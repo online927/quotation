@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             x:Class="Quotation.Desktop.Views.ShellView"
+             x:DataType="vm:ShellViewModel">
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Ctrl+D" Command="{Binding NavigateCommand}" CommandParameter="dashboard" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding NavigateCommand}" CommandParameter="new" />
+    <KeyBinding Gesture="Ctrl+I" Command="{Binding NavigateCommand}" CommandParameter="inbox" />
+    <KeyBinding Gesture="Ctrl+H" Command="{Binding NavigateCommand}" CommandParameter="history" />
+  </UserControl.KeyBindings>
+  <DockPanel>
+    <!-- Header -->
+    <Border DockPanel.Dock="Top" Background="{StaticResource HeaderBrush}" Padding="14,8">
+      <Grid ColumnDefinitions="*,Auto,Auto">
+        <TextBlock Text="QUOTATION SYSTEM" Foreground="White" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding UserDisplay}" Foreground="#D6E4F5" VerticalAlignment="Center" Margin="0,0,12,0" />
+        <Button Grid.Column="2" Content="Log out" Command="{Binding LogoutCommand}" />
+      </Grid>
+    </Border>
+
+    <!-- Status bar -->
+    <Border DockPanel.Dock="Bottom" Background="#E4E9F0" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,1,0,0" Padding="12,4">
+      <StackPanel Orientation="Horizontal" Spacing="18">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Ellipse Width="9" Height="9" Fill="{StaticResource OkBrush}" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
+          <Ellipse Width="9" Height="9" Fill="{StaticResource BadBrush}" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
+          <TextBlock FontSize="12" Text="Tally Connected" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
+          <TextBlock FontSize="12" Text="Tally Disconnected" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
+        </StackPanel>
+        <TextBlock FontSize="12" Text="{Binding Status.TallyCompany, StringFormat='Company: {0}', FallbackValue=''}" />
+        <TextBlock FontSize="12" Text="{Binding Status.ActiveFinancialYear, StringFormat='FY: {0}', FallbackValue=''}" />
+        <TextBlock FontSize="12" Text="{Binding Status.LastSuccessfulSyncUtc, StringFormat='Last sync (UTC): {0:dd-MMM-yyyy HH:mm}', FallbackValue='Last sync: never', TargetNullValue='Last sync: never'}" />
+        <TextBlock FontSize="12" Foreground="{StaticResource WarnBrush}" Text="Tally data is stale" IsVisible="{Binding Status.DataIsStale, FallbackValue=False}" />
+        <TextBlock FontSize="12" Text="{Binding ServerState}" Foreground="{StaticResource MutedBrush}" />
+      </StackPanel>
+    </Border>
+
+    <!-- Navigation -->
+    <Border DockPanel.Dock="Left" Width="210" Background="{StaticResource NavBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,1,0">
+      <ItemsControl ItemsSource="{Binding NavItems}" Margin="6,8">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:NavItem">
+            <Button Classes="nav" Classes.selected="{Binding IsSelected}"
+                    Command="{Binding $parent[ItemsControl].((vm:ShellViewModel)DataContext).NavigateCommand}"
+                    CommandParameter="{Binding Key}">
+              <Grid ColumnDefinitions="*,Auto" Width="180">
+                <TextBlock Text="{Binding Title}" />
+                <TextBlock Grid.Column="1" Text="{Binding Shortcut}" FontSize="10" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+              </Grid>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </Border>
+
+    <ContentControl Content="{Binding CurrentPage}" />
+  </DockPanel>
+</UserControl>

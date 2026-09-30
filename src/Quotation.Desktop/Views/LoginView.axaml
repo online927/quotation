@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             x:Class="Quotation.Desktop.Views.LoginView"
+             x:DataType="vm:LoginViewModel">
+  <Grid Background="{StaticResource HeaderBrush}">
+    <Border Classes="card" Width="400" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="28">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="h1" Text="TS Quotation System" />
+        <TextBlock Classes="muted" Text="Sign in to the Quotation Server" Margin="0,0,0,8" />
+
+        <TextBlock Classes="label" Text="Server address" />
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox Name="ServerBox" Text="{Binding ServerUrl}" Watermark="http://server-pc:5080" />
+          <Button Grid.Column="1" Margin="6,0,0,0" Content="Test" Command="{Binding TestServerCommand}" />
+        </Grid>
+        <TextBlock Text="{Binding ServerStatus}" Foreground="{StaticResource OkBrush}" FontSize="12"
+                   IsVisible="{Binding ServerStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <TextBlock Classes="label" Text="Username" />
+        <TextBox Name="UserBox" Text="{Binding Username}" />
+        <TextBlock Classes="label" Text="Password" />
+        <TextBox Name="PasswordBox" Text="{Binding Password}" PasswordChar="●">
+          <TextBox.KeyBindings>
+            <KeyBinding Gesture="Enter" Command="{Binding LoginCommand}" />
+          </TextBox.KeyBindings>
+        </TextBox>
+
+        <TextBlock Classes="error" Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                Content="Sign in" Command="{Binding LoginCommand}" IsDefault="True" IsEnabled="{Binding !IsBusy}" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

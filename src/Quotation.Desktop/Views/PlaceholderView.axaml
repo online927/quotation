@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             x:Class="Quotation.Desktop.Views.PlaceholderView"
+             x:DataType="vm:PlaceholderViewModel">
+  <StackPanel Margin="24" Spacing="8">
+    <TextBlock Classes="h1" Text="{Binding Title}" />
+    <TextBlock Classes="muted" Text="{Binding Message}" />
+  </StackPanel>
+</UserControl>

@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             x:Class="Quotation.Desktop.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="16">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Classes="h1" Text="Dashboard" />
+        <Button Grid.Column="1" Content="Refresh (F5)" Command="{Binding LoadCommand}" HotKey="F5" />
+      </Grid>
+      <TextBlock Classes="error" Text="{Binding ErrorMessage}"
+                 IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <UniformGrid Columns="4" >
+        <Border Classes="card" Margin="0,0,10,10">
+          <StackPanel>
+            <TextBlock Classes="muted" Text="Today's Quotations" />
+            <TextBlock FontSize="30" FontWeight="Bold" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,10,10">
+          <StackPanel>
+            <TextBlock Classes="muted" Text="Drafts" />
+            <TextBlock FontSize="30" FontWeight="Bold" Text="{Binding Data.Drafts, FallbackValue='–'}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,10,10">
+          <StackPanel>
+            <TextBlock Classes="muted" Text="Pending Review" />
+            <TextBlock FontSize="30" FontWeight="Bold" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,10,10">
+          <StackPanel>
+            <TextBlock Classes="muted" Text="AI Inbox needs attention" />
+            <TextBlock FontSize="30" FontWeight="Bold" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–'}" />
+          </StackPanel>
+        </Border>
+      </UniformGrid>
+
+      <Border Classes="card">
+        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" >
+          <TextBlock Classes="h2" Grid.ColumnSpan="2" Text="Connections" Margin="0,0,0,8" />
+          <TextBlock Grid.Row="1" Classes="label" Text="Tally" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TallyText}" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="2" Classes="label" Text="Tally company" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Data.Status.TallyCompany, FallbackValue='–', TargetNullValue='–'}" />
+          <TextBlock Grid.Row="3" Classes="label" Text="Active financial year" />
+          <TextBlock Grid.Row="3" Grid.Column="1">
+            <Run Text="{Binding Data.Status.ActiveFinancialYear, FallbackValue='–'}" />
+            <Run Text="  (source: " Foreground="{StaticResource MutedBrush}" />
+            <Run Text="{Binding Data.Status.ActiveFinancialYearSource, FallbackValue=''}" Foreground="{StaticResource MutedBrush}" />
+            <Run Text=")" Foreground="{StaticResource MutedBrush}" />
+          </TextBlock>
+          <TextBlock Grid.Row="4" Classes="label" Text="Last sync" />
+          <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastSyncText}" />
+          <TextBlock Grid.Row="5" Classes="label" Text="Products / Customers" />
+          <TextBlock Grid.Row="5" Grid.Column="1">
+            <Run Text="{Binding Data.Status.ProductCount, FallbackValue='–'}" />
+            <Run Text=" / " />
+            <Run Text="{Binding Data.Status.CustomerCount, FallbackValue='–'}" />
+          </TextBlock>
+          <TextBlock Grid.Row="6" Classes="label" Text="Gmail" />
+          <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding GmailText}" />
+          <TextBlock Grid.Row="7" Classes="label" Text="Claude AI" />
+          <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding AiText}" />
+        </Grid>
+      </Border>
+
+      <WrapPanel>
+        <Button Classes="primary" Margin="0,0,8,8" Content="New Quotation (Ctrl+N)" Command="{Binding GoCommand}" CommandParameter="new" />
+        <Button Margin="0,0,8,8" Content="AI Inbox" Command="{Binding GoCommand}" CommandParameter="inbox" />
+        <Button Margin="0,0,8,8" Content="Draft Quotations" Command="{Binding GoCommand}" CommandParameter="drafts" />
+        <Button Margin="0,0,8,8" Content="Quotation History" Command="{Binding GoCommand}" CommandParameter="history" />
+        <Button Margin="0,0,8,8" Content="Tally Connection" Command="{Binding GoCommand}" CommandParameter="tally" />
+      </WrapPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

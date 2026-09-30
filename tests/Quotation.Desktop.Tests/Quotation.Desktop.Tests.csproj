@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Quotation.TestSupport\Quotation.TestSupport.csproj" />
+    <ProjectReference Include="..\..\src\Quotation.Desktop\Quotation.Desktop.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Quotation.TestSupport" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,221 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             xmlns:c="using:Quotation.Contracts"
+             x:Class="Quotation.Desktop.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <UserControl.Styles>
+    <Style Selector="Grid.form > TextBlock">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,4,12,4" />
+    </Style>
+    <Style Selector="Grid.form > TextBox, Grid.form > NumericUpDown, Grid.form > ComboBox, Grid.form > CheckBox">
+      <Setter Property="Margin" Value="0,3" />
+    </Style>
+  </UserControl.Styles>
+  <DockPanel Margin="20">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+      <TextBlock Classes="h1" Text="Settings" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Button Content="Reload" Command="{Binding LoadCommand}" />
+        <Button Classes="primary" Content="Save (Ctrl+S)" Command="{Binding SaveCommand}" HotKey="Ctrl+S" IsEnabled="{Binding IsAdmin}" />
+      </StackPanel>
+    </Grid>
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+      <TextBlock Classes="muted" Text="Only administrators can change settings." IsVisible="{Binding IsReadOnly}" />
+      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Foreground="{StaticResource OkBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+
+    <TabControl IsEnabled="{Binding Settings, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <TabItem Header="Company">
+        <ScrollViewer>
+          <Grid Classes="form" ColumnDefinitions="200,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Text="Company name" />
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Company.CompanyName}" />
+            <TextBlock Grid.Row="1" Text="Address (one line per row)" VerticalAlignment="Top" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AddressLines}" AcceptsReturn="True" Height="70" />
+            <TextBlock Grid.Row="2" Text="Mobile" />
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Company.Mobile}" />
+            <TextBlock Grid.Row="3" Text="Phone" />
+            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Settings.Company.Phone}" />
+            <TextBlock Grid.Row="4" Text="GSTIN/UIN" />
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Company.Gstin}" />
+            <TextBlock Grid.Row="5" Text="State name / code" />
+            <Grid Grid.Row="5" Grid.Column="1" ColumnDefinitions="*,8,90">
+              <TextBox Text="{Binding Settings.Company.StateName}" />
+              <TextBox Grid.Column="2" Text="{Binding Settings.Company.StateCode}" />
+            </Grid>
+            <TextBlock Grid.Row="6" Text="E-mail" />
+            <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Settings.Company.Email}" />
+            <TextBlock Grid.Row="7" Text="Company's PAN" />
+            <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Settings.Company.Pan}" />
+            <TextBlock Grid.Row="8" Text="MSME number" />
+            <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding Settings.Company.MsmeNumber}" />
+            <TextBlock Grid.Row="9" Text="IEC" />
+            <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding Settings.Company.Iec}" />
+            <TextBlock Grid.Row="10" Text="Bank: account holder" />
+            <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding Settings.Company.BankAccountHolder}" />
+            <TextBlock Grid.Row="11" Text="Bank name" />
+            <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding Settings.Company.BankName}" />
+            <TextBlock Grid.Row="12" Text="Account number" />
+            <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding Settings.Company.BankAccountNumber}" />
+            <TextBlock Grid.Row="13" Text="Branch &amp; IFSC" />
+            <Grid Grid.Row="13" Grid.Column="1" ColumnDefinitions="*,8,160">
+              <TextBox Text="{Binding Settings.Company.BankBranch}" Watermark="Branch" />
+              <TextBox Grid.Column="2" Text="{Binding Settings.Company.BankIfsc}" Watermark="IFSC" />
+            </Grid>
+            <TextBlock Grid.Row="14" Text="Logo file (on server)" />
+            <TextBox Grid.Row="14" Grid.Column="1" Text="{Binding Settings.Company.LogoPath}" Watermark="C:\ProgramData\TSQuotation\logo.png (optional)" />
+            <TextBlock Grid.Row="15" Text="Authorised signatory label" />
+            <TextBox Grid.Row="15" Grid.Column="1" Text="{Binding Settings.Company.AuthorisedSignatoryLabel}" />
+            <TextBlock Grid.Row="16" Text="Default prepared by" />
+            <TextBox Grid.Row="16" Grid.Column="1" Text="{Binding Settings.Company.DefaultPreparedBy}" />
+            <TextBlock Grid.Row="17" Text="Default verified by" />
+            <TextBox Grid.Row="17" Grid.Column="1" Text="{Binding Settings.Company.DefaultVerifiedBy}" />
+            <TextBlock Grid.Row="18" Text="Quotation validity (days)" />
+            <NumericUpDown Grid.Row="18" Grid.Column="1" Value="{Binding Settings.Company.QuotationValidityDays}" Minimum="0" Maximum="365" FormatString="0" Width="140" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="19" Text="Validity text" />
+            <TextBox Grid.Row="19" Grid.Column="1" Text="{Binding Settings.Company.ValidityText}" />
+            <TextBlock Grid.Row="20" Text="Declaration" VerticalAlignment="Top" />
+            <TextBox Grid.Row="20" Grid.Column="1" Text="{Binding Settings.Company.Declaration}" AcceptsReturn="True" TextWrapping="Wrap" Height="60" />
+            <TextBlock Grid.Row="21" Text="Terms &amp; conditions (one per line)" VerticalAlignment="Top" />
+            <TextBox Grid.Row="21" Grid.Column="1" Text="{Binding Terms}" AcceptsReturn="True" Height="90" />
+            <TextBlock Grid.Row="22" Text="Default payment terms" />
+            <TextBox Grid.Row="22" Grid.Column="1" Text="{Binding Settings.Company.DefaultPaymentTerms}" />
+            <TextBlock Grid.Row="23" Text="Footer text" />
+            <TextBox Grid.Row="23" Grid.Column="1" Text="{Binding Settings.Company.FooterText}" />
+          </Grid>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Quotation">
+        <ScrollViewer>
+          <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Text="Number pattern" />
+            <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
+              <TextBox Text="{Binding Settings.Quotation.NumberPattern}" />
+              <Button Grid.Column="1" Margin="6,0,0,0" Content="Preview" Command="{Binding RefreshExampleCommand}" />
+            </Grid>
+            <TextBlock Grid.Row="1" Text="Example" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ExampleNumber}" FontWeight="SemiBold" Foreground="Black" />
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" FontSize="11" TextWrapping="Wrap"
+                       Text="Tokens: {FY}=2526, {FY_LABEL}=2025-26, {FYS2}/{FYE2}=25/26, {FYS4}/{FYE4}=2025/2026, {SEQ} or {SEQ:4} (zero-padded)." />
+            <TextBlock Grid.Row="3" Text="First number of a new financial year" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultStartSequence}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="4" Text="Financial year start month" />
+            <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding Settings.Quotation.FinancialYearStartMonth}" Minimum="1" Maximum="12" FormatString="0" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="5" Text="GST presentation" />
+            <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding TaxPresentations}" SelectedItem="{Binding Settings.Quotation.TaxPresentation}" Width="200" />
+            <TextBlock Grid.Row="6" Text="Round off total to rupee" />
+            <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RoundOffTotal}" />
+            <TextBlock Grid.Row="7" Text="Default packing &amp; forwarding (₹)" />
+            <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultPackingForwardingAmount}" Minimum="0" FormatString="0.00" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="8" Text="…or default P&amp;F % of subtotal" />
+            <NumericUpDown Grid.Row="8" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultPackingForwardingPercent}" Minimum="0" Maximum="100" FormatString="0.00" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="9" Text="Refresh rates when duplicating" />
+            <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RefreshRatesOnDuplicate}" />
+            <TextBlock Grid.Row="10" Text="Allow generation with stale Tally data" />
+            <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllowStaleDataOverride}" />
+            <TextBlock Grid.Row="11" Text="Tally data stale after (hours)" />
+            <NumericUpDown Grid.Row="11" Grid.Column="1" Value="{Binding Settings.Quotation.StaleDataHours}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="12" Text="Require HSN/SAC on every line" />
+            <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RequireHsn}" />
+          </Grid>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Tally">
+        <ScrollViewer>
+          <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Text="TallyPrime XML/HTTP address" />
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Tally.Url}" Watermark="http://192.168.1.10:9000" />
+            <TextBlock Grid.Row="1" Text="Company name (blank = loaded company)" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Tally.CompanyName}" />
+            <TextBlock Grid.Row="2" Text="Customer ledger groups (one per line)" VerticalAlignment="Top" />
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding CustomerGroups}" AcceptsReturn="True" Height="60" />
+            <TextBlock Grid.Row="3" Text="Selling rate source" />
+            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding RateSources}" SelectedItem="{Binding Settings.Tally.RateSource}" Width="200" />
+            <TextBlock Grid.Row="4" Text="Price level (if rate source = PriceLevel)" />
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Tally.PriceLevel}" />
+            <TextBlock Grid.Row="5" Text="Incremental sync every (minutes)" />
+            <NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding Settings.Tally.IncrementalSyncMinutes}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="6" Text="Nightly full sync time (HH:mm)" />
+            <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Settings.Tally.NightlyFullSyncTime}" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="7" Text="Request timeout (seconds)" />
+            <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Settings.Tally.TimeoutSeconds}" Minimum="5" FormatString="0" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="8" Text="Connection check every (seconds)" />
+            <NumericUpDown Grid.Row="8" Grid.Column="1" Value="{Binding Settings.Tally.ConnectionCheckSeconds}" Minimum="10" FormatString="0" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="9" Text="Active FY override (start year, blank = detect)" />
+            <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding FyOverride}" Width="160" HorizontalAlignment="Left" Watermark="e.g. 2025" />
+          </Grid>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Claude AI">
+        <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Text="Enable AI assistant" />
+          <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Ai.Enabled}" />
+          <TextBlock Grid.Row="1" Text="Model" />
+          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Ai.Model}" />
+          <TextBlock Grid.Row="2" Text="API key" />
+          <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
+            <TextBox Text="{Binding NewApiKey}" PasswordChar="●" Watermark="Enter a new key to replace the stored one" />
+            <TextBlock FontSize="11" Text="A key is stored (encrypted on the server)." IsVisible="{Binding Settings.Ai.ApiKeyConfigured, FallbackValue=False}" Foreground="{StaticResource OkBrush}" />
+          </StackPanel>
+          <TextBlock Grid.Row="3" Text="Max product candidates sent to AI" />
+          <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.Ai.MaxCandidates}" Minimum="3" Maximum="25" FormatString="0" Width="160" HorizontalAlignment="Left" />
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Gmail">
+        <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Text="Enable Gmail ingestion" />
+          <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Gmail.Enabled}" />
+          <TextBlock Grid.Row="1" Text="Gmail search query" />
+          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Gmail.Query}" />
+          <TextBlock Grid.Row="2" Text="Poll every (minutes)" />
+          <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding Settings.Gmail.PollMinutes}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
+          <TextBlock Grid.Row="3" Text="OAuth client JSON (Desktop app)" VerticalAlignment="Top" />
+          <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
+            <TextBox Text="{Binding NewGmailClientJson}" AcceptsReturn="True" Height="70" Watermark="Paste client_secret_….json contents to replace the stored one" />
+            <TextBlock FontSize="11" Text="OAuth client is stored (encrypted on the server)." IsVisible="{Binding Settings.Gmail.ClientSecretConfigured, FallbackValue=False}" Foreground="{StaticResource OkBrush}" />
+          </StackPanel>
+          <TextBlock Grid.Row="4" Text="Connected account" />
+          <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Gmail.ConnectedAccount, FallbackValue='Not connected', TargetNullValue='Not connected'}" />
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Users" IsVisible="{Binding IsAdmin}">
+        <StackPanel Margin="4,8" Spacing="10" MaxWidth="900" HorizontalAlignment="Left">
+          <ItemsControl ItemsSource="{Binding Users}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="c:UserDto">
+                <Grid ColumnDefinitions="160,220,80,90,*" Margin="0,2">
+                  <TextBlock Text="{Binding Username}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding DisplayName}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding Role}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="3" Text="{Binding IsActive, StringFormat='Active: {0}'}" VerticalAlignment="Center" />
+                  <Button Grid.Column="4" HorizontalAlignment="Left" Content="Activate / Deactivate"
+                          Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).ToggleUserCommand}" CommandParameter="{Binding}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="h2" Text="Add user" />
+          <Grid ColumnDefinitions="160,8,220,8,160,8,Auto,8,Auto">
+            <TextBox Text="{Binding NewUsername}" Watermark="Username" />
+            <TextBox Grid.Column="2" Text="{Binding NewDisplayName}" Watermark="Display name" />
+            <TextBox Grid.Column="4" Text="{Binding NewUserPassword}" PasswordChar="●" Watermark="Initial password" />
+            <CheckBox Grid.Column="6" Content="Admin" IsChecked="{Binding NewUserIsAdmin}" />
+            <Button Grid.Column="8" Content="Add user" Command="{Binding AddUserCommand}" />
+          </Grid>
+        </StackPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

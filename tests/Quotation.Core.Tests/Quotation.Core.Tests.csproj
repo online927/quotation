@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Quotation.Core\Quotation.Core.csproj" />
+  </ItemGroup>
+</Project>

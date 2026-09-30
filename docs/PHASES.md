@@ -9,7 +9,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 3 | Customer/product synchronization | ✅ Done |
 | 4 | Local product/customer search | ✅ Done |
 | 5 | Quotation UI | ⏳ |
-| 6 | Quotation calculation engine | ⏳ |
+| 6 | Quotation calculation engine | ✅ Done |
 | 7 | Quotation numbering | ⏳ |
 | 8 | PDF engine (Tally quotation layout) | ⏳ |
 | 9 | Claude AI integration | ⏳ |
@@ -157,3 +157,23 @@ to `All` and sync again.
 `dotnet test --filter Search`. In the app (after a sync) open **Products** and type
 `universal bevel`, `10mm`, `3 core 2.5 sq mm cable`, `18790110`, `univresal`;
 open **Customers** and type `SONEPAR` or a GSTIN.
+
+---
+
+## Phase 6 — Quotation calculation engine
+
+**Delivered** (`Quotation.Core/Calculation`, `Quotation.Core/Validation`) — deterministic code, never AI:
+
+* Line amount = Qty × Rate − Discount %, rounded to paise (half away from zero, like Tally).
+* Subtotal, packing & forwarding (fixed amount or % of subtotal), total quantity (+ unit when all lines share one).
+* GST presentation setting:
+  * **RateOnly** (default, like the Tally quotation): GST % column only, totals exclusive of GST.
+  * **ComputeTax**: CGST + SGST (same state) or IGST (other state), P&F apportioned across GST rates.
+* Optional round-off to the rupee with a separate round-off amount.
+* Indian number format (`1,23,45,678.90`) and amount in words with lakh/crore
+  (`INR Eighteen Thousand Four Hundred Eight and Fifty paise Only`).
+* Pre-approval validation: customer, products from Tally, quantity > 0, rate > 0, discount 0–100 %,
+  GST rate must be a notified rate, HSN/SAC present and 4/6/8 digits, unit present, date inside the
+  active financial year, P&F not negative — every problem is reported, nothing is silently fixed.
+
+**How to test**: `dotnet test --filter "CalculationTests"`.

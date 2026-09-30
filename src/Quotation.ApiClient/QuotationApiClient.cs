@@ -185,3 +185,16 @@ public partial class QuotationApiClient
         return await r.Content.ReadAsStringAsync(ct);
     }
 }
+
+public partial class QuotationApiClient
+{
+    public Task<List<ProductSearchHitDto>> SearchProductsAsync(string query, int limit = 20, CancellationToken ct = default) =>
+        GetAsync<List<ProductSearchHitDto>>($"api/products/search?limit={limit}{Q("q", query)}", ct);
+
+    public Task<ProductDetailDto> ProductAsync(int id, CancellationToken ct = default) => GetAsync<ProductDetailDto>($"api/products/{id}", ct);
+
+    public Task<List<CustomerSearchHitDto>> SearchCustomersAsync(string query, int limit = 20, CancellationToken ct = default) =>
+        GetAsync<List<CustomerSearchHitDto>>($"api/customers/search?limit={limit}{Q("q", query)}", ct);
+
+    public Task<CustomerDetailDto> CustomerAsync(int id, CancellationToken ct = default) => GetAsync<CustomerDetailDto>($"api/customers/{id}", ct);
+}

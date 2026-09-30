@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             xmlns:c="using:Quotation.Contracts"
+             x:Class="Quotation.Desktop.Views.CustomersView"
+             x:DataType="vm:CustomersViewModel">
+  <Grid Margin="20" ColumnDefinitions="3*,12,2*" RowDefinitions="Auto,Auto,*">
+    <TextBlock Classes="h1" Text="Customers" Grid.ColumnSpan="3" Margin="0,0,0,10" />
+    <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,0,8">
+      <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search name, GSTIN, phone, e-mail, city…" />
+      <TextBlock Classes="muted" FontSize="11" Text="{Binding ResultInfo}" />
+      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+    <ListBox Grid.Row="2" Name="ResultList" ItemsSource="{Binding Results}" SelectedItem="{Binding Selected}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="c:CustomerSearchHitDto">
+          <StackPanel Margin="0,1">
+            <TextBlock Text="{Binding Customer.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+            <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis">
+              <Run Text="{Binding Customer.StateName, Mode=OneWay}" />
+              <Run Text="  " />
+              <Run Text="{Binding Customer.Gstin, Mode=OneWay}" />
+              <Run Text="  " />
+              <Run Text="{Binding Customer.Phone, Mode=OneWay}" />
+            </TextBlock>
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <Border Grid.Row="1" Grid.RowSpan="2" Grid.Column="2" Classes="card" IsVisible="{Binding Detail, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <ScrollViewer>
+        <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Grid.ColumnSpan="2" Classes="h2" Text="{Binding Detail.Name, FallbackValue=''}" TextWrapping="Wrap" Margin="0,0,0,8" />
+          <TextBlock Grid.Row="1" Classes="label" Text="Mailing name" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Detail.MailingName, FallbackValue=''}" TextWrapping="Wrap" />
+          <TextBlock Grid.Row="2" Classes="label" Text="Billing address" VerticalAlignment="Top" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AddressText}" TextWrapping="Wrap" />
+          <TextBlock Grid.Row="3" Classes="label" Text="State / code" />
+          <TextBlock Grid.Row="3" Grid.Column="1">
+            <Run Text="{Binding Detail.StateName, FallbackValue='', Mode=OneWay}" />
+            <Run Text=" / " />
+            <Run Text="{Binding Detail.StateCode, FallbackValue='', Mode=OneWay}" />
+          </TextBlock>
+          <TextBlock Grid.Row="4" Classes="label" Text="Pincode" />
+          <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Detail.Pincode, FallbackValue=''}" />
+          <TextBlock Grid.Row="5" Classes="label" Text="GSTIN/UIN" />
+          <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{Binding Detail.Gstin, FallbackValue=''}" />
+            <TextBlock Text="(checksum invalid)" Foreground="{StaticResource WarnBrush}" IsVisible="{Binding !Detail.GstinValid, FallbackValue=False}" />
+          </StackPanel>
+          <TextBlock Grid.Row="6" Classes="label" Text="Registration" />
+          <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Detail.GstRegistrationType, FallbackValue=''}" />
+          <TextBlock Grid.Row="7" Classes="label" Text="PAN" />
+          <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Detail.Pan, FallbackValue=''}" />
+          <TextBlock Grid.Row="8" Classes="label" Text="Contact" />
+          <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding Detail.ContactPerson, FallbackValue=''}" />
+          <TextBlock Grid.Row="9" Classes="label" Text="Phone / mobile" />
+          <TextBlock Grid.Row="9" Grid.Column="1">
+            <Run Text="{Binding Detail.Phone, FallbackValue='', Mode=OneWay}" />
+            <Run Text="  " />
+            <Run Text="{Binding Detail.Mobile, FallbackValue='', Mode=OneWay}" />
+          </TextBlock>
+          <TextBlock Grid.Row="10" Classes="label" Text="E-mail" />
+          <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding Detail.Email, FallbackValue=''}" />
+          <TextBlock Grid.Row="11" Classes="label" Text="Ship-to" VerticalAlignment="Top" />
+          <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding ShipToText}" TextWrapping="Wrap" />
+          <TextBlock Grid.Row="12" Classes="label" Text="Tally group" />
+          <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding Detail.LedgerGroup, FallbackValue=''}" />
+        </Grid>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

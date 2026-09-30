@@ -43,8 +43,8 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         NavItems.Add(new NavItem("drafts", "Draft Quotations", "", () => new PlaceholderViewModel("Draft Quotations", "Phase 5")));
         NavItems.Add(new NavItem("today", "Today's Quotations", "", () => new PlaceholderViewModel("Today's Quotations", "Phase 12")));
         NavItems.Add(new NavItem("history", "Quotation History", "Ctrl+H", () => new PlaceholderViewModel("Quotation History", "Phase 12")));
-        NavItems.Add(new NavItem("customers", "Customers", "", () => new PlaceholderViewModel("Customers", "Phase 4")));
-        NavItems.Add(new NavItem("products", "Products", "", () => new PlaceholderViewModel("Products", "Phase 4")));
+        NavItems.Add(new NavItem("customers", "Customers", "", () => new CustomersViewModel(_session)));
+        NavItems.Add(new NavItem("products", "Products", "", () => new ProductsViewModel(_session)));
         NavItems.Add(new NavItem("tally", "Tally Connection", "", () => new TallyViewModel(_session)));
         NavItems.Add(new NavItem("gmail", "Gmail Connection", "", () => new PlaceholderViewModel("Gmail Connection", "Phase 10")));
         NavItems.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session)));

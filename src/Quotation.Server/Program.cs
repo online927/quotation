@@ -47,6 +47,7 @@ builder.Services.AddSingleton<TallyConnectionChecker>();
 builder.Services.AddHostedService<TallyMonitorService>();
 builder.Services.AddSingleton<TallySyncService>();
 builder.Services.AddHostedService<SyncWorker>();
+builder.Services.AddSingleton<CatalogSearchService>();
 
 builder.Services.AddAuthentication(TokenAuthenticationHandler.SchemeName)
     .AddScheme<AuthenticationSchemeOptions, TokenAuthenticationHandler>(TokenAuthenticationHandler.SchemeName, null);
@@ -72,6 +73,7 @@ app.UseAuthorization();
 app.MapSystemEndpoints();
 app.MapTallyEndpoints();
 app.MapSyncEndpoints();
+app.MapCatalogEndpoints();
 
 app.Logger.LogInformation("TS Quotation Server starting. Data directory: {DataDir}", dataDir);
 await app.RunAsync();

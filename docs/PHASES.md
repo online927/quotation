@@ -7,7 +7,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 1 | Architecture and repository setup | ✅ Done |
 | 2 | Tally connectivity | ✅ Done |
 | 3 | Customer/product synchronization | ✅ Done |
-| 4 | Local product/customer search | ⏳ |
+| 4 | Local product/customer search | ✅ Done |
 | 5 | Quotation UI | ⏳ |
 | 6 | Quotation calculation engine | ⏳ |
 | 7 | Quotation numbering | ⏳ |
@@ -128,3 +128,32 @@ data (tests do this automatically: `dotnet test --filter Sync`).
 With real Tally: after the first sync, use **Diagnostics** with an exact item name to confirm
 HSN, GST and rate fields are present. If they are empty, set **Settings → Tally → Fetch mode**
 to `All` and sync again.
+
+---
+
+## Phase 4 — Local product/customer search
+
+**Delivered**
+
+* **Search engine** (`Quotation.Core/Search`): in-memory inverted index rebuilt after every sync.
+  * Exact, prefix (binary search), contains (trigram) and typo-tolerant matching
+    (Damerau–Levenshtein: 1 edit up to 5 letters, 2 edits for longer words; also while typing).
+  * Unit/format normalization: `10 mm` = `10mm`, `2.5 sq.mm` = `2.5sqmm`, metres/meters/mtr, `"` = inch.
+  * Part numbers with or without separators: `187-901-10` = `18790110` = `187 901 10`.
+  * **Numbers are never fuzzy-matched**: `2.5sqmm` never matches `1.5sqmm`; `10mm` never matches `10.5mm`/`110mm`.
+  * Field-weighted ranking (name, alias, part no. > brand > group/description), exact/starts-with
+    bonuses, all-terms-first, and *match evidence* (exact name/identifier, fuzzy used) for the AI safety rules.
+  * Natural-language filler words ignored ("please quote for the universal bevel protractor").
+  * 20,000 products: index build ≈ 0.6 s, **average query ≈ 5 ms**.
+* Customers searchable by name, alias, mailing name, **GSTIN**, phone/mobile, e-mail, contact, city.
+* Server: `/api/products/search`, `/api/products/{id}`, `/api/customers/search`, `/api/customers/{id}`;
+  searches keep working while Tally is offline (served from the synchronized copy).
+* Desktop: **Products** and **Customers** pages with search-as-you-type (120 ms debounce),
+  ↓ to move into results, detail panel (HSN, GST + source, rate + source/date, aliases,
+  billing and ship-to addresses, GSTIN checksum warning).
+
+**How to test**
+
+`dotnet test --filter Search`. In the app (after a sync) open **Products** and type
+`universal bevel`, `10mm`, `3 core 2.5 sq mm cable`, `18790110`, `univresal`;
+open **Customers** and type `SONEPAR` or a GSTIN.

@@ -177,7 +177,8 @@ public class QuotationLine
     /// <summary>Additional description lines printed under the item name (brand, model, MOQ …).</summary>
     public string Description { get; set; } = "";
     public string Hsn { get; set; } = "";
-    public decimal GstRate { get; set; }
+    /// <summary>Null when neither Tally nor the user supplied a GST rate.</summary>
+    public decimal? GstRate { get; set; }
     public string DueOn { get; set; } = "";
     public decimal Quantity { get; set; }
     public string Unit { get; set; } = "";

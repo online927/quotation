@@ -11,7 +11,7 @@ using Quotation.Data;
 namespace Quotation.Data.Migrations
 {
     [DbContext(typeof(QuotationDbContext))]
-    [Migration("20260930123508_InitialCreate")]
+    [Migration("20260930125407_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -614,7 +614,7 @@ namespace Quotation.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("GstRate")
+                    b.Property<decimal?>("GstRate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Hsn")

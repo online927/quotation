@@ -41,4 +41,13 @@ public sealed record DashboardDto(
 public sealed record AuditEntryDto(long Id, DateTime AtUtc, string User, string Machine, string Action,
     string EntityType, string EntityId, string Details);
 
-public sealed record ApiError(string Error, IReadOnlyList<string>? Details = null);
+public sealed record ApiError(string Error, IReadOnlyList<string>? Details = null, string? Code = null);
+
+public static class ApiErrorCodes
+{
+    public const string Validation = "VALIDATION";
+    public const string StaleData = "STALE_DATA";
+    public const string RatesChanged = "RATES_CHANGED";
+    public const string Concurrency = "CONCURRENCY";
+    public const string InvalidState = "INVALID_STATE";
+}

@@ -8,9 +8,10 @@ using Quotation.Contracts;
 namespace Quotation.ApiClient;
 
 /// <summary>Error returned by the Quotation Server (validation, conflict, auth …).</summary>
-public sealed class ApiException(HttpStatusCode status, string message, IReadOnlyList<string>? details = null)
+public sealed class ApiException(HttpStatusCode status, string message, IReadOnlyList<string>? details = null, string? code = null)
     : Exception(message)
 {
+    public string? Code { get; } = code;
     public HttpStatusCode Status { get; } = status;
     public IReadOnlyList<string> Details { get; } = details ?? [];
     public bool IsUnauthorized => Status == HttpStatusCode.Unauthorized;
@@ -147,7 +148,7 @@ public partial class QuotationApiClient
                 HttpStatusCode.NotFound => "Not found.",
                 _ => $"Server error ({(int)response.StatusCode}).",
             };
-            throw new ApiException(response.StatusCode, message, error?.Details);
+            throw new ApiException(response.StatusCode, message, error?.Details, error?.Code);
         }
     }
 
@@ -197,4 +198,33 @@ public partial class QuotationApiClient
         GetAsync<List<CustomerSearchHitDto>>($"api/customers/search?limit={limit}{Q("q", query)}", ct);
 
     public Task<CustomerDetailDto> CustomerAsync(int id, CancellationToken ct = default) => GetAsync<CustomerDetailDto>($"api/customers/{id}", ct);
+}
+
+public partial class QuotationApiClient
+{
+    public Task<QuotationDto> CreateQuotationAsync(SaveQuotationRequest r, CancellationToken ct = default) => PostAsync<QuotationDto>("api/quotations", r, ct);
+    public Task<QuotationDto> UpdateQuotationAsync(Guid id, SaveQuotationRequest r, CancellationToken ct = default) =>
+        SendAsync<QuotationDto>(HttpMethod.Put, $"api/quotations/{id}", r, ct);
+    public Task<QuotationDto> QuotationAsync(Guid id, CancellationToken ct = default) => GetAsync<QuotationDto>($"api/quotations/{id}", ct);
+    public Task<QuotationDto> ApproveQuotationAsync(Guid id, bool overrideStaleData = false, int? revision = null, CancellationToken ct = default) =>
+        PostAsync<QuotationDto>($"api/quotations/{id}/approve", new ApproveRequest(overrideStaleData, revision), ct);
+    public Task<QuotationDto> CancelQuotationAsync(Guid id, CancellationToken ct = default) => PostAsync<QuotationDto>($"api/quotations/{id}/cancel", null, ct);
+    public Task<QuotationDto> DuplicateQuotationAsync(Guid id, CancellationToken ct = default) => PostAsync<QuotationDto>($"api/quotations/{id}/duplicate", null, ct);
+    public Task<QuotationDto> RegeneratePdfAsync(Guid id, CancellationToken ct = default) => PostAsync<QuotationDto>($"api/quotations/{id}/regenerate-pdf", null, ct);
+    public Task<byte[]> QuotationPdfAsync(Guid id, CancellationToken ct = default) => GetBytesAsync($"api/quotations/{id}/pdf", ct);
+    public Task<List<ValidationErrorDto>> ValidateQuotationAsync(Guid id, CancellationToken ct = default) =>
+        GetAsync<List<ValidationErrorDto>>($"api/quotations/{id}/validate", ct);
+    public Task<NextNumberDto> NextNumberAsync(DateOnly? date = null, CancellationToken ct = default) =>
+        GetAsync<NextNumberDto>("api/quotations/next-number" + (date is null ? "" : $"?date={date:yyyy-MM-dd}"), ct);
+
+    public Task<List<QuotationSummaryDto>> QuotationsAsync(string? q = null, Quotation.Core.Domain.QuotationStatus? status = null,
+        DateOnly? from = null, DateOnly? to = null, int? customerId = null, int take = 100, Quotation.Core.Domain.QuotationSource? source = null,
+        CancellationToken ct = default) =>
+        GetAsync<List<QuotationSummaryDto>>($"api/quotations?take={take}{Q("q", q)}{Q("status", status?.ToString())}{Q("source", source?.ToString())}" +
+                                            $"{Q("from", from?.ToString("yyyy-MM-dd"))}{Q("to", to?.ToString("yyyy-MM-dd"))}{Q("customerId", customerId?.ToString())}", ct);
+
+    public Task<NumberSeriesDto> NumberSeriesAsync(int? financialYearStart = null, CancellationToken ct = default) =>
+        GetAsync<NumberSeriesDto>("api/numbering" + (financialYearStart is null ? "" : $"?financialYearStart={financialYearStart}"), ct);
+    public Task<NumberSeriesDto> SetNextSequenceAsync(int financialYearStart, int next, CancellationToken ct = default) =>
+        SendAsync<NumberSeriesDto>(HttpMethod.Put, "api/numbering", new SetNextSequenceRequest(financialYearStart, next), ct);
 }

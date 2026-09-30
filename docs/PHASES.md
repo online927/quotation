@@ -10,7 +10,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 4 | Local product/customer search | ✅ Done |
 | 5 | Quotation UI | ⏳ |
 | 6 | Quotation calculation engine | ✅ Done |
-| 7 | Quotation numbering | ⏳ |
+| 7 | Quotation numbering | ✅ Done |
 | 8 | PDF engine (Tally quotation layout) | ⏳ |
 | 9 | Claude AI integration | ⏳ |
 | 10 | Gmail integration | ⏳ |
@@ -177,3 +177,32 @@ open **Customers** and type `SONEPAR` or a GSTIN.
   active financial year, P&F not negative — every problem is reported, nothing is silently fixed.
 
 **How to test**: `dotnet test --filter "CalculationTests"`.
+
+---
+
+## Phase 7 — Quotation numbering (+ quotation service)
+
+**Delivered**
+
+* **Central numbering** on the Quotation Server: the number is allocated inside the same database
+  transaction that saves the quotation, under a server-wide lock, with a UNIQUE index as final
+  safeguard. Tested with 60 simultaneous creations from 5 simulated PCs → 60 distinct, gap-free numbers.
+* One series per financial year (`NumberSeries`), pattern from Settings (`TSQ{FY}-{SEQ}` → `TSQ2526-3247`),
+  **continue from the existing Tally series** (admin sets next number, e.g. 3248; cannot go below a used number),
+  numbers never reused (cancelled quotations keep theirs), provisional next-number preview.
+* Financial-year rules: quotation date must be inside the active FY (from Tally); on FY change a new
+  series starts at the configured first number.
+* **Quotation service** (`/api/quotations`): create, update (optimistic concurrency — edits from two
+  PCs are detected), approve, cancel, duplicate, list/search, validation, PDF download/regeneration.
+  * Tally is authoritative: item name, HSN, GST, unit, buyer GSTIN/state are re-applied from Tally data on
+    every save; the user may override the rate (the Tally rate is kept for reference), discount, quantity,
+    description, addresses and reference fields.
+  * **Approval**: quick incremental sync → re-apply Tally values → if a Tally rate changed the quotation is
+    updated and returned for review → full validation → data-freshness check (stale data needs an explicit,
+    audited override, which can be disabled) → number → save → PDF. An approved quotation is saved before
+    the PDF is rendered, so a PDF failure never loses the approval (it can be regenerated).
+  * Place of supply (consignee state) decides CGST+SGST vs IGST when tax computation is enabled.
+  * Every action is written to the audit log.
+
+**How to test**: `dotnet test --filter "NumberingTests|QuotationLifecycleTests"`.
+Admins can view/set the next number via `GET/PUT /api/numbering` (desktop screen in Phase 5).

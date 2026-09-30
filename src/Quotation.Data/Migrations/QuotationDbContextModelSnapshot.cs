@@ -611,7 +611,7 @@ namespace Quotation.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("GstRate")
+                    b.Property<decimal?>("GstRate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Hsn")

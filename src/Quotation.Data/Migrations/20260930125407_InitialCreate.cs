@@ -317,7 +317,7 @@ namespace Quotation.Data.Migrations
                     ItemName = table.Column<string>(type: "TEXT", nullable: false),
                     Description = table.Column<string>(type: "TEXT", nullable: false),
                     Hsn = table.Column<string>(type: "TEXT", nullable: false),
-                    GstRate = table.Column<decimal>(type: "TEXT", nullable: false),
+                    GstRate = table.Column<decimal>(type: "TEXT", nullable: true),
                     DueOn = table.Column<string>(type: "TEXT", nullable: false),
                     Quantity = table.Column<decimal>(type: "TEXT", nullable: false),
                     Unit = table.Column<string>(type: "TEXT", nullable: false),

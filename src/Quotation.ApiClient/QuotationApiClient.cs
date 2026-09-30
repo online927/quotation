@@ -244,3 +244,15 @@ public partial class QuotationApiClient
         PostAsync<AiRequestDto>($"api/ai/requests/{id}/create-draft", r, ct);
     public Task<AiRequestDto> DismissAiRequestAsync(int id, CancellationToken ct = default) => PostAsync<AiRequestDto>($"api/ai/requests/{id}/dismiss", null, ct);
 }
+
+public partial class QuotationApiClient
+{
+    public Task<GmailStatusDto> GmailStatusAsync(CancellationToken ct = default) => GetAsync<GmailStatusDto>("api/gmail/status", ct);
+    public Task<List<EmailMessageDto>> GmailMessagesAsync(int take = 100, CancellationToken ct = default) => GetAsync<List<EmailMessageDto>>($"api/gmail/messages?take={take}", ct);
+    public Task<GmailPollResultDto> GmailPollAsync(CancellationToken ct = default) => PostAsync<GmailPollResultDto>("api/gmail/poll", null, ct);
+    public Task<GmailConnectStartResponse> GmailConnectStartAsync(string redirectUri, CancellationToken ct = default) =>
+        PostAsync<GmailConnectStartResponse>("api/gmail/connect/start", new GmailConnectStartRequest(redirectUri), ct);
+    public Task GmailConnectCompleteAsync(GmailConnectCompleteRequest r, CancellationToken ct = default) =>
+        SendAsync(HttpMethod.Post, "api/gmail/connect/complete", r, ct);
+    public Task GmailDisconnectAsync(CancellationToken ct = default) => SendAsync(HttpMethod.Post, "api/gmail/disconnect", null, ct);
+}

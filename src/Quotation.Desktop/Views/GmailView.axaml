@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             x:Class="Quotation.Desktop.Views.GmailView"
+             x:DataType="vm:GmailViewModel">
+  <DockPanel Margin="20">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+      <TextBlock Classes="h1" Text="Gmail Connection" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Button Content="Refresh (F5)" HotKey="F5" Command="{Binding LoadCommand}" />
+        <Button Content="Check now" Command="{Binding PollCommand}" />
+        <Button Classes="primary" Content="Open AI Inbox" Command="{Binding OpenInboxCommand}" />
+      </StackPanel>
+    </Grid>
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,10">
+      <StackPanel Spacing="4">
+        <TextBlock FontWeight="Bold" Text="{Binding ConnectionText}" />
+        <TextBlock FontSize="12" Text="{Binding Status.Query, StringFormat='Monitored Gmail search: {0}', FallbackValue=''}" />
+        <TextBlock FontSize="12" Text="{Binding LastPollText, StringFormat='Last checked: {0}'}" />
+        <TextBlock FontSize="12" Text="{Binding CountsText}" />
+        <TextBlock Classes="error" Text="{Binding Status.LastError, FallbackValue=''}" IsVisible="{Binding Status.LastError, Converter={x:Static StringConverters.IsNotNullOrEmpty}, FallbackValue=False}" />
+        <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+        <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0" IsVisible="{Binding IsAdmin}">
+          <Button Classes="primary" Content="Connect Gmail (Google sign-in)" Command="{Binding ConnectCommand}" />
+          <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+        </StackPanel>
+        <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                   Text="Sign-in happens on Google's page; this application never sees your Gmail password. Access is read-only; the token is stored encrypted on the Quotation Server. Enable polling and set the search query in Settings → Gmail." />
+      </StackPanel>
+    </Border>
+    <Border DockPanel.Dock="Top" Background="#E4E9F0" Padding="8,5">
+      <Grid ColumnDefinitions="130,220,*,110,*">
+        <TextBlock FontWeight="SemiBold" Text="Received" />
+        <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="From" />
+        <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="Subject" />
+        <TextBlock Grid.Column="3" FontWeight="SemiBold" Text="Status" />
+        <TextBlock Grid.Column="4" FontWeight="SemiBold" Text="Result" />
+      </Grid>
+    </Border>
+    <ListBox ItemsSource="{Binding Messages}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:EmailRow">
+          <Grid ColumnDefinitions="130,220,*,110,*">
+            <TextBlock Text="{Binding Received}" FontSize="12" />
+            <TextBlock Grid.Column="1" Text="{Binding From}" FontSize="12" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="2" Text="{Binding Subject}" FontSize="12" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="3" Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" />
+            <TextBlock Grid.Column="4" Text="{Binding Result}" FontSize="12" TextWrapping="Wrap" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</UserControl>

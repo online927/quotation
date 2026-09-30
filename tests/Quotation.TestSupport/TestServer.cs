@@ -22,6 +22,14 @@ public sealed class TestServer : WebApplicationFactory<Program>
         public Quotation.AI.IAIProvider? Create() => server.AiProvider;
     }
 
+    /// <summary>Fake mailbox the server's Gmail ingestion reads from (null = not connected).</summary>
+    public FakeGmail? Gmail { get; set; }
+
+    private sealed class GmailFactory(TestServer server) : IGmailClientFactory
+    {
+        public Quotation.Gmail.IGmailClient? Create() => server.Gmail;
+    }
+
     /// <summary>Simulated TallyPrime that the server's "tally" HTTP client talks to.</summary>
     public TallySimulatorEngine Tally { get; }
 
@@ -43,6 +51,7 @@ public sealed class TestServer : WebApplicationFactory<Program>
             services.AddHttpClient(TallyGateway.HttpClientName)
                 .ConfigurePrimaryHttpMessageHandler(() => new SimulatorHttpHandler(Tally));
             services.AddSingleton<IAIProviderFactory>(new FixedFactory(this));
+            services.AddSingleton<IGmailClientFactory>(new GmailFactory(this));
         });
         if (ConfigureServicesHook is not null) builder.ConfigureServices(ConfigureServicesHook);
     }

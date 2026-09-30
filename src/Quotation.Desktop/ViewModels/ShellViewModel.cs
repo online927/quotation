@@ -49,7 +49,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         NavItems.Add(new NavItem("customers", "Customers", "", () => new CustomersViewModel(_session)));
         NavItems.Add(new NavItem("products", "Products", "", () => new ProductsViewModel(_session)));
         NavItems.Add(new NavItem("tally", "Tally Connection", "", () => new TallyViewModel(_session)));
-        NavItems.Add(new NavItem("gmail", "Gmail Connection", "", () => new PlaceholderViewModel("Gmail Connection", "Phase 10")));
+        NavItems.Add(new NavItem("gmail", "Gmail Connection", "", () => new GmailViewModel(_session, this)));
         NavItems.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session)));
 
         Navigate("dashboard");

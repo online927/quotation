@@ -13,8 +13,9 @@ public sealed class ScriptedProvider(Func<ScriptedProvider.Context, Task> script
     public string Name => "Scripted";
     public AiRunRequest? LastRequest { get; private set; }
 
-    public sealed class Context(Func<AiToolCall, CancellationToken, Task<AiToolOutput>> execute)
+    public sealed class Context(Func<AiToolCall, CancellationToken, Task<AiToolOutput>> execute, AiRunRequest request)
     {
+        public AiRunRequest Request { get; } = request;
         private int _n;
         public List<AiToolCallRecord> Calls { get; } = [];
 
@@ -32,7 +33,7 @@ public sealed class ScriptedProvider(Func<ScriptedProvider.Context, Task> script
     public async Task<AiRunResult> RunAsync(AiRunRequest request, Func<AiToolCall, CancellationToken, Task<AiToolOutput>> executeTool, CancellationToken ct)
     {
         LastRequest = request;
-        var ctx = new Context(executeTool);
+        var ctx = new Context(executeTool, request);
         await script(ctx);
         return new AiRunResult("", ctx.Calls, ctx.Calls.Count + 1, "end_turn", 1000, 200, "scripted");
     }

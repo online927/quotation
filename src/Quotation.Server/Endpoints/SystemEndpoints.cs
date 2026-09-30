@@ -155,6 +155,9 @@ public static class SystemEndpoints
         if (dto.Quotation.DefaultPackingForwardingAmount < 0 || dto.Quotation.DefaultPackingForwardingPercent < 0)
             errors.Add("Packing & forwarding cannot be negative.");
         if (dto.Company.QuotationValidityDays < 0) errors.Add("Validity days cannot be negative.");
+        if (!string.IsNullOrWhiteSpace(dto.Gmail.ClientSecretJson) && Quotation.Gmail.GmailOAuth.ValidateClientSecret(dto.Gmail.ClientSecretJson) is { } gmailError)
+            errors.Add(gmailError);
+        if (string.IsNullOrWhiteSpace(dto.Gmail.Query)) errors.Add("Gmail search query cannot be empty.");
         return errors;
     }
 }

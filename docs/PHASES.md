@@ -13,8 +13,8 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 7 | Quotation numbering | ✅ Done |
 | 8 | PDF engine (Tally quotation layout) | ✅ Done (to be fine-tuned against your reference PDF) |
 | 9 | Claude AI integration | ✅ Done |
-| 10 | Gmail integration | ⏳ |
-| 11 | AI Inbox | ⏳ |
+| 10 | Gmail integration | ✅ Done |
+| 11 | AI Inbox | ✅ Done |
 | 12 | Quotation history / audit | ⏳ |
 | 13 | Multi-client / concurrency testing | ⏳ |
 | 14 | Windows packaging / installer | ⏳ |
@@ -306,3 +306,35 @@ Enter, type `universal bevel`, Enter, `2`, Enter, Enter, Enter → line added; *
 **How to test**: Settings → Claude AI: enable, paste an API key, Save. AI Inbox → type
 "Create quotation for Bharat Precision for 2 universal bevel protractors" → draft opens; try
 "Please quote 10 pcs 3 core 2.5 sqmm cable for Bharat Precision" → you are asked to choose the cable.
+
+---
+
+## Phase 10 — Gmail integration
+
+**Delivered** (`Quotation.Gmail`, Google.Apis.Gmail.v1)
+
+* **OAuth 2.0 installed-app flow**: admin clicks *Connect Gmail*; the desktop opens Google's sign-in page and
+  receives the one-time code on `http://127.0.0.1:{free port}/`; the server exchanges it for a refresh token
+  (read-only scope `gmail.readonly`) and stores it encrypted (DPAPI). The password is never seen; the client
+  secret never leaves the server; state values are single-use and expire in 10 minutes; tokens are redacted
+  from logs.
+* **Polling** of a configurable Gmail search (default `label:Quotations newer_than:14d`) every few minutes, or
+  *Check now*. Each message is recorded with its **Gmail message id (unique key)** before processing:
+  `UNPROCESSED → PROCESSING → DRAFT_CREATED / COMPLETED (needs review) / IGNORED (not a quotation) / FAILED`.
+  Restarts resume stale PROCESSING rows and reuse an existing analysis — never a second draft. Failures are
+  retried up to 3 times. If the AI is not configured, e-mails wait and are processed once it is.
+* Plain-text body (or HTML converted to text), sender, subject, received date; the sender's e-mail address is
+  matched against Tally customer e-mails to identify the customer.
+* Desktop **Gmail Connection** page: status, account, query, last check/error, per-status counts, message list.
+
+## Phase 11 — AI Inbox
+
+The AI Inbox (built in Phase 9) now also lists Gmail requests (subject, sender, received time, e-mail text):
+*Ready for review* items already have a draft (**Open Draft**); *Needs clarification* items show the reason
+(e.g. "3 possible products found") with **select customer / select product / quantity** and **Create Draft**;
+*Failed* items show the error; items can be dismissed. Dashboard shows "AI Inbox needs attention".
+
+**How to test**: Google Cloud Console → create an OAuth client of type *Desktop app* → download the JSON →
+Settings → Gmail: paste JSON, enable, set the query → Save → Gmail Connection → **Connect Gmail**.
+Send yourself a test e-mail with the label, press **Check now**, open the AI Inbox.
+Automated: `dotnet test --filter "GmailTests|GmailPageTests"`.

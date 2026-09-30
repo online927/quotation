@@ -31,7 +31,7 @@ public sealed class StatusService(
             active.Source,
             await db.Products.CountAsync(p => !p.IsDeleted, ct),
             await db.Customers.CountAsync(c => !c.IsDeleted, ct),
-            gmail.Enabled && !string.IsNullOrEmpty(gmail.ConnectedAccount) && settings.HasSecret(SettingsService.SecretGmailToken),
+            !string.IsNullOrEmpty(gmail.ConnectedAccount) && settings.HasSecret(SettingsService.SecretGmailToken),
             gmail.ConnectedAccount,
             ai.Create() is not null,
             runtime.SyncRunning || runtime.SyncProgress is not null);

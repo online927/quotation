@@ -5,6 +5,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Quotation.Server\Quotation.Server.csproj" />
     <ProjectReference Include="..\..\src\Quotation.ApiClient\Quotation.ApiClient.csproj" />
+    <ProjectReference Include="..\..\src\Quotation.Gmail\Quotation.Gmail.csproj" />
     <ProjectReference Include="..\..\tools\Tally.Simulator\Tally.Simulator.csproj" />
   </ItemGroup>
   <ItemGroup>

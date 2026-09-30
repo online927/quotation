@@ -122,3 +122,32 @@ public sealed class AiDraftLine
     public decimal Quantity { get; set; }
     public string? Description { get; set; }
 }
+
+public sealed record GmailStatusDto(
+    bool Enabled,
+    bool ClientConfigured,
+    bool Connected,
+    string? Account,
+    string Query,
+    DateTime? LastPollUtc,
+    string? LastError,
+    IReadOnlyDictionary<string, int> Counts);
+
+public sealed record GmailConnectStartRequest(string RedirectUri);
+public sealed record GmailConnectStartResponse(string AuthorizationUrl, string State);
+public sealed record GmailConnectCompleteRequest(string Code, string State, string RedirectUri);
+
+public sealed record EmailMessageDto(
+    int Id,
+    string GmailMessageId,
+    string From,
+    string Subject,
+    DateTime ReceivedUtc,
+    Quotation.Core.Domain.EmailProcessingStatus Status,
+    string ProcessingResult,
+    int Attempts,
+    string? LastError,
+    int? AiRequestId,
+    Guid? QuotationId);
+
+public sealed record GmailPollResultDto(int Found, int New, int Processed, int Failed, string? Error);

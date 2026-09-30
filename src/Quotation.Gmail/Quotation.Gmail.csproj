@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Quotation.Gmail</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Gmail.v1" />
+    <PackageReference Include="Google.Apis.Auth" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Quotation.Server.Tests" />
+  </ItemGroup>
+</Project>

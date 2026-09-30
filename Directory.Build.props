@@ -8,7 +8,7 @@
     <WarningsAsErrors>nullable</WarningsAsErrors>
     <Company>T.SAIFUDDIN &amp; CO.</Company>
     <Product>TS Quotation System</Product>
-    <Version>0.1.0</Version>
+    <Version>0.9.0</Version>
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
 </Project>

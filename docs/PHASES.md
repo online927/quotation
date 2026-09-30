@@ -17,7 +17,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 11 | AI Inbox | ✅ Done |
 | 12 | Quotation history / audit | ✅ Done |
 | 13 | Multi-client / concurrency testing | ✅ Done |
-| 14 | Windows packaging / installer | ⏳ |
+| 14 | Windows packaging / installer | ✅ Done (installers built on Windows/CI) |
 | 15 | End-to-end testing | ⏳ |
 
 ---
@@ -380,3 +380,23 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
   `%ProgramData%\TSQuotation\backups`, kept 30 days; on-demand backup for admins (`POST /api/diagnostics/backup`).
 
 **How to test**: `dotnet test --filter "ConcurrencyStressTests|NumberingTests"`.
+
+---
+
+## Phase 14 — Windows packaging / installer
+
+**Delivered** (`installer/`)
+
+* `publish.ps1` (Windows) / `publish.sh` (cross-publish): runs the tests, then publishes **self-contained,
+  single-file, compressed win-x64** executables — no .NET installation needed on any PC:
+  `TSQuotation.Server.exe`, `TSQuotation.exe` (desktop), `TallySimulator.exe` (demo/testing).
+* **TSQuotationServer-Setup.exe** (Inno Setup): installs to Program Files, registers the **Windows Service**
+  `TSQuotationServer` (delayed auto-start, automatic restart on failure), opens TCP 5080 for domain/private
+  networks, creates `%ProgramData%\TSQuotation` (database, PDFs, logs, backups — never deleted on uninstall),
+  keeps the existing `appsettings.json` on upgrade, stops/starts the service around upgrades.
+* **TSQuotation-Setup.exe**: desktop app with Start-menu/desktop shortcuts; asks for the server address
+  (or `/VERYSILENT /SERVER=http://server-pc:5080` for silent roll-out), stored as the default for new users.
+* CI (GitHub Actions, Windows runner) installs Inno Setup and uploads both installers as build artifacts.
+
+**How to test**: on a Windows PC with the .NET 10 SDK and Inno Setup 6: `.\installer\publish.ps1` →
+`publish\installers\`. Or download the `windows-installers` artifact from the CI run.

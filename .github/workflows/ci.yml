@@ -34,11 +34,12 @@ jobs:
           dotnet-version: 10.0.x
       - name: Test on Windows (DPAPI, paths)
         run: dotnet test Quotation.sln -c Release
-      - name: Publish server
-        run: dotnet publish src/Quotation.Server -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish/server
-      - name: Publish desktop
-        run: dotnet publish src/Quotation.Desktop -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/desktop
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Publish and build installers
+        shell: pwsh
+        run: ./installer/publish.ps1 -Version "0.9.${{ github.run_number }}"
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-build
-          path: publish/
+          name: windows-installers
+          path: publish/installers/

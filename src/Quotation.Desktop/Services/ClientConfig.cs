@@ -34,6 +34,20 @@ public sealed class ClientConfig
         {
             // Corrupt config: fall back to defaults rather than refusing to start.
         }
+        // First run on this PC: take the installer's default server address if present.
+        var defaults = Path.Combine(AppContext.BaseDirectory, "client.defaults.json");
+        try
+        {
+            if (File.Exists(defaults))
+            {
+                var d = JsonSerializer.Deserialize<ClientConfig>(File.ReadAllText(defaults)) ?? new();
+                return new ClientConfig { ServerUrl = d.ServerUrl, FilePath = path };
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore a damaged defaults file.
+        }
         return new ClientConfig { FilePath = path };
     }
 

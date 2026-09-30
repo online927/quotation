@@ -16,7 +16,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 10 | Gmail integration | ✅ Done |
 | 11 | AI Inbox | ✅ Done |
 | 12 | Quotation history / audit | ✅ Done |
-| 13 | Multi-client / concurrency testing | ⏳ |
+| 13 | Multi-client / concurrency testing | ✅ Done |
 | 14 | Windows packaging / installer | ⏳ |
 | 15 | End-to-end testing | ⏳ |
 
@@ -358,3 +358,25 @@ Automated: `dotnet test --filter "GmailTests|GmailPageTests"`.
 
 **How to test**: create a few quotations, press Ctrl+F and search by number, customer, product or today's date;
 open a quotation → *History / audit trail* → *Load history*; Diagnostics (admin).
+
+---
+
+## Phase 13 — Multi-client / concurrency
+
+**Verified by automated tests**
+
+* 6 client PCs concurrently searching, creating, approving (with PDF) and listing quotations **while a full
+  20,000-product / 3,000-customer sync writes to the database**: 0 errors, 90 quotations, numbers unique and
+  gap-free, sync succeeded (≈6 s total).
+* 60 simultaneous creations from 5 PCs (Phase 7), edit conflicts between two PCs detected (optimistic
+  concurrency), concurrent sync requests rejected, overlapping Gmail polls cannot double-process a message,
+  the unique index rejects a duplicate number even if the application logic were bypassed.
+
+**Hardening**
+
+* SQLite: WAL journal, private cache (no shared-cache table locks), 30 s busy timeout; all writes go through
+  the single server process.
+* **Automatic daily online backups** (SQLite backup API, consistent while running) in
+  `%ProgramData%\TSQuotation\backups`, kept 30 days; on-demand backup for admins (`POST /api/diagnostics/backup`).
+
+**How to test**: `dotnet test --filter "ConcurrencyStressTests|NumberingTests"`.

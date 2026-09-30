@@ -44,6 +44,13 @@ public static class DiagnosticsEndpoints
                     : []);
         });
 
+        g.MapPost("/backup", async (BackupService backups, AuditService audit, HttpContext ctx, CancellationToken ct) =>
+        {
+            var path = await backups.BackupNowAsync(ct);
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "DatabaseBackup", "Database", Path.GetFileName(path), ct: ct);
+            return Results.Ok(new { path });
+        });
+
         g.MapGet("/log", (IOptions<ServerOptions> options, string? file, int? lines) =>
         {
             var logDir = Path.Combine(options.Value.ResolveDataDirectory(), "logs");

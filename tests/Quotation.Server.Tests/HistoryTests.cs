@@ -72,3 +72,19 @@ public class HistoryTests : QuotationTestBase
         Assert.Equal(HttpStatusCode.Forbidden, ex.Status);
     }
 }
+
+public class BackupTests : QuotationTestBase
+{
+    [Fact]
+    public async Task Online_backup_contains_the_quotations()
+    {
+        var q = await Api.CreateQuotationAsync(await BevelRequest());
+        var path = await Api.BackupNowAsync();
+        Assert.True(File.Exists(path));
+        using var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={path};Mode=ReadOnly;Pooling=False");
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Number FROM Quotations";
+        Assert.Equal(q.Number, cmd.ExecuteScalar());
+    }
+}

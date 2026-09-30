@@ -60,6 +60,8 @@ builder.Services.AddSingleton<IGmailClientFactory, GoogleGmailClientFactory>();
 builder.Services.AddSingleton<GmailConnectService>();
 builder.Services.AddSingleton<GmailIngestionService>();
 builder.Services.AddHostedService<GmailPollingWorker>();
+builder.Services.AddSingleton<BackupService>();
+builder.Services.AddHostedService<BackupWorker>();
 
 builder.Services.AddAuthentication(TokenAuthenticationHandler.SchemeName)
     .AddScheme<AuthenticationSchemeOptions, TokenAuthenticationHandler>(TokenAuthenticationHandler.SchemeName, null);

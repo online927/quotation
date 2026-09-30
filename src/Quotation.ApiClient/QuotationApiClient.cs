@@ -273,3 +273,13 @@ public partial class QuotationApiClient
 {
     public Task<List<AuditEntryDto>> QuotationAuditAsync(Guid id, CancellationToken ct = default) => GetAsync<List<AuditEntryDto>>($"api/quotations/{id}/audit", ct);
 }
+
+public partial class QuotationApiClient
+{
+    public async Task<string> BackupNowAsync(CancellationToken ct = default)
+    {
+        using var r = await SendRawAsync(HttpMethod.Post, "api/diagnostics/backup", null, ct);
+        using var doc = await System.Text.Json.JsonDocument.ParseAsync(await r.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+        return doc.RootElement.GetProperty("path").GetString() ?? "";
+    }
+}

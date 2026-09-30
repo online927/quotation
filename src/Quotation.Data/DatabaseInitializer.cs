@@ -10,7 +10,6 @@ public static class DatabaseInitializer
     {
         DataSource = databasePath,
         Mode = SqliteOpenMode.ReadWriteCreate,
-        Cache = SqliteCacheMode.Shared,
         // Microsoft.Data.Sqlite retries SQLITE_BUSY until the command timeout elapses.
         DefaultTimeout = 30,
         Pooling = true,

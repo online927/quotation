@@ -89,6 +89,7 @@ app.MapCatalogEndpoints();
 app.MapQuotationEndpoints();
 app.MapAiEndpoints();
 app.MapGmailEndpoints();
+app.MapDiagnosticsEndpoints();
 
 app.Logger.LogInformation("TS Quotation Server starting. Data directory: {DataDir}", dataDir);
 await app.RunAsync();

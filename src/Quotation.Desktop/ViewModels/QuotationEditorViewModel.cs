@@ -109,6 +109,11 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     [ObservableProperty] private decimal? _packingForwardingPercent;
     [ObservableProperty] private CalcResult? _totals;
     public ObservableCollection<string> ValidationMessages { get; } = [];
+    public ObservableCollection<RecentItemDto> RecentCustomers { get; } = [];
+    public ObservableCollection<RecentItemDto> RecentProducts { get; } = [];
+    public ObservableCollection<string> AuditTrail { get; } = [];
+    public bool HasRecentCustomers => RecentCustomers.Count > 0 && CustomerId is null;
+    public bool HasRecentProducts => RecentProducts.Count > 0;
     [ObservableProperty] private bool _needsStaleOverride;
     [ObservableProperty] private string? _staleMessage;
 
@@ -161,6 +166,18 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
                 await RefreshNumberPreviewAsync();
                 RecalculateTotals();
                 IsDirty = false;
+            }
+            try
+            {
+                var recent = await _session.Api.RecentItemsAsync();
+                foreach (var c in recent.Customers) RecentCustomers.Add(c);
+                foreach (var p in recent.Products) RecentProducts.Add(p);
+                OnPropertyChanged(nameof(HasRecentCustomers));
+                OnPropertyChanged(nameof(HasRecentProducts));
+            }
+            catch (ApiException)
+            {
+                // Recent items are a convenience only.
             }
         });
     }
@@ -241,6 +258,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     }
 
     partial void OnStatusChanged(QuotationStatus value) => NotifyState();
+    partial void OnCustomerIdChanged(int? value) => OnPropertyChanged(nameof(HasRecentCustomers));
     partial void OnNumberChanged(string? value) => OnPropertyChanged(nameof(Title));
     partial void OnEditingLineChanged(QuotationLineViewModel? value) => OnPropertyChanged(nameof(EntryButtonText));
     partial void OnDateChanged(DateTime? value)
@@ -656,4 +674,32 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
 
     [RelayCommand]
     private void NewQuotation() => _navigator.NewQuotation();
+
+    [RelayCommand]
+    private Task PickRecentCustomerAsync(RecentItemDto item) => RunAsync(async () =>
+    {
+        await SelectCustomerAsync(item.Id);
+        OnPropertyChanged(nameof(HasRecentCustomers));
+    });
+
+    [RelayCommand]
+    private Task PickRecentProductAsync(RecentItemDto item) => RunAsync(async () =>
+    {
+        var p = await _session.Api.ProductAsync(item.Id);
+        SelectProduct(new ProductSummaryDto(p.Id, p.Name, p.PartNumber, p.Brand, p.StockGroup, p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description));
+        _loading = true;
+        ProductSearchText = p.Name;
+        _loading = false;
+    });
+
+    [RelayCommand]
+    private Task LoadAuditTrailAsync() => RunAsync(async () =>
+    {
+        AuditTrail.Clear();
+        if (Id is null) return;
+        foreach (var a in await _session.Api.QuotationAuditAsync(Id.Value))
+        {
+            AuditTrail.Add($"{Formatting.LocalDateTime(a.AtUtc)}  {a.Action}  by {a.User} ({a.Machine})  {a.Details}".TrimEnd());
+        }
+    });
 }

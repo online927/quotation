@@ -111,6 +111,18 @@
                   </DataTemplate>
                 </AutoCompleteBox.ItemTemplate>
               </AutoCompleteBox>
+              <WrapPanel IsVisible="{Binding HasRecentCustomers}" Margin="0,3,0,0">
+                <TextBlock Classes="fl" Text="Recent:" Margin="0,0,4,0" VerticalAlignment="Center" />
+                <ItemsControl ItemsSource="{Binding RecentCustomers}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="c:RecentItemDto">
+                      <Button Content="{Binding Name}" FontSize="11" Padding="6,1" Margin="0,0,4,4"
+                              Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).PickRecentCustomerCommand}" CommandParameter="{Binding}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </WrapPanel>
               <TextBlock Classes="fl" Text="Name" />
               <TextBox Text="{Binding BuyerName}" />
               <TextBlock Classes="fl" Text="Address" />
@@ -312,6 +324,18 @@
                     <Button Content="Clear" Command="{Binding CancelEntryCommand}" />
                   </StackPanel>
                 </Grid>
+                <WrapPanel IsVisible="{Binding HasRecentProducts}">
+                  <TextBlock Classes="fl" Text="Recent products:" Margin="0,0,4,0" VerticalAlignment="Center" />
+                  <ItemsControl ItemsSource="{Binding RecentProducts}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="c:RecentItemDto">
+                        <Button Content="{Binding Name}" FontSize="11" Padding="6,1" Margin="0,0,4,4" MaxWidth="320"
+                                Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).PickRecentProductCommand}" CommandParameter="{Binding}" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </WrapPanel>
                 <Grid ColumnDefinitions="*,12,Auto">
                   <StackPanel>
                     <TextBlock Classes="fl" Text="Additional description lines (brand, model, MOQ …) — printed under the item" />
@@ -355,7 +379,7 @@
               </Grid>
             </StackPanel>
           </Border>
-          <Border Grid.Column="2" Classes="card" Padding="10">
+          <Border Grid.Column="2" Classes="card" Padding="10" Grid.Row="0">
             <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Text="Subtotal" />
               <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" HorizontalAlignment="Right" />
@@ -378,6 +402,18 @@
             </Grid>
           </Border>
         </Grid>
+        <Expander Header="History / audit trail" IsVisible="{Binding Id, Converter={x:Static ObjectConverters.IsNotNull}}" HorizontalAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <Button Content="Load history" Command="{Binding LoadAuditTrailCommand}" />
+            <ItemsControl ItemsSource="{Binding AuditTrail}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Text="{Binding}" FontSize="11" TextWrapping="Wrap" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Expander>
       </StackPanel>
     </ScrollViewer>
   </DockPanel>

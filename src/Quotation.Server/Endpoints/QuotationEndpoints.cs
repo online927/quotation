@@ -26,6 +26,13 @@ public static class QuotationEndpoints
             {
                 foreach (var term in q.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(5))
                 {
+                    // A date term (30-09-2026, 30/09/26, 30-Sep-2026) searches by quotation date.
+                    if (DateOnly.TryParseExact(term, DateFormats, System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.None, out var day))
+                    {
+                        query = query.Where(x => x.Date == day);
+                        continue;
+                    }
                     var like = "%" + term.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
                     query = query.Where(x =>
                         EF.Functions.Like(x.Number!, like) ||
@@ -104,6 +111,26 @@ public static class QuotationEndpoints
             return svc.Validate(q).Select(i => new ValidationErrorDto(i.Field, i.Message, i.LineNo)).ToList();
         }));
 
+        g.MapGet("/{id:guid}/audit", async (Guid id, QuotationDbContext db, CancellationToken ct) =>
+            await db.AuditLog.AsNoTracking().Where(a => a.EntityType == "Quotation" && a.EntityId == id.ToString())
+                .OrderBy(a => a.Id)
+                .Select(a => new AuditEntryDto(a.Id, a.AtUtc, a.User, a.Machine, a.Action, a.EntityType, a.EntityId, a.Details))
+                .ToListAsync(ct));
+
+        g.MapGet("/recent-items", async (QuotationDbContext db, HttpContext ctx, CancellationToken ct) =>
+        {
+            var user = ctx.User.UserName();
+            var recent = await db.Quotations.AsNoTracking().Where(x => x.CreatedBy == user || x.UpdatedBy == user)
+                .OrderByDescending(x => x.CreatedUtc).Take(60)
+                .Select(x => new { x.CustomerId, x.Buyer.Name, Lines = x.Lines.Select(l => new { l.ProductId, l.ItemName }) })
+                .ToListAsync(ct);
+            var customers = recent.Where(r => r.CustomerId != null).Select(r => new RecentItemDto(r.CustomerId!.Value, r.Name))
+                .DistinctBy(c => c.Id).Take(8).ToList();
+            var products = recent.SelectMany(r => r.Lines).Where(l => l.ProductId != null).Select(l => new RecentItemDto(l.ProductId!.Value, l.ItemName))
+                .DistinctBy(p => p.Id).Take(10).ToList();
+            return new RecentItemsDto(customers, products);
+        });
+
         g.MapGet("/next-number", (DateOnly? date, QuotationService svc, CancellationToken ct) =>
             Handle(() => svc.PreviewNextNumberAsync(date, ct)));
 
@@ -131,6 +158,8 @@ public static class QuotationEndpoints
             }
         });
     }
+
+    private static readonly string[] DateFormats = ["d-M-yyyy", "d/M/yyyy", "d-M-yy", "d/M/yy", "d-MMM-yyyy", "d-MMM-yy", "yyyy-MM-dd"];
 
     internal static UserContext User(HttpContext ctx) => new(ctx.User.UserName(), ctx.User.DisplayName(), ctx.Machine());
 

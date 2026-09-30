@@ -51,3 +51,21 @@ public static class ApiErrorCodes
     public const string Concurrency = "CONCURRENCY";
     public const string InvalidState = "INVALID_STATE";
 }
+
+public sealed record RecentItemDto(int Id, string Name);
+
+public sealed record RecentItemsDto(IReadOnlyList<RecentItemDto> Customers, IReadOnlyList<RecentItemDto> Products);
+
+public sealed record DiagnosticsDto(
+    string ServerVersion,
+    string Runtime,
+    string OperatingSystem,
+    string MachineName,
+    string DataDirectory,
+    long DatabaseBytes,
+    int Products,
+    int Customers,
+    int Quotations,
+    int PdfFiles,
+    SystemStatusDto Status,
+    IReadOnlyList<string> LogFiles);

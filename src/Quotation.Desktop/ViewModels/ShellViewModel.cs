@@ -26,6 +26,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     [ObservableProperty] private SystemStatusDto? _status;
     [ObservableProperty] private string _serverState = "Connecting…";
     [ObservableProperty] private bool _serverReachable = true;
+    [ObservableProperty] private string _globalSearch = "";
 
     public ObservableCollection<NavItem> NavItems { get; } = [];
     public string LastSyncText => "Last sync: " + (Formatting.LocalDateTime(Status?.LastSuccessfulSyncUtc) ?? "never");
@@ -51,6 +52,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         NavItems.Add(new NavItem("tally", "Tally Connection", "", () => new TallyViewModel(_session)));
         NavItems.Add(new NavItem("gmail", "Gmail Connection", "", () => new GmailViewModel(_session, this)));
         NavItems.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session)));
+        if (session.IsAdmin) NavItems.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session)));
 
         Navigate("dashboard");
         _ = PollStatusAsync(_cts.Token);
@@ -72,6 +74,15 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     }
 
     public void NewQuotation() => Navigate("new");
+
+    /// <summary>Global search: quotation number, customer, GSTIN, product, reference or date.</summary>
+    [RelayCommand]
+    private void Search()
+    {
+        if (string.IsNullOrWhiteSpace(GlobalSearch)) return;
+        foreach (var n in NavItems) n.IsSelected = n.Key == "history";
+        CurrentPage = new QuotationListViewModel(_session, this, QuotationListPreset.History, GlobalSearch.Trim());
+    }
 
     [RelayCommand]
     private async Task LogoutAsync()

@@ -1,0 +1,94 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             xmlns:c="using:Quotation.Contracts"
+             x:Class="Quotation.Desktop.Views.DiagnosticsView"
+             x:DataType="vm:DiagnosticsViewModel">
+  <DockPanel Margin="20">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+      <TextBlock Classes="h1" Text="Diagnostics" />
+      <Button Grid.Column="1" Content="Refresh (F5)" HotKey="F5" Command="{Binding LoadCommand}" />
+    </Grid>
+    <TextBlock DockPanel.Dock="Top" Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    <TabControl>
+      <TabItem Header="System">
+        <Border Classes="card" Margin="0,8" VerticalAlignment="Top">
+          <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Classes="label" Text="Server version" />
+            <TextBlock Grid.Column="1" Text="{Binding Info.ServerVersion, FallbackValue=''}" />
+            <TextBlock Grid.Row="1" Classes="label" Text="Server runtime / OS" />
+            <TextBlock Grid.Row="1" Grid.Column="1" TextWrapping="Wrap">
+              <Run Text="{Binding Info.Runtime, FallbackValue='', Mode=OneWay}" />
+              <Run Text=" · " />
+              <Run Text="{Binding Info.OperatingSystem, FallbackValue='', Mode=OneWay}" />
+              <Run Text=" · " />
+              <Run Text="{Binding Info.MachineName, FallbackValue='', Mode=OneWay}" />
+            </TextBlock>
+            <TextBlock Grid.Row="2" Classes="label" Text="This PC" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ClientInfo}" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="3" Classes="label" Text="Data directory" />
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Info.DataDirectory, FallbackValue=''}" />
+            <TextBlock Grid.Row="4" Classes="label" Text="Database size" />
+            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DatabaseSize}" />
+            <TextBlock Grid.Row="5" Classes="label" Text="Products / customers" />
+            <TextBlock Grid.Row="5" Grid.Column="1">
+              <Run Text="{Binding Info.Products, FallbackValue='', Mode=OneWay}" />
+              <Run Text=" / " />
+              <Run Text="{Binding Info.Customers, FallbackValue='', Mode=OneWay}" />
+            </TextBlock>
+            <TextBlock Grid.Row="6" Classes="label" Text="Quotations / PDFs" />
+            <TextBlock Grid.Row="6" Grid.Column="1">
+              <Run Text="{Binding Info.Quotations, FallbackValue='', Mode=OneWay}" />
+              <Run Text=" / " />
+              <Run Text="{Binding Info.PdfFiles, FallbackValue='', Mode=OneWay}" />
+            </TextBlock>
+            <TextBlock Grid.Row="7" Classes="label" Text="Tally" />
+            <TextBlock Grid.Row="7" Grid.Column="1" TextWrapping="Wrap">
+              <Run Text="{Binding Info.Status.TallyConnected, StringFormat='Connected: {0}', FallbackValue='', Mode=OneWay}" />
+              <Run Text="  " />
+              <Run Text="{Binding Info.Status.TallyError, FallbackValue='', Mode=OneWay}" Foreground="{StaticResource BadBrush}" />
+            </TextBlock>
+            <TextBlock Grid.Row="8" Classes="label" Text="Gmail / Claude AI" />
+            <TextBlock Grid.Row="8" Grid.Column="1">
+              <Run Text="{Binding Info.Status.GmailConnected, StringFormat='Gmail connected: {0}', FallbackValue='', Mode=OneWay}" />
+              <Run Text="   " />
+              <Run Text="{Binding Info.Status.AiConfigured, StringFormat='AI configured: {0}', FallbackValue='', Mode=OneWay}" />
+            </TextBlock>
+            <TextBlock Grid.Row="9" Classes="label" Text="Log files" VerticalAlignment="Top" />
+            <ItemsControl Grid.Row="9" Grid.Column="1" ItemsSource="{Binding Info.LogFiles, FallbackValue={x:Null}}" />
+          </Grid>
+        </Border>
+      </TabItem>
+      <TabItem Header="Audit log">
+        <DockPanel Margin="0,8">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto" Margin="0,0,0,6">
+            <TextBox Text="{Binding AuditFilter}" Watermark="Filter by action, user or details" />
+            <Button Grid.Column="2" Content="Apply" Command="{Binding LoadAuditCommand}" />
+          </Grid>
+          <ListBox ItemsSource="{Binding Audit}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="c:AuditEntryDto">
+                <Grid ColumnDefinitions="150,170,110,120,*">
+                  <TextBlock Text="{Binding AtUtc, StringFormat='{}{0:dd-MMM-yyyy HH:mm:ss}'}" FontSize="11" />
+                  <TextBlock Grid.Column="1" Text="{Binding Action}" FontSize="11" FontWeight="SemiBold" />
+                  <TextBlock Grid.Column="2" Text="{Binding User}" FontSize="11" />
+                  <TextBlock Grid.Column="3" Text="{Binding Machine}" FontSize="11" />
+                  <TextBlock Grid.Column="4" FontSize="11" TextWrapping="Wrap">
+                    <Run Text="{Binding EntityType, Mode=OneWay}" />
+                    <Run Text=" " />
+                    <Run Text="{Binding EntityId, Mode=OneWay}" />
+                    <Run Text=" " />
+                    <Run Text="{Binding Details, Mode=OneWay}" />
+                  </TextBlock>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Server log">
+        <TextBox Margin="0,8" Text="{Binding LogText}" IsReadOnly="True" AcceptsReturn="True" FontFamily="Consolas,Menlo,monospace" FontSize="11" TextWrapping="NoWrap" />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

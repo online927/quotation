@@ -15,7 +15,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 9 | Claude AI integration | ✅ Done |
 | 10 | Gmail integration | ✅ Done |
 | 11 | AI Inbox | ✅ Done |
-| 12 | Quotation history / audit | ⏳ |
+| 12 | Quotation history / audit | ✅ Done |
 | 13 | Multi-client / concurrency testing | ⏳ |
 | 14 | Windows packaging / installer | ⏳ |
 | 15 | End-to-end testing | ⏳ |
@@ -338,3 +338,23 @@ The AI Inbox (built in Phase 9) now also lists Gmail requests (subject, sender, 
 Settings → Gmail: paste JSON, enable, set the query → Save → Gmail Connection → **Connect Gmail**.
 Send yourself a test e-mail with the label, press **Check now**, open the AI Inbox.
 Automated: `dotnet test --filter "GmailTests|GmailPageTests"`.
+
+---
+
+## Phase 12 — Quotation history / audit / diagnostics
+
+**Delivered**
+
+* **Global search** in the header (Ctrl+F, Enter): quotation number, customer, GSTIN, product, reference or a
+  date (`30-09-2026`, `30/09/26`, `30-Sep-2026`); several words narrow the result.
+* History record per quotation: id, number, FY, date, customer + GSTIN snapshot, products, quantities, rates,
+  discounts, GST, P&F, totals, PDF location, created by/at, approved by/at, source (MANUAL/AI/GMAIL), status.
+* **Recent customers and recent products** (per user) as one-click picks on the quotation screen.
+* **Audit trail** per quotation in the editor (created, updated, approved with/without stale data, rates
+  refreshed from Tally, PDF generated/failed/downloaded, cancelled, duplicated, AI draft created …).
+* Admin **Diagnostics** screen: server version/runtime/OS/machine, data directory, database size, counts,
+  Tally/Gmail/AI state, log files, full audit log with filter, and the server log tail (credentials redacted
+  again at read time).
+
+**How to test**: create a few quotations, press Ctrl+F and search by number, customer, product or today's date;
+open a quotation → *History / audit trail* → *Load history*; Diagnostics (admin).

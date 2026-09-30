@@ -256,3 +256,20 @@ public partial class QuotationApiClient
         SendAsync(HttpMethod.Post, "api/gmail/connect/complete", r, ct);
     public Task GmailDisconnectAsync(CancellationToken ct = default) => SendAsync(HttpMethod.Post, "api/gmail/disconnect", null, ct);
 }
+
+public partial class QuotationApiClient
+{
+    public Task<RecentItemsDto> RecentItemsAsync(CancellationToken ct = default) => GetAsync<RecentItemsDto>("api/quotations/recent-items", ct);
+    public Task<DiagnosticsDto> DiagnosticsAsync(CancellationToken ct = default) => GetAsync<DiagnosticsDto>("api/diagnostics", ct);
+
+    public async Task<string> ServerLogAsync(int lines = 300, CancellationToken ct = default)
+    {
+        using var r = await SendRawAsync(HttpMethod.Get, $"api/diagnostics/log?lines={lines}", null, ct);
+        return await r.Content.ReadAsStringAsync(ct);
+    }
+}
+
+public partial class QuotationApiClient
+{
+    public Task<List<AuditEntryDto>> QuotationAuditAsync(Guid id, CancellationToken ct = default) => GetAsync<List<AuditEntryDto>>($"api/quotations/{id}/audit", ct);
+}

@@ -75,6 +75,7 @@
         <TextBlock Classes="muted" FontSize="11" Text="{Binding LastPdfPath, StringFormat='PDF saved to {0}'}" IsVisible="{Binding LastPdfPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         <WrapPanel>
           <Button Margin="0,0,6,0" Content="Save Draft (Ctrl+S)" Command="{Binding SaveCommand}" IsEnabled="{Binding IsEditable}" />
+          <Button Margin="0,0,6,0" Content="Preview (F11)" Command="{Binding PreviewCommand}" HotKey="F11" />
           <Button Classes="primary" Margin="0,0,6,0" Content="Approve &amp; Generate PDF (Ctrl+Enter)" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}" />
           <Button Margin="0,0,6,0" Content="Open PDF (Ctrl+P)" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" />
           <Button Margin="0,0,6,0" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding IsFinal}" />

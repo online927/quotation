@@ -11,7 +11,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 5 | Quotation UI | ✅ Done |
 | 6 | Quotation calculation engine | ✅ Done |
 | 7 | Quotation numbering | ✅ Done |
-| 8 | PDF engine (Tally quotation layout) | ⏳ |
+| 8 | PDF engine (Tally quotation layout) | ✅ Done (to be fine-tuned against your reference PDF) |
 | 9 | Claude AI integration | ⏳ |
 | 10 | Gmail integration | ⏳ |
 | 11 | AI Inbox | ⏳ |
@@ -237,3 +237,38 @@ Admins can view/set the next number via `GET/PUT /api/numbering` (desktop screen
 **How to test**: run simulator + server + desktop (Phase 2). Press **Ctrl+N**, type `sonepar` and
 Enter, type `universal bevel`, Enter, `2`, Enter, Enter, Enter → line added; **Ctrl+S**; then
 **Ctrl+Enter**. Automated: `dotnet test tests/Quotation.Desktop.Tests`.
+
+---
+
+## Phase 8 — PDF engine (Tally quotation layout)
+
+**Delivered** (`Quotation.Pdf`, PDFsharp — MIT licence)
+
+* Coordinate-drawn A4 quotation in the TallyPrime print structure: centred **QUOTATION** title; boxed
+  header with company (optional logo), **Consignee (Ship to)** and **Buyer (Bill to)** on the left and the
+  reference grid on the right (Quotation No., Dated, Buyer's Ref./Order No., Dated, Dispatched through,
+  Destination, Mode/Terms of Payment, Other References, Terms of Delivery); ruled item table
+  (Sl No., Description of Goods with italic extra lines, HSN/SAC, GST Rate, Due on, Quantity, Rate, per,
+  Disc. %, Amount) with column rules running to the Total row; subtotal, Packing & Forwarding, taxes and
+  round-off rows; **Total** with total quantity and ₹ amount; **Amount Chargeable (in words)** and E. & O.E;
+  terms & conditions; Company's PAN, MSME No., IEC, **Declaration**, quotation validity;
+  **Company's Bank Details**; Prepared by / Verified by and "for COMPANY … Authorised Signatory" box;
+  "This is a Computer Generated Document".
+* All company values come from Settings. Fonts are bundled (Liberation Sans — metrically identical to
+  Arial — plus DejaVu Sans for ₹), so every PC prints identically.
+* Multi-page: header and column headings repeat, "continued to page number N", "Page x of y", rows never
+  split (an item longer than a page continues as "(contd.)" without losing lines), totals/words/declaration/
+  bank/signature always together on the last page. Long addresses and descriptions wrap within their boxes.
+* Tests verify every field is present, no overlapping or clipped text, page-break rules, long
+  addresses/descriptions, missing optional fields, and render time.
+* Server: PDF generated on approval and stored under `%ProgramData%\TSQuotation\pdf\{FY}\{number}.pdf`
+  (atomic write); **Preview** (F11) renders the current draft with a DRAFT watermark without saving;
+  a failed render leaves the quotation Approved with the error shown and **Regenerate PDF** available.
+* Samples: `docs/samples/sample-quotation-single.pdf`, `docs/samples/sample-quotation-multipage.pdf`.
+
+**Pending your input**: the reference Tally quotation PDF was not in the repository. Please add it
+(e.g. `docs/reference/tally-quotation.pdf`); column widths, font sizes and block order are centralised in
+`QuotationPdfRenderer` so they can be matched precisely.
+
+**How to test**: approve a quotation in the app (PDF opens automatically) or press **F11** on a draft;
+`dotnet test tests/Quotation.Pdf.Tests` (set `PDF_OUTPUT_DIR` to keep the generated files).

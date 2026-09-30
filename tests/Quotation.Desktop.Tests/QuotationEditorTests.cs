@@ -86,11 +86,16 @@ public class QuotationEditorTests
 
         Assert.True(await editor.SaveAsync());
         Assert.NotNull(editor.Number);
+        await editor.PreviewCommand.ExecuteAsync(null);
+        Assert.Contains("Preview-" + editor.Number + ".pdf", ((RecordingLauncher)ctx.Session.Documents).Saved);
         Assert.False(editor.IsDirty);
         Assert.Equal(QuotationStatus.Draft, editor.Status);
 
         await editor.ApproveCommand.ExecuteAsync(null);
-        Assert.Equal(QuotationStatus.Approved, editor.Status);
+        Assert.Equal(QuotationStatus.Generated, editor.Status);
+        Assert.True(editor.HasPdf);
+        var launcher = (RecordingLauncher)ctx.Session.Documents;
+        Assert.Contains(editor.Number + ".pdf", launcher.Saved);
     }
 
     [AvaloniaFact]
@@ -178,7 +183,7 @@ public class QuotationEditorTests
         Assert.Equal(QuotationStatus.Draft, editor.Status);
 
         await editor.ApproveAnywayCommand.ExecuteAsync(null);
-        Assert.Equal(QuotationStatus.Approved, editor.Status);
+        Assert.Equal(QuotationStatus.Generated, editor.Status);
         Assert.NotNull(editor.DataWarning);
     }
 

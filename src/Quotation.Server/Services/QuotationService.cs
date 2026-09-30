@@ -278,6 +278,18 @@ public sealed class QuotationService(
         return dto;
     }
 
+    /// <summary>Renders the current state with a DRAFT watermark (unapproved) without saving anything.</summary>
+    public async Task<byte[]> PreviewPdfAsync(Guid id, PdfQuotationRenderer pdf, CancellationToken ct)
+    {
+        var q = await LoadAsync(id, ct);
+        if (q.Status is QuotationStatus.Generated or QuotationStatus.Approved)
+        {
+            return pdf.Render(q, settings.Company, settings.Quotation);
+        }
+        var provisional = q.Number ?? (await numbering.PreviewAsync(db, fy.GetActive().Year, ct)).Number + " (provisional)";
+        return pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional);
+    }
+
     public async Task<NextNumberDto> PreviewNextNumberAsync(DateOnly? date, CancellationToken ct) =>
         await numbering.PreviewAsync(db, RequireActiveYear(date ?? fy.Today()), ct);
 

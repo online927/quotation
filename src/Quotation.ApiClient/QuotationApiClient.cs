@@ -228,3 +228,8 @@ public partial class QuotationApiClient
     public Task<NumberSeriesDto> SetNextSequenceAsync(int financialYearStart, int next, CancellationToken ct = default) =>
         SendAsync<NumberSeriesDto>(HttpMethod.Put, "api/numbering", new SetNextSequenceRequest(financialYearStart, next), ct);
 }
+
+public partial class QuotationApiClient
+{
+    public Task<byte[]> PreviewPdfAsync(Guid id, CancellationToken ct = default) => GetBytesAsync($"api/quotations/{id}/preview", ct);
+}

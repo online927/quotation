@@ -50,7 +50,8 @@ builder.Services.AddHostedService<SyncWorker>();
 builder.Services.AddSingleton<CatalogSearchService>();
 builder.Services.AddSingleton<NumberingService>();
 builder.Services.AddSingleton<PdfStorage>();
-builder.Services.AddSingleton<IQuotationDocumentRenderer, UnavailableRenderer>();
+builder.Services.AddSingleton<PdfQuotationRenderer>();
+builder.Services.AddSingleton<IQuotationDocumentRenderer>(sp => sp.GetRequiredService<PdfQuotationRenderer>());
 builder.Services.AddScoped<QuotationService>();
 
 builder.Services.AddAuthentication(TokenAuthenticationHandler.SchemeName)

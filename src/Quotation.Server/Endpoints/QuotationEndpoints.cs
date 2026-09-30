@@ -82,6 +82,22 @@ public static class QuotationEndpoints
             return Results.File(path, "application/pdf", Path.GetFileName(path));
         });
 
+        g.MapGet("/{id:guid}/preview", async (Guid id, QuotationService svc, PdfQuotationRenderer pdf, CancellationToken ct) =>
+        {
+            try
+            {
+                return Results.File(await svc.PreviewPdfAsync(id, pdf, ct), "application/pdf", "preview.pdf");
+            }
+            catch (QuotationException ex)
+            {
+                return Results.Json(new ApiError(ex.Message, null, ex.Code), statusCode: ex.Status);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new ApiError(ex.Message));
+            }
+        });
+
         g.MapGet("/{id:guid}/validate", (Guid id, QuotationService svc, CancellationToken ct) => Handle(async () =>
         {
             var q = await svc.LoadAsync(id, ct);

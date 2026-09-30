@@ -49,16 +49,36 @@ public class QuotationLifecycleTests : QuotationTestBase
     }
 
     [Fact]
-    public async Task Approval_validates_and_is_kept_even_if_pdf_fails()
+    public async Task Approval_generates_the_pdf()
     {
         var q = await Api.CreateQuotationAsync(await BevelRequest());
         var approved = await Api.ApproveQuotationAsync(q.Id);
-        // The PDF engine is not part of this phase: approval must still be saved with an error recorded.
-        Assert.Equal(QuotationStatus.Approved, approved.Status);
+        Assert.Equal(QuotationStatus.Generated, approved.Status);
         Assert.Equal("admin", approved.ApprovedBy);
-        Assert.NotNull(approved.PdfError);
+        Assert.True(approved.HasPdf);
+        Assert.Null(approved.PdfError);
         Assert.Equal(q.Number, approved.Number);
+
+        var pdf = await Api.QuotationPdfAsync(q.Id);
+        Assert.True(pdf.Length > 5000);
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(pdf, 0, 4));
+        var stored = Path.Combine(Server.DataDirectory, "pdf", FinancialYearFolder(), q.Number + ".pdf");
+        Assert.True(File.Exists(stored), stored);
     }
+
+    [Fact]
+    public async Task Preview_renders_a_draft_without_changing_it()
+    {
+        var q = await Api.CreateQuotationAsync(await BevelRequest());
+        var pdf = await Api.PreviewPdfAsync(q.Id);
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(pdf, 0, 4));
+        var after = await Api.QuotationAsync(q.Id);
+        Assert.Equal(QuotationStatus.Draft, after.Status);
+        Assert.False(after.HasPdf);
+        Assert.Equal(q.Revision, after.Revision);
+    }
+
+    private static string FinancialYearFolder() => FinancialYear.For(Today).StartYear.ToString();
 
     [Fact]
     public async Task Invalid_quotation_cannot_be_approved()
@@ -98,7 +118,7 @@ public class QuotationLifecycleTests : QuotationTestBase
         Assert.Equal(ApiErrorCodes.StaleData, ex.Code);
 
         var approved = await Api.ApproveQuotationAsync(q.Id, overrideStaleData: true);
-        Assert.Equal(QuotationStatus.Approved, approved.Status);
+        Assert.Equal(QuotationStatus.Generated, approved.Status);
         Assert.Contains("Live Tally data could not be retrieved", approved.DataFreshnessWarning);
         var audit = await Api.AuditAsync("Quotation", q.Id.ToString());
         Assert.Contains(audit, a => a.Action == "QuotationApprovedWithStaleData");
@@ -131,7 +151,7 @@ public class QuotationLifecycleTests : QuotationTestBase
         Assert.Equal(16400m, updated.Lines[0].Rate);
         Assert.Equal(32800m, updated.GrandTotal);
         var approved = await Api.ApproveQuotationAsync(q.Id);
-        Assert.Equal(QuotationStatus.Approved, approved.Status);
+        Assert.Equal(QuotationStatus.Generated, approved.Status);
     }
 
     [Fact]

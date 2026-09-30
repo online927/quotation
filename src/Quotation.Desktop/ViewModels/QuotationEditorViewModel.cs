@@ -608,6 +608,18 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     [RelayCommand]
     private Task OpenPdfAsync() => RunAsync(OpenPdfCoreAsync);
 
+    /// <summary>Saves pending changes and opens a DRAFT-watermarked preview of the current quotation.</summary>
+    [RelayCommand]
+    private async Task PreviewAsync()
+    {
+        if ((IsDirty || Id is null) && !await SaveAsync()) return;
+        await RunAsync(async () =>
+        {
+            var bytes = await _session.Api.PreviewPdfAsync(Id!.Value);
+            LastPdfPath = _session.Documents.SaveAndOpen(bytes, "Preview-" + QuotationNumberFormatter.ToFileName(Number ?? "draft") + ".pdf");
+        });
+    }
+
     private async Task OpenPdfCoreAsync()
     {
         if (Id is null) return;

@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             x:Class="Quotation.Desktop.Views.TallyView"
+             x:DataType="vm:TallyViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="14" MaxWidth="900" HorizontalAlignment="Left">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Classes="h1" Text="Tally Connection" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Content="Refresh (F5)" Command="{Binding LoadCommand}" HotKey="F5" />
+          <Button Classes="primary" Content="Test connection (Ctrl+T)" Command="{Binding TestConnectionCommand}" HotKey="Ctrl+T" />
+        </StackPanel>
+      </Grid>
+      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <Border Classes="card">
+        <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Classes="label" Text="Tally address" />
+          <TextBlock Grid.Column="1" Text="{Binding TallyUrl}" />
+          <TextBlock Grid.Row="1" Classes="label" Text="Tally connection" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ConnectionText}" FontWeight="Bold" />
+          <TextBlock Grid.Row="2" Classes="label" Text="Company" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Status.TallyCompany, FallbackValue='–', TargetNullValue='–'}" />
+          <TextBlock Grid.Row="3" Classes="label" Text="Active financial year" />
+          <TextBlock Grid.Row="3" Grid.Column="1">
+            <Run Text="{Binding Status.ActiveFinancialYear, FallbackValue='–', Mode=OneWay}" />
+            <Run Text="{Binding Status.ActiveFinancialYearSource, StringFormat='  (source: {0})', FallbackValue='', Mode=OneWay}" Foreground="{StaticResource MutedBrush}" />
+          </TextBlock>
+          <TextBlock Grid.Row="4" Classes="label" Text="Last checked" />
+          <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastCheckedText}" />
+          <TextBlock Grid.Row="5" Classes="label" Text="Last synchronized" />
+          <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LastSyncText}" />
+          <TextBlock Grid.Row="6" Classes="label" Text="Products" />
+          <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Status.ProductCount, StringFormat='{}{0:N0}', FallbackValue='–'}" />
+          <TextBlock Grid.Row="7" Classes="label" Text="Customers" />
+          <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Status.CustomerCount, StringFormat='{}{0:N0}', FallbackValue='–'}" />
+          <TextBlock Grid.Row="8" Classes="label" Text="Last error" VerticalAlignment="Top" />
+          <TextBlock Grid.Row="8" Grid.Column="1" Classes="error" Text="{Binding Status.TallyError, FallbackValue=''}" />
+        </Grid>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding TestResult, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="h2" Text="Connection test" />
+          <TextBlock Text="{Binding TestResult.Message, FallbackValue=''}" TextWrapping="Wrap" />
+          <TextBlock Classes="muted" Text="{Binding TestResult.ActiveFinancialYear, StringFormat='Active financial year (from Tally period): {0}', FallbackValue=''}" />
+          <TextBlock Classes="muted" Text="{Binding TestResult.PeriodFrom, StringFormat='Current period from: {0:dd-MMM-yyyy}', FallbackValue=''}" />
+          <TextBlock Classes="muted" Text="Companies open in Tally:" />
+          <ItemsControl ItemsSource="{Binding TestResult.LoadedCompanies, FallbackValue={x:Null}}" Margin="12,0,0,0" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="h2" Text="If Tally is disconnected" />
+          <TextBlock TextWrapping="Wrap" Text="1. TallyPrime must be running on the configured PC with the company open." />
+          <TextBlock TextWrapping="Wrap" Text="2. In TallyPrime: F1 (Help) &gt; Settings &gt; Connectivity &gt; Client/Server configuration: 'TallyPrime acts as' = Both (or Server), Port = 9000." />
+          <TextBlock TextWrapping="Wrap" Text="3. Windows Firewall on that PC must allow inbound TCP 9000 from the Quotation Server." />
+          <TextBlock TextWrapping="Wrap" Text="While Tally is unavailable you can keep searching previously synchronized data; quotations will show a stale-data warning." />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

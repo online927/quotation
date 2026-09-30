@@ -5,7 +5,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | # | Phase | Status |
 |---|---|---|
 | 1 | Architecture and repository setup | ✅ Done |
-| 2 | Tally connectivity | ⏳ |
+| 2 | Tally connectivity | ✅ Done |
 | 3 | Customer/product synchronization | ⏳ |
 | 4 | Local product/customer search | ⏳ |
 | 5 | Quotation UI | ⏳ |
@@ -52,3 +52,41 @@ dotnet run --project src/Quotation.Desktop
 ```
 Log in as `admin` / `admin`, set a new password, open **Settings**, enter company details,
 change the number pattern and press **Preview** to see the example number, **Save**.
+
+---
+
+## Phase 2 — Tally connectivity
+
+**Delivered**
+
+* **Quotation.Tally**: XML-over-HTTP client for TallyPrime.
+  * Export-only request builder with inline TDL collections (filters, computed fields);
+    the client refuses to send anything that is not an `Export` request.
+  * Streaming XML parsing (20k items never loaded as one document), tolerant of Tally's
+    invalid `&#4;` character references, UTF-8/UTF-16 responses, and `LINEERROR`/`RESPONSE` errors.
+  * Clear errors for: Tally not running / port closed, timeout, no company open,
+    configured company not open (lists the open companies).
+  * Company discovery and **active financial year detection** from Tally's current period
+    (`##SVFromDate`), falling back to Tally's current date.
+* **Tally simulator** (`tools/Tally.Simulator`): behaves like TallyPrime's XML port with a
+  realistic dataset (20,000 stock items, 3,000 customers, TallyPrime 3+ and legacy GST/HSN/address
+  layouts, group-inherited GST, price levels, ambiguous cable variants, Sonepar, Universal Bevel
+  Protractor). Used by tests and for demos without Tally.
+* **Server**: connection monitor (every 60 s), `POST /api/tally/test`, `GET /api/tally/companies`;
+  active FY priority: admin override → Tally → last known Tally value → system date.
+* **Desktop**: Tally Connection page (status, company, active FY, last check, last sync,
+  counts, test button Ctrl+T, troubleshooting steps).
+
+**How to test**
+
+```bash
+dotnet test
+# Terminal 1 — simulated Tally on port 9000
+dotnet run --project tools/Tally.Simulator
+# Terminal 2 — server;  Terminal 3 — desktop app
+dotnet run --project src/Quotation.Server
+dotnet run --project src/Quotation.Desktop
+```
+Open **Tally Connection** → **Test connection**. Stop the simulator and test again to see the
+disconnected state. With real Tally: set **Settings → Tally → address** to the PC running
+TallyPrime (e.g. `http://192.168.1.10:9000`).

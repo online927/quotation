@@ -48,18 +48,18 @@
           <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Data.Status.TallyCompany, FallbackValue='–', TargetNullValue='–'}" />
           <TextBlock Grid.Row="3" Classes="label" Text="Active financial year" />
           <TextBlock Grid.Row="3" Grid.Column="1">
-            <Run Text="{Binding Data.Status.ActiveFinancialYear, FallbackValue='–'}" />
+            <Run Text="{Binding Data.Status.ActiveFinancialYear, FallbackValue='–', Mode=OneWay}" />
             <Run Text="  (source: " Foreground="{StaticResource MutedBrush}" />
-            <Run Text="{Binding Data.Status.ActiveFinancialYearSource, FallbackValue=''}" Foreground="{StaticResource MutedBrush}" />
+            <Run Text="{Binding Data.Status.ActiveFinancialYearSource, FallbackValue='', Mode=OneWay}" Foreground="{StaticResource MutedBrush}" />
             <Run Text=")" Foreground="{StaticResource MutedBrush}" />
           </TextBlock>
           <TextBlock Grid.Row="4" Classes="label" Text="Last sync" />
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastSyncText}" />
           <TextBlock Grid.Row="5" Classes="label" Text="Products / Customers" />
           <TextBlock Grid.Row="5" Grid.Column="1">
-            <Run Text="{Binding Data.Status.ProductCount, FallbackValue='–'}" />
+            <Run Text="{Binding Data.Status.ProductCount, FallbackValue='–', Mode=OneWay}" />
             <Run Text=" / " />
-            <Run Text="{Binding Data.Status.CustomerCount, FallbackValue='–'}" />
+            <Run Text="{Binding Data.Status.CustomerCount, FallbackValue='–', Mode=OneWay}" />
           </TextBlock>
           <TextBlock Grid.Row="6" Classes="label" Text="Gmail" />
           <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding GmailText}" />

@@ -41,6 +41,10 @@ builder.Services.AddSingleton<FinancialYearService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<StatusService>();
+builder.Services.AddHttpClient(TallyGateway.HttpClientName);
+builder.Services.AddSingleton<TallyGateway>();
+builder.Services.AddSingleton<TallyConnectionChecker>();
+builder.Services.AddHostedService<TallyMonitorService>();
 
 builder.Services.AddAuthentication(TokenAuthenticationHandler.SchemeName)
     .AddScheme<AuthenticationSchemeOptions, TokenAuthenticationHandler>(TokenAuthenticationHandler.SchemeName, null);
@@ -63,6 +67,7 @@ app.UseExceptionHandler();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapSystemEndpoints();
+app.MapTallyEndpoints();
 
 app.Logger.LogInformation("TS Quotation Server starting. Data directory: {DataDir}", dataDir);
 await app.RunAsync();

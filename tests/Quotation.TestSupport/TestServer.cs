@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Quotation.ApiClient;
+using Quotation.Server.Services;
+using Tally.Simulator;
 
 namespace Quotation.TestSupport;
 
@@ -12,7 +14,14 @@ public sealed class TestServer : WebApplicationFactory<Program>
 
     public Action<IServiceCollection>? ConfigureServicesHook { get; set; }
 
-    public TestServer() => Directory.CreateDirectory(DataDirectory);
+    /// <summary>Simulated TallyPrime that the server's "tally" HTTP client talks to.</summary>
+    public TallySimulatorEngine Tally { get; }
+
+    public TestServer(int products = 300, int customers = 200, DateOnly? today = null)
+    {
+        Directory.CreateDirectory(DataDirectory);
+        Tally = new TallySimulatorEngine(SampleDataset.Create(products, customers, today: today ?? DateOnly.FromDateTime(DateTime.Today)));
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -21,6 +30,11 @@ public sealed class TestServer : WebApplicationFactory<Program>
         builder.UseSetting("Server:EnableBackgroundWorkers", "false");
         builder.UseSetting("Server:BootstrapAdminPassword", "admin123");
         builder.UseEnvironment("Testing");
+        builder.ConfigureServices(services =>
+        {
+            services.AddHttpClient(TallyGateway.HttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => new SimulatorHttpHandler(Tally));
+        });
         if (ConfigureServicesHook is not null) builder.ConfigureServices(ConfigureServicesHook);
     }
 

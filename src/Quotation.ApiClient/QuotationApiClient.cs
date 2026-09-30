@@ -158,3 +158,9 @@ public partial class QuotationApiClient
         return o;
     }
 }
+
+public partial class QuotationApiClient
+{
+    public Task<TallyTestResultDto> TestTallyAsync(CancellationToken ct = default) => PostAsync<TallyTestResultDto>("api/tally/test", null, ct);
+    public Task<List<string>> TallyCompaniesAsync(CancellationToken ct = default) => GetAsync<List<string>>("api/tally/companies", ct);
+}

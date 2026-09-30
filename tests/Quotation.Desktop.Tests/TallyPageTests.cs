@@ -26,6 +26,17 @@ public class TallyPageTests
         Assert.Equal("2026-27", vm.Status!.ActiveFinancialYear);
         Assert.NotNull(window.FindDescendantOfType<TallyView>());
 
+        await vm.IncrementalSyncCommand.ExecuteAsync(null);
+        Assert.Null(vm.ErrorMessage);
+        Assert.NotEmpty(vm.Runs);
+        Assert.Equal("Succeeded", vm.Runs[0].Status);
+        Assert.Equal("Full", vm.Runs[0].Kind); // first sync is always full
+        Assert.True(vm.Status!.ProductCount > 0);
+
+        vm.SampleName = "187-901-10-UNIVERSAL BEVEL PROTRACTOR";
+        await vm.LoadSampleCommand.ExecuteAsync(null);
+        Assert.Contains("90172020", vm.SampleXml);
+
         server.Tally.Online = false;
         await vm.TestConnectionCommand.ExecuteAsync(null);
         Assert.False(vm.TestResult!.Success);

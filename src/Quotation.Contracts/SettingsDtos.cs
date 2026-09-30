@@ -20,6 +20,14 @@ public sealed class TallySettings
     /// <summary>Local time (HH:mm) of the nightly full sync. Empty disables it.</summary>
     public string NightlyFullSyncTime { get; set; } = "02:00";
     public int ConnectionCheckSeconds { get; set; } = 60;
+    /// <summary>"Selected" requests only the needed fields; "All" requests every field (slower, for troubleshooting).</summary>
+    public string FetchMode { get; set; } = "Selected";
+    /// <summary>Tally field used as the product brand: Category, StockGroup or None.</summary>
+    public string BrandField { get; set; } = "Category";
+    /// <summary>Tally field used as the product manufacturer: Category, StockGroup or None.</summary>
+    public string ManufacturerField { get; set; } = "None";
+    /// <summary>Derive a part number from item names such as "187-901-10-UNIVERSAL BEVEL PROTRACTOR" when Tally has none.</summary>
+    public bool DerivePartNumberFromName { get; set; } = true;
     /// <summary>Optional override of the active financial year start (e.g. 2025). Null = detect from Tally.</summary>
     public int? ActiveFinancialYearOverride { get; set; }
 }

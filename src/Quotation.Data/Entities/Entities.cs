@@ -28,6 +28,10 @@ public class Product
     public DateOnly? RateDate { get; set; }
     public string RateSource { get; set; } = "";
     public string Moq { get; set; } = "";
+    /// <summary>True when HSN/GST come from the stock group ("As per Company/Stock Group").</summary>
+    public bool GstInherited { get; set; }
+    /// <summary>Raw GST/HSN and price lists from Tally (JSON), so values can be re-resolved for any date offline.</summary>
+    public string TallyDataJson { get; set; } = "";
     public bool IsDeleted { get; set; }
     public DateTime LastSyncedUtc { get; set; }
 }
@@ -41,6 +45,8 @@ public class StockGroup
     public string Parent { get; set; } = "";
     public string Hsn { get; set; } = "";
     public decimal? GstRate { get; set; }
+    /// <summary>Raw GST/HSN details (JSON) for inheritance resolution.</summary>
+    public string TallyDataJson { get; set; } = "";
     public bool IsDeleted { get; set; }
     public DateTime LastSyncedUtc { get; set; }
 }
@@ -80,6 +86,8 @@ public class Customer
     public string Phone { get; set; } = "";
     public string Mobile { get; set; } = "";
     public string Email { get; set; } = "";
+    /// <summary>Additional ship-to addresses from Tally (JSON list), offered as consignee choices.</summary>
+    public string ShipToJson { get; set; } = "";
     public bool IsDeleted { get; set; }
     public DateTime LastSyncedUtc { get; set; }
 }
@@ -221,6 +229,7 @@ public class SyncRun
     public int ProductsDeleted { get; set; }
     public int CustomersDeleted { get; set; }
     public long? MaxAlterId { get; set; }
+    public string TriggeredBy { get; set; } = "";
     public string? Message { get; set; }
 }
 

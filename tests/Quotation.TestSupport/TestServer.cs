@@ -38,6 +38,13 @@ public sealed class TestServer : WebApplicationFactory<Program>
         if (ConfigureServicesHook is not null) builder.ConfigureServices(ConfigureServicesHook);
     }
 
+    /// <summary>Direct database access for assertions.</summary>
+    public T Db<T>(Func<Quotation.Data.QuotationDbContext, T> query)
+    {
+        using var scope = Services.CreateScope();
+        return query(scope.ServiceProvider.GetRequiredService<Quotation.Data.QuotationDbContext>());
+    }
+
     public QuotationApiClient CreateApi(string machine = "TEST-PC") => new(CreateClient(), machine);
 
     public async Task<QuotationApiClient> LoginAsAdminAsync(string machine = "TEST-PC")

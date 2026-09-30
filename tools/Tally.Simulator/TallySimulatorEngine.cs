@@ -23,6 +23,9 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
     /// <summary>When false, no company is open (TallyPrime running at the Select Company screen).</summary>
     public bool CompanyOpen { get; set; } = true;
 
+    /// <summary>Artificial delay applied by the HTTP handlers (simulates a slow network/Tally).</summary>
+    public TimeSpan ResponseDelay { get; set; } = TimeSpan.Zero;
+
     public int RequestCount { get; private set; }
     public int NonExportRequestCount { get; private set; }
     public List<string> RequestLog { get; } = [];

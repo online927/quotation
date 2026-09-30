@@ -15,7 +15,8 @@ public sealed class SimulatorHttpHandler(TallySimulatorEngine engine) : HttpMess
         {
             throw new HttpRequestException("Connection refused", new SocketException((int)SocketError.ConnectionRefused));
         }
-        if (Latency > TimeSpan.Zero) await Task.Delay(Latency, ct);
+        var delay = Latency > TimeSpan.Zero ? Latency : engine.ResponseDelay;
+        if (delay > TimeSpan.Zero) await Task.Delay(delay, ct);
         var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
         var xml = engine.Handle(body);
         return new HttpResponseMessage(HttpStatusCode.OK)

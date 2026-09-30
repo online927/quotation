@@ -45,6 +45,8 @@ builder.Services.AddHttpClient(TallyGateway.HttpClientName);
 builder.Services.AddSingleton<TallyGateway>();
 builder.Services.AddSingleton<TallyConnectionChecker>();
 builder.Services.AddHostedService<TallyMonitorService>();
+builder.Services.AddSingleton<TallySyncService>();
+builder.Services.AddHostedService<SyncWorker>();
 
 builder.Services.AddAuthentication(TokenAuthenticationHandler.SchemeName)
     .AddScheme<AuthenticationSchemeOptions, TokenAuthenticationHandler>(TokenAuthenticationHandler.SchemeName, null);
@@ -61,6 +63,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
     await DatabaseInitializer.InitializeAsync(db);
     await scope.ServiceProvider.GetRequiredService<AuthService>().EnsureBootstrapAdminAsync(CancellationToken.None);
+    await TallySyncService.RecoverInterruptedAsync(db, DateTime.UtcNow, CancellationToken.None);
 }
 
 app.UseExceptionHandler();
@@ -68,6 +71,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapSystemEndpoints();
 app.MapTallyEndpoints();
+app.MapSyncEndpoints();
 
 app.Logger.LogInformation("TS Quotation Server starting. Data directory: {DataDir}", dataDir);
 await app.RunAsync();

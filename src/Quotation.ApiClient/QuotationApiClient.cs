@@ -164,3 +164,24 @@ public partial class QuotationApiClient
     public Task<TallyTestResultDto> TestTallyAsync(CancellationToken ct = default) => PostAsync<TallyTestResultDto>("api/tally/test", null, ct);
     public Task<List<string>> TallyCompaniesAsync(CancellationToken ct = default) => GetAsync<List<string>>("api/tally/companies", ct);
 }
+
+public partial class QuotationApiClient
+{
+    /// <summary>Starts a sync. With wait=true the call returns when the sync has finished.</summary>
+    public async Task<SyncRunDto?> StartSyncAsync(Quotation.Core.Domain.SyncKind kind, bool wait = false, CancellationToken ct = default)
+    {
+        var url = $"api/sync/{kind.ToString().ToLowerInvariant()}{(wait ? "?wait=true" : "")}";
+        if (wait) return await PostAsync<SyncRunDto>(url, null, ct);
+        await SendAsync(HttpMethod.Post, url, null, ct);
+        return null;
+    }
+
+    public Task<SyncStateDto> SyncStateAsync(CancellationToken ct = default) => GetAsync<SyncStateDto>("api/sync/state", ct);
+    public Task<List<SyncRunDto>> SyncRunsAsync(int take = 50, CancellationToken ct = default) => GetAsync<List<SyncRunDto>>($"api/sync/runs?take={take}", ct);
+
+    public async Task<string> TallySampleAsync(string type, string name, CancellationToken ct = default)
+    {
+        using var r = await SendRawAsync(HttpMethod.Get, $"api/sync/sample?type={Uri.EscapeDataString(type)}&name={Uri.EscapeDataString(name)}", null, ct);
+        return await r.Content.ReadAsStringAsync(ct);
+    }
+}

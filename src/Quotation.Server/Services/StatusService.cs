@@ -33,11 +33,11 @@ public sealed class StatusService(
             gmail.Enabled && !string.IsNullOrEmpty(gmail.ConnectedAccount) && settings.HasSecret(SettingsService.SecretGmailToken),
             gmail.ConnectedAccount,
             settings.Ai.Enabled && settings.HasSecret(SettingsService.SecretAiApiKey),
-            runtime.SyncRunning);
+            runtime.SyncRunning || runtime.SyncProgress is not null);
     }
 
     public async Task<DateTime?> LastSuccessfulSyncUtcAsync(CancellationToken ct) =>
-        await db.SyncRuns.Where(r => r.Status == SyncStatus.Succeeded)
+        await db.SyncRuns.Where(r => r.Status == SyncStatus.Succeeded || r.Status == SyncStatus.Skipped)
             .OrderByDescending(r => r.StartedUtc)
             .Select(r => r.FinishedUtc)
             .FirstOrDefaultAsync(ct);

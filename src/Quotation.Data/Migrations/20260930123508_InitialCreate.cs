@@ -54,6 +54,7 @@ namespace Quotation.Data.Migrations
                     Phone = table.Column<string>(type: "TEXT", nullable: false),
                     Mobile = table.Column<string>(type: "TEXT", nullable: false),
                     Email = table.Column<string>(type: "TEXT", nullable: false),
+                    ShipToJson = table.Column<string>(type: "TEXT", nullable: false),
                     IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
                     LastSyncedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
@@ -129,6 +130,8 @@ namespace Quotation.Data.Migrations
                     RateDate = table.Column<DateOnly>(type: "TEXT", nullable: true),
                     RateSource = table.Column<string>(type: "TEXT", nullable: false),
                     Moq = table.Column<string>(type: "TEXT", nullable: false),
+                    GstInherited = table.Column<bool>(type: "INTEGER", nullable: false),
+                    TallyDataJson = table.Column<string>(type: "TEXT", nullable: false),
                     IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
                     LastSyncedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
@@ -231,6 +234,7 @@ namespace Quotation.Data.Migrations
                     Parent = table.Column<string>(type: "TEXT", nullable: false),
                     Hsn = table.Column<string>(type: "TEXT", nullable: false),
                     GstRate = table.Column<decimal>(type: "TEXT", nullable: true),
+                    TallyDataJson = table.Column<string>(type: "TEXT", nullable: false),
                     IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
                     LastSyncedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
@@ -254,6 +258,7 @@ namespace Quotation.Data.Migrations
                     ProductsDeleted = table.Column<int>(type: "INTEGER", nullable: false),
                     CustomersDeleted = table.Column<int>(type: "INTEGER", nullable: false),
                     MaxAlterId = table.Column<long>(type: "INTEGER", nullable: true),
+                    TriggeredBy = table.Column<string>(type: "TEXT", nullable: false),
                     Message = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>

@@ -52,6 +52,50 @@
       </Border>
 
       <Border Classes="card">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="h2" Text="Synchronization" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Button Content="Sync changes (F9)" HotKey="F9" Command="{Binding IncrementalSyncCommand}" IsEnabled="{Binding !SyncRunning}" />
+              <Button Content="Full sync" Command="{Binding FullSyncCommand}" IsEnabled="{Binding !SyncRunning}" />
+            </StackPanel>
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Changes are synchronized automatically every few minutes and a full sync runs nightly. Use 'Sync changes' after editing items or prices in Tally." />
+          <TextBlock Text="{Binding InfoMessage}" Foreground="{StaticResource AccentBrush}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+          <ItemsControl ItemsSource="{Binding Runs}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:SyncRunRow">
+                <Grid ColumnDefinitions="140,90,80,*" Margin="0,2">
+                  <TextBlock Text="{Binding Started}" FontSize="12" />
+                  <TextBlock Grid.Column="1" Text="{Binding Kind}" FontSize="12" />
+                  <TextBlock Grid.Column="2" Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" />
+                  <StackPanel Grid.Column="3">
+                    <TextBlock Text="{Binding Changes}" FontSize="12" />
+                    <TextBlock Text="{Binding Message}" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding IsAdmin}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Diagnostics: raw Tally data for one master" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="Use this to check which fields Tally returns (e.g. if HSN, GST or rates appear empty)." />
+          <Grid ColumnDefinitions="140,8,*,8,Auto">
+            <ComboBox ItemsSource="{Binding SampleTypes}" SelectedItem="{Binding SampleType}" HorizontalAlignment="Stretch" />
+            <TextBox Grid.Column="2" Text="{Binding SampleName}" Watermark="Exact name as in Tally" />
+            <Button Grid.Column="4" Content="Fetch" Command="{Binding LoadSampleCommand}" />
+          </Grid>
+          <TextBox Text="{Binding SampleXml}" IsReadOnly="True" FontFamily="Consolas,Menlo,monospace" FontSize="11" Height="220" AcceptsReturn="True"
+                   IsVisible="{Binding SampleXml, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
         <StackPanel Spacing="4">
           <TextBlock Classes="h2" Text="If Tally is disconnected" />
           <TextBlock TextWrapping="Wrap" Text="1. TallyPrime must be running on the configured PC with the company open." />

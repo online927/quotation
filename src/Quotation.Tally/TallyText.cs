@@ -64,6 +64,28 @@ public static class TallyText
         return slash < 0 ? "" : v[(slash + 1)..].Trim();
     }
 
+    /// <summary>Serializes Tally XML for display, dropping the control characters Tally emits.</summary>
+    public static string ToDisplayXml(XNode node)
+    {
+        var sb = new StringBuilder();
+        using (var writer = System.Xml.XmlWriter.Create(sb, new System.Xml.XmlWriterSettings
+               {
+                   CheckCharacters = false,
+                   Indent = true,
+                   OmitXmlDeclaration = true,
+               }))
+        {
+            node.WriteTo(writer);
+        }
+        var text = sb.ToString();
+        var clean = new StringBuilder(text.Length);
+        foreach (var c in text)
+        {
+            if (!char.IsControl(c) || c is '\r' or '\n' or '\t') clean.Append(c);
+        }
+        return clean.ToString();
+    }
+
     /// <summary>Escapes a string for use inside a TDL formula string literal.</summary>
     public static string TdlString(string value) => "\"" + value.Replace("\"", "\"\"") + "\"";
 

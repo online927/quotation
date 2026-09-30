@@ -209,6 +209,10 @@ namespace Quotation.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ShipToJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("StateCode")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -351,6 +355,9 @@ namespace Quotation.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("GstInherited")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal?>("GstRate")
                         .HasColumnType("TEXT");
 
@@ -400,6 +407,10 @@ namespace Quotation.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("StockGroup")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TallyDataJson")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -694,6 +705,10 @@ namespace Quotation.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TallyDataJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TallyGuid")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -743,6 +758,10 @@ namespace Quotation.Data.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("TriggeredBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 

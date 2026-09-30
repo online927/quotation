@@ -233,3 +233,14 @@ public partial class QuotationApiClient
 {
     public Task<byte[]> PreviewPdfAsync(Guid id, CancellationToken ct = default) => GetBytesAsync($"api/quotations/{id}/preview", ct);
 }
+
+public partial class QuotationApiClient
+{
+    public Task<AiRequestDto> AnalyzeAsync(string text, CancellationToken ct = default) => PostAsync<AiRequestDto>("api/ai/analyze", new AnalyzeRequest(text), ct);
+    public Task<List<AiRequestDto>> AiRequestsAsync(Quotation.Core.Domain.AiRequestStatus? status = null, int take = 100, CancellationToken ct = default) =>
+        GetAsync<List<AiRequestDto>>($"api/ai/requests?take={take}{Q("status", status?.ToString())}", ct);
+    public Task<AiRequestDto> AiRequestAsync(int id, CancellationToken ct = default) => GetAsync<AiRequestDto>($"api/ai/requests/{id}", ct);
+    public Task<AiRequestDto> CreateDraftFromAiAsync(int id, CreateDraftFromAiRequest r, CancellationToken ct = default) =>
+        PostAsync<AiRequestDto>($"api/ai/requests/{id}/create-draft", r, ct);
+    public Task<AiRequestDto> DismissAiRequestAsync(int id, CancellationToken ct = default) => PostAsync<AiRequestDto>($"api/ai/requests/{id}/dismiss", null, ct);
+}

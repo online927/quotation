@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Quotation.AI\Quotation.AI.csproj" />
+    <ProjectReference Include="..\..\tools\Tally.Simulator\Tally.Simulator.csproj" />
+    <ProjectReference Include="..\Quotation.TestSupport\Quotation.TestSupport.csproj" />
+  </ItemGroup>
+</Project>

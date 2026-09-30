@@ -57,3 +57,15 @@ public enum SyncStatus
     Failed = 2,
     Skipped = 3,
 }
+
+/// <summary>State of an AI-analysed request (typed instruction or e-mail) in the AI Inbox.</summary>
+public enum AiRequestStatus
+{
+    Processing = 0,
+    ReadyForReview = 1,
+    NeedsClarification = 2,
+    NotAQuotation = 3,
+    DraftCreated = 4,
+    Dismissed = 5,
+    Failed = 6,
+}

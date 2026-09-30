@@ -210,8 +210,8 @@ public class EmailMessage
     public EmailProcessingStatus Status { get; set; }
     public Guid? QuotationId { get; set; }
     public string ProcessingResult { get; set; } = "";
-    /// <summary>JSON of the AI extraction + candidate lists shown in the AI Inbox.</summary>
-    public string? AnalysisJson { get; set; }
+    /// <summary>The AI analysis of this e-mail (AI Inbox entry).</summary>
+    public int? AiRequestId { get; set; }
     public int Attempts { get; set; }
     public string? LastError { get; set; }
     public DateTime CreatedUtc { get; set; }
@@ -278,4 +278,29 @@ public class AuditEntry
     public string EntityType { get; set; } = "";
     public string EntityId { get; set; } = "";
     public string Details { get; set; } = "";
+}
+
+/// <summary>An AI analysis of a typed request or an e-mail, shown in the AI Inbox.</summary>
+public class AiRequest
+{
+    public int Id { get; set; }
+    public QuotationSource Source { get; set; }
+    public int? EmailMessageId { get; set; }
+    public string InputText { get; set; } = "";
+    public string Subject { get; set; } = "";
+    public string FromAddress { get; set; } = "";
+    public DateTime? ReceivedUtc { get; set; }
+    public AiRequestStatus Status { get; set; }
+    public string Summary { get; set; } = "";
+    /// <summary>Validated analysis (customer/line resolutions and candidates) as JSON.</summary>
+    public string AnalysisJson { get; set; } = "";
+    public Guid? QuotationId { get; set; }
+    public string? Error { get; set; }
+    public string Model { get; set; } = "";
+    public long InputTokens { get; set; }
+    public long OutputTokens { get; set; }
+    public string CreatedBy { get; set; } = "";
+    public DateTime CreatedUtc { get; set; }
+    public DateTime? UpdatedUtc { get; set; }
+    public string? UpdatedBy { get; set; }
 }

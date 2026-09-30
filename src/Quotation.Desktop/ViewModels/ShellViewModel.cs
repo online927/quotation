@@ -42,7 +42,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
 
         NavItems.Add(new NavItem("dashboard", "Dashboard", "Ctrl+D", () => new DashboardViewModel(_session, Navigate)));
         NavItems.Add(new NavItem("new", "New Quotation", "Ctrl+N", () => new QuotationEditorViewModel(_session, this)));
-        NavItems.Add(new NavItem("inbox", "AI Inbox", "Ctrl+I", () => new PlaceholderViewModel("AI Inbox", "Phase 11")));
+        NavItems.Add(new NavItem("inbox", "AI Inbox", "Ctrl+I", () => new AiInboxViewModel(_session, this)));
         NavItems.Add(new NavItem("drafts", "Draft Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Drafts)));
         NavItems.Add(new NavItem("today", "Today's Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Today)));
         NavItems.Add(new NavItem("history", "Quotation History", "Ctrl+H", () => new QuotationListViewModel(_session, this, QuotationListPreset.History)));

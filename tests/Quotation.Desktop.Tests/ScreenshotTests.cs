@@ -68,6 +68,18 @@ public class ScreenshotTests
         await UiHelpers.WaitUntil(() => products.Detail is not null);
         await Shot("03-products");
 
+        server.AiProvider = new ScriptedProvider(async ai =>
+        {
+            var p = await ai.Call("search_product", new { query = "3 core 2.5 sqmm cable" });
+            await ai.Call("create_quotation_draft", ScriptedProvider.Draft("Sonepar", null,
+                ScriptedProvider.Line("3 core 2.5 sqmm cable", "3 core 2.5 sqmm cable", null, 10)));
+        });
+        shell.Navigate("inbox");
+        var inbox = (AiInboxViewModel)shell.CurrentPage!;
+        inbox.RequestText = "Please quote 10 pcs 3 core 2.5 sqmm cable for Sonepar";
+        await inbox.AnalyzeCommand.ExecuteAsync(null);
+        await Shot("06-ai-inbox");
+
         shell.Navigate("tally");
         await Task.Delay(500);
         await Shot("04-tally");

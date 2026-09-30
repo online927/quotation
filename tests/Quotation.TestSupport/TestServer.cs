@@ -14,6 +14,14 @@ public sealed class TestServer : WebApplicationFactory<Program>
 
     public Action<IServiceCollection>? ConfigureServicesHook { get; set; }
 
+    /// <summary>When set, replaces the Claude provider (scripted model for tests).</summary>
+    public Quotation.AI.IAIProvider? AiProvider { get; set; }
+
+    private sealed class FixedFactory(TestServer server) : IAIProviderFactory
+    {
+        public Quotation.AI.IAIProvider? Create() => server.AiProvider;
+    }
+
     /// <summary>Simulated TallyPrime that the server's "tally" HTTP client talks to.</summary>
     public TallySimulatorEngine Tally { get; }
 
@@ -34,6 +42,7 @@ public sealed class TestServer : WebApplicationFactory<Program>
         {
             services.AddHttpClient(TallyGateway.HttpClientName)
                 .ConfigurePrimaryHttpMessageHandler(() => new SimulatorHttpHandler(Tally));
+            services.AddSingleton<IAIProviderFactory>(new FixedFactory(this));
         });
         if (ConfigureServicesHook is not null) builder.ConfigureServices(ConfigureServicesHook);
     }

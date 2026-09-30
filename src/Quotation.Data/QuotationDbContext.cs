@@ -18,6 +18,7 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
     public DbSet<ApiSession> ApiSessions => Set<ApiSession>();
     public DbSet<SettingEntry> Settings => Set<SettingEntry>();
     public DbSet<AuditEntry> AuditLog => Set<AuditEntry>();
+    public DbSet<AiRequest> AiRequests => Set<AiRequest>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -110,5 +111,12 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
         });
 
         b.Entity<SyncRun>(e => e.HasIndex(x => x.StartedUtc));
+
+        b.Entity<AiRequest>(e =>
+        {
+            e.HasIndex(x => x.Status);
+            e.HasIndex(x => x.CreatedUtc);
+            e.HasIndex(x => x.EmailMessageId);
+        });
     }
 }

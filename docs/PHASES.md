@@ -12,7 +12,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 6 | Quotation calculation engine | ✅ Done |
 | 7 | Quotation numbering | ✅ Done |
 | 8 | PDF engine (Tally quotation layout) | ✅ Done (to be fine-tuned against your reference PDF) |
-| 9 | Claude AI integration | ⏳ |
+| 9 | Claude AI integration | ✅ Done |
 | 10 | Gmail integration | ⏳ |
 | 11 | AI Inbox | ⏳ |
 | 12 | Quotation history / audit | ⏳ |
@@ -272,3 +272,37 @@ Enter, type `universal bevel`, Enter, `2`, Enter, Enter, Enter → line added; *
 
 **How to test**: approve a quotation in the app (PDF opens automatically) or press **F11** on a draft;
 `dotnet test tests/Quotation.Pdf.Tests` (set `PDF_OUTPUT_DIR` to keep the generated files).
+
+---
+
+## Phase 9 — Claude AI integration
+
+**Delivered** (`Quotation.AI`, official Anthropic C# SDK)
+
+* `IAIProvider` abstraction; `ClaudeProvider` implementation on the Messages API with a manual tool loop
+  (the application executes every tool). Default model `claude-opus-5-5` (configurable in Settings) with
+  adaptive thinking and explicit `medium` effort, strict tool schemas, prompt caching on the static
+  system prompt + tools, append-only history (thinking blocks echoed unchanged), server-side refusal
+  fallback (beta `server-side-fallback-2026-06-01`, fallback `claude-opus-4-8`), typed error handling
+  (rate limit / 5xx / network / bad request → clear message; the request is kept as *Failed*).
+* Tools offered to Claude (all read-only): `search_customer`, `get_customer_details`, `search_product`,
+  `get_product_details`, `get_current_rate`, `get_quotation_history`, `ask_clarification`,
+  `create_quotation_draft` (records a *proposal* only). Only top candidates (default 8) are ever sent —
+  never the catalogue.
+* **Safety rules enforced in code** (`MatchPolicy`): the application re-runs every search itself; a product
+  or customer is accepted only with deterministic evidence (exact part no./name/GSTIN/e-mail, a single
+  candidate matching all terms without typo correction, or a decisive ranking margin) *and* agreement with
+  the AI's choice. Otherwise the user must select. Invented ids are rejected; missing quantity is asked,
+  never assumed; HSN/GST/rate/unit/addresses always come from Tally; e-mail text is framed as untrusted data
+  (prompt-injection resistant); the AI's confidence is informational only.
+* AI drafts are `PENDING_REVIEW`, **un-numbered**, and cannot be approved by the AI; a person's save/approve
+  assigns the number and generates the PDF.
+* Server: `/api/ai/analyze`, `/api/ai/requests`, `/create-draft`, `/dismiss`; analyses stored in `AiRequests`
+  with model and token usage; every step audited.
+* Desktop **AI Inbox**: type a request (Ctrl+Enter), see customer/product matches, pick among candidates when
+  ambiguous, set missing quantities, **Create Draft** → opens in the quotation editor for review.
+* Tests: 20 orchestration/safety tests with a scripted model (no network), 6 server tests, 1 UI test.
+
+**How to test**: Settings → Claude AI: enable, paste an API key, Save. AI Inbox → type
+"Create quotation for Bharat Precision for 2 universal bevel protractors" → draft opens; try
+"Please quote 10 pcs 3 core 2.5 sqmm cable for Bharat Precision" → you are asked to choose the cable.

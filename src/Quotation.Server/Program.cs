@@ -53,6 +53,9 @@ builder.Services.AddSingleton<PdfStorage>();
 builder.Services.AddSingleton<PdfQuotationRenderer>();
 builder.Services.AddSingleton<IQuotationDocumentRenderer>(sp => sp.GetRequiredService<PdfQuotationRenderer>());
 builder.Services.AddScoped<QuotationService>();
+builder.Services.AddSingleton<IAIProviderFactory, ClaudeProviderFactory>();
+builder.Services.AddScoped<AiDataTools>();
+builder.Services.AddScoped<AiService>();
 
 builder.Services.AddAuthentication(TokenAuthenticationHandler.SchemeName)
     .AddScheme<AuthenticationSchemeOptions, TokenAuthenticationHandler>(TokenAuthenticationHandler.SchemeName, null);
@@ -80,6 +83,7 @@ app.MapTallyEndpoints();
 app.MapSyncEndpoints();
 app.MapCatalogEndpoints();
 app.MapQuotationEndpoints();
+app.MapAiEndpoints();
 
 app.Logger.LogInformation("TS Quotation Server starting. Data directory: {DataDir}", dataDir);
 await app.RunAsync();

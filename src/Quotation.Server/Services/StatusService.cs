@@ -10,6 +10,7 @@ public sealed class StatusService(
     RuntimeStatus runtime,
     SettingsService settings,
     FinancialYearService fy,
+    IAIProviderFactory ai,
     TimeProvider clock)
 {
     public async Task<SystemStatusDto> GetAsync(CancellationToken ct)
@@ -32,7 +33,7 @@ public sealed class StatusService(
             await db.Customers.CountAsync(c => !c.IsDeleted, ct),
             gmail.Enabled && !string.IsNullOrEmpty(gmail.ConnectedAccount) && settings.HasSecret(SettingsService.SecretGmailToken),
             gmail.ConnectedAccount,
-            settings.Ai.Enabled && settings.HasSecret(SettingsService.SecretAiApiKey),
+            ai.Create() is not null,
             runtime.SyncRunning || runtime.SyncProgress is not null);
     }
 
@@ -48,8 +49,8 @@ public sealed class StatusService(
         var todays = await db.Quotations.CountAsync(q => q.Date == today && q.Status != QuotationStatus.Cancelled, ct);
         var drafts = await db.Quotations.CountAsync(q => q.Status == QuotationStatus.Draft, ct);
         var pending = await db.Quotations.CountAsync(q => q.Status == QuotationStatus.PendingReview, ct);
-        var inbox = await db.EmailMessages.CountAsync(e =>
-            e.Status == EmailProcessingStatus.DraftCreated || e.Status == EmailProcessingStatus.Failed, ct);
+        var inbox = await db.AiRequests.CountAsync(r =>
+            r.Status == AiRequestStatus.NeedsClarification || r.Status == AiRequestStatus.Failed || r.Status == AiRequestStatus.ReadyForReview, ct);
         return new DashboardDto(todays, drafts, pending, inbox, await GetAsync(ct));
     }
 }

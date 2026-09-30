@@ -113,7 +113,8 @@ public sealed class QuotationService(
         q.Revision++;
         audit.Add(user.UserName, user.Machine, wasFinal ? "QuotationEditedAfterApproval" : "QuotationUpdated", "Quotation", q.Id.ToString(), q.Number ?? "");
 
-        if (q.Number is null && q.Source == QuotationSource.Manual)
+        // A person saving the quotation (including an AI draft under review) gives it its number.
+        if (q.Number is null)
         {
             await numbering.AssignAndSaveAsync(db, q, RequireActiveYear(q.Date), () => SaveAsync(ct), ct);
         }

@@ -12,6 +12,36 @@ namespace Quotation.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "AiRequests",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Source = table.Column<int>(type: "INTEGER", nullable: false),
+                    EmailMessageId = table.Column<int>(type: "INTEGER", nullable: true),
+                    InputText = table.Column<string>(type: "TEXT", nullable: false),
+                    Subject = table.Column<string>(type: "TEXT", nullable: false),
+                    FromAddress = table.Column<string>(type: "TEXT", nullable: false),
+                    ReceivedUtc = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    Summary = table.Column<string>(type: "TEXT", nullable: false),
+                    AnalysisJson = table.Column<string>(type: "TEXT", nullable: false),
+                    QuotationId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    Error = table.Column<string>(type: "TEXT", nullable: true),
+                    Model = table.Column<string>(type: "TEXT", nullable: false),
+                    InputTokens = table.Column<long>(type: "INTEGER", nullable: false),
+                    OutputTokens = table.Column<long>(type: "INTEGER", nullable: false),
+                    CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedUtc = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AiRequests", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AuditLog",
                 columns: table => new
                 {
@@ -78,7 +108,7 @@ namespace Quotation.Data.Migrations
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
                     QuotationId = table.Column<Guid>(type: "TEXT", nullable: true),
                     ProcessingResult = table.Column<string>(type: "TEXT", nullable: false),
-                    AnalysisJson = table.Column<string>(type: "TEXT", nullable: true),
+                    AiRequestId = table.Column<int>(type: "INTEGER", nullable: true),
                     Attempts = table.Column<int>(type: "INTEGER", nullable: false),
                     LastError = table.Column<string>(type: "TEXT", nullable: true),
                     CreatedUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
@@ -362,6 +392,21 @@ namespace Quotation.Data.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AiRequests_CreatedUtc",
+                table: "AiRequests",
+                column: "CreatedUtc");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AiRequests_EmailMessageId",
+                table: "AiRequests",
+                column: "EmailMessageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AiRequests_Status",
+                table: "AiRequests",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ApiSessions_TokenHash",
                 table: "ApiSessions",
                 column: "TokenHash",
@@ -500,6 +545,9 @@ namespace Quotation.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AiRequests");
+
             migrationBuilder.DropTable(
                 name: "ApiSessions");
 

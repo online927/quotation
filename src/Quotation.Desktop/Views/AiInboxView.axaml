@@ -1,0 +1,115 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             x:Class="Quotation.Desktop.Views.AiInboxView"
+             x:DataType="vm:AiInboxViewModel">
+  <DockPanel Margin="20">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+      <TextBlock Classes="h1" Text="AI Inbox" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+        <CheckBox Content="Show all (incl. completed)" IsChecked="{Binding ShowAll}" />
+        <Button Content="Refresh (F5)" HotKey="F5" Command="{Binding LoadCommand}" />
+      </StackPanel>
+    </Grid>
+
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,10">
+      <StackPanel Spacing="6">
+        <TextBlock Classes="h2" Text="Ask the AI to prepare a quotation" />
+        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                   Text="Example: Create quotation for Sonepar for 5 universal bevel protractors. The AI only prepares a draft: products and customers are matched against Tally, and you review and approve before any PDF is produced." />
+        <TextBlock Foreground="{StaticResource WarnBrush}" Text="{Binding AiState}" IsVisible="{Binding AiState, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="*,8,Auto">
+          <TextBox Name="RequestBox" Text="{Binding RequestText}" AcceptsReturn="True" TextWrapping="Wrap" Height="54"
+                   Watermark="Type or paste the request… (Ctrl+Enter to send)">
+            <TextBox.KeyBindings>
+              <KeyBinding Gesture="Ctrl+Enter" Command="{Binding AnalyzeCommand}" />
+            </TextBox.KeyBindings>
+          </TextBox>
+          <Button Grid.Column="2" Classes="primary" VerticalAlignment="Stretch" Content="Analyse" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
+        </Grid>
+        <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+        <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer>
+      <ItemsControl ItemsSource="{Binding Items}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:AiRequestItemViewModel">
+            <Border Classes="card" Margin="0,0,0,10">
+              <StackPanel Spacing="4">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel>
+                    <TextBlock Classes="h2" Text="{Binding Title}" TextWrapping="Wrap" />
+                    <TextBlock Classes="muted" FontSize="11">
+                      <Run Text="{Binding From, Mode=OneWay}" />
+                      <Run Text="  ·  " />
+                      <Run Text="{Binding When, Mode=OneWay}" />
+                    </TextBlock>
+                  </StackPanel>
+                  <Border Grid.Column="1" CornerRadius="3" Padding="8,2" VerticalAlignment="Top" Background="#E4E9F0">
+                    <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="11" />
+                  </Border>
+                </Grid>
+                <TextBlock Text="{Binding Input}" FontSize="12" FontStyle="Italic" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+                <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
+                <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                <StackPanel IsVisible="{Binding HasAnalysis}" Spacing="4" Margin="0,4,0,0">
+                  <Grid ColumnDefinitions="120,*">
+                    <TextBlock Classes="label" Text="Customer" />
+                    <StackPanel Grid.Column="1" Spacing="2">
+                      <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}">
+                        <Run Text="{Binding CustomerStatus, Mode=OneWay}" FontWeight="SemiBold" />
+                        <Run Text="  — asked for: " />
+                        <Run Text="{Binding CustomerQuery, Mode=OneWay}" />
+                      </TextBlock>
+                      <ComboBox ItemsSource="{Binding CustomerOptions}" SelectedItem="{Binding SelectedCustomer}" HorizontalAlignment="Stretch"
+                                IsEnabled="{Binding CanDecide}" PlaceholderText="Select customer…" />
+                      <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" Text="{Binding CustomerReason}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Grid>
+                  <ItemsControl ItemsSource="{Binding Lines}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:AiLineViewModel">
+                        <Grid ColumnDefinitions="120,*,8,100" Margin="0,4,0,0">
+                          <TextBlock Classes="label" Text="{Binding StatusText}" FontWeight="SemiBold" VerticalAlignment="Top" />
+                          <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock FontSize="12" Text="{Binding RequestedText, StringFormat='Requested: {0}'}" TextWrapping="Wrap" />
+                            <ComboBox ItemsSource="{Binding Candidates}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch" PlaceholderText="Select the correct product…"
+                                      IsEnabled="{Binding $parent[ItemsControl].((vm:AiRequestItemViewModel)DataContext).CanDecide}" />
+                            <TextBlock FontSize="11" Text="{Binding Reason}" TextWrapping="Wrap"
+                                       Foreground="{StaticResource WarnBrush}" IsVisible="{Binding NeedsAttention}" />
+                          </StackPanel>
+                          <StackPanel Grid.Column="3">
+                            <TextBlock Classes="label" Text="Quantity" />
+                            <NumericUpDown Value="{Binding Quantity}" Minimum="0" FormatString="0.###" ShowButtonSpinner="False"
+                                           IsEnabled="{Binding $parent[ItemsControl].((vm:AiRequestItemViewModel)DataContext).CanDecide}" />
+                          </StackPanel>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <ItemsControl ItemsSource="{Binding Questions}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{Binding StringFormat='? {0}'}" Foreground="{StaticResource WarnBrush}" FontSize="12" TextWrapping="Wrap" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+
+                <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+                  <Button Classes="primary" Content="Create Draft" Command="{Binding CreateDraftCommand}" IsVisible="{Binding CanDecide}" IsEnabled="{Binding CanCreateDraft}" />
+                  <Button Classes="primary" Content="Open Draft" Command="{Binding OpenDraftCommand}" IsVisible="{Binding HasDraft}" />
+                  <Button Content="Dismiss" Command="{Binding DismissCommand}" IsVisible="{Binding !HasDraft}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

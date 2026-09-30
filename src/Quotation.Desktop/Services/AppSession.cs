@@ -15,4 +15,15 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
     }
 
     public bool IsAdmin => Api.CurrentUser?.Role == Core.Domain.UserRole.Admin;
+
+    public DocumentLauncher Documents { get; set; } = new(config);
+
+    /// <summary>Settings cached for the session (company state, tax presentation, defaults).</summary>
+    public Contracts.AllSettingsDto? Settings { get; set; }
+
+    public async Task<Contracts.AllSettingsDto> GetSettingsAsync(bool refresh = false)
+    {
+        if (Settings is null || refresh) Settings = await Api.SettingsAsync();
+        return Settings;
+    }
 }

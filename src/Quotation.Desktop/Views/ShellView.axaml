@@ -15,7 +15,7 @@
       <Grid ColumnDefinitions="*,Auto,Auto">
         <TextBlock Text="QUOTATION SYSTEM" Foreground="White" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" />
         <TextBlock Grid.Column="1" Text="{Binding UserDisplay}" Foreground="#D6E4F5" VerticalAlignment="Center" Margin="0,0,12,0" />
-        <Button Grid.Column="2" Content="Log out" Command="{Binding LogoutCommand}" />
+        <Button Grid.Column="2" Content="Log out" Command="{Binding LogoutCommand}" Foreground="White" Background="#3A5A80" />
       </Grid>
     </Border>
 
@@ -30,7 +30,7 @@
         </StackPanel>
         <TextBlock FontSize="12" Text="{Binding Status.TallyCompany, StringFormat='Company: {0}', FallbackValue=''}" />
         <TextBlock FontSize="12" Text="{Binding Status.ActiveFinancialYear, StringFormat='FY: {0}', FallbackValue=''}" />
-        <TextBlock FontSize="12" Text="{Binding Status.LastSuccessfulSyncUtc, StringFormat='Last sync (UTC): {0:dd-MMM-yyyy HH:mm}', FallbackValue='Last sync: never', TargetNullValue='Last sync: never'}" />
+        <TextBlock FontSize="12" Text="{Binding LastSyncText}" />
         <TextBlock FontSize="12" Foreground="{StaticResource WarnBrush}" Text="Tally data is stale" IsVisible="{Binding Status.DataIsStale, FallbackValue=False}" />
         <TextBlock FontSize="12" Text="{Binding ServerState}" Foreground="{StaticResource MutedBrush}" />
       </StackPanel>

@@ -26,6 +26,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _newUserIsAdmin;
     public ObservableCollection<UserDto> Users { get; } = [];
 
+    // Numbering
+    [ObservableProperty] private NumberSeriesDto? _series;
+    [ObservableProperty] private decimal? _newNextSequence;
+
     public bool IsAdmin => _session.IsAdmin;
     public bool IsReadOnly => !IsAdmin;
     public IReadOnlyList<TaxPresentation> TaxPresentations { get; } = Enum.GetValues<TaxPresentation>();
@@ -64,8 +68,25 @@ public sealed partial class SettingsViewModel : ViewModelBase
         FyOverride = s.Tally.ActiveFinancialYearOverride?.ToString() ?? "";
         Settings = s;
         OnPropertyChanged(nameof(ExampleNumber));
-        if (IsAdmin) await LoadUsersAsync();
+        if (IsAdmin)
+        {
+            await LoadUsersAsync();
+            Series = await _session.Api.NumberSeriesAsync();
+            NewNextSequence = Series.NextSequence;
+        }
+        _session.Settings = s;
     });
+
+    [RelayCommand]
+    private async Task SetNextNumberAsync()
+    {
+        if (Series is null || NewNextSequence is null) return;
+        InfoMessage = null;
+        if (await RunAsync(async () => Series = await _session.Api.SetNextSequenceAsync(Series.FinancialYearStart, (int)NewNextSequence.Value)))
+        {
+            InfoMessage = $"Next quotation number for {Series!.FinancialYear} will be {Series.NextNumberPreview}.";
+        }
+    }
 
     [RelayCommand]
     private void RefreshExample() => OnPropertyChanged(nameof(ExampleNumber));
@@ -98,6 +119,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         {
             NewApiKey = "";
             NewGmailClientJson = "";
+            _session.Settings = Settings;
             InfoMessage = "Settings saved.";
             OnPropertyChanged(nameof(ExampleNumber));
         }

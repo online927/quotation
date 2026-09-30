@@ -16,7 +16,7 @@ public sealed partial class NavItem(string key, string title, string shortcut, F
 }
 
 /// <summary>Main application frame: navigation, current page and connection status bar.</summary>
-public sealed partial class ShellViewModel : ViewModelBase, IDisposable
+public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INavigator
 {
     private readonly AppSession _session;
     private readonly Action _onLogout;
@@ -28,6 +28,9 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _serverReachable = true;
 
     public ObservableCollection<NavItem> NavItems { get; } = [];
+    public string LastSyncText => "Last sync: " + (Formatting.LocalDateTime(Status?.LastSuccessfulSyncUtc) ?? "never");
+
+    partial void OnStatusChanged(SystemStatusDto? value) => OnPropertyChanged(nameof(LastSyncText));
     public string UserDisplay { get; }
 
     public ShellViewModel(AppSession session, Action onLogout)
@@ -38,11 +41,11 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         UserDisplay = user is null ? "" : $"{user.DisplayName} ({user.Role})";
 
         NavItems.Add(new NavItem("dashboard", "Dashboard", "Ctrl+D", () => new DashboardViewModel(_session, Navigate)));
-        NavItems.Add(new NavItem("new", "New Quotation", "Ctrl+N", () => new PlaceholderViewModel("New Quotation", "Phase 5")));
+        NavItems.Add(new NavItem("new", "New Quotation", "Ctrl+N", () => new QuotationEditorViewModel(_session, this)));
         NavItems.Add(new NavItem("inbox", "AI Inbox", "Ctrl+I", () => new PlaceholderViewModel("AI Inbox", "Phase 11")));
-        NavItems.Add(new NavItem("drafts", "Draft Quotations", "", () => new PlaceholderViewModel("Draft Quotations", "Phase 5")));
-        NavItems.Add(new NavItem("today", "Today's Quotations", "", () => new PlaceholderViewModel("Today's Quotations", "Phase 12")));
-        NavItems.Add(new NavItem("history", "Quotation History", "Ctrl+H", () => new PlaceholderViewModel("Quotation History", "Phase 12")));
+        NavItems.Add(new NavItem("drafts", "Draft Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Drafts)));
+        NavItems.Add(new NavItem("today", "Today's Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Today)));
+        NavItems.Add(new NavItem("history", "Quotation History", "Ctrl+H", () => new QuotationListViewModel(_session, this, QuotationListPreset.History)));
         NavItems.Add(new NavItem("customers", "Customers", "", () => new CustomersViewModel(_session)));
         NavItems.Add(new NavItem("products", "Products", "", () => new ProductsViewModel(_session)));
         NavItems.Add(new NavItem("tally", "Tally Connection", "", () => new TallyViewModel(_session)));
@@ -61,6 +64,14 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         foreach (var n in NavItems) n.IsSelected = n == item;
         CurrentPage = item.Factory();
     }
+
+    public void OpenQuotation(Guid id)
+    {
+        foreach (var n in NavItems) n.IsSelected = false;
+        CurrentPage = new QuotationEditorViewModel(_session, this, id);
+    }
+
+    public void NewQuotation() => Navigate("new");
 
     [RelayCommand]
     private async Task LogoutAsync()

@@ -1,0 +1,383 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             xmlns:c="using:Quotation.Contracts"
+             x:Class="Quotation.Desktop.Views.QuotationEditorView"
+             x:DataType="vm:QuotationEditorViewModel">
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    <KeyBinding Gesture="Ctrl+Enter" Command="{Binding ApproveCommand}" />
+    <KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateCommand}" />
+    <KeyBinding Gesture="Ctrl+P" Command="{Binding OpenPdfCommand}" />
+  </UserControl.KeyBindings>
+  <UserControl.Styles>
+    <Style Selector="TextBlock.fl">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Margin" Value="0,4,0,1" />
+    </Style>
+    <Style Selector="TextBlock.th">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.td">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style Selector="NumericUpDown">
+      <Setter Property="ShowButtonSpinner" Value="False" />
+    </Style>
+    <Style Selector="Border.row.editing">
+      <Setter Property="Background" Value="#FFF6D5" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel Margin="14,10">
+    <!-- Title bar -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,0,0,8">
+      <TextBlock Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
+      <Border Grid.Column="1" Background="#E4E9F0" CornerRadius="3" Padding="8,2" Margin="12,0" VerticalAlignment="Center">
+        <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="11" />
+      </Border>
+      <TextBlock Grid.Column="2" Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="11" />
+      <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,14,0">
+        <TextBlock Classes="fl" Text="Quotation No." VerticalAlignment="Center" Margin="0" />
+        <TextBlock Text="{Binding NumberText}" FontWeight="Bold" VerticalAlignment="Center" />
+      </StackPanel>
+      <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6">
+        <TextBlock Classes="fl" Text="Dated" VerticalAlignment="Center" Margin="0" />
+        <CalendarDatePicker Name="DateBox" SelectedDate="{Binding Date}" CustomDateFormatString="dd-MMM-yyyy" SelectedDateFormat="Custom" Width="140" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Action bar -->
+    <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,1,0,0" Padding="0,8,0,0">
+      <StackPanel Spacing="6">
+        <Border Background="#FFF3CD" BorderBrush="#E0B84D" BorderThickness="1" CornerRadius="3" Padding="10,6" IsVisible="{Binding NeedsStaleOverride}">
+          <Grid ColumnDefinitions="*,Auto,Auto">
+            <TextBlock Text="{Binding StaleMessage}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Margin="8,0" Content="Approve anyway (logged)" Command="{Binding ApproveAnywayCommand}" />
+            <Button Grid.Column="2" Content="Cancel" Command="{Binding DismissStaleCommand}" />
+          </Grid>
+        </Border>
+        <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <ItemsControl ItemsSource="{Binding ValidationMessages}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding StringFormat='• {0}'}" Foreground="{StaticResource BadBrush}" FontSize="12" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Foreground="{StaticResource WarnBrush}" Text="{Binding DataWarning}" IsVisible="{Binding DataWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+        <TextBlock Foreground="{StaticResource BadBrush}" Text="{Binding PdfError}" IsVisible="{Binding PdfError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+        <TextBlock Foreground="{StaticResource OkBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="muted" FontSize="11" Text="{Binding LastPdfPath, StringFormat='PDF saved to {0}'}" IsVisible="{Binding LastPdfPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <WrapPanel>
+          <Button Margin="0,0,6,0" Content="Save Draft (Ctrl+S)" Command="{Binding SaveCommand}" IsEnabled="{Binding IsEditable}" />
+          <Button Classes="primary" Margin="0,0,6,0" Content="Approve &amp; Generate PDF (Ctrl+Enter)" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}" />
+          <Button Margin="0,0,6,0" Content="Open PDF (Ctrl+P)" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" />
+          <Button Margin="0,0,6,0" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding IsFinal}" />
+          <Button Margin="0,0,6,0" Content="Duplicate (Ctrl+D)" Command="{Binding DuplicateCommand}" IsEnabled="{Binding Id, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <Button Margin="0,0,6,0" Content="New" Command="{Binding NewQuotationCommand}" />
+          <Button Margin="0,0,6,0" Content="Cancel Quotation" Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}" />
+          <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0" Text="Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{StaticResource WarnBrush}" />
+        </WrapPanel>
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer>
+      <StackPanel Spacing="10" IsEnabled="{Binding IsEditable}">
+        <!-- Parties and references -->
+        <Grid ColumnDefinitions="*,10,*,10,*">
+          <Border Classes="card" Padding="10">
+            <StackPanel>
+              <TextBlock Classes="h2" Text="Buyer (Bill to)" />
+              <TextBlock Classes="fl" Text="Customer (Tally ledger)" />
+              <AutoCompleteBox Name="CustomerBox" Text="{Binding CustomerSearchText}" SelectedItem="{Binding SelectedCustomerHit}"
+                               AsyncPopulator="{Binding CustomerPopulator}" FilterMode="None" MinimumPrefixLength="1"
+                               MinimumPopulateDelay="0:0:0.12" MaxDropDownHeight="360" Watermark="Type customer name, GSTIN or phone…">
+                <AutoCompleteBox.ItemTemplate>
+                  <DataTemplate x:DataType="c:CustomerSearchHitDto">
+                    <StackPanel>
+                      <TextBlock Text="{Binding Customer.Name}" FontWeight="SemiBold" />
+                      <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}">
+                        <Run Text="{Binding Customer.StateName, Mode=OneWay}" />
+                        <Run Text="  " />
+                        <Run Text="{Binding Customer.Gstin, Mode=OneWay}" />
+                      </TextBlock>
+                    </StackPanel>
+                  </DataTemplate>
+                </AutoCompleteBox.ItemTemplate>
+              </AutoCompleteBox>
+              <TextBlock Classes="fl" Text="Name" />
+              <TextBox Text="{Binding BuyerName}" />
+              <TextBlock Classes="fl" Text="Address" />
+              <TextBox Text="{Binding BuyerAddress}" AcceptsReturn="True" TextWrapping="Wrap" Height="62" />
+              <Grid ColumnDefinitions="*,6,*">
+                <StackPanel>
+                  <TextBlock Classes="fl" Text="GSTIN/UIN (from Tally)" />
+                  <TextBox Text="{Binding BuyerGstin}" IsReadOnly="True" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <TextBlock Classes="fl" Text="State / Code (from Tally)" />
+                  <TextBox IsReadOnly="True" Text="{Binding BuyerStateDisplay, Mode=OneWay}" />
+                </StackPanel>
+              </Grid>
+              <Grid ColumnDefinitions="*,6,*">
+                <StackPanel>
+                  <TextBlock Classes="fl" Text="Contact" />
+                  <TextBox Text="{Binding BuyerContact}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <TextBlock Classes="fl" Text="Phone" />
+                  <TextBox Text="{Binding BuyerPhone}" />
+                </StackPanel>
+              </Grid>
+              <TextBlock Classes="fl" Text="E-mail" />
+              <TextBox Text="{Binding BuyerEmail}" />
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Column="2" Classes="card" Padding="10">
+            <StackPanel>
+              <TextBlock Classes="h2" Text="Consignee (Ship to)" />
+              <TextBlock Classes="fl" Text="Ship to" />
+              <ComboBox ItemsSource="{Binding ShipToOptions}" SelectedItem="{Binding SelectedShipTo}" HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ShipToOption">
+                    <TextBlock Text="{Binding Label}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <StackPanel IsVisible="{Binding !ConsigneeSameAsBuyer}">
+                <TextBlock Classes="fl" Text="Name" />
+                <TextBox Text="{Binding ConsigneeName}" />
+                <TextBlock Classes="fl" Text="Address" />
+                <TextBox Text="{Binding ConsigneeAddress}" AcceptsReturn="True" TextWrapping="Wrap" Height="62" />
+                <Grid ColumnDefinitions="*,6,*,6,50">
+                  <StackPanel>
+                    <TextBlock Classes="fl" Text="GSTIN" />
+                    <TextBox Text="{Binding ConsigneeGstin}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2">
+                    <TextBlock Classes="fl" Text="State" />
+                    <TextBox Text="{Binding ConsigneeState}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="4">
+                    <TextBlock Classes="fl" Text="Code" />
+                    <TextBox Text="{Binding ConsigneeStateCode}" />
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+              <TextBlock Classes="muted" FontSize="11" Margin="0,6,0,0" Text="Consignee is the same as the buyer." IsVisible="{Binding ConsigneeSameAsBuyer}" />
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Column="4" Classes="card" Padding="10">
+            <Grid ColumnDefinitions="*,6,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+              <TextBlock Classes="h2" Text="References" Grid.ColumnSpan="3" />
+              <StackPanel Grid.Row="1">
+                <TextBlock Classes="fl" Text="Buyer's Ref./Order No." />
+                <TextBox Text="{Binding BuyersReference}" />
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.Column="2">
+                <TextBlock Classes="fl" Text="Ref. dated" />
+                <CalendarDatePicker SelectedDate="{Binding BuyersReferenceDate}" CustomDateFormatString="dd-MMM-yyyy" SelectedDateFormat="Custom" HorizontalAlignment="Stretch" />
+              </StackPanel>
+              <StackPanel Grid.Row="2">
+                <TextBlock Classes="fl" Text="Dispatched through" />
+                <TextBox Text="{Binding DispatchedThrough}" />
+              </StackPanel>
+              <StackPanel Grid.Row="2" Grid.Column="2">
+                <TextBlock Classes="fl" Text="Destination" />
+                <TextBox Text="{Binding Destination}" />
+              </StackPanel>
+              <StackPanel Grid.Row="3" Grid.ColumnSpan="3">
+                <TextBlock Classes="fl" Text="Mode/Terms of payment" />
+                <TextBox Text="{Binding PaymentTerms}" />
+              </StackPanel>
+              <StackPanel Grid.Row="4" Grid.ColumnSpan="3">
+                <TextBlock Classes="fl" Text="Other references" />
+                <TextBox Text="{Binding OtherReferences}" />
+              </StackPanel>
+              <StackPanel Grid.Row="5" Grid.ColumnSpan="3">
+                <TextBlock Classes="fl" Text="Terms of delivery" />
+                <TextBox Text="{Binding TermsOfDelivery}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+
+        <!-- Items -->
+        <Border Classes="card" Padding="0">
+          <StackPanel>
+            <Border Background="#E4E9F0" Padding="8,5">
+              <Grid ColumnDefinitions="36,*,80,50,70,70,90,44,54,100,110">
+                <TextBlock Classes="th" Text="Sl" />
+                <TextBlock Classes="th" Grid.Column="1" Text="Description of Goods" />
+                <TextBlock Classes="th" Grid.Column="2" Text="HSN/SAC" />
+                <TextBlock Classes="th" Grid.Column="3" Text="GST" />
+                <TextBlock Classes="th" Grid.Column="4" Text="Due on" />
+                <TextBlock Classes="th" Grid.Column="5" Text="Quantity" HorizontalAlignment="Right" />
+                <TextBlock Classes="th" Grid.Column="6" Text="Rate" HorizontalAlignment="Right" />
+                <TextBlock Classes="th" Grid.Column="7" Text="per" Margin="6,0,0,0" />
+                <TextBlock Classes="th" Grid.Column="8" Text="Disc. %" HorizontalAlignment="Right" />
+                <TextBlock Classes="th" Grid.Column="9" Text="Amount" HorizontalAlignment="Right" />
+              </Grid>
+            </Border>
+            <ItemsControl ItemsSource="{Binding Lines}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:QuotationLineViewModel">
+                  <Border Classes="row" Classes.editing="{Binding IsEditing}" BorderBrush="#EEF1F5" BorderThickness="0,0,0,1" Padding="8,4">
+                    <Grid ColumnDefinitions="36,*,80,50,70,70,90,44,54,100,110">
+                      <TextBlock Classes="td" Text="{Binding LineNo}" />
+                      <StackPanel Grid.Column="1">
+                        <TextBlock Classes="td" Text="{Binding ItemName}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Classes="td" Text="{Binding Description}" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
+                      </StackPanel>
+                      <TextBlock Classes="td" Grid.Column="2" Text="{Binding Hsn}" />
+                      <TextBlock Classes="td" Grid.Column="3" Text="{Binding GstText}" />
+                      <TextBlock Classes="td" Grid.Column="4" Text="{Binding DueOn}" />
+                      <TextBlock Classes="td" Grid.Column="5" Text="{Binding QuantityText}" HorizontalAlignment="Right" />
+                      <StackPanel Grid.Column="6">
+                        <TextBlock Classes="td" Text="{Binding RateText}" HorizontalAlignment="Right" />
+                        <TextBlock FontSize="10" Foreground="{StaticResource WarnBrush}" Text="{Binding TallyRateHint}" HorizontalAlignment="Right" IsVisible="{Binding RateOverridden}" />
+                      </StackPanel>
+                      <TextBlock Classes="td" Grid.Column="7" Text="{Binding Unit}" Margin="6,0,0,0" />
+                      <TextBlock Classes="td" Grid.Column="8" Text="{Binding DiscountText}" HorizontalAlignment="Right" />
+                      <TextBlock Classes="td" Grid.Column="9" Text="{Binding AmountText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+                      <StackPanel Grid.Column="10" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="2">
+                        <Button Content="Edit" FontSize="11" Padding="6,1"
+                                Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EditLineCommand}" CommandParameter="{Binding}" />
+                        <Button Content="↑" FontSize="11" Padding="6,1"
+                                Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).MoveLineUpCommand}" CommandParameter="{Binding}" />
+                        <Button Content="✕" FontSize="11" Padding="6,1"
+                                Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).RemoveLineCommand}" CommandParameter="{Binding}" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Line entry -->
+            <Border Background="#F7FAFD" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,1,0,0" Padding="8">
+              <StackPanel Spacing="4">
+                <Grid ColumnDefinitions="*,8,90,8,110,8,80,8,90,8,Auto">
+                  <StackPanel>
+                    <TextBlock Classes="fl" Text="Product (name, part no., alias, brand) — Enter to select" />
+                    <AutoCompleteBox Name="ProductBox" Text="{Binding ProductSearchText}" SelectedItem="{Binding SelectedProductHit}"
+                                     AsyncPopulator="{Binding ProductPopulator}" FilterMode="None" MinimumPrefixLength="1"
+                                     MinimumPopulateDelay="0:0:0.1" MaxDropDownHeight="420" Watermark="e.g. universal bevel, 10mm, 187-901">
+                      <AutoCompleteBox.ItemTemplate>
+                        <DataTemplate x:DataType="c:ProductSearchHitDto">
+                          <Grid ColumnDefinitions="*,60,90" MinWidth="560">
+                            <StackPanel>
+                              <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" />
+                              <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}">
+                                <Run Text="{Binding Product.Brand, Mode=OneWay}" />
+                                <Run Text="  HSN " />
+                                <Run Text="{Binding Product.Hsn, Mode=OneWay}" />
+                                <Run Text="  GST " />
+                                <Run Text="{Binding Product.GstRate, StringFormat='{}{0:0.##}%', Mode=OneWay}" />
+                              </TextBlock>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding Product.Unit}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding Product.Rate, StringFormat='{}{0:N2}', TargetNullValue='no rate'}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                          </Grid>
+                        </DataTemplate>
+                      </AutoCompleteBox.ItemTemplate>
+                    </AutoCompleteBox>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2">
+                    <TextBlock Classes="fl" Text="Quantity" />
+                    <NumericUpDown Name="QtyBox" Value="{Binding EntryQuantity}" Minimum="0" FormatString="0.###" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="4">
+                    <TextBlock Classes="fl" Text="Rate" />
+                    <NumericUpDown Name="RateBox" Value="{Binding EntryRate}" Minimum="0" FormatString="0.00" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="6">
+                    <TextBlock Classes="fl" Text="Disc. %" />
+                    <NumericUpDown Name="DiscountBox" Value="{Binding EntryDiscount}" Minimum="0" Maximum="99.99" FormatString="0.##" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="8">
+                    <TextBlock Classes="fl" Text="Due on" />
+                    <TextBox Name="DueOnBox" Text="{Binding EntryDueOn}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="10" Orientation="Horizontal" VerticalAlignment="Bottom" Spacing="4">
+                    <Button Classes="primary" Content="{Binding EntryButtonText}" Command="{Binding CommitEntryCommand}" />
+                    <Button Content="Clear" Command="{Binding CancelEntryCommand}" />
+                  </StackPanel>
+                </Grid>
+                <Grid ColumnDefinitions="*,12,Auto">
+                  <StackPanel>
+                    <TextBlock Classes="fl" Text="Additional description lines (brand, model, MOQ …) — printed under the item" />
+                    <TextBox Name="DescriptionBox" Text="{Binding EntryDescription}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" VerticalAlignment="Bottom" IsVisible="{Binding EntryProduct, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}">
+                      <Run Text="From Tally — HSN " />
+                      <Run Text="{Binding EntryProduct.Hsn, FallbackValue='', Mode=OneWay}" />
+                      <Run Text=", GST " />
+                      <Run Text="{Binding EntryProduct.GstRate, StringFormat='{}{0:0.##}%', FallbackValue='', TargetNullValue='not set', Mode=OneWay}" />
+                      <Run Text=", Unit " />
+                      <Run Text="{Binding EntryProduct.Unit, FallbackValue='', Mode=OneWay}" />
+                      <Run Text=", Rate " />
+                      <Run Text="{Binding EntryProduct.Rate, StringFormat='{}{0:N2}', FallbackValue='', TargetNullValue='not set — enter a rate', Mode=OneWay}" />
+                    </TextBlock>
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <!-- Footer: terms and totals -->
+        <Grid ColumnDefinitions="*,12,360">
+          <Border Classes="card" Padding="10">
+            <StackPanel>
+              <TextBlock Classes="fl" Text="Remarks (printed on quotation)" />
+              <TextBox Text="{Binding Remarks}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
+              <TextBlock Classes="fl" Text="Terms &amp; conditions (one per line)" />
+              <TextBox Text="{Binding TermsAndConditions}" AcceptsReturn="True" TextWrapping="Wrap" Height="80" />
+              <Grid ColumnDefinitions="*,6,*">
+                <StackPanel>
+                  <TextBlock Classes="fl" Text="Prepared by" />
+                  <TextBox Text="{Binding PreparedBy}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <TextBlock Classes="fl" Text="Verified by" />
+                  <TextBox Text="{Binding VerifiedBy}" />
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="2" Classes="card" Padding="10">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+              <TextBlock Text="Subtotal" />
+              <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" HorizontalAlignment="Right" />
+              <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="4" Margin="0,4">
+                <TextBlock Text="Packing &amp; Forwarding ₹" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding PackingForwarding}" Minimum="0" FormatString="0.00" Width="90" />
+                <TextBlock Text="or %" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding PackingForwardingPercent}" Minimum="0" Maximum="100" FormatString="0.##" Width="60" />
+              </StackPanel>
+              <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PackingText}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding TaxText}" FontSize="12" IsVisible="{Binding ShowsTaxes}" TextWrapping="Wrap" />
+              <TextBlock Grid.Row="3" Text="Round off" IsVisible="{Binding RoundOffText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding RoundOffText}" HorizontalAlignment="Right" />
+              <TextBlock Grid.Row="4" Text="Total quantity" />
+              <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TotalQuantityText}" HorizontalAlignment="Right" />
+              <Border Grid.Row="5" Grid.ColumnSpan="2" Height="1" Background="{StaticResource PanelBorderBrush}" Margin="0,6" />
+              <TextBlock Grid.Row="6" Text="Total" FontWeight="Bold" FontSize="16" />
+              <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding GrandTotalText}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Right" />
+              <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Text="{Binding AmountInWords}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+            </Grid>
+          </Border>
+        </Grid>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

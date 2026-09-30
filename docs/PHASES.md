@@ -8,7 +8,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 2 | Tally connectivity | ✅ Done |
 | 3 | Customer/product synchronization | ✅ Done |
 | 4 | Local product/customer search | ✅ Done |
-| 5 | Quotation UI | ⏳ |
+| 5 | Quotation UI | ✅ Done |
 | 6 | Quotation calculation engine | ✅ Done |
 | 7 | Quotation numbering | ✅ Done |
 | 8 | PDF engine (Tally quotation layout) | ⏳ |
@@ -206,3 +206,34 @@ open **Customers** and type `SONEPAR` or a GSTIN.
 
 **How to test**: `dotnet test --filter "NumberingTests|QuotationLifecycleTests"`.
 Admins can view/set the next number via `GET/PUT /api/numbering` (desktop screen in Phase 5).
+
+---
+
+## Phase 5 — Quotation UI
+
+**Delivered** (desktop app)
+
+* **New Quotation** screen laid out like the Tally voucher: Buyer (Bill to), Consignee (Ship to),
+  references (Buyer's Ref./Order No. + date, Dispatched through, Destination, Payment terms,
+  Other references, Terms of delivery), item table (Sl, Description of Goods + extra description
+  lines, HSN/SAC, GST, Due on, Quantity, Rate, per, Disc. %, Amount), remarks, terms & conditions,
+  prepared/verified by, totals with P&F (amount or %), taxes (when enabled), round-off,
+  total quantity, grand total and amount in words.
+* **Customer autocomplete** (name, GSTIN, phone) fills buyer name, address, GSTIN, state + code,
+  contact, phone, e-mail from Tally; **Ship-to** offers "Same as buyer", the customer's Tally
+  addresses, or a typed consignee.
+* **Product autocomplete** with HSN/GST/unit/rate preview; Tally rate pre-filled and editable
+  (overrides are highlighted with the original Tally rate).
+* **Keyboard flow**: Enter moves to the next field; Product → Enter → Qty → Enter → Rate → Enter →
+  Disc % → Enter adds the line and returns to Product; Esc cancels a line edit;
+  Ctrl+S save, Ctrl+Enter approve & generate, Ctrl+P open PDF, Ctrl+D duplicate, Ctrl+N new.
+* Live totals using the same calculation engine as the server; provisional next number shown.
+* Approval workflow in the UI: validation messages listed, stale-data confirmation
+  ("Approve anyway (logged)"), Tally-rate-changed review, PDF error with **Regenerate PDF**.
+* **Draft Quotations / Today's Quotations / Quotation History** lists with search, Enter/double-click
+  to open, one-click **Duplicate**.
+* Settings → Quotation: admin can set the **next quotation number** to continue the Tally series.
+
+**How to test**: run simulator + server + desktop (Phase 2). Press **Ctrl+N**, type `sonepar` and
+Enter, type `universal bevel`, Enter, `2`, Enter, Enter, Enter → line added; **Ctrl+S**; then
+**Ctrl+Enter**. Automated: `dotnet test tests/Quotation.Desktop.Tests`.

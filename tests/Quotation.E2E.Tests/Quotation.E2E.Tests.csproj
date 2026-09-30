@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Quotation.ApiClient\Quotation.ApiClient.csproj" />
+    <!-- Built so the real executables exist; started as separate processes by the tests. -->
+    <ProjectReference Include="..\..\src\Quotation.Server\Quotation.Server.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\tools\Tally.Simulator\Tally.Simulator.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="PdfPig" />
+  </ItemGroup>
+</Project>

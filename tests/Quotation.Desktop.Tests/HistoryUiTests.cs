@@ -51,6 +51,8 @@ public class HistoryUiTests
         var diag = Assert.IsType<DiagnosticsViewModel>(shell.CurrentPage);
         await UiHelpers.WaitUntil(() => diag.Info is not null);
         Assert.NotEmpty(diag.Audit);
+        await diag.BackupCommand.ExecuteAsync(null);
+        Assert.Contains("Backup written", diag.InfoMessage);
         Assert.NotNull(window.FindDescendantOfType<DiagnosticsView>());
         shell.Dispose();
     }

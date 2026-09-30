@@ -18,7 +18,7 @@ Each phase ends with: build → tests → fixes → summary → how to test.
 | 12 | Quotation history / audit | ✅ Done |
 | 13 | Multi-client / concurrency testing | ✅ Done |
 | 14 | Windows packaging / installer | ✅ Done (installers built on Windows/CI) |
-| 15 | End-to-end testing | ⏳ |
+| 15 | End-to-end testing | ✅ Done |
 
 ---
 
@@ -400,3 +400,32 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 
 **How to test**: on a Windows PC with the .NET 10 SDK and Inno Setup 6: `.\installer\publish.ps1` →
 `publish\installers\`. Or download the `windows-installers` artifact from the CI run.
+
+---
+
+## Phase 15 — End-to-end testing and documentation
+
+**Delivered**
+
+* **Real-process end-to-end test** (`tests/Quotation.E2E.Tests`): starts the Tally simulator and the Quotation
+  Server as separate processes (real HTTP, background workers enabled, file logging) and drives them like two
+  desktop PCs: first-run password change → company & Tally settings (incl. an API key) → Tally test → full sync →
+  search → quotation from a second PC → approval with PDF (content verified) → **hard kill + restart** (data
+  intact, numbering continues, duplicate uses the current Tally rate) → **Tally outage** (search still works,
+  approval requires the logged override) → database, PDFs and logs on disk → **no API key or password in any log**.
+* `docs/SETUP.md`: installation, Tally configuration, connecting to TallyPrime Server, initial sync, company
+  details, Claude API, Gmail OAuth, first quotation, backups/upgrades, troubleshooting.
+* WhatsApp: `IMessageChannel` extension point and message template in `Quotation.Core/Messaging`,
+  deliberately **not** implemented or registered in V1.
+
+### Test inventory (280 automated tests)
+
+| Suite | Tests | Covers |
+|---|---|---|
+| Core | 102 | financial year, numbering patterns, GST/GSTIN/state codes, search & fuzzy matching (20k perf), calculations, amount in words, validation |
+| Tally | 39 | XML client, errors/offline/timeouts, company & FY detection, master parsing (both layouts), GST inheritance, rates, incremental filter |
+| PDF | 12 | all fields, no overlaps/clipping, multi-page, unsplit rows, long descriptions/addresses, watermark, speed |
+| AI | 20 | orchestration and safety rules with a scripted model: ambiguity, wrong/invented ids, missing quantity, customers, e-mail framing, strict schemas |
+| Server | 89 | auth/roles/settings/secrets, Tally API, sync (full/incremental/deleted/failed/interrupted/20k), search API, numbering & concurrency, lifecycle, PDF failure recovery, AI API, Gmail ingestion & duplicates, history/audit/diagnostics, backups, 6-PC stress test |
+| Desktop (headless UI) | 17 | login, navigation, Tally page, catalogue pages, quotation entry incl. keyboard flow, stale override, lists, AI Inbox, Gmail page, OAuth loopback, search/recent/diagnostics, XAML lint |
+| End-to-end | 1 | real processes, restart, outage, log hygiene |

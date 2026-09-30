@@ -12,20 +12,31 @@ Quotation management and AI quotation automation for **TallyPrime + TallyPrime S
 | Document | Contents |
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture, technology choices, Tally/AI/Gmail/PDF design |
-| [docs/SETUP.md](docs/SETUP.md) | Installation and configuration |
-| [docs/PHASES.md](docs/PHASES.md) | Delivery phases, status and how to test each one |
+| [docs/SETUP.md](docs/SETUP.md) | Installation, Tally, Gmail, Claude, company details, first quotation, troubleshooting |
+| [docs/PHASES.md](docs/PHASES.md) | Delivery phases, what each delivered, and how to test it |
+
+## Status
+
+All 15 phases are implemented and covered by 280 automated tests (unit, integration, headless UI,
+real-process end-to-end). Sample output: [single-item PDF](docs/samples/sample-quotation-single.pdf),
+[multi-page PDF](docs/samples/sample-quotation-multipage.pdf).
 
 ## Solution layout
 
 ```
-src/Quotation.Core         Domain, calculations, numbering, search, validation
-src/Quotation.Contracts    DTOs shared between server and desktop
+src/Quotation.Core         Domain, calculations, numbering, search, validation, messaging extension point
+src/Quotation.Contracts    DTOs shared between server and desktop (incl. AI analysis results)
 src/Quotation.Data         EF Core (SQLite) database and migrations
+src/Quotation.Tally        TallyPrime XML/HTTP client, master parsers, GST/rate resolution
+src/Quotation.Pdf          Tally-style quotation PDF renderer
+src/Quotation.AI           AI provider abstraction, Claude provider, quotation assistant, match policy
+src/Quotation.Gmail        Gmail OAuth (installed app) and read-only mailbox client
 src/Quotation.Server       Central Quotation Server (ASP.NET Core, Windows Service)
 src/Quotation.ApiClient    Typed HTTP client for the server
 src/Quotation.Desktop      Desktop application (Avalonia)
-tools/                     Tally simulator and utilities
-tests/                     Unit, integration and headless UI tests
+tools/Tally.Simulator      Simulated TallyPrime (20k items) for development, demos and tests
+installer/                 Publish scripts and Inno Setup installers (server + client)
+tests/                     Unit, integration, headless UI and end-to-end tests
 ```
 
 ## Developer quick start
@@ -34,6 +45,7 @@ Requires the .NET 10 SDK.
 
 ```bash
 dotnet test                                   # run all tests
+dotnet run --project tools/Tally.Simulator    # simulated TallyPrime on :9000
 dotnet run --project src/Quotation.Server     # server on http://localhost:5080 (login admin/admin)
 dotnet run --project src/Quotation.Desktop    # desktop app
 ```

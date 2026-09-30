@@ -36,6 +36,13 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
     });
 
     [RelayCommand]
+    private Task BackupAsync() => RunAsync(async () =>
+    {
+        var path = await _session.Api.BackupNowAsync();
+        InfoMessage = "Backup written on the server: " + path;
+    });
+
+    [RelayCommand]
     private Task LoadAuditAsync() => RunAsync(LoadAuditCoreAsync);
 
     private async Task LoadAuditCoreAsync()

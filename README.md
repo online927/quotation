@@ -17,7 +17,7 @@ Quotation management and AI quotation automation for **TallyPrime + TallyPrime S
 
 ## Status
 
-All 15 phases are implemented and covered by 280 automated tests (unit, integration, headless UI,
+All 15 phases are implemented and covered by 282 automated tests (unit, integration, headless UI,
 real-process end-to-end). Sample output: [single-item PDF](docs/samples/sample-quotation-single.pdf),
 [multi-page PDF](docs/samples/sample-quotation-multipage.pdf).
 

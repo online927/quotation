@@ -18,6 +18,9 @@ public sealed class RuntimeStatus
     {
         lock (_gate)
         {
+            // Checks run concurrently (monitor, sync, manual refresh). A slow check that started earlier
+            // must not overwrite the result of a check that started later.
+            if (TallyLastCheckedUtc is { } last && checkedUtc < last) return;
             TallyConnected = connected;
             TallyError = error;
             TallyLastCheckedUtc = checkedUtc;

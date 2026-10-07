@@ -62,6 +62,22 @@ The Quotation Server talks to TallyPrime through TallyPrime's supported XML-over
 Test from the server PC: open `http://localhost:9000` in a browser — TallyPrime answers
 `<RESPONSE>TallyPrime Server is Running</RESPONSE>`.
 
+### Your Tally data is never changed
+
+The quotation system **only reads** from Tally. It never creates, alters or deletes any ledger, stock item,
+voucher, company setting or anything else in Tally.
+
+* Quotations, numbers, customers' extra details, AI drafts, Gmail requests and PDFs are stored only in the
+  Quotation Server's own database (`C:\ProgramData\TSQuotation`), never in Tally.
+* Every request goes through a read-only guard before it is sent to Tally. A request is blocked unless it
+  is a single Export (read) request. It may contain no import data, no vouchers or masters, no TDL functions,
+  actions or forms, and no write actions such as `NEW OBJECT` or `SAVE TARGET`. Automated tests check that
+  blocked requests never reach Tally.
+* Neither Claude AI nor Gmail is connected to Tally. They only work with the copy of master data already
+  synchronized into the Quotation Server.
+* For an extra safeguard, run the TallyPrime instance that serves port 9000 as a Tally user with
+  **display-only** rights (step 4 above). Tally itself then refuses any change, whatever the source.
+
 ---
 
 ## 4. Install the desktop app (each client PC)

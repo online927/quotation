@@ -34,6 +34,35 @@ public class TallyConnectivityTests
         Assert.Equal(0, sim.Engine.RequestCount);
     }
 
+    [Theory]
+    // Import hidden behind an Export header
+    [InlineData("<ENVELOPE><HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER><BODY><TALLYREQUEST>Import</TALLYREQUEST></BODY></ENVELOPE>")]
+    [InlineData("<ENVELOPE><HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER><BODY><IMPORTDATA><REQUESTDATA><TALLYMESSAGE><VOUCHER/></TALLYMESSAGE></REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>")]
+    // TDL function with a write action
+    [InlineData("<ENVELOPE><HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER><BODY><DESC><TDL><TDLMESSAGE><FUNCTION NAME=\"F\"><ACTION>001 : NEW OBJECT : Ledger</ACTION></FUNCTION></TDLMESSAGE></TDL></DESC></BODY></ENVELOPE>")]
+    [InlineData("<ENVELOPE><HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER><BODY><DESC><TDL><TDLMESSAGE><COLLECTION NAME=\"X\" ISMODIFY=\"Yes\"/></TDLMESSAGE></TDL></DESC></BODY></ENVELOPE>")]
+    [InlineData("<ENVELOPE><HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER><BODY><DESC><TDL><TDLMESSAGE><COLLECTION NAME=\"X\"><COMPUTE>A : $$CallFn:SAVE TARGET</COMPUTE></COLLECTION></TDLMESSAGE></TDL></DESC></BODY></ENVELOPE>")]
+    [InlineData("not xml")]
+    public async Task Client_refuses_anything_that_could_change_tally_data(string request)
+    {
+        var sim = new Sim();
+        var client = sim.Client();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => client.ExportAsync(request));
+        Assert.Equal(0, sim.Engine.RequestCount);
+    }
+
+    [Fact]
+    public void Company_names_containing_action_words_are_still_allowed()
+    {
+        var xml = TallyRequestBuilder.Collection(new TallyCollectionRequest
+        {
+            Name = "X",
+            Type = "Ledger",
+            Filters = new Dictionary<string, string> { ["G"] = TallyMasterService.GroupFormula(["Import Customers", "Sundry \"Execute\" Debtors"]) },
+        }, "ABC IMPORTS & SYNC TRADERS");
+        TallyReadOnlyGuard.EnsureReadOnly(xml);
+    }
+
     [Fact]
     public async Task Detects_company_and_active_financial_year()
     {

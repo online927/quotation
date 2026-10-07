@@ -97,11 +97,8 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
 
     private async Task<HttpResponseMessage> SendAsync(string requestXml, CancellationToken ct)
     {
-        if (!requestXml.Contains("<TALLYREQUEST>Export</TALLYREQUEST>", StringComparison.Ordinal))
-        {
-            // Defence in depth: this application must never write to Tally.
-            throw new InvalidOperationException("Only Export requests may be sent to Tally.");
-        }
+        // Defence in depth: this application must never write to Tally.
+        TallyReadOnlyGuard.EnsureReadOnly(requestXml);
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(options.Timeout);

@@ -96,6 +96,7 @@
               <TextBlock Classes="h2" Text="Buyer (Bill to)" />
               <TextBlock Classes="fl" Text="Customer (Tally ledger)" />
               <AutoCompleteBox Name="CustomerBox" Text="{Binding CustomerSearchText}" SelectedItem="{Binding SelectedCustomerHit}"
+                               ValueMemberBinding="{Binding Customer.Name, x:DataType=c:CustomerSearchHitDto}"
                                AsyncPopulator="{Binding CustomerPopulator}" FilterMode="None" MinimumPrefixLength="1"
                                MinimumPopulateDelay="0:0:0.12" MaxDropDownHeight="360" Watermark="Type customer name, GSTIN or phone…">
                 <AutoCompleteBox.ItemTemplate>
@@ -281,6 +282,7 @@
                   <StackPanel>
                     <TextBlock Classes="fl" Text="Product (name, part no., alias, brand) — Enter to select" />
                     <AutoCompleteBox Name="ProductBox" Text="{Binding ProductSearchText}" SelectedItem="{Binding SelectedProductHit}"
+                                     ValueMemberBinding="{Binding Product.Name, x:DataType=c:ProductSearchHitDto}"
                                      AsyncPopulator="{Binding ProductPopulator}" FilterMode="None" MinimumPrefixLength="1"
                                      MinimumPopulateDelay="0:0:0.1" MaxDropDownHeight="420" Watermark="e.g. universal bevel, 10mm, 187-901">
                       <AutoCompleteBox.ItemTemplate>

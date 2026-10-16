@@ -129,6 +129,55 @@ public class QuotationEditorTests
     }
 
     [AvaloniaFact]
+    public async Task Product_picked_from_the_drop_down_is_added_as_a_line()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        var box = view.FindControl<AutoCompleteBox>("ProductBox")!;
+        var expected = (await ctx.Session.Api.SearchProductsAsync("530-104")).First().Product;
+
+        box.Focus();
+        Dispatcher.UIThread.RunJobs();
+        ctx.Window.KeyTextInput("530-104");
+        await UiHelpers.WaitUntil(() => box.IsDropDownOpen);
+        ctx.Window.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.ArrowDown, null);
+        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        await UiHelpers.WaitUntil(() => editor.EntryProduct is not null);
+        await Task.Delay(300); // let any follow-up search (from the box text changing) run
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(expected.Id, editor.EntryProduct!.Id);
+        Assert.Equal(expected.Name, box.Text); // the product name, not the search result object
+        Assert.DoesNotContain("ProductSearchHitDto", editor.ProductSearchText);
+
+        editor.EntryQuantity = 2;
+        editor.CommitEntryCommand.Execute(null);
+        Assert.Null(editor.ErrorMessage);
+        var line = Assert.Single(editor.Lines);
+        Assert.Equal(expected.Name, line.ItemName);
+    }
+
+    [AvaloniaFact]
+    public async Task Customer_picked_from_the_drop_down_fills_the_buyer()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        var box = view.FindControl<AutoCompleteBox>("CustomerBox")!;
+
+        box.FindDescendantOfType<TextBox>()!.Focus();
+        Dispatcher.UIThread.RunJobs();
+        ctx.Window.KeyTextInput("SONEPAR INDIA");
+        await UiHelpers.WaitUntil(() => box.IsDropDownOpen);
+        ctx.Window.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.ArrowDown, null);
+        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        await UiHelpers.WaitUntil(() => editor.BuyerName == "Sonepar India Private Limited");
+
+        Assert.Equal("SONEPAR INDIA PRIVATE LIMITED", box.Text); // Tally ledger name, not the search result object
+    }
+
+    [AvaloniaFact]
     public async Task Rate_override_is_marked_and_lines_can_be_edited_and_removed()
     {
         using var ctx = await SetupAsync();

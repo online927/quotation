@@ -16,7 +16,8 @@ public sealed class ClientConfig
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
     public static string DefaultPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TSQuotation", "client.json");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create),
+        "TSQuotation", "client.json");
 
     public static ClientConfig Load(string? path = null)
     {

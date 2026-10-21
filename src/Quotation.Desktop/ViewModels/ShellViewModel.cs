@@ -31,6 +31,16 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public ObservableCollection<NavItem> NavItems { get; } = [];
     public string LastSyncText => "Last sync: " + (Formatting.LocalDateTime(Status?.LastSuccessfulSyncUtc) ?? "never");
 
+    /// <summary>Installed client version (e.g. "App v0.9.18"), so a user can confirm an update reached this PC.</summary>
+    public static string AppVersionText
+    {
+        get
+        {
+            var v = typeof(App).Assembly.GetName().Version;
+            return v is null ? "" : $"App v{v.Major}.{v.Minor}.{v.Build}";
+        }
+    }
+
     partial void OnStatusChanged(SystemStatusDto? value) => OnPropertyChanged(nameof(LastSyncText));
     public string UserDisplay { get; }
 

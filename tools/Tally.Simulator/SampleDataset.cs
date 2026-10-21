@@ -98,11 +98,11 @@ public sealed class SampleDataset
 
     private SimStockItem AddItem(string name, string group, string unit, string hsn, decimal gst, decimal? rate,
         string partNo = "", string category = "", string description = "", IEnumerable<string>? aliases = null,
-        bool inherit = false, bool legacy = false)
+        bool inherit = false, bool legacy = false, string? guid = null)
     {
         var item = new SimStockItem
         {
-            Guid = NewGuid(),
+            Guid = guid ?? NewGuid(),
             AlterId = NextAlterId(),
             Name = name,
             PartNo = partNo,
@@ -145,6 +145,11 @@ public sealed class SampleDataset
         AddItem("SAFETY HELMET WHITE (RATCHET)", "Safety Products", "NOS", "65061090", 18, 285m, category: "Karam", legacy: true);
         var noRate = AddItem("CARBIDE END MILL 10MM 4 FLUTE", "End Mills", "NOS", "82077010", 18, null, category: "YG-1");
         noRate.PriceLevels.Add((new DateOnly(2025, 4, 1), "Dealer", 1450m));
+
+        // As reported from a live company: no stock category (Tally sends "Not Applicable") and no selling rate.
+        // Fixed GUID so the random data generated after it stays the same.
+        AddItem("112-201-POINT MICROMETER", "MITUTOYO", "NOS", "90173010", 18, null, partNo: "112-201",
+            guid: "5e7c1a52-1b2d-4c6e-9f10-112201000001-00000001");
     }
 
     private static readonly string[] Brands =

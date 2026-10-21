@@ -418,14 +418,14 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 * WhatsApp: `IMessageChannel` extension point and message template in `Quotation.Core/Messaging`,
   deliberately **not** implemented or registered in V1.
 
-### Test inventory (291 automated tests)
+### Test inventory (297 automated tests)
 
 | Suite | Tests | Covers |
 |---|---|---|
 | Core | 102 | financial year, numbering patterns, GST/GSTIN/state codes, search & fuzzy matching (20k perf), calculations, amount in words, validation |
-| Tally | 46 | XML client, read-only guard (blocked write requests never reach Tally), errors/offline/timeouts, company & FY detection, master parsing (both layouts), GST inheritance, rates, incremental filter |
+| Tally | 47 | XML client, read-only guard (blocked write requests never reach Tally), errors/offline/timeouts, company & FY detection, master parsing (both layouts), GST inheritance, rates, incremental filter |
 | PDF | 12 | all fields, no overlaps/clipping, multi-page, unsplit rows, long descriptions/addresses, watermark, speed |
 | AI | 20 | orchestration and safety rules with a scripted model: ambiguity, wrong/invented ids, missing quantity, customers, e-mail framing, strict schemas |
-| Server | 91 | auth/roles/settings/secrets, Tally API, concurrent status checks, sync (full/incremental/deleted/failed/interrupted/20k), search API, numbering & concurrency, lifecycle, PDF failure recovery, AI API, Gmail ingestion & duplicates, history/audit/diagnostics, backups, 6-PC stress test |
-| Desktop (headless UI) | 19 | login, navigation, Tally page, catalogue pages, quotation entry incl. keyboard flow and real product/customer drop-downs, stale override, lists, AI Inbox, Gmail page, OAuth loopback, search/recent/diagnostics, XAML lint |
+| Server | 92 | auth/roles/settings/secrets, Tally API, concurrent status checks, re-read after mapping upgrade, sync (full/incremental/deleted/failed/interrupted/20k), search API, numbering & concurrency, lifecycle, PDF failure recovery, AI API, Gmail ingestion & duplicates, history/audit/diagnostics, backups, 6-PC stress test |
+| Desktop (headless UI) | 23 | login, navigation, Tally page, catalogue pages, quotation entry incl. keyboard flow, Tally-style product/customer lists (↑/↓, Enter, mouse, fast typing, Esc), stale override, lists, AI Inbox, Gmail page, OAuth loopback, search/recent/diagnostics, XAML lint |
 | End-to-end | 1 | real processes, restart, outage, log hygiene |

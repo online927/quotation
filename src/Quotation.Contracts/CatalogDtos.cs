@@ -14,7 +14,11 @@ public sealed record ProductSummaryDto(
 
 public sealed record SearchMatchDto(bool AllTermsMatched, bool ExactName, bool ExactIdentifier, bool UsedFuzzy, IReadOnlyList<string> MatchedFields);
 
-public sealed record ProductSearchHitDto(ProductSummaryDto Product, double Score, SearchMatchDto Match);
+public sealed record ProductSearchHitDto(ProductSummaryDto Product, double Score, SearchMatchDto Match)
+{
+    /// <summary>Shown wherever a hit is displayed as text, so a raw record dump never reaches the user.</summary>
+    public override string ToString() => Product.Name;
+}
 
 public sealed record ProductDetailDto(
     int Id,
@@ -50,7 +54,11 @@ public sealed record CustomerSummaryDto(
     string Phone,
     string Email);
 
-public sealed record CustomerSearchHitDto(CustomerSummaryDto Customer, double Score, SearchMatchDto Match);
+public sealed record CustomerSearchHitDto(CustomerSummaryDto Customer, double Score, SearchMatchDto Match)
+{
+    /// <summary>Shown wherever a hit is displayed as text, so a raw record dump never reaches the user.</summary>
+    public override string ToString() => Customer.Name;
+}
 
 public sealed record CustomerDetailDto(
     int Id,

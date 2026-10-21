@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Quotation.Core.Domain;
 using Quotation.Tally;
 using Xunit.Abstractions;
@@ -95,6 +96,28 @@ public class SyncTests(ITestOutputHelper output) : IDisposable
         Assert.Equal(SyncKind.Full, run!.Kind);
         Assert.True(_server.Db(db => db.Customers.Single(c => c.Name == "SONEPAR INDIA PRIVATE LIMITED").IsDeleted));
         Assert.False(_server.Db(db => db.Customers.Single(c => c.Name == "BHARAT PRECISION ENGINEERING").IsDeleted));
+    }
+
+    [Fact]
+    public async Task Upgrade_with_changed_tally_mapping_rereads_all_items_once()
+    {
+        var api = await _server.LoginAsAdminAsync();
+        await api.StartSyncAsync(SyncKind.Full, wait: true);
+        var micrometer = _server.Db(db => db.Products.Single(p => p.Name == "112-201-POINT MICROMETER"));
+        Assert.Equal("", micrometer.Brand); // Tally's "Not Applicable" category is not a brand
+        Assert.Null(micrometer.Rate);
+
+        // A database synchronized by an older version (different mapping) is re-read in full once.
+        using (var scope = _server.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<Quotation.Server.Services.SettingsService>();
+            await store.SaveAsync(Quotation.Server.Services.TallySyncService.SettingsHashKey,
+                new Quotation.Server.Services.TallySyncService.StateString { Value = "Sundry Debtors;StandardPrice;;Category;;True" }, "system");
+        }
+        var run = await api.StartSyncAsync(SyncKind.Incremental, wait: true);
+        Assert.Equal(SyncKind.Full, run!.Kind);
+        var next = await api.StartSyncAsync(SyncKind.Incremental, wait: true);
+        Assert.Equal(SyncKind.Incremental, next!.Kind);
     }
 
     [Fact]

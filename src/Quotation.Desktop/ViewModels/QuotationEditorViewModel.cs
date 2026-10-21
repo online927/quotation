@@ -49,7 +49,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
 
     // ---------------------------------------------------------------- customer
     [ObservableProperty] private int? _customerId;
-    [ObservableProperty] private CustomerSearchHitDto? _selectedCustomerHit;
     [ObservableProperty] private string _customerSearchText = "";
     [ObservableProperty] private string _buyerName = "";
     [ObservableProperty] private string _buyerAddress = "";
@@ -91,7 +90,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     [ObservableProperty] private QuotationLineViewModel? _selectedLine;
 
     // Line entry panel
-    [ObservableProperty] private ProductSearchHitDto? _selectedProductHit;
     [ObservableProperty] private string _productSearchText = "";
     [ObservableProperty] private ProductSummaryDto? _entryProduct;
     [ObservableProperty] private decimal? _entryQuantity = 1;
@@ -301,11 +299,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         catch (Exception) { return []; }
     }
 
-    partial void OnSelectedCustomerHitChanged(CustomerSearchHitDto? value)
-    {
-        if (value is null || _loading || value.Customer.Id == CustomerId) return;
-        _ = RunAsync(() => SelectCustomerAsync(value.Customer.Id));
-    }
+    /// <summary>A customer was picked from the search list.</summary>
+    public Task<bool> PickCustomerAsync(int customerId) => RunAsync(() => SelectCustomerAsync(customerId));
 
     public async Task SelectCustomerAsync(int customerId)
     {
@@ -372,12 +367,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         catch (Exception) { return []; }
     }
 
-    partial void OnSelectedProductHitChanged(ProductSearchHitDto? value)
-    {
-        if (value is null) return;
-        SelectProduct(value.Product);
-    }
-
     public void SelectProduct(ProductSummaryDto p)
     {
         EntryProduct = p;
@@ -386,15 +375,31 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         {
             EntryDescription = p.Description;
         }
+        SetProductTextSilently(p.Name);
+    }
+
+    private void SetProductTextSilently(string text)
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        ProductSearchText = text;
+        _loading = wasLoading;
+    }
+
+    partial void OnProductSearchTextChanged(string value)
+    {
+        // Typing over a picked product un-picks it, so a line is never added for a product the box no longer shows.
+        if (_loading || EntryProduct is not { } p) return;
+        if (!string.Equals(value.Trim(), p.Name.Trim(), StringComparison.OrdinalIgnoreCase)) EntryProduct = null;
     }
 
     [RelayCommand]
     private void CommitEntry()
     {
         ErrorMessage = null;
-        if (EntryProduct is null && EditingLine?.ProductId is null)
+        if (EntryProduct is null)
         {
-            ErrorMessage = "Select a product from the list (type part of its name, part number or alias).";
+            ErrorMessage = "Select a product from the list: type part of its name, part number or alias, then press Enter (or click it).";
             return;
         }
         if (EntryQuantity is null or <= 0)
@@ -433,9 +438,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         foreach (var l in Lines) l.IsEditing = l == line;
         EditingLine = line;
         EntryProduct = line.ProductId is null ? null : new ProductSummaryDto(line.ProductId.Value, line.ItemName, "", "", "", line.Unit, line.Hsn, line.GstRate, line.TallyRate, line.Description);
-        _loading = true;
-        ProductSearchText = line.ItemName;
-        _loading = false;
+        SetProductTextSilently(line.ItemName);
         EntryQuantity = line.Quantity;
         EntryRate = line.Rate;
         EntryDiscount = line.DiscountPercent;
@@ -475,8 +478,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         foreach (var l in Lines) l.IsEditing = false;
         EditingLine = null;
         EntryProduct = null;
-        SelectedProductHit = null;
-        ProductSearchText = "";
+        SetProductTextSilently("");
         EntryQuantity = 1;
         EntryRate = null;
         EntryDiscount = 0;
@@ -687,9 +689,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     {
         var p = await _session.Api.ProductAsync(item.Id);
         SelectProduct(new ProductSummaryDto(p.Id, p.Name, p.PartNumber, p.Brand, p.StockGroup, p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description));
-        _loading = true;
-        ProductSearchText = p.Name;
-        _loading = false;
     });
 
     [RelayCommand]

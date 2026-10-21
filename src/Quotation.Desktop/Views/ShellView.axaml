@@ -39,6 +39,7 @@
         <TextBlock FontSize="12" Text="{Binding LastSyncText}" />
         <TextBlock FontSize="12" Foreground="{StaticResource WarnBrush}" Text="Tally data is stale" IsVisible="{Binding Status.DataIsStale, FallbackValue=False}" />
         <TextBlock FontSize="12" Text="{Binding ServerState}" Foreground="{StaticResource MutedBrush}" />
+        <TextBlock FontSize="12" Text="{x:Static vm:ShellViewModel.AppVersionText}" Foreground="{StaticResource MutedBrush}" />
       </StackPanel>
     </Border>
 

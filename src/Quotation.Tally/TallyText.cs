@@ -27,6 +27,13 @@ public static class TallyText
 
     public static string Text(XElement? parent, string name) => Clean(parent?.Element(name)?.Value);
 
+    /// <summary>
+    /// Tally sends "no category" as its reserved name "&#4; Not Applicable"; that is not a real value
+    /// (e.g. it must never be printed as a brand).
+    /// </summary>
+    public static string NotReserved(string value) =>
+        value.Equals("Not Applicable", StringComparison.OrdinalIgnoreCase) ? "" : value;
+
     public static DateOnly? Date(string? value)
     {
         var v = Clean(value);

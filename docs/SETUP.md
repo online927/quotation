@@ -181,11 +181,15 @@ enter the quantity → **Create Draft**). Nothing is ever sent to customers auto
 
 **Manually (keyboard)**
 1. **Ctrl+N** (New Quotation). The provisional number and today's date are shown.
-2. Type part of the customer name (or GSTIN/phone) → ↓ → **Enter**. Bill-to and ship-to are filled from Tally;
-   choose another *Ship to* address if needed.
-3. In **Product**, type e.g. `universal bevel` or `187-901` → **Enter** → quantity → **Enter** → rate (Tally rate
-   pre-filled, change if needed) → **Enter** → discount % → **Enter**: the line is added. Repeat for more lines.
+2. Type part of the customer name (or GSTIN/phone). Matching Tally ledgers are listed with the first one
+   highlighted (like Tally's *List of Ledger Accounts*): **↑/↓** move the highlight, **Enter** (or a click) accepts it,
+   **Esc** closes the list. Bill-to and ship-to are filled from Tally; choose another *Ship to* address if needed.
+3. In **Product**, type e.g. `universal bevel` or `187-901`. The matching items are listed with the first one
+   highlighted: **↑/↓** to choose, **Enter** (or a click) to select → quantity → **Enter** → rate (Tally rate
+   pre-filled; if the item has no rate in Tally the box is empty — type it) → **Enter** → discount % → **Enter**:
+   the line is added and the product box is cleared for the next item. Repeat for more lines.
    Add description lines (brand, model, MOQ) in the box below the product before adding the line.
+   If you change the product text after selecting, the selection is dropped — select from the list again.
 4. Fill references (buyer's order no., payment terms, delivery …) and packing & forwarding if needed.
 5. **Ctrl+S** saves the draft and assigns the quotation number. **F11** opens a preview (DRAFT watermark).
 6. **Ctrl+Enter — Approve & Generate PDF**: the app refreshes Tally data, validates everything, generates the PDF
@@ -201,6 +205,9 @@ new number, today's date, same customer and products, current Tally rates.
 ---
 
 ## 10. Backups, upgrades and moving the server
+
+* **Which version is running?** The app version is shown at the bottom right of the window (e.g. `App v0.9.18`).
+  When updating, close TS Quotation first — the installer asks you to if it is still open.
 
 * **Automatic backups**: every day to `C:\ProgramData\TSQuotation\backups` (kept 30 days). Include this folder in
   your normal backup. Admins can take one at any time: **Diagnostics → Backup database now**.

@@ -70,7 +70,7 @@ public static class TallyMasterParser
             aliases,
             TallyText.List(e, "MAILINGNAME.LIST", "MAILINGNAME").FirstOrDefault() ?? "",
             TallyText.Text(e, "PARENT"),
-            TallyText.Text(e, "CATEGORY"),
+            TallyText.NotReserved(TallyText.Text(e, "CATEGORY")),
             TallyText.Text(e, "BASEUNITS"),
             TallyText.Text(e, "DESCRIPTION"),
             TallyText.Text(e, "NARRATION"),

@@ -291,7 +291,8 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
         sb.Append("    <STOCKITEM NAME=\"").Append(E(i.Name)).Append("\" RESERVEDNAME=\"\">\r\n");
         Tag(sb, "GUID", i.Guid);
         Tag(sb, "PARENT", i.Parent);
-        Tag(sb, "CATEGORY", i.Category);
+        if (i.Category.Length > 0) Tag(sb, "CATEGORY", i.Category);
+        else sb.Append("     <CATEGORY TYPE=\"String\">").Append(Ctl4).Append(" Not Applicable</CATEGORY>\r\n"); // Tally's "no category"
         Tag(sb, "BASEUNITS", i.Unit);
         Tag(sb, "DESCRIPTION", i.Description);
         Tag(sb, "NARRATION", i.Notes);

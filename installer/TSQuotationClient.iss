@@ -20,6 +20,9 @@ OutputBaseFilename=TSQuotation-Setup-{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+; Setup asks the user to close a running copy first, so an update always replaces the program.
+AppMutex=TSQuotationClientRunning,Global\TSQuotationClientRunning
+CloseApplications=yes
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"

@@ -3,7 +3,10 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia;
+using Quotation.Contracts;
 using Quotation.Core.Domain;
+using Quotation.Desktop.Controls;
 using Quotation.Desktop.Services;
 using Quotation.Desktop.ViewModels;
 using Quotation.Desktop.Views;
@@ -128,53 +131,193 @@ public class QuotationEditorTests
         Assert.Null(editor.EntryProduct); // entry cleared for the next product
     }
 
-    [AvaloniaFact]
-    public async Task Product_picked_from_the_drop_down_is_added_as_a_line()
+    private static void Press(Ctx ctx, Key key, PhysicalKey physical, RawInputModifiers modifiers = RawInputModifiers.None)
     {
-        using var ctx = await SetupAsync();
-        var editor = await NewEditor(ctx);
-        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
-        var box = view.FindControl<AutoCompleteBox>("ProductBox")!;
-        var expected = (await ctx.Session.Api.SearchProductsAsync("530-104")).First().Product;
+        ctx.Window.KeyPress(key, modifiers, physical, null);
+        Dispatcher.UIThread.RunJobs();
+    }
 
+    private static async Task<SearchPicker> TypeInto(Ctx ctx, string pickerName, string text)
+    {
+        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        var box = view.FindControl<SearchPicker>(pickerName)!;
         box.Focus();
         Dispatcher.UIThread.RunJobs();
-        ctx.Window.KeyTextInput("530-104");
+        Assert.True(box.InputBox.IsKeyboardFocusWithin);
+        ctx.Window.KeyTextInput(text);
         await UiHelpers.WaitUntil(() => box.IsDropDownOpen);
-        ctx.Window.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.ArrowDown, null);
-        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
-        await UiHelpers.WaitUntil(() => editor.EntryProduct is not null);
-        await Task.Delay(300); // let any follow-up search (from the box text changing) run
-        Dispatcher.UIThread.RunJobs();
-
-        Assert.Equal(expected.Id, editor.EntryProduct!.Id);
-        Assert.Equal(expected.Name, box.Text); // the product name, not the search result object
-        Assert.DoesNotContain("ProductSearchHitDto", editor.ProductSearchText);
-
-        editor.EntryQuantity = 2;
-        editor.CommitEntryCommand.Execute(null);
-        Assert.Null(editor.ErrorMessage);
-        var line = Assert.Single(editor.Lines);
-        Assert.Equal(expected.Name, line.ItemName);
+        return box;
     }
 
     [AvaloniaFact]
-    public async Task Customer_picked_from_the_drop_down_fills_the_buyer()
+    public async Task Product_list_is_used_like_tally_and_the_line_is_added()
     {
         using var ctx = await SetupAsync();
         var editor = await NewEditor(ctx);
         var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
-        var box = view.FindControl<AutoCompleteBox>("CustomerBox")!;
+        var box = await TypeInto(ctx, "ProductBox", "carbide end mill");
+        var hits = box.Results.Cast<ProductSearchHitDto>().ToList();
+        Assert.True(hits.Count >= 2);
+        Assert.Equal(0, box.HighlightedIndex); // first match highlighted, nothing picked yet
+        Assert.Null(editor.EntryProduct);
 
-        box.FindDescendantOfType<TextBox>()!.Focus();
+        // Arrow keys only move the highlight: the typed text, the focus and the entry stay as they are.
+        Press(ctx, Key.Down, PhysicalKey.ArrowDown);
+        Assert.Equal(1, box.HighlightedIndex);
+        Press(ctx, Key.Down, PhysicalKey.ArrowDown);
+        Press(ctx, Key.Up, PhysicalKey.ArrowUp);
+        Assert.Equal(1, box.HighlightedIndex);
+        Assert.Equal("carbide end mill", box.InputBox.Text);
+        Assert.True(box.IsDropDownOpen);
+        Assert.True(box.InputBox.IsKeyboardFocusWithin);
+        Assert.Null(editor.EntryProduct);
+
+        // Enter accepts the highlighted product and moves to Quantity.
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
+        var picked = hits[1].Product;
+        await UiHelpers.WaitUntil(() => editor.EntryProduct?.Id == picked.Id);
+        Assert.Equal(picked.Name, box.InputBox.Text);
+        Assert.False(box.IsDropDownOpen);
+        var qty = view.FindControl<NumericUpDown>("QtyBox")!;
+        await UiHelpers.WaitUntil(() => qty.IsKeyboardFocusWithin);
+
+        // Quantity → Rate → Disc % → Enter adds the line.
+        Press(ctx, Key.A, PhysicalKey.A, RawInputModifiers.Control);
+        ctx.Window.KeyTextInput("2");
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
+        Press(ctx, Key.A, PhysicalKey.A, RawInputModifiers.Control);
+        ctx.Window.KeyTextInput("1450");
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
+        await UiHelpers.WaitUntil(() => editor.Lines.Count == 1);
+        Assert.Null(editor.ErrorMessage);
+        var line = editor.Lines[0];
+        Assert.Equal(picked.Name, line.ItemName);
+        Assert.Equal(2m, line.Quantity);
+        Assert.Equal(1450m, line.Rate);
+
+        // The entry is cleared for the next product and the old list does not come back.
+        await UiHelpers.WaitUntil(() => box.InputBox.IsKeyboardFocusWithin);
+        await Task.Delay(400);
         Dispatcher.UIThread.RunJobs();
-        ctx.Window.KeyTextInput("SONEPAR INDIA");
+        Assert.Equal("", box.InputBox.Text);
+        Assert.Equal("", editor.ProductSearchText);
+        Assert.False(box.IsDropDownOpen);
+        Assert.Null(editor.EntryProduct);
+    }
+
+    [AvaloniaFact]
+    public async Task Reported_item_without_a_tally_rate_is_added_after_typing_its_rate()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        var box = await TypeInto(ctx, "ProductBox", "112-201");
+        var top = Assert.IsType<ProductSearchHitDto>(box.Results[0]);
+        Assert.Equal("112-201-POINT MICROMETER", top.Product.Name);
+        Assert.Equal("", top.Product.Brand);
+        Assert.Null(top.Product.Rate);
+
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
+        await UiHelpers.WaitUntil(() => editor.EntryProduct is not null);
+        Assert.Equal("112-201-POINT MICROMETER", box.InputBox.Text);
+        Assert.Null(editor.EntryRate); // no rate in Tally: the user types it
+
+        await UiHelpers.WaitUntil(() => view.FindControl<NumericUpDown>("QtyBox")!.IsKeyboardFocusWithin);
+        Press(ctx, Key.Enter, PhysicalKey.Enter);          // quantity 1 → rate
+        ctx.Window.KeyTextInput("2350");
+        Press(ctx, Key.Enter, PhysicalKey.Enter);          // → disc %
+        Press(ctx, Key.Enter, PhysicalKey.Enter);          // add line
+        await UiHelpers.WaitUntil(() => editor.Lines.Count == 1);
+        Assert.Equal("112-201-POINT MICROMETER", editor.Lines[0].ItemName);
+        Assert.Equal(2350m, editor.Lines[0].Rate);
+        Assert.Equal("90173010", editor.Lines[0].Hsn);
+    }
+
+    [AvaloniaFact]
+    public async Task Product_can_be_picked_with_the_mouse()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        var box = await TypeInto(ctx, "ProductBox", "carbide end mill");
+        var hits = box.Results.Cast<ProductSearchHitDto>().ToList();
+
+        ListBoxItem? item = null;
+        await UiHelpers.WaitUntil(() => (item = box.ResultList.ContainerFromIndex(1) as ListBoxItem) is { IsArrangeValid: true });
+        var top = TopLevel.GetTopLevel(item)!;
+        var point = item!.TranslatePoint(new Point(20, 6), top)!.Value;
+        top.MouseDown(point, MouseButton.Left);
+        top.MouseUp(point, MouseButton.Left);
+
+        await UiHelpers.WaitUntil(() => editor.EntryProduct?.Id == hits[1].Product.Id);
+        Assert.Equal(hits[1].Product.Name, box.InputBox.Text);
+        Assert.False(box.IsDropDownOpen);
+    }
+
+    [AvaloniaFact]
+    public async Task Enter_pressed_while_typing_takes_the_top_match_for_the_full_text()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        var box = view.FindControl<SearchPicker>("ProductBox")!;
+        var expected = (await ctx.Session.Api.SearchProductsAsync("530-104")).First().Product;
+        box.Focus();
+        Dispatcher.UIThread.RunJobs();
+
+        ctx.Window.KeyTextInput("530-104");
+        Press(ctx, Key.Enter, PhysicalKey.Enter); // before the list has appeared
+
+        await UiHelpers.WaitUntil(() => editor.EntryProduct is not null);
+        Assert.Equal(expected.Id, editor.EntryProduct!.Id);
+        Assert.Equal(expected.Name, box.InputBox.Text);
+    }
+
+    [AvaloniaFact]
+    public async Task Typing_over_a_picked_product_unpicks_it_and_esc_closes_the_list()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        var box = await TypeInto(ctx, "ProductBox", "530-104");
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
+        await UiHelpers.WaitUntil(() => editor.EntryProduct is not null);
+
+        // Change the text: the product is no longer picked, so it cannot be added by mistake.
+        box.Focus();
+        Dispatcher.UIThread.RunJobs();
+        ctx.Window.KeyTextInput(" X");
+        Assert.Null(editor.EntryProduct);
         await UiHelpers.WaitUntil(() => box.IsDropDownOpen);
-        ctx.Window.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.ArrowDown, null);
-        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Press(ctx, Key.Escape, PhysicalKey.Escape);
+        Assert.False(box.IsDropDownOpen);
+        Assert.EndsWith(" X", box.InputBox.Text);
+
+        // Enter on un-picked text shows the matches again instead of moving on.
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
+        await UiHelpers.WaitUntil(() => box.IsDropDownOpen || editor.EntryProduct is not null || box.Results.Count == 0);
+        Assert.Null(editor.EntryProduct);
+        Assert.True(box.InputBox.IsKeyboardFocusWithin);
+
+        editor.CommitEntryCommand.Execute(null);
+        Assert.Contains("Select a product", editor.ErrorMessage);
+        Assert.Empty(editor.Lines);
+    }
+
+    [AvaloniaFact]
+    public async Task Customer_picked_from_the_list_fills_the_buyer()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        var box = await TypeInto(ctx, "CustomerBox", "SONEPAR INDIA");
+        Assert.Equal(0, box.HighlightedIndex);
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
         await UiHelpers.WaitUntil(() => editor.BuyerName == "Sonepar India Private Limited");
 
-        Assert.Equal("SONEPAR INDIA PRIVATE LIMITED", box.Text); // Tally ledger name, not the search result object
+        Assert.Equal("SONEPAR INDIA PRIVATE LIMITED", box.InputBox.Text); // Tally ledger name
+        Assert.False(box.IsDropDownOpen);
+        var product = view.FindControl<SearchPicker>("ProductBox")!;
+        await UiHelpers.WaitUntil(() => product.InputBox.IsKeyboardFocusWithin);
     }
 
     [AvaloniaFact]

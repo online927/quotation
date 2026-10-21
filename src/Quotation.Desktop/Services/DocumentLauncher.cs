@@ -6,7 +6,7 @@ namespace Quotation.Desktop.Services;
 public class DocumentLauncher(ClientConfig config)
 {
     public string Folder => string.IsNullOrWhiteSpace(config.PdfFolder)
-        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Quotations")
+        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.Create), "Quotations")
         : config.PdfFolder;
 
     public virtual string SaveAndOpen(byte[] pdf, string fileName, bool open = true)

@@ -60,6 +60,12 @@ public sealed class TallySyncService(
         }
     }
 
+    /// <summary>
+    /// Bump when the way Tally data is read changes, so the next sync re-reads every master once
+    /// (2: Tally's reserved "Not Applicable" stock category is no longer used as a brand).
+    /// </summary>
+    private const int MappingVersion = 2;
+
     private async Task<SyncRunDto> RunCoreAsync(SyncKind requested, string triggeredBy, CancellationToken ct)
     {
         using var scope = scopes.CreateScope();
@@ -67,7 +73,7 @@ public sealed class TallySyncService(
         var now = clock.GetUtcNow().UtcDateTime;
         var today = fy.Today();
         var tally = settings.Tally;
-        var settingsHash = $"{string.Join("|", tally.CustomerGroups)};{tally.RateSource};{tally.PriceLevel};{tally.BrandField};{tally.ManufacturerField};{tally.DerivePartNumberFromName}";
+        var settingsHash = $"v{MappingVersion};{string.Join("|", tally.CustomerGroups)};{tally.RateSource};{tally.PriceLevel};{tally.BrandField};{tally.ManufacturerField};{tally.DerivePartNumberFromName}";
 
         var lastRun = await db.SyncRuns.Where(r => r.Status == SyncStatus.Succeeded || r.Status == SyncStatus.Skipped)
             .OrderByDescending(r => r.Id).FirstOrDefaultAsync(ct);

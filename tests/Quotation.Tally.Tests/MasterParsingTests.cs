@@ -41,6 +41,18 @@ public class MasterParsingTests
     }
 
     [Fact]
+    public async Task Item_without_category_or_rate_has_no_brand_and_no_rate()
+    {
+        var sim = new Sim();
+        var items = await All(new TallyMasterService(sim.Client()).GetStockItemsAsync());
+        var micrometer = items.Single(i => i.Name == "112-201-POINT MICROMETER");
+        Assert.Equal("", micrometer.Category); // Tally's reserved "Not Applicable" is not a brand
+        Assert.Equal("112-201", micrometer.PartNumber);
+        var rate = TallyRateResolver.Resolve(micrometer.StandardPrices, micrometer.PriceLevels, TallyRateResolver.StandardPrice, "", Today);
+        Assert.Null(rate.Rate);
+    }
+
+    [Fact]
     public async Task Legacy_layout_and_group_inheritance()
     {
         var sim = new Sim();

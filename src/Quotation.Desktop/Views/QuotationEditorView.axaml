@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              xmlns:c="using:Quotation.Contracts"
+             xmlns:ctl="using:Quotation.Desktop.Controls"
              x:Class="Quotation.Desktop.Views.QuotationEditorView"
              x:DataType="vm:QuotationEditorViewModel">
   <UserControl.KeyBindings>
@@ -95,11 +96,10 @@
             <StackPanel>
               <TextBlock Classes="h2" Text="Buyer (Bill to)" />
               <TextBlock Classes="fl" Text="Customer (Tally ledger)" />
-              <AutoCompleteBox Name="CustomerBox" Text="{Binding CustomerSearchText}" SelectedItem="{Binding SelectedCustomerHit}"
-                               ValueMemberBinding="{Binding Customer.Name, x:DataType=c:CustomerSearchHitDto}"
-                               AsyncPopulator="{Binding CustomerPopulator}" FilterMode="None" MinimumPrefixLength="1"
-                               MinimumPopulateDelay="0:0:0.12" MaxDropDownHeight="360" Watermark="Type customer name, GSTIN or phone…">
-                <AutoCompleteBox.ItemTemplate>
+              <ctl:SearchPicker Name="CustomerBox" Text="{Binding CustomerSearchText}" Search="{Binding CustomerPopulator}"
+                                MaxDropDownHeight="360" MinDropDownWidth="380" Watermark="Type customer name, GSTIN or phone…"
+                                NoMatchText="No matching customer in the Tally ledgers">
+                <ctl:SearchPicker.ItemTemplate>
                   <DataTemplate x:DataType="c:CustomerSearchHitDto">
                     <StackPanel>
                       <TextBlock Text="{Binding Customer.Name}" FontWeight="SemiBold" />
@@ -110,8 +110,8 @@
                       </TextBlock>
                     </StackPanel>
                   </DataTemplate>
-                </AutoCompleteBox.ItemTemplate>
-              </AutoCompleteBox>
+                </ctl:SearchPicker.ItemTemplate>
+              </ctl:SearchPicker>
               <WrapPanel IsVisible="{Binding HasRecentCustomers}" Margin="0,3,0,0">
                 <TextBlock Classes="fl" Text="Recent:" Margin="0,0,4,0" VerticalAlignment="Center" />
                 <ItemsControl ItemsSource="{Binding RecentCustomers}">
@@ -280,12 +280,11 @@
               <StackPanel Spacing="4">
                 <Grid ColumnDefinitions="*,8,90,8,110,8,80,8,90,8,Auto">
                   <StackPanel>
-                    <TextBlock Classes="fl" Text="Product (name, part no., alias, brand) — Enter to select" />
-                    <AutoCompleteBox Name="ProductBox" Text="{Binding ProductSearchText}" SelectedItem="{Binding SelectedProductHit}"
-                                     ValueMemberBinding="{Binding Product.Name, x:DataType=c:ProductSearchHitDto}"
-                                     AsyncPopulator="{Binding ProductPopulator}" FilterMode="None" MinimumPrefixLength="1"
-                                     MinimumPopulateDelay="0:0:0.1" MaxDropDownHeight="420" Watermark="e.g. universal bevel, 10mm, 187-901">
-                      <AutoCompleteBox.ItemTemplate>
+                    <TextBlock Classes="fl" Text="Product (name, part no., alias, brand) — ↑/↓ to choose, Enter to select" />
+                    <ctl:SearchPicker Name="ProductBox" Text="{Binding ProductSearchText}" Search="{Binding ProductPopulator}"
+                                      SearchDelay="0:0:0.1" MaxDropDownHeight="420" MinDropDownWidth="600"
+                                      Watermark="e.g. universal bevel, 10mm, 187-901" NoMatchText="No matching product in Tally">
+                      <ctl:SearchPicker.ItemTemplate>
                         <DataTemplate x:DataType="c:ProductSearchHitDto">
                           <Grid ColumnDefinitions="*,60,90" MinWidth="560">
                             <StackPanel>
@@ -302,8 +301,8 @@
                             <TextBlock Grid.Column="2" Text="{Binding Product.Rate, StringFormat='{}{0:N2}', TargetNullValue='no rate'}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                           </Grid>
                         </DataTemplate>
-                      </AutoCompleteBox.ItemTemplate>
-                    </AutoCompleteBox>
+                      </ctl:SearchPicker.ItemTemplate>
+                    </ctl:SearchPicker>
                   </StackPanel>
                   <StackPanel Grid.Column="2">
                     <TextBlock Classes="fl" Text="Quantity" />

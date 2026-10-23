@@ -99,6 +99,20 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
                     foreach (var l in Data.Ledgers.Where(l => !l.Deleted && filter(new FilterSubject(l.Name, l.AlterId, l.Parent))))
                         WriteLedger(sb, l);
                     break;
+                case "vouchertype":
+                    foreach (var t in Data.VoucherTypes) WriteVoucherType(sb, t);
+                    break;
+                case "voucher":
+                    var statics = desc.Element("STATICVARIABLES");
+                    var from = ParseDate(statics?.Element("SVFROMDATE")?.Value) ?? Data.PeriodFrom;
+                    var to = ParseDate(statics?.Element("SVTODATE")?.Value) ?? Data.PeriodTo;
+                    var types = formulas.Values.SelectMany(f => VoucherTypeRegex().Matches(f))
+                        .Select(m => m.Groups[1].Value.Replace("\"\"", "\"")).ToList();
+                    foreach (var v in Data.Vouchers.Where(v => v.Date >= from && v.Date <= to &&
+                                 (types.Count == 0 || types.Contains(v.Type, StringComparer.OrdinalIgnoreCase)) &&
+                                 filter(new FilterSubject(v.Number, v.AlterId, ""))))
+                        WriteVoucher(sb, v);
+                    break;
                 default:
                     return Error($"Unknown object type '{type}'");
             }
@@ -165,6 +179,12 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
     [GeneratedRegex(@"\$Name\s*=\s*""((?:[^""]|"""")*)""", RegexOptions.IgnoreCase)]
     private static partial Regex NameRegex();
 
+    [GeneratedRegex(@"\$VoucherTypeName\s*=\s*""((?:[^""]|"""")*)""", RegexOptions.IgnoreCase)]
+    private static partial Regex VoucherTypeRegex();
+
+    private static DateOnly? ParseDate(string? value) =>
+        DateOnly.TryParseExact(value?.Trim(), ["yyyyMMdd", "d-MMM-yyyy"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
+
     private Func<FilterSubject, bool> BuildFilter(List<string> formulas)
     {
         var predicates = new List<Func<FilterSubject, bool>>();
@@ -223,6 +243,7 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
         Tag(sb, "STARTINGFROM", D(c.FinancialYearFrom), "Date");
         Tag(sb, "BOOKSFROM", D(c.BooksFrom), "Date");
         Tag(sb, "ALTMSTID", " " + Data.MaxAlterId, "Number");
+        Tag(sb, "ALTVCHID", " " + Data.MaxVoucherAlterId, "Number");
         Tag(sb, "STATENAME", c.State);
         Tag(sb, "GSTREGISTRATIONNUMBER", c.Gstin);
         foreach (var (name, formula) in computes)
@@ -238,6 +259,42 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
             Tag(sb, name.ToUpperInvariant(), value, formula.Contains("Date", StringComparison.OrdinalIgnoreCase) ? "Date" : "String");
         }
         sb.Append("    </COMPANY>\r\n");
+    }
+
+    private static void WriteVoucherType(StringBuilder sb, SimVoucherType t)
+    {
+        sb.Append("    <VOUCHERTYPE NAME=\"").Append(E(t.Name)).Append("\" RESERVEDNAME=\"").Append(E(t.Reserved)).Append("\">\r\n");
+        if (t.Reserved.Length > 0) sb.Append("     <PARENT TYPE=\"String\">").Append(Ctl4).Append(' ').Append(E(t.Reserved)).Append("</PARENT>\r\n");
+        else Tag(sb, "PARENT", t.Parent);
+        sb.Append("    </VOUCHERTYPE>\r\n");
+    }
+
+    private static void WriteVoucher(StringBuilder sb, SimVoucher v)
+    {
+        sb.Append("    <VOUCHER REMOTEID=\"").Append(v.Guid).Append("\" VCHTYPE=\"").Append(E(v.Type))
+          .Append("\" ACTION=\"Create\" OBJVIEW=\"").Append(v.AccountingMode ? "Accounting Voucher View" : "Invoice Voucher View").Append("\">\r\n");
+        Tag(sb, "DATE", D(v.Date), "Date");
+        Tag(sb, "GUID", v.Guid);
+        Tag(sb, "VOUCHERTYPENAME", v.Type);
+        Tag(sb, "VOUCHERNUMBER", v.Number);
+        Tag(sb, "PARTYLEDGERNAME", v.Party);
+        Tag(sb, "ISCANCELLED", v.Cancelled ? "Yes" : "No", "Logical");
+        Tag(sb, "ISDELETED", "No", "Logical");
+        Tag(sb, "ALTERID", " " + v.AlterId, "Number");
+        var listName = v.AccountingMode ? "INVENTORYALLOCATIONS.LIST" : "ALLINVENTORYENTRIES.LIST";
+        if (v.AccountingMode) sb.Append("     <LEDGERENTRIES.LIST>\r\n      <LEDGERNAME>Sales Account</LEDGERNAME>\r\n");
+        foreach (var l in v.Lines)
+        {
+            sb.Append("      <").Append(listName).Append(">\r\n");
+            Tag(sb, "STOCKITEMNAME", l.Item);
+            Tag(sb, "RATE", N(l.Rate) + "/" + l.Unit, "Rate");
+            Tag(sb, "AMOUNT", N(l.Rate * l.Quantity), "Amount");
+            Tag(sb, "ACTUALQTY", $" {l.Quantity.ToString("0.###", CultureInfo.InvariantCulture)} {l.Unit}", "Quantity");
+            Tag(sb, "BILLEDQTY", $" {l.Quantity.ToString("0.###", CultureInfo.InvariantCulture)} {l.Unit}", "Quantity");
+            sb.Append("      </").Append(listName).Append(">\r\n");
+        }
+        if (v.AccountingMode) sb.Append("     </LEDGERENTRIES.LIST>\r\n");
+        sb.Append("    </VOUCHER>\r\n");
     }
 
     private static void WriteNames(StringBuilder sb, string name, List<string> aliases)

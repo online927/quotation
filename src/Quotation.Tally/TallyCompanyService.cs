@@ -10,7 +10,8 @@ public sealed record TallyCompany(
     DateOnly? BooksFrom,
     long MaxMasterAlterId,
     string StateName,
-    string Gstin);
+    string Gstin,
+    long MaxVoucherAlterId = 0);
 
 /// <summary>Information about the company and the period currently active in the Tally instance.</summary>
 public sealed record TallyCompanyInfo(
@@ -27,7 +28,7 @@ public sealed class TallyCompanyService(TallyXmlClient client)
 {
     internal static readonly string[] CompanyMethods =
     [
-        "Name", "GUID", "StartingFrom", "BooksFrom", "AltMstId", "AlterID", "StateName", "GSTRegistrationNumber",
+        "Name", "GUID", "StartingFrom", "BooksFrom", "AltMstId", "AltVchId", "AlterID", "StateName", "GSTRegistrationNumber",
     ];
 
     /// <summary>Lists the companies currently loaded in the Tally instance.</summary>
@@ -126,7 +127,8 @@ public sealed class TallyCompanyService(TallyXmlClient client)
         TallyText.Date(TallyText.Text(e, "BOOKSFROM")),
         TallyText.Long(TallyText.Text(e, "ALTMSTID")),
         TallyText.Text(e, "STATENAME"),
-        TallyText.Text(e, "GSTREGISTRATIONNUMBER"));
+        TallyText.Text(e, "GSTREGISTRATIONNUMBER"),
+        TallyText.Long(TallyText.Text(e, "ALTVCHID")));
 
     internal static string NameOf(XElement e)
     {

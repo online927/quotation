@@ -13,6 +13,8 @@ public sealed class SampleDataset
     public List<SimUnit> Units { get; } = [];
     public List<SimLedger> Ledgers { get; } = [];
     public List<SimLedgerGroup> LedgerGroups { get; } = [];
+    public List<SimVoucherType> VoucherTypes { get; } = [];
+    public List<SimVoucher> Vouchers { get; } = [];
 
     /// <summary>Tally's current period (Alt+F2).</summary>
     public DateOnly PeriodFrom { get; set; }
@@ -24,6 +26,11 @@ public sealed class SampleDataset
 
     public long NextAlterId() => ++_alterId;
     public long MaxAlterId => _alterId;
+
+    private long _voucherAlterId;
+
+    public long NextVoucherAlterId() => ++_voucherAlterId;
+    public long MaxVoucherAlterId => _voucherAlterId;
 
     private SampleDataset(int seed) => _rng = new Random(seed);
 
@@ -42,6 +49,8 @@ public sealed class SampleDataset
         d.BuildLedgerGroups();
         d.BuildKnownLedgers();
         d.BuildGeneratedLedgers(Math.Max(0, customers - d.Ledgers.Count(l => l.Parent.Contains("Debtors"))));
+        d.BuildVoucherTypes();
+        d.BuildKnownVouchers();
         return d;
     }
 
@@ -150,6 +159,9 @@ public sealed class SampleDataset
         // Fixed GUID so the random data generated after it stays the same.
         AddItem("112-201-POINT MICROMETER", "MITUTOYO", "NOS", "90173010", 18, null, partNo: "112-201",
             guid: "5e7c1a52-1b2d-4c6e-9f10-112201000001-00000001");
+        // As reported: no price in the master; Tally fills the rate from earlier quotations/invoices (see BuildKnownVouchers).
+        AddItem("-Rsk Spirit Level 200Mm", "Hand Tools", "NOS", "90153090", 18, null,
+            guid: "0603ecef-f545-4d31-b5d3-15da8f30b462-00014824");
     }
 
     private static readonly string[] Brands =
@@ -210,6 +222,44 @@ public sealed class SampleDataset
             new SimLedgerGroup { Name = "Sundry Creditors", Parent = "Current Liabilities" },
             new SimLedgerGroup { Name = "Sales Accounts", Parent = "" },
         ]);
+    }
+
+    private void BuildVoucherTypes()
+    {
+        foreach (var t in new[] { "Sales", "Purchase", "Quotation", "Sales Order", "Receipt", "Payment", "Journal" })
+            VoucherTypes.Add(new SimVoucherType { Name = t, Reserved = t });
+        VoucherTypes.Add(new SimVoucherType { Name = "GST Sales", Parent = "Sales" });
+        VoucherTypes.Add(new SimVoucherType { Name = "TS Quotation", Parent = "Quotation" });
+    }
+
+    /// <summary>Adds a voucher with one item line (used by the sample data and by tests).</summary>
+    public SimVoucher AddVoucher(string type, DateOnly date, string number, string party, string item, decimal rate,
+        decimal quantity = 1, string unit = "NOS", bool cancelled = false, bool accountingMode = false)
+    {
+        var v = new SimVoucher
+        {
+            Guid = $"7a1c0d3e-5b6f-4a8b-9c0d-{Vouchers.Count + 1:000000000000}",
+            AlterId = NextVoucherAlterId(),
+            Date = date, Type = type, Number = number, Party = party, Cancelled = cancelled, AccountingMode = accountingMode,
+            Lines = [new SimVoucherLine { Item = item, Rate = rate, Quantity = quantity, Unit = unit }],
+        };
+        Vouchers.Add(v);
+        return v;
+    }
+
+    private void BuildKnownVouchers()
+    {
+        var t = CurrentDate;
+        const string level = "-Rsk Spirit Level 200Mm";
+        AddVoucher("TS Quotation", t.AddDays(-800), "TSQ-OLD-1", "BHARAT PRECISION ENGINEERING", level, 5000m); // outside the window
+        AddVoucher("TS Quotation", t.AddDays(-200), "TSQ-101", "BHARAT PRECISION ENGINEERING", level, 9500m);
+        AddVoucher("GST Sales", t.AddDays(-40), "INV-2041", "SONEPAR INDIA PRIVATE LIMITED", level, 9800m, 2, accountingMode: true);
+        AddVoucher("TS Quotation", t.AddDays(-5), "TSQ-3403", "BHARAT PRECISION ENGINEERING", level, 10500m);
+        AddVoucher("Sales Order", t.AddDays(-3), "SO-77", "BHARAT PRECISION ENGINEERING", level, 12000m);   // not a sales/quotation type
+        AddVoucher("Purchase", t.AddDays(-2), "P-551", "RKS TOOLS", level, 7000m);                         // purchase rate, ignored
+        AddVoucher("TS Quotation", t.AddDays(-1), "TSQ-3404", "BHARAT PRECISION ENGINEERING", level, 1m, cancelled: true);
+        // An item that has a Tally selling price keeps it; its quoted rate is only a fallback.
+        AddVoucher("TS Quotation", t.AddDays(-10), "TSQ-3390", "SONEPAR INDIA PRIVATE LIMITED", "187-901-10-UNIVERSAL BEVEL PROTRACTOR", 15000m);
     }
 
     private void BuildKnownLedgers()

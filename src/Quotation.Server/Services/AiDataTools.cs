@@ -44,14 +44,14 @@ public sealed class AiDataTools(QuotationDbContext db, CatalogSearchService sear
     public async Task<ProductCandidate?> GetProductAsync(int id, CancellationToken ct)
     {
         var p = await db.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, ct);
-        return p is null ? null : new ProductCandidate(p.Id, p.Name, p.PartNumber, p.Brand, p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description,
+        return p is null ? null : new ProductCandidate(p.Id, p.Name, p.PartNumber, p.Brand, p.Unit, p.Hsn, p.GstRate, p.Rate ?? p.LastRate, p.Description,
             new MatchEvidenceInfo(false, false, false, false, 0));
     }
 
     public async Task<decimal?> GetCurrentRateAsync(int productId, CancellationToken ct)
     {
         var p = await db.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Id == productId, ct);
-        return p is null ? null : quotations.RateOn(p, fy.Today());
+        return p is null ? null : quotations.SuggestedRate(p, fy.Today());
     }
 
     public async Task<IReadOnlyList<QuotationHistoryItem>> GetQuotationHistoryAsync(int? customerId, string? query, int limit, CancellationToken ct)

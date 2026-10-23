@@ -235,6 +235,20 @@ public class QuotationEditorTests
     }
 
     [AvaloniaFact]
+    public async Task Item_without_tally_price_is_filled_with_its_last_quoted_rate()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        var box = await TypeInto(ctx, "ProductBox", "rsk spirit level");
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
+        await UiHelpers.WaitUntil(() => editor.EntryProduct is not null);
+
+        Assert.Equal("-Rsk Spirit Level 200Mm", box.InputBox.Text);
+        Assert.Equal(10500m, editor.EntryRate); // as Tally fills it: last quoted rate
+        Assert.StartsWith("Last rate: TS Quotation TSQ-3403", editor.EntryRateNoteText);
+    }
+
+    [AvaloniaFact]
     public async Task Product_can_be_picked_with_the_mouse()
     {
         using var ctx = await SetupAsync();

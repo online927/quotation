@@ -450,6 +450,16 @@ namespace Quotation.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<decimal?>("LastRate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("LastRateDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastRateNote")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("LastSyncedUtc")
                         .HasColumnType("TEXT");
 

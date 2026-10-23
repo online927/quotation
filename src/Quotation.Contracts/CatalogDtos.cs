@@ -10,7 +10,9 @@ public sealed record ProductSummaryDto(
     string Hsn,
     decimal? GstRate,
     decimal? Rate,
-    string Description);
+    string Description,
+    /// <summary>Empty when <see cref="Rate"/> is the Tally selling price; otherwise where the last rate came from.</summary>
+    string RateNote = "");
 
 public sealed record SearchMatchDto(bool AllTermsMatched, bool ExactName, bool ExactIdentifier, bool UsedFuzzy, IReadOnlyList<string> MatchedFields);
 

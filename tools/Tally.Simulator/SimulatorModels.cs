@@ -86,3 +86,34 @@ public sealed class SimCompany
     public string State { get; set; } = "Karnataka";
     public string Gstin { get; set; } = "29AAAFT0000A1Z0";
 }
+
+public sealed class SimVoucherType
+{
+    public string Name { get; set; } = "";
+    /// <summary>Type it is derived from; empty for Tally's predefined types.</summary>
+    public string Parent { get; set; } = "";
+    /// <summary>Tally's predefined base type (Sales, Purchase, Quotation …); empty for user-created types.</summary>
+    public string Reserved { get; set; } = "";
+}
+
+public sealed class SimVoucherLine
+{
+    public string Item { get; set; } = "";
+    public decimal Rate { get; set; }
+    public string Unit { get; set; } = "NOS";
+    public decimal Quantity { get; set; } = 1;
+}
+
+public sealed class SimVoucher
+{
+    public string Guid { get; set; } = "";
+    public long AlterId { get; set; }
+    public DateOnly Date { get; set; }
+    public string Type { get; set; } = "";
+    public string Number { get; set; } = "";
+    public string Party { get; set; } = "";
+    public bool Cancelled { get; set; }
+    /// <summary>Accounting-mode voucher: items appear under the ledger's INVENTORYALLOCATIONS.</summary>
+    public bool AccountingMode { get; set; }
+    public List<SimVoucherLine> Lines { get; set; } = [];
+}

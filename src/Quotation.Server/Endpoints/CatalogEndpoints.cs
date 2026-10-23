@@ -57,11 +57,16 @@ public static class CatalogEndpoints
     }
 
     public static ProductSummaryDto ToSummary(Product x) =>
-        new(x.Id, x.Name, x.PartNumber, x.Brand, x.StockGroup, x.Unit, x.Hsn, x.GstRate, x.Rate, x.Description);
+        new(x.Id, x.Name, x.PartNumber, x.Brand, x.StockGroup, x.Unit, x.Hsn, x.GstRate, x.Rate ?? x.LastRate, x.Description,
+            x.Rate is null && x.LastRate is not null ? x.LastRateNote : "");
 
-    public static ProductDetailDto ToDetail(Product x) => new(x.Id, x.Name, SplitLines(x.Aliases), x.PartNumber, x.Brand, x.Manufacturer,
-        x.Category, x.StockGroup, x.Unit, x.Description, x.Hsn, x.GstRate, x.GstSource, x.Rate, x.RateDate, x.RateSource, x.IsDeleted,
-        x.LastSyncedUtc);
+    public static ProductDetailDto ToDetail(Product x)
+    {
+        var rate = LastRateService.Effective(x);
+        return new(x.Id, x.Name, SplitLines(x.Aliases), x.PartNumber, x.Brand, x.Manufacturer,
+            x.Category, x.StockGroup, x.Unit, x.Description, x.Hsn, x.GstRate, x.GstSource, rate.Rate, rate.Date, rate.Source, x.IsDeleted,
+            x.LastSyncedUtc);
+    }
 
     public static CustomerSummaryDto ToSummary(Customer x) => new(x.Id, x.Name, x.MailingName, x.Address, x.StateName, x.StateCode,
         x.Gstin, x.ContactPerson, x.Mobile.Length > 0 ? x.Mobile : x.Phone, x.Email);

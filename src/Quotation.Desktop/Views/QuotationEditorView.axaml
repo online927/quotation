@@ -298,7 +298,11 @@
                               </TextBlock>
                             </StackPanel>
                             <TextBlock Grid.Column="1" Text="{Binding Product.Unit}" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="2" Text="{Binding Product.Rate, StringFormat='{}{0:N2}', TargetNullValue='no rate'}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
+                              <TextBlock Text="{Binding Product.Rate, StringFormat='{}{0:N2}', TargetNullValue='no rate'}" HorizontalAlignment="Right" />
+                              <TextBlock Text="last rate" FontSize="10" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right"
+                                         IsVisible="{Binding Product.RateNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            </StackPanel>
                           </Grid>
                         </DataTemplate>
                       </ctl:SearchPicker.ItemTemplate>
@@ -353,6 +357,8 @@
                       <Run Text=", Rate " />
                       <Run Text="{Binding EntryProduct.Rate, StringFormat='{}{0:N2}', FallbackValue='', TargetNullValue='not set — enter a rate', Mode=OneWay}" />
                     </TextBlock>
+                    <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" Text="{Binding EntryRateNoteText}"
+                               IsVisible="{Binding EntryRateNoteText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                   </StackPanel>
                 </Grid>
               </StackPanel>

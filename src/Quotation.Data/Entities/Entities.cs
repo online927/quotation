@@ -27,6 +27,11 @@ public class Product
     public decimal? Rate { get; set; }
     public DateOnly? RateDate { get; set; }
     public string RateSource { get; set; } = "";
+    /// <summary>Last rate the item was quoted/sold at (used when the Tally master has no selling price).</summary>
+    public decimal? LastRate { get; set; }
+    public DateOnly? LastRateDate { get; set; }
+    /// <summary>Where the last rate came from, e.g. "TS Quotation TSQ2526-3403 · I3 PRECISION · 23-Oct-26".</summary>
+    public string LastRateNote { get; set; } = "";
     public string Moq { get; set; } = "";
     /// <summary>True when HSN/GST come from the stock group ("As per Company/Stock Group").</summary>
     public bool GstInherited { get; set; }

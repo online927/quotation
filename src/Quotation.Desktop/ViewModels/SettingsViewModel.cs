@@ -15,6 +15,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _addressLines = "";
     [ObservableProperty] private string _terms = "";
     [ObservableProperty] private string _customerGroups = "";
+    [ObservableProperty] private string _lastRateVoucherTypes = "";
     [ObservableProperty] private string _fyOverride = "";
     [ObservableProperty] private string _newApiKey = "";
     [ObservableProperty] private string _newGmailClientJson = "";
@@ -65,6 +66,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         AddressLines = string.Join(Environment.NewLine, s.Company.AddressLines);
         Terms = string.Join(Environment.NewLine, s.Company.TermsAndConditions);
         CustomerGroups = string.Join(Environment.NewLine, s.Tally.CustomerGroups);
+        LastRateVoucherTypes = string.Join(Environment.NewLine, s.Tally.LastRateVoucherTypes);
         FyOverride = s.Tally.ActiveFinancialYearOverride?.ToString() ?? "";
         Settings = s;
         OnPropertyChanged(nameof(ExampleNumber));
@@ -99,6 +101,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Settings.Company.AddressLines = SplitLines(AddressLines);
         Settings.Company.TermsAndConditions = SplitLines(Terms);
         Settings.Tally.CustomerGroups = SplitLines(CustomerGroups);
+        Settings.Tally.LastRateVoucherTypes = SplitLines(LastRateVoucherTypes);
         if (string.IsNullOrWhiteSpace(FyOverride))
         {
             Settings.Tally.ActiveFinancialYearOverride = null;

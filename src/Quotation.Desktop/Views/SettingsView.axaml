@@ -144,7 +144,7 @@
       <TabItem Header="Tally">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="TallyPrime XML/HTTP address" />
             <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Tally.Url}" Watermark="http://192.168.1.10:9000" />
             <TextBlock Grid.Row="1" Text="Company name (blank = loaded company)" />
@@ -165,6 +165,17 @@
             <NumericUpDown Grid.Row="8" Grid.Column="1" Value="{Binding Settings.Tally.ConnectionCheckSeconds}" Minimum="10" FormatString="0" Width="160" HorizontalAlignment="Left" />
             <TextBlock Grid.Row="9" Text="Active FY override (start year, blank = detect)" />
             <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding FyOverride}" Width="160" HorizontalAlignment="Left" Watermark="e.g. 2025" />
+            <TextBlock Grid.Row="10" Text="No selling price in Tally: use last rate" VerticalAlignment="Top" />
+            <StackPanel Grid.Row="10" Grid.Column="1">
+              <CheckBox IsChecked="{Binding Settings.Tally.UseLastRate}" Content="Fill the rate the item was last quoted/sold at (any customer)" />
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                         Text="Read from Tally's Sales and Quotation vouchers (read-only) and from quotations approved in this app. Takes effect at the next sync." />
+            </StackPanel>
+            <TextBlock Grid.Row="11" Text="Voucher types for last rate (one per line)" VerticalAlignment="Top" />
+            <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding LastRateVoucherTypes}" AcceptsReturn="True" Height="60"
+                     Watermark="Blank = all Sales and Quotation types (e.g. Sales, TS Quotation)" />
+            <TextBlock Grid.Row="12" Text="Look back for last rate (months)" />
+            <NumericUpDown Grid.Row="12" Grid.Column="1" Value="{Binding Settings.Tally.LastRateMonths}" Minimum="1" Maximum="120" FormatString="0" Width="160" HorizontalAlignment="Left" />
           </Grid>
         </ScrollViewer>
       </TabItem>

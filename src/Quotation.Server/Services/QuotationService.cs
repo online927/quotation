@@ -41,6 +41,7 @@ public sealed class QuotationService(
     RuntimeStatus runtime,
     StatusService status,
     TallySyncService sync,
+    LastRateService lastRates,
     IQuotationDocumentRenderer renderer,
     PdfStorage pdfStorage,
     TimeProvider clock,
@@ -217,6 +218,9 @@ public sealed class QuotationService(
             await SaveAsync(ct);
         }
 
+        // The approved rates become the items' last rates (not stored in Tally).
+        if (await lastRates.ApplyApprovedQuotationAsync(db, q, ct)) sync.NotifyDataChanged();
+
         // 6. PDF.
         await GeneratePdfAsync(q, user, ct);
         return ToDto(q);
@@ -384,7 +388,7 @@ public sealed class QuotationService(
                           ?? previous.Values.FirstOrDefault(o => o.ProductId == pid);
                 line.TallyRate = rl.TallyRate is not null && old?.TallyRate == rl.TallyRate
                     ? rl.TallyRate
-                    : RateOn(p, q.Date);
+                    : SuggestedRate(p, q.Date);
                 if (line.Rate < 0) line.Rate = line.TallyRate ?? 0; // "use Tally rate" marker
             }
             lines.Add(line);
@@ -442,6 +446,9 @@ public sealed class QuotationService(
         }
         return changes;
     }
+
+    /// <summary>Rate offered for a new line: the Tally selling rate on the date, else the item's last quoted/sold rate.</summary>
+    public decimal? SuggestedRate(Product p, DateOnly date) => RateOn(p, date) ?? p.LastRate;
 
     /// <summary>Tally selling rate applicable on <paramref name="date"/> (re-resolved from raw Tally data).</summary>
     public decimal? RateOn(Product p, DateOnly date)

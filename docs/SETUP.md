@@ -100,6 +100,12 @@ voucher, company setting or anything else in Tally.
    * **Company name**: leave empty to use the company open in TallyPrime, or type the exact name.
    * **Customer ledger groups**: default `Sundry Debtors` (sub-groups included). Add others if customers are kept elsewhere.
    * **Selling rate source**: `StandardPrice` (Standard Selling Price in the stock item) or `PriceLevel` + the price level name.
+   * **No selling price in Tally: use last rate** (on by default): many items have no price in the master; Tally
+     then fills the rate from earlier vouchers. The app does the same: it fills the rate the item was **last quoted or
+     sold at (any customer)**, read (read-only) from Tally's Sales and Quotation vouchers — including types derived
+     from them such as *TS Quotation* — and from quotations approved in this app. The screen shows where the rate
+     came from (e.g. *Last rate: TS Quotation TSQ2526-3403 · I3 PRECISION · 23-Oct-26*). A Tally selling price, when
+     present, always wins. Optional: list specific voucher types, and how many months to look back (default 24).
    * **Save (Ctrl+S)**.
 2. **Tally Connection → Test connection (Ctrl+T)** → shows the company and the active financial year.
 3. Press **Full sync**. 20,000 items typically take well under a minute. The page shows the counts and
@@ -227,7 +233,7 @@ new number, today's date, same customer and products, current Tally rates.
 | Tally Disconnected | TallyPrime running with the company open? F1 → Settings → Connectivity: acts as *Both*, port 9000? Firewall TCP 9000? Settings → Tally address correct? The exact error is on the Tally Connection page. Searching keeps working with the last synchronized data. |
 | "Company 'X' is not open in Tally" | Open that company in TallyPrime, or clear Settings → Tally → Company name. |
 | Wrong financial year / numbers | Check TallyPrime's current period (Alt+F2). Or set Settings → Tally → Active FY override. |
-| HSN / GST / rate empty or wrong | Tally Connection → Diagnostics raw XML; Settings → Tally → Fetch mode = All; rate source/price level; then Full sync. Items without a selling price in Tally have no rate — enter one in the quotation. |
+| HSN / GST / rate empty or wrong | Tally Connection → Diagnostics raw XML; Settings → Tally → Fetch mode = All; rate source/price level; then Full sync. Items without a selling price in Tally get their last quoted/sold rate; items never quoted or sold have no rate — enter one. The sync message on the Tally page says how many last rates were read and from which voucher types. |
 | Quotation date rejected | Dates must be inside the active financial year. |
 | "Rates changed in Tally" on approval | The quotation was updated with the new Tally rates; review and approve again. |
 | "Live Tally data could not be retrieved" | Tally is offline or the last sync is old. Approve anyway (logged) if allowed, or fix Tally first. |

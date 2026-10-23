@@ -367,6 +367,11 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         catch (Exception) { return []; }
     }
 
+    /// <summary>Where a suggested rate came from when Tally has no selling price for the item.</summary>
+    public string EntryRateNoteText => EntryProduct?.RateNote is { Length: > 0 } note ? "Last rate: " + note : "";
+
+    partial void OnEntryProductChanged(ProductSummaryDto? value) => OnPropertyChanged(nameof(EntryRateNoteText));
+
     public void SelectProduct(ProductSummaryDto p)
     {
         EntryProduct = p;
@@ -688,7 +693,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     private Task PickRecentProductAsync(RecentItemDto item) => RunAsync(async () =>
     {
         var p = await _session.Api.ProductAsync(item.Id);
-        SelectProduct(new ProductSummaryDto(p.Id, p.Name, p.PartNumber, p.Brand, p.StockGroup, p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description));
+        const string last = "Last rate: ";
+        SelectProduct(new ProductSummaryDto(p.Id, p.Name, p.PartNumber, p.Brand, p.StockGroup, p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description,
+            p.RateSource.StartsWith(last, StringComparison.Ordinal) ? p.RateSource[last.Length..] : ""));
     });
 
     [RelayCommand]

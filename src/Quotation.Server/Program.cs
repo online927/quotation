@@ -45,6 +45,7 @@ builder.Services.AddHttpClient(TallyGateway.HttpClientName);
 builder.Services.AddSingleton<TallyGateway>();
 builder.Services.AddSingleton<TallyConnectionChecker>();
 builder.Services.AddHostedService<TallyMonitorService>();
+builder.Services.AddSingleton<LastRateService>();
 builder.Services.AddSingleton<TallySyncService>();
 builder.Services.AddHostedService<SyncWorker>();
 builder.Services.AddSingleton<CatalogSearchService>();

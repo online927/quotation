@@ -33,6 +33,7 @@ public sealed class TallySyncService(
     SettingsService settings,
     RuntimeStatus runtime,
     FinancialYearService fy,
+    LastRateService lastRates,
     TimeProvider clock,
     ILogger<TallySyncService> log)
 {
@@ -45,6 +46,9 @@ public sealed class TallySyncService(
     public event Action? DataChanged;
 
     public bool IsRunning => _gate.CurrentCount == 0;
+
+    /// <summary>Tells the search indexes that product data changed outside a sync (e.g. last rates after an approval).</summary>
+    public void NotifyDataChanged() => DataChanged?.Invoke();
 
     public async Task<SyncRunDto> RunAsync(SyncKind requested, string triggeredBy, CancellationToken ct)
     {
@@ -101,11 +105,14 @@ public sealed class TallySyncService(
 
             if (kind == SyncKind.Incremental && maxAlterId > 0 && maxAlterId == lastRun!.MaxAlterId)
             {
+                // Masters unchanged, but new quotations/invoices may carry newer last rates.
+                var rates = await RefreshLastRatesAsync(db, full: false, info.Company.MaxVoucherAlterId, today, ct);
                 run.Status = SyncStatus.Skipped;
                 run.MaxAlterId = maxAlterId;
                 run.FinishedUtc = clock.GetUtcNow().UtcDateTime;
-                run.Message = "No changes in Tally since the last sync.";
+                run.Message = ("No changes in Tally masters since the last sync. " + rates.Message).Trim();
                 await db.SaveChangesAsync(ct);
+                if (rates.Changed > 0) DataChanged?.Invoke();
                 return ToDto(run);
             }
             long? since = kind == SyncKind.Incremental ? lastRun!.MaxAlterId : null;
@@ -201,9 +208,17 @@ public sealed class TallySyncService(
             await tx.CommitAsync(ct);
             await settings.SaveAsync(SettingsHashKey, new StateString { Value = settingsHash }, "system", ct);
 
+            runtime.SetSync(true, "Reading last rates from quotations and invoices…");
+            var lastRateResult = await RefreshLastRatesAsync(db, kind == SyncKind.Full, info.Company.MaxVoucherAlterId, today, ct);
+            if (lastRateResult.Message.Length > 0)
+            {
+                run.Message += " " + lastRateResult.Message;
+                await db.SaveChangesAsync(ct);
+            }
+
             log.LogInformation("{Kind} sync completed: {Products} products, {Customers} customers changed, {PDel}/{CDel} deleted, {Seconds:0.0}s",
                 kind, run.ProductsChanged, run.CustomersChanged, run.ProductsDeleted, run.CustomersDeleted, sw.Elapsed.TotalSeconds);
-            if (run.ProductsChanged + run.CustomersChanged + run.ProductsDeleted + run.CustomersDeleted > 0 || kind == SyncKind.Full)
+            if (run.ProductsChanged + run.CustomersChanged + run.ProductsDeleted + run.CustomersDeleted + lastRateResult.Changed > 0 || kind == SyncKind.Full)
             {
                 DataChanged?.Invoke();
             }
@@ -220,6 +235,23 @@ public sealed class TallySyncService(
             if (ex is TallyUnavailableException) runtime.SetTally(false, null, ex.Message, clock.GetUtcNow().UtcDateTime, null);
             log.LogWarning("{Kind} sync failed: {Message}", kind, failed.Message);
             return ToDto(failed);
+        }
+    }
+
+    /// <summary>Last rates are an addition: a problem reading vouchers never fails the master sync.</summary>
+    private async Task<LastRateResult> RefreshLastRatesAsync(QuotationDbContext db, bool full, long companyVoucherAlterId, DateOnly today,
+        CancellationToken ct)
+    {
+        try
+        {
+            return await lastRates.RefreshAsync(db, full, companyVoucherAlterId, today, ct);
+        }
+        catch (TallyException ex)
+        {
+            // Drop any half-applied product changes; keep the sync run itself tracked.
+            foreach (var e in db.ChangeTracker.Entries<Product>().Where(e => e.State != EntityState.Unchanged).ToList()) e.State = EntityState.Detached;
+            log.LogWarning("Last rates were not updated: {Message}", ex.Message);
+            return new LastRateResult(0, "Last rates were not updated: " + ex.Message);
         }
     }
 

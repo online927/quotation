@@ -9,7 +9,7 @@ namespace Quotation.Server.Services;
 
 /// <summary>Lightweight, immutable copies of catalogue rows held by the search indexes.</summary>
 public sealed record ProductDoc(int Id, string Name, string Aliases, string PartNumber, string Brand, string Manufacturer,
-    string Category, string StockGroup, string Unit, string Hsn, decimal? GstRate, decimal? Rate, string Description);
+    string Category, string StockGroup, string Unit, string Hsn, decimal? GstRate, decimal? Rate, string Description, string RateNote = "");
 
 public sealed record CustomerDoc(int Id, string Name, string Aliases, string MailingName, string Address, string StateName,
     string StateCode, string Pincode, string Gstin, string ContactPerson, string Phone, string Mobile, string Email);
@@ -88,7 +88,7 @@ public sealed class CatalogSearchService
             var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
             var products = await db.Products.AsNoTracking().Where(p => !p.IsDeleted)
                 .Select(p => new ProductDoc(p.Id, p.Name, p.Aliases, p.PartNumber, p.Brand, p.Manufacturer, p.Category, p.StockGroup,
-                    p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description))
+                    p.Unit, p.Hsn, p.GstRate, p.Rate ?? p.LastRate, p.Description, p.Rate == null && p.LastRate != null ? p.LastRateNote : ""))
                 .ToListAsync(ct);
             var customers = await db.Customers.AsNoTracking().Where(c => !c.IsDeleted)
                 .Select(c => new CustomerDoc(c.Id, c.Name, c.Aliases, c.MailingName, c.Address, c.StateName, c.StateCode, c.Pincode,
@@ -106,7 +106,7 @@ public sealed class CatalogSearchService
     }
 
     public static ProductSummaryDto ToSummary(ProductDoc p) =>
-        new(p.Id, p.Name, p.PartNumber, p.Brand, p.StockGroup, p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description);
+        new(p.Id, p.Name, p.PartNumber, p.Brand, p.StockGroup, p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description, p.RateNote);
 
     public static CustomerSummaryDto ToSummary(CustomerDoc c) =>
         new(c.Id, c.Name, c.MailingName, c.Address, c.StateName, c.StateCode, c.Gstin, c.ContactPerson,

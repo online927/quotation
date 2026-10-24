@@ -120,6 +120,20 @@ public class QuotationEditorTests
         ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);   // → discount
         Dispatcher.UIThread.RunJobs();
         ctx.Window.KeyTextInput("10");
+        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);   // → due on
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(view.FindControl<TextBox>("DueOnBox")!.IsKeyboardFocusWithin);
+        ctx.Window.KeyTextInput("2 weeks");
+        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);   // → description
+        Dispatcher.UIThread.RunJobs();
+        var description = view.FindControl<TextBox>("DescriptionBox")!;
+        Assert.True(description.IsKeyboardFocusWithin);
+        Assert.Empty(editor.Lines);
+        ctx.Window.KeyTextInput("Brand: Mitutoyo");
+        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.Shift, PhysicalKey.Enter, null);  // new line in the description
+        Dispatcher.UIThread.RunJobs();
+        ctx.Window.KeyTextInput("MOQ: 1");
+        Assert.Empty(editor.Lines);
         ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);   // add line
         await UiHelpers.WaitUntil(() => editor.Lines.Count == 1);
 
@@ -128,6 +142,9 @@ public class QuotationEditorTests
         Assert.Equal(3250m, line.Rate);
         Assert.Equal(10m, line.DiscountPercent);
         Assert.Equal(8775m, line.Amount);
+        Assert.Equal("2 weeks", line.DueOn);
+        Assert.Equal(["Brand: Mitutoyo", "MOQ: 1"], line.Description.Split('\n').Select(l => l.TrimEnd('\r')));
+        await UiHelpers.WaitUntil(() => view.FindControl<SearchPicker>("ProductBox")!.InputBox.IsKeyboardFocusWithin);
         Assert.Null(editor.EntryProduct); // entry cleared for the next product
     }
 
@@ -187,8 +204,10 @@ public class QuotationEditorTests
         Press(ctx, Key.Enter, PhysicalKey.Enter);
         Press(ctx, Key.A, PhysicalKey.A, RawInputModifiers.Control);
         ctx.Window.KeyTextInput("1450");
-        Press(ctx, Key.Enter, PhysicalKey.Enter);
-        Press(ctx, Key.Enter, PhysicalKey.Enter);
+        Press(ctx, Key.Enter, PhysicalKey.Enter);          // → disc %
+        Press(ctx, Key.Enter, PhysicalKey.Enter);          // → due on
+        Press(ctx, Key.Enter, PhysicalKey.Enter);          // → description
+        Press(ctx, Key.Enter, PhysicalKey.Enter);          // add line
         await UiHelpers.WaitUntil(() => editor.Lines.Count == 1);
         Assert.Null(editor.ErrorMessage);
         var line = editor.Lines[0];
@@ -227,6 +246,8 @@ public class QuotationEditorTests
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // quantity 1 → rate
         ctx.Window.KeyTextInput("2350");
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // → disc %
+        Press(ctx, Key.Enter, PhysicalKey.Enter);          // → due on
+        Press(ctx, Key.Enter, PhysicalKey.Enter);          // → description
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // add line
         await UiHelpers.WaitUntil(() => editor.Lines.Count == 1);
         Assert.Equal("112-201-POINT MICROMETER", editor.Lines[0].ItemName);

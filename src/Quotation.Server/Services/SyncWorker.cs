@@ -16,6 +16,7 @@ public sealed class SyncWorker(
     SettingsService settings,
     RuntimeStatus runtime,
     IOptions<ServerOptions> options,
+    Quotation.Tally.TallyLoadGuard tallyLoad,
     TimeProvider clock,
     ILogger<SyncWorker> log) : BackgroundService
 {
@@ -60,6 +61,7 @@ public sealed class SyncWorker(
     internal async Task<SyncKind?> DecideAsync(CancellationToken ct)
     {
         if (!runtime.TallyConnected) return null;
+        if (tallyLoad.IsBusy) return null; // Tally answers slowly: leave it to its users and try again later
         using var scope = scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
         var tally = settings.Tally;

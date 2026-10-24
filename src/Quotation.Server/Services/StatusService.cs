@@ -11,6 +11,7 @@ public sealed class StatusService(
     SettingsService settings,
     FinancialYearService fy,
     IAIProviderFactory ai,
+    Quotation.Tally.TallyLoadGuard tallyLoad,
     TimeProvider clock)
 {
     public async Task<SystemStatusDto> GetAsync(CancellationToken ct)
@@ -34,7 +35,10 @@ public sealed class StatusService(
             !string.IsNullOrEmpty(gmail.ConnectedAccount) && settings.HasSecret(SettingsService.SecretGmailToken),
             gmail.ConnectedAccount,
             ai.Create() is not null,
-            runtime.SyncRunning || runtime.SyncProgress is not null);
+            runtime.SyncRunning || runtime.SyncProgress is not null,
+            tallyLoad.LastProbeTime?.TotalMilliseconds,
+            tallyLoad.IsBusy,
+            tallyLoad.Describe());
     }
 
     public async Task<DateTime?> LastSuccessfulSyncUtcAsync(CancellationToken ct) =>

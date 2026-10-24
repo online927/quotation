@@ -25,7 +25,19 @@ public class NightWindowTests : IDisposable
         var clock = new FixedClock(DateTime.Parse("2026-10-24 " + time));
         return new SyncWorker(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetRequiredService<TallySyncService>(),
             sp.GetRequiredService<SettingsService>(), sp.GetRequiredService<RuntimeStatus>(), sp.GetRequiredService<IOptions<ServerOptions>>(),
-            clock, NullLogger<SyncWorker>.Instance);
+            sp.GetRequiredService<Quotation.Tally.TallyLoadGuard>(), clock, NullLogger<SyncWorker>.Instance);
+    }
+
+    [Fact]
+    public async Task Scheduled_syncs_hold_back_while_tally_is_busy()
+    {
+        var worker = WorkerAt("11:00");
+        var sp = _server.Services;
+        sp.GetRequiredService<RuntimeStatus>().SetTally(true, "T.SAIFUDDIN & CO.", null, DateTime.UtcNow, 2026);
+        Assert.NotNull(await worker.DecideAsync(CancellationToken.None)); // empty database: a full sync is due
+
+        sp.GetRequiredService<Quotation.Tally.TallyLoadGuard>().RecordTimeout(); // Tally did not answer in time
+        Assert.Null(await worker.DecideAsync(CancellationToken.None));
     }
 
     [Theory]

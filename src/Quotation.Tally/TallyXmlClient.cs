@@ -11,7 +11,8 @@ namespace Quotation.Tally;
 /// Low-level XML-over-HTTP client for TallyPrime. Sends export requests and parses the
 /// responses tolerantly (Tally emits character references that are invalid in XML 1.0).
 /// </summary>
-public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions options, ILogger? logger = null)
+public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions options, ILogger? logger = null,
+    TallyLoadGuard? guard = null, bool probe = false)
 {
     private static readonly XmlReaderSettings ReaderSettings = new()
     {
@@ -95,22 +96,30 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
         }
     }
 
+    private async Task<HttpResponseMessage> PostAsync(string requestXml, CancellationToken ct)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(options.Timeout);
+        using var content = new StringContent(requestXml, new UTF8Encoding(false), "text/xml");
+        return await http.PostAsync(options.Url, content, timeout.Token);
+    }
+
     private async Task<HttpResponseMessage> SendAsync(string requestXml, CancellationToken ct)
     {
         // Defence in depth: this application must never write to Tally.
         TallyReadOnlyGuard.EnsureReadOnly(requestXml);
 
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(options.Timeout);
-        var content = new StringContent(requestXml, new UTF8Encoding(false), "text/xml");
         HttpResponseMessage response;
         try
         {
-            response = await http.PostAsync(options.Url, content, timeout.Token);
+            // Waiting for an earlier request (guard) does not count against the timeout. The whole response is
+            // buffered by PostAsync, so the guard is held until Tally has finished answering.
+            response = guard is null ? await PostAsync(requestXml, ct) : await guard.RunAsync(() => PostAsync(requestXml, ct), probe, ct);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            throw new TallyUnavailableException($"Tally at {options.Url} did not respond within {options.Timeout.TotalSeconds:0} s.");
+            guard?.RecordTimeout();
+            throw new TallyTimeoutException($"Tally at {options.Url} did not respond within {options.Timeout.TotalSeconds:0} s.");
         }
         catch (HttpRequestException ex)
         {

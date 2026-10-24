@@ -53,7 +53,8 @@ public sealed class TestServer : WebApplicationFactory<Program>
                 .ConfigurePrimaryHttpMessageHandler(() => new SimulatorHttpHandler(Tally));
             services.AddSingleton<IAIProviderFactory>(new FixedFactory(this));
             services.AddSingleton<IGmailClientFactory>(new GmailFactory(this));
-            // No pauses between voucher requests against the in-memory simulator.
+            // No gaps or pauses between requests against the in-memory simulator.
+            services.AddSingleton(new Quotation.Tally.TallyLoadGuard { MinimumGap = TimeSpan.Zero });
             services.AddSingleton(sp => new LastRateService(sp.GetRequiredService<TallyGateway>(), sp.GetRequiredService<SettingsService>(),
                 sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<LastRateService>>()) { PauseBetweenRequests = TimeSpan.Zero });
         });

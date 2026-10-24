@@ -29,7 +29,12 @@ public sealed record SystemStatusDto(
     bool GmailConnected,
     string? GmailAccount,
     bool AiConfigured,
-    bool SyncRunning);
+    bool SyncRunning,
+    /// <summary>Response time of Tally's last connection check, in milliseconds.</summary>
+    double? TallyResponseMs = null,
+    /// <summary>Tally answers slowly: background reading is paused (Tally stays responsive for its users).</summary>
+    bool TallyBusy = false,
+    string? TallyLoadText = null);
 
 public sealed record DashboardDto(
     int TodaysQuotations,

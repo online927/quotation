@@ -42,6 +42,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<StatusService>();
 builder.Services.AddHttpClient(TallyGateway.HttpClientName);
+builder.Services.AddSingleton<Quotation.Tally.TallyLoadGuard>(_ => new Quotation.Tally.TallyLoadGuard());
 builder.Services.AddSingleton<TallyGateway>();
 builder.Services.AddSingleton<TallyConnectionChecker>();
 builder.Services.AddHostedService<TallyMonitorService>();

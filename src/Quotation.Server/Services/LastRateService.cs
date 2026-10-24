@@ -114,6 +114,7 @@ public sealed class LastRateService(TallyGateway gateway, SettingsService settin
                 {
                     var (start, end) = chunks[i];
                     if (done > 0 && PauseBetweenRequests > TimeSpan.Zero) await Task.Delay(PauseBetweenRequests, ct);
+                    if (gateway.Load.IsBusy) throw new TallyException("Tally is answering slowly (busy), so reading was paused to keep it responsive.");
                     done++;
                     progress($"Reading last rates from Tally ({done} of {total}): {root}, " +
                              $"{start.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)} to {end.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)}…");
@@ -167,6 +168,7 @@ public sealed class LastRateService(TallyGateway gateway, SettingsService settin
         if (state.Hash != CurrentHash()) return new LastRateResult(0, NotReadYetMessage);
         var now = clock.GetUtcNow().UtcDateTime;
         if (state.PausedUntilUtc is { } paused && paused > now) return new LastRateResult(0, "");
+        if (gateway.Load.IsBusy) return new LastRateResult(0, "");
         if (companyVoucherAlterId > 0 && companyVoucherAlterId == state.CompanyVoucherAlterId) return new LastRateResult(0, "");
 
         var from = new DateOnly(today.Year, today.Month, 1).AddMonths(-RecentMonths);

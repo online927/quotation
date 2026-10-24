@@ -15,7 +15,7 @@
       <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
       <Border Classes="card">
-        <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+        <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
           <TextBlock Classes="label" Text="Tally address" />
           <TextBlock Grid.Column="1" Text="{Binding TallyUrl}" />
           <TextBlock Grid.Row="1" Classes="label" Text="Tally connection" />
@@ -35,8 +35,10 @@
           <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Status.ProductCount, StringFormat='{}{0:N0}', FallbackValue='–'}" />
           <TextBlock Grid.Row="7" Classes="label" Text="Customers" />
           <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Status.CustomerCount, StringFormat='{}{0:N0}', FallbackValue='–'}" />
-          <TextBlock Grid.Row="8" Classes="label" Text="Last error" VerticalAlignment="Top" />
-          <TextBlock Grid.Row="8" Grid.Column="1" Classes="error" Text="{Binding Status.TallyError, FallbackValue=''}" />
+          <TextBlock Grid.Row="8" Classes="label" Text="Tally load" />
+          <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding Status.TallyLoadText, FallbackValue='–', TargetNullValue='–'}" TextWrapping="Wrap" />
+          <TextBlock Grid.Row="9" Classes="label" Text="Last error" VerticalAlignment="Top" />
+          <TextBlock Grid.Row="9" Grid.Column="1" Classes="error" Text="{Binding Status.TallyError, FallbackValue=''}" />
         </Grid>
       </Border>
 

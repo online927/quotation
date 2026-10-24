@@ -56,15 +56,33 @@ begin
   Result := Exec(ExpandConstant('{sys}\sc.exe'), 'query {#ServiceName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
 end;
 
-function PrepareToInstall(var NeedsRestart: Boolean): String;
+function ServiceStopped: Boolean;
 var
   ResultCode: Integer;
 begin
-  // Stop the running service so its files can be replaced during an upgrade.
+  Result := Exec(ExpandConstant('{cmd}'), '/C "' + ExpandConstant('{sys}\sc.exe') + ' query {#ServiceName} | find "STOPPED""', '',
+    SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode, Waited: Integer;
+begin
+  // Stop the running server so its files can be replaced during an upgrade. The server may need a while to
+  // finish a request to Tally, so wait until Windows reports it stopped (up to a minute).
   if ServiceExists then
   begin
     Exec(ExpandConstant('{sys}\sc.exe'), 'stop {#ServiceName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    Sleep(4000);
+    Waited := 0;
+    while (not ServiceStopped) and (Waited < 60000) do
+    begin
+      Sleep(1000);
+      Waited := Waited + 1000;
+    end;
   end;
+  // A server still running (service stuck, or started by hand) and the Tally simulator would keep their files locked.
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM TSQuotation.Server.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM TallySimulator.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(1500);
   Result := '';
 end;

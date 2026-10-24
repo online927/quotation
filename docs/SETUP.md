@@ -122,6 +122,12 @@ voucher, company setting or anything else in Tally.
 After this, changes in Tally are picked up automatically every 15 minutes (**F9 / Sync changes** for an immediate
 update) and a full sync runs nightly at 02:00 (configurable).
 
+**Tally stays responsive.** TallyPrime answers one request at a time and cannot react to its users while it works.
+The server therefore sends Tally only one request at a time, with a short pause between requests, and measures how
+fast Tally answers (shown as *Tally load* on the Tally Connection page). When Tally answers slowly (someone runs a
+heavy report) or a request times out, background work — scheduled syncs and reading last rates — waits until Tally
+answers quickly again; the status bar then shows *Tally is busy — background reading paused*.
+
 ---
 
 ## 6. Company details and quotation settings
@@ -138,9 +144,20 @@ conditions (one per line), default payment terms and footer.
 * **Next quotation number**: to continue your Tally quotation series, enter the number after your last Tally
   quotation (last was TSQ2526-3247 → enter **3248**) and press **Set next number**. Stop numbering quotations in
   Tally from that point to avoid overlaps.
-* **GST presentation**: `RateOnly` (GST % per line, totals without GST — like the Tally quotation) or
-  `ComputeTax` (CGST+SGST or IGST added; requires the company *state code*).
+* **GST presentation**: `RateOnly` (GST % per line, totals without GST) or
+  `ComputeTax` (SGST + CGST or IGST lines added under the items, as on the Tally print; requires the company *state code*).
 * Packing & forwarding default, round-off, refresh rates when duplicating, stale-data rules, HSN required.
+* **Proforma invoice number pattern**: default `TSPI{FY}-{SEQ}` → `TSPI2526-13`, a series of its own. Under
+  **Next proforma invoice number** enter the number after your last Tally proforma (last was TSPI2526-12 → **13**).
+
+**To make the PDF look like your Tally prints** (TSQ2526-3402, TSPI2526-12):
+* Settings → Quotation: **GST presentation = ComputeTax** and **Round off total to rupee** on.
+* Settings → Company: **Declaration** = *This Quote is Valid for Fifteen Days Only* (clear *Validity text* if you
+  do not want a second validity line), **Jurisdiction** = *SUBJECT TO BANGALORE JURISDICTION*. The proforma
+  declaration (*This is a Proforma invoice and not a Tax invoice*) and footer (*This is a Computer Generated
+  Invoice*) are pre-filled.
+* Every PDF shows *Printed on <date> at <time>  By: <user>* at the top, like Tally. The user is the person logged
+  in to the app who downloads/opens the PDF (the copy archived on the server at approval carries the approver).
 
 ---
 
@@ -197,9 +214,9 @@ enter the quantity → **Create Draft**). Nothing is ever sent to customers auto
    **Esc** closes the list. Bill-to and ship-to are filled from Tally; choose another *Ship to* address if needed.
 3. In **Product**, type e.g. `universal bevel` or `187-901`. The matching items are listed with the first one
    highlighted: **↑/↓** to choose, **Enter** (or a click) to select → quantity → **Enter** → rate (Tally rate
-   pre-filled; if the item has no rate in Tally the box is empty — type it) → **Enter** → discount % → **Enter**:
+   pre-filled; if the item has no rate in Tally the box is empty — type it) → **Enter** → discount % → **Enter** →
+   due on → **Enter** → description (brand, model, MOQ …; **Shift+Enter** starts a new line inside it) → **Enter**:
    the line is added and the product box is cleared for the next item. Repeat for more lines.
-   Add description lines (brand, model, MOQ) in the box below the product before adding the line.
    If you change the product text after selecting, the selection is dropped — select from the list again.
 4. Fill references (buyer's order no., payment terms, delivery …) and packing & forwarding if needed.
 5. **Ctrl+S** saves the draft and assigns the quotation number. **F11** opens a preview (DRAFT watermark).
@@ -212,6 +229,19 @@ review → **Ctrl+S** → **Ctrl+Enter**.
 
 **Repeat business**: open an old quotation (History, **Ctrl+H**, or **Ctrl+F** search) → **Duplicate (Ctrl+D)**:
 new number, today's date, same customer and products, current Tally rates.
+
+**Proforma invoices**: **New Proforma Invoice (Ctrl+Shift+N)** works like a quotation, with its own TSPI number
+and the extra fields *Delivery Note*, *Dispatch Doc No.* and *Delivery Note Date*. Or open a saved quotation and
+press **Convert to Proforma Invoice**: a new proforma with the same customer and lines is created (the quotation
+stays as it is; *Other references* says *Our quotation TSQ…*). The PDF follows the Tally proforma layout (HSN/SAC
+tax summary, tax amount in words, customer's seal and signature). **Proforma Invoices** in the sidebar lists them;
+every list has an *All documents / Quotations / Proforma invoices* filter.
+
+**Moving around**: the **‹ ›** buttons at the top (or **Alt+←** / **Alt+→**, the mouse's back/forward side buttons,
+or **Esc**) go back and forward like a web browser. A list comes back exactly as you left it (search, filter,
+selection, scroll position) and refreshed. The trail next to the buttons (e.g. *Draft Quotations › Quotation
+TSQ2526-3403*) shows where you are; click an earlier step to jump back. If the page has unsaved changes you are
+asked **Save** (Enter) / **Don't Save** (N) / **Cancel** (Esc).
 
 ---
 

@@ -418,14 +418,30 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 * WhatsApp: `IMessageChannel` extension point and message template in `Quotation.Core/Messaging`,
   deliberately **not** implemented or registered in V1.
 
-### Test inventory (315 automated tests)
+### Test inventory (331 automated tests)
 
 | Suite | Tests | Covers |
 |---|---|---|
 | Core | 102 | financial year, numbering patterns, GST/GSTIN/state codes, search & fuzzy matching (20k perf), calculations, amount in words, validation |
-| Tally | 51 | XML client, last rates from sales/quotation vouchers (per type via Tally's index, weekly), read-only guard (blocked write requests never reach Tally), errors/offline/timeouts, company & FY detection, master parsing (both layouts), GST inheritance, rates, incremental filter |
-| PDF | 12 | all fields, no overlaps/clipping, multi-page, unsplit rows, long descriptions/addresses, watermark, speed |
+| Tally | 54 | XML client, load guard (one request at a time, slow/timeout → background holds back), last rates from sales/quotation vouchers (per type via Tally's index, weekly), read-only guard (blocked write requests never reach Tally), errors/offline/timeouts, company & FY detection, master parsing (both layouts), GST inheritance, rates, incremental filter |
+| PDF | 16 | Tally print layout (Printed on/By, page titles, header grid, tax lines, proforma HSN summary), all fields, no overlaps/clipping, multi-page, unsplit rows, long descriptions/addresses, watermark, speed |
 | AI | 20 | orchestration and safety rules with a scripted model: ambiguity, wrong/invented ids, missing quantity, customers, e-mail framing, strict schemas |
-| Server | 105 | auth/roles/settings/secrets, Tally API, concurrent status checks, re-read after mapping upgrade, last rates (Tally vouchers, app approvals, switch-off, slow Tally, stop, night-only), sync (full/incremental/deleted/failed/interrupted/20k), search API, numbering & concurrency, lifecycle, PDF failure recovery, AI API, Gmail ingestion & duplicates, history/audit/diagnostics, backups, 6-PC stress test |
-| Desktop (headless UI) | 24 | login, navigation, Tally page, catalogue pages, quotation entry incl. keyboard flow, Tally-style product/customer lists (↑/↓, Enter, mouse, fast typing, Esc), stale override, lists, AI Inbox, Gmail page, OAuth loopback, search/recent/diagnostics, XAML lint |
+| Server | 110 | proforma invoices (own series, convert, list filter, PDF), auth/roles/settings/secrets, Tally API, concurrent status checks, re-read after mapping upgrade, last rates (Tally vouchers, app approvals, switch-off, slow Tally, stop, night-only), sync (full/incremental/deleted/failed/interrupted/20k), search API, numbering & concurrency, lifecycle, PDF failure recovery, AI API, Gmail ingestion & duplicates, history/audit/diagnostics, backups, 6-PC stress test |
+| Desktop (headless UI) | 28 | login, navigation with Back/Forward, breadcrumbs and the unsaved-changes question (keyboard and mouse), proforma invoices, Tally page, catalogue pages, quotation entry incl. keyboard flow, Tally-style product/customer lists (↑/↓, Enter, mouse, fast typing, Esc), stale override, lists, AI Inbox, Gmail page, OAuth loopback, search/recent/diagnostics, XAML lint |
 | End-to-end | 1 | real processes, restart, outage, log hygiene |
+
+## After first use — changes requested by T.SAIFUDDIN & CO.
+
+* **Modern look** (in the spirit of apple.com): light page, white rounded cards, one blue accent, pill buttons,
+  grouped sidebar, quieter tables and status bar.
+* **Line entry order**: Product → Qty → Rate → Disc % → Due on → Description → Enter adds the line
+  (Shift+Enter = new line inside the description).
+* **PDF like the Tally prints**: *Printed on … By: <logged-in user>*, `QUOTATION(Page 2)` / `continued ...`,
+  Tally's header grid, SGST/CGST/IGST and round-off lines.
+* **Proforma invoice mode**: own TSPI series, convert a quotation, Tally proforma layout with HSN/SAC summary.
+* **Back navigation**: ‹ › buttons, Alt+←/→, mouse side buttons, Esc, breadcrumbs, pages kept as left,
+  Save / Don't Save / Cancel before leaving unsaved work.
+* **Tally load guard**: one request at a time with pauses, response time measured, background reading pauses
+  while Tally is busy.
+
+**How to test**: `dotnet test --filter "ProformaTests|NavigationTests|TallyLoadGuardTests|TallyPrintLayoutTests"`.

@@ -1,6 +1,13 @@
 namespace Quotation.Core.Domain;
 
 /// <summary>Lifecycle of a quotation. Only a user can move a quotation to Approved/Generated.</summary>
+/// <summary>Kind of document: a quotation or a proforma invoice (both only in this app, never in Tally).</summary>
+public enum DocumentType
+{
+    Quotation = 0,
+    ProformaInvoice = 1,
+}
+
 public enum QuotationStatus
 {
     Draft = 0,

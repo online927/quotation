@@ -56,7 +56,7 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
             e.HasKey(x => x.Id);
             // Final safety net against duplicate numbers (NULLs are allowed for un-numbered AI drafts).
             e.HasIndex(x => x.Number).IsUnique();
-            e.HasIndex(x => new { x.FinancialYearStart, x.Sequence }).IsUnique();
+            e.HasIndex(x => new { x.DocType, x.FinancialYearStart, x.Sequence }).IsUnique();
             e.HasIndex(x => x.Date);
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.CustomerId);

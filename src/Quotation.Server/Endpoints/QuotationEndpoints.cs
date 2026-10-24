@@ -14,9 +14,10 @@ public static class QuotationEndpoints
         var g = app.MapGroup("/api/quotations").RequireAuthorization();
 
         g.MapGet("/", async (QuotationDbContext db, string? q, QuotationStatus? status, QuotationSource? source,
-            DateOnly? from, DateOnly? to, int? customerId, int? take, int? skip, CancellationToken ct) =>
+            DateOnly? from, DateOnly? to, int? customerId, int? take, int? skip, DocumentType? type, CancellationToken ct) =>
         {
             var query = db.Quotations.AsNoTracking().AsQueryable();
+            if (type is not null) query = query.Where(x => x.DocType == type);
             if (status is not null) query = query.Where(x => x.Status == status);
             if (source is not null) query = query.Where(x => x.Source == source);
             if (from is not null) query = query.Where(x => x.Date >= from);
@@ -49,7 +50,7 @@ public static class QuotationEndpoints
                 .Skip(Math.Max(0, skip ?? 0)).Take(Math.Clamp(take ?? 100, 1, 1000))
                 .Select(x => new QuotationSummaryDto(x.Id, x.Number, x.Date, x.Status, x.Source, x.Buyer.Name, x.Buyer.Gstin,
                     x.Lines.OrderBy(l => l.LineNo).Select(l => l.ItemName).FirstOrDefault() ?? "", x.Lines.Count, x.GrandTotal,
-                    x.CreatedBy, x.CreatedUtc, x.ApprovedBy, x.PdfPath != null))
+                    x.CreatedBy, x.CreatedUtc, x.ApprovedBy, x.PdfPath != null, x.DocType))
                 .ToListAsync(ct);
             return rows;
         });
@@ -71,6 +72,9 @@ public static class QuotationEndpoints
         g.MapPost("/{id:guid}/duplicate", (Guid id, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
             Handle(() => svc.DuplicateAsync(id, User(ctx), ct)));
 
+        g.MapPost("/{id:guid}/convert-to-proforma", (Guid id, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
+            Handle(() => svc.ConvertToProformaAsync(id, User(ctx), ct)));
+
         g.MapPost("/{id:guid}/regenerate-pdf", (Guid id, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
             Handle(async () =>
             {
@@ -79,21 +83,24 @@ public static class QuotationEndpoints
                 return svc.ToDto(q);
             }));
 
-        g.MapGet("/{id:guid}/pdf", async (Guid id, QuotationDbContext db, PdfStorage storage, AuditService audit, HttpContext ctx,
-            CancellationToken ct) =>
+        g.MapGet("/{id:guid}/pdf", async (Guid id, QuotationDbContext db, QuotationService svc, PdfStorage storage, AuditService audit,
+            HttpContext ctx, CancellationToken ct) =>
         {
             var q = await db.Quotations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
             var path = storage.FullPath(q?.PdfPath);
             if (q is null || path is null) return Results.NotFound(new ApiError("No PDF has been generated for this quotation."));
+            // Printed fresh, so it shows who printed it and when (as Tally does).
+            var bytes = await svc.PrintPdfAsync(id, User(ctx), ct);
+            if (bytes is null) return Results.NotFound(new ApiError("No PDF has been generated for this quotation."));
             await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "PdfDownloaded", "Quotation", id.ToString(), q.Number ?? "", ct);
-            return Results.File(path, "application/pdf", Path.GetFileName(path));
+            return Results.File(bytes, "application/pdf", Path.GetFileName(path));
         });
 
-        g.MapGet("/{id:guid}/preview", async (Guid id, QuotationService svc, PdfQuotationRenderer pdf, CancellationToken ct) =>
+        g.MapGet("/{id:guid}/preview", async (Guid id, QuotationService svc, PdfQuotationRenderer pdf, HttpContext ctx, CancellationToken ct) =>
         {
             try
             {
-                return Results.File(await svc.PreviewPdfAsync(id, pdf, ct), "application/pdf", "preview.pdf");
+                return Results.File(await svc.PreviewPdfAsync(id, pdf, ct, User(ctx)), "application/pdf", "preview.pdf");
             }
             catch (QuotationException ex)
             {
@@ -131,15 +138,15 @@ public static class QuotationEndpoints
             return new RecentItemsDto(customers, products);
         });
 
-        g.MapGet("/next-number", (DateOnly? date, QuotationService svc, CancellationToken ct) =>
-            Handle(() => svc.PreviewNextNumberAsync(date, ct)));
+        g.MapGet("/next-number", (DateOnly? date, DocumentType? type, QuotationService svc, CancellationToken ct) =>
+            Handle(() => svc.PreviewNextNumberAsync(date, ct, type ?? DocumentType.Quotation)));
 
         var n = app.MapGroup("/api/numbering").RequireAuthorization(SystemEndpoints.AdminPolicy);
-        n.MapGet("/", async (int? financialYearStart, NumberingService numbering, FinancialYearService fy, SettingsService settings,
-            QuotationDbContext db, CancellationToken ct) =>
+        n.MapGet("/", async (int? financialYearStart, DocumentType? type, NumberingService numbering, FinancialYearService fy,
+            SettingsService settings, QuotationDbContext db, CancellationToken ct) =>
         {
             var year = financialYearStart is { } s ? new FinancialYear(s, settings.Quotation.FinancialYearStartMonth) : fy.GetActive().Year;
-            return await numbering.GetSeriesAsync(db, year, ct);
+            return await numbering.GetSeriesAsync(db, year, ct, type ?? DocumentType.Quotation);
         });
         n.MapPut("/", async (SetNextSequenceRequest r, NumberingService numbering, SettingsService settings, QuotationDbContext db,
             AuditService audit, HttpContext ctx, CancellationToken ct) =>
@@ -147,9 +154,9 @@ public static class QuotationEndpoints
             try
             {
                 var year = new FinancialYear(r.FinancialYearStart, settings.Quotation.FinancialYearStartMonth);
-                var result = await numbering.SetNextAsync(db, year, r.NextSequence, ct);
+                var result = await numbering.SetNextAsync(db, year, r.NextSequence, ct, r.DocType);
                 await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "NumberSeriesChanged", "NumberSeries", year.Label,
-                    $"Next={r.NextSequence}", ct);
+                    $"{r.DocType}: Next={r.NextSequence}", ct);
                 return Results.Ok(result);
             }
             catch (InvalidOperationException ex)

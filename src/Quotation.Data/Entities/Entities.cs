@@ -115,6 +115,7 @@ public class QuotationHeader
     public Guid Id { get; set; }
     /// <summary>Null until a user saves/approves the quotation.</summary>
     public string? Number { get; set; }
+    public DocumentType DocType { get; set; }
     public int? FinancialYearStart { get; set; }
     public int? Sequence { get; set; }
     public DateOnly Date { get; set; }
@@ -133,6 +134,10 @@ public class QuotationHeader
     public string OtherReferences { get; set; } = "";
     public string Destination { get; set; } = "";
     public string TermsOfDelivery { get; set; } = "";
+    // Proforma invoice references (printed only on proforma invoices).
+    public string DeliveryNote { get; set; } = "";
+    public string DispatchDocNo { get; set; } = "";
+    public DateOnly? DeliveryNoteDate { get; set; }
     public string Remarks { get; set; } = "";
     public string TermsAndConditions { get; set; } = "";
 
@@ -179,6 +184,8 @@ public class QuotationLine
     public int LineNo { get; set; }
     public int? ProductId { get; set; }
     public string ItemName { get; set; } = "";
+    /// <summary>Part number from Tally (printed in the "Part No." column of proforma invoices).</summary>
+    public string PartNumber { get; set; } = "";
     /// <summary>Additional description lines printed under the item name (brand, model, MOQ …).</summary>
     public string Description { get; set; } = "";
     public string Hsn { get; set; } = "";

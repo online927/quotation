@@ -16,6 +16,15 @@ namespace Quotation.Server.Services;
 public sealed class NumberingService(SettingsService settings)
 {
     public const string SeriesKey = "QUOTATION";
+    public const string ProformaSeriesKey = "PROFORMA";
+
+    private static string KeyOf(DocumentType type) => type == DocumentType.ProformaInvoice ? ProformaSeriesKey : SeriesKey;
+
+    private string PatternOf(DocumentType type) =>
+        type == DocumentType.ProformaInvoice ? settings.Quotation.ProformaNumberPattern : settings.Quotation.NumberPattern;
+
+    private int StartOf(DocumentType type) =>
+        Math.Max(type == DocumentType.ProformaInvoice ? settings.Quotation.ProformaDefaultStartSequence : settings.Quotation.DefaultStartSequence, 1);
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     /// <summary>Allocates the next number for <paramref name="fy"/>, then runs <paramref name="save"/>, atomically.</summary>
@@ -26,7 +35,7 @@ public sealed class NumberingService(SettingsService settings)
         try
         {
             await using var tx = await db.Database.BeginTransactionAsync(ct);
-            var (series, sequence, number) = await NextAsync(db, fy, ct);
+            var (series, sequence, number) = await NextAsync(db, fy, ct, quotation.DocType);
             series.NextSequence = sequence + 1;
             series.UpdatedUtc = DateTime.UtcNow;
             quotation.Number = number;
@@ -50,16 +59,18 @@ public sealed class NumberingService(SettingsService settings)
     }
 
     /// <summary>The number the next saved quotation would receive (not reserved).</summary>
-    public async Task<NextNumberDto> PreviewAsync(QuotationDbContext db, FinancialYear fy, CancellationToken ct)
+    public async Task<NextNumberDto> PreviewAsync(QuotationDbContext db, FinancialYear fy, CancellationToken ct,
+        DocumentType type = DocumentType.Quotation)
     {
-        var (_, sequence, number) = await NextAsync(db, fy, ct, track: false);
+        var (_, sequence, number) = await NextAsync(db, fy, ct, type, track: false);
         return new NextNumberDto(fy.Label, number, sequence, Provisional: true);
     }
 
-    public async Task<NumberSeriesDto> GetSeriesAsync(QuotationDbContext db, FinancialYear fy, CancellationToken ct)
+    public async Task<NumberSeriesDto> GetSeriesAsync(QuotationDbContext db, FinancialYear fy, CancellationToken ct,
+        DocumentType type = DocumentType.Quotation)
     {
-        var (_, sequence, number) = await NextAsync(db, fy, ct, track: false);
-        var maxUsed = await MaxUsedAsync(db, fy, ct);
+        var (_, sequence, number) = await NextAsync(db, fy, ct, type, track: false);
+        var maxUsed = await MaxUsedAsync(db, fy, type, ct);
         return new NumberSeriesDto(fy.Label, fy.StartYear, sequence, maxUsed + 1, number);
     }
 
@@ -67,18 +78,20 @@ public sealed class NumberingService(SettingsService settings)
     /// Sets the next sequence for a financial year, e.g. to continue the existing Tally series
     /// (last Tally quotation TSQ2526-3247 → next 3248). Cannot go below a number already used.
     /// </summary>
-    public async Task<NumberSeriesDto> SetNextAsync(QuotationDbContext db, FinancialYear fy, int next, CancellationToken ct)
+    public async Task<NumberSeriesDto> SetNextAsync(QuotationDbContext db, FinancialYear fy, int next, CancellationToken ct,
+        DocumentType type = DocumentType.Quotation)
     {
+        var key = KeyOf(type);
         await _gate.WaitAsync(ct);
         try
         {
-            var maxUsed = await MaxUsedAsync(db, fy, ct);
+            var maxUsed = await MaxUsedAsync(db, fy, type, ct);
             if (next <= maxUsed) throw new InvalidOperationException($"Number {next} is already used or passed; the next number must be at least {maxUsed + 1}.");
             if (next < 1) throw new InvalidOperationException("The next number must be at least 1.");
-            var series = await db.NumberSeries.FirstOrDefaultAsync(s => s.SeriesKey == SeriesKey && s.FinancialYearStart == fy.StartYear, ct);
+            var series = await db.NumberSeries.FirstOrDefaultAsync(s => s.SeriesKey == key && s.FinancialYearStart == fy.StartYear, ct);
             if (series is null)
             {
-                series = new NumberSeries { SeriesKey = SeriesKey, FinancialYearStart = fy.StartYear };
+                series = new NumberSeries { SeriesKey = key, FinancialYearStart = fy.StartYear };
                 db.NumberSeries.Add(series);
             }
             series.NextSequence = next;
@@ -89,22 +102,23 @@ public sealed class NumberingService(SettingsService settings)
         {
             _gate.Release();
         }
-        return await GetSeriesAsync(db, fy, ct);
+        return await GetSeriesAsync(db, fy, ct, type);
     }
 
     private async Task<(NumberSeries Series, int Sequence, string Number)> NextAsync(QuotationDbContext db, FinancialYear fy,
-        CancellationToken ct, bool track = true)
+        CancellationToken ct, DocumentType type, bool track = true)
     {
-        var pattern = settings.Quotation.NumberPattern;
-        var series = await db.NumberSeries.FirstOrDefaultAsync(s => s.SeriesKey == SeriesKey && s.FinancialYearStart == fy.StartYear, ct);
-        var maxUsed = await MaxUsedAsync(db, fy, ct);
+        var pattern = PatternOf(type);
+        var key = KeyOf(type);
+        var series = await db.NumberSeries.FirstOrDefaultAsync(s => s.SeriesKey == key && s.FinancialYearStart == fy.StartYear, ct);
+        var maxUsed = await MaxUsedAsync(db, fy, type, ct);
         if (series is null)
         {
             series = new NumberSeries
             {
-                SeriesKey = SeriesKey,
+                SeriesKey = key,
                 FinancialYearStart = fy.StartYear,
-                NextSequence = Math.Max(settings.Quotation.DefaultStartSequence, 1),
+                NextSequence = StartOf(type),
             };
             if (track) db.NumberSeries.Add(series);
         }
@@ -119,6 +133,6 @@ public sealed class NumberingService(SettingsService settings)
         return (series, sequence, number);
     }
 
-    private static async Task<int> MaxUsedAsync(QuotationDbContext db, FinancialYear fy, CancellationToken ct) =>
-        await db.Quotations.Where(q => q.FinancialYearStart == fy.StartYear).MaxAsync(q => q.Sequence, ct) ?? 0;
+    private static async Task<int> MaxUsedAsync(QuotationDbContext db, FinancialYear fy, DocumentType type, CancellationToken ct) =>
+        await db.Quotations.Where(q => q.FinancialYearStart == fy.StartYear && q.DocType == type).MaxAsync(q => q.Sequence, ct) ?? 0;
 }

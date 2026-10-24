@@ -41,6 +41,9 @@ public sealed class CompanySettings
     public string DefaultPaymentTerms { get; set; } = "";
     public string DefaultTermsOfDelivery { get; set; } = "";
     public string FooterText { get; set; } = "This is a Computer Generated Document";
+    /// <summary>Declaration printed on proforma invoices.</summary>
+    public string ProformaDeclaration { get; set; } = "This is a Proforma invoice and not a Tax invoice";
+    public string ProformaFooterText { get; set; } = "This is a Computer Generated Invoice";
     public string Jurisdiction { get; set; } = "";
 }
 
@@ -54,6 +57,9 @@ public sealed class QuotationSettings
     public string NumberPattern { get; set; } = "TSQ{FY}-{SEQ}";
     /// <summary>First sequence number used when a new financial year starts.</summary>
     public int DefaultStartSequence { get; set; } = 1;
+    /// <summary>Number pattern of proforma invoices (same tokens), e.g. TSPI2526-12.</summary>
+    public string ProformaNumberPattern { get; set; } = "TSPI{FY}-{SEQ}";
+    public int ProformaDefaultStartSequence { get; set; } = 1;
     /// <summary>Financial year start month (4 = April).</summary>
     public int FinancialYearStartMonth { get; set; } = 4;
 

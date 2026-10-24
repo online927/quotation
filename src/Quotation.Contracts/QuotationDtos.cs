@@ -19,6 +19,7 @@ public sealed class QuotationLineDto
     public int LineNo { get; set; }
     public int? ProductId { get; set; }
     public string ItemName { get; set; } = "";
+    public string PartNumber { get; set; } = "";
     /// <summary>Extra description lines printed under the item (brand, model, MOQ …).</summary>
     public string Description { get; set; } = "";
     public string Hsn { get; set; } = "";
@@ -38,6 +39,8 @@ public sealed class SaveQuotationRequest
 {
     /// <summary>Revision the client edited (optimistic concurrency). Ignored on create.</summary>
     public int Revision { get; set; }
+    /// <summary>Quotation or proforma invoice; set on create, cannot change afterwards.</summary>
+    public DocumentType DocType { get; set; }
     public DateOnly Date { get; set; }
     public int? CustomerId { get; set; }
     public PartyDto Buyer { get; set; } = new();
@@ -50,6 +53,9 @@ public sealed class SaveQuotationRequest
     public string OtherReferences { get; set; } = "";
     public string Destination { get; set; } = "";
     public string TermsOfDelivery { get; set; } = "";
+    public string DeliveryNote { get; set; } = "";
+    public string DispatchDocNo { get; set; } = "";
+    public DateOnly? DeliveryNoteDate { get; set; }
     public string Remarks { get; set; } = "";
     public string TermsAndConditions { get; set; } = "";
     public decimal PackingForwarding { get; set; }
@@ -65,6 +71,7 @@ public sealed class QuotationDto
 {
     public Guid Id { get; set; }
     public string? Number { get; set; }
+    public DocumentType DocType { get; set; }
     public string? FinancialYear { get; set; }
     public DateOnly Date { get; set; }
     public QuotationStatus Status { get; set; }
@@ -81,6 +88,9 @@ public sealed class QuotationDto
     public string OtherReferences { get; set; } = "";
     public string Destination { get; set; } = "";
     public string TermsOfDelivery { get; set; } = "";
+    public string DeliveryNote { get; set; } = "";
+    public string DispatchDocNo { get; set; } = "";
+    public DateOnly? DeliveryNoteDate { get; set; }
     public string Remarks { get; set; } = "";
     public string TermsAndConditions { get; set; } = "";
     public decimal PackingForwarding { get; set; }
@@ -127,7 +137,8 @@ public sealed record QuotationSummaryDto(
     string CreatedBy,
     DateTime CreatedUtc,
     string? ApprovedBy,
-    bool HasPdf);
+    bool HasPdf,
+    DocumentType DocType = DocumentType.Quotation);
 
 public sealed record ApproveRequest(bool OverrideStaleData = false, int? Revision = null);
 
@@ -135,6 +146,6 @@ public sealed record NextNumberDto(string FinancialYear, string Number, int Sequ
 
 public sealed record NumberSeriesDto(string FinancialYear, int FinancialYearStart, int NextSequence, int MinimumAllowed, string NextNumberPreview);
 
-public sealed record SetNextSequenceRequest(int FinancialYearStart, int NextSequence);
+public sealed record SetNextSequenceRequest(int FinancialYearStart, int NextSequence, DocumentType DocType = DocumentType.Quotation);
 
 public sealed record ValidationErrorDto(string Field, string Message, int? LineNo);

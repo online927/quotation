@@ -2,14 +2,16 @@ using System.Globalization;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using Quotation.Core.Calculation;
+using Quotation.Core.Domain;
 
 namespace Quotation.Pdf;
 
 /// <summary>
-/// Renders a quotation in the layout of the TallyPrime quotation print: title, boxed header with the
-/// company / consignee / buyer blocks on the left and the reference grid on the right, the ruled item
-/// table (Sl No., Description of Goods, HSN/SAC, GST Rate, Due on, Quantity, Rate, per, Disc. %, Amount),
-/// totals, amount in words, PAN/MSME/IEC, declaration, bank details and the signature block.
+/// Renders a quotation or proforma invoice in the layout of the TallyPrime prints: "Printed on … By: …",
+/// title, boxed header with the company / consignee / buyer blocks on the left and the reference grid on the
+/// right, the ruled item table (Sl No., Description of Goods, HSN/SAC, GST Rate, Due on | Part No., Quantity,
+/// Rate, per, Disc. %, Amount), P&amp;F / tax / round-off rows, totals, amount in words, the HSN-wise tax table
+/// (proforma invoice), PAN/MSME/IEC, declaration, bank details and the signature block.
 ///
 /// Every text block is measured before it is placed. Item rows are never split across pages; the
 /// header and column headings repeat on every page; totals, amount in words, declaration, bank details
@@ -27,28 +29,44 @@ public sealed class QuotationPdfRenderer
     internal const double ContentWidth = PageWidth - MarginLeft - MarginRight;
     internal const double Pad = 3.5;
 
-    // Column widths of the item table (Description takes the rest).
-    private static readonly (string Title, double Width, Align Align)[] Columns =
+    // Column widths of the item table (Description takes the rest). Quotations show "Due on", proforma invoices "Part No.".
+    private static readonly (string Title, double Width, Align Align)[] QuotationColumns =
     [
         ("Sl\nNo.", 20, Align.Center),
         ("Description of Goods", 0, Align.Left),
         ("HSN/SAC", 46, Align.Left),
         ("GST\nRate", 28, Align.Right),
-        ("Due on", 34, Align.Left),
+        ("Due on", 36, Align.Left),
         ("Quantity", 50, Align.Right),
         ("Rate", 52, Align.Right),
-        ("per", 28, Align.Left),
+        ("per", 26, Align.Left),
         ("Disc.\n%", 26, Align.Right),
         ("Amount", 64, Align.Right),
     ];
 
-    private const int ColSl = 0, ColDesc = 1, ColHsn = 2, ColGst = 3, ColDue = 4, ColQty = 5, ColRate = 6, ColPer = 7, ColDisc = 8, ColAmount = 9;
+    private static readonly (string Title, double Width, Align Align)[] ProformaColumns =
+    [
+        ("Sl\nNo.", 20, Align.Center),
+        ("Description of Goods", 0, Align.Left),
+        ("HSN/SAC", 46, Align.Left),
+        ("GST\nRate", 28, Align.Right),
+        ("Part No.", 46, Align.Left),
+        ("Quantity", 50, Align.Right),
+        ("Rate", 52, Align.Right),
+        ("per", 26, Align.Left),
+        ("Disc.\n%", 26, Align.Right),
+        ("Amount", 64, Align.Right),
+    ];
+
+    private const int ColSl = 0, ColDesc = 1, ColHsn = 2, ColGst = 3, ColRef = 4, ColQty = 5, ColRate = 6, ColPer = 7, ColDisc = 8, ColAmount = 9;
 
     private enum Align { Left, Center, Right }
 
     private readonly XFont _title, _company, _label, _text, _bold, _italic, _boldItalic, _head, _small, _words;
-    private readonly double[] _colX;
-    private readonly double[] _colW;
+    private readonly Lock _renderLock = new();
+    private (string Title, double Width, Align Align)[] Columns = QuotationColumns;
+    private double[] _colX = [];
+    private double[] _colW = [];
 
     public QuotationPdfRenderer()
     {
@@ -63,7 +81,12 @@ public sealed class QuotationPdfRenderer
         _head = Font(7.5, XFontStyleEx.Bold);
         _small = Font(7, XFontStyleEx.Regular);
         _words = Font(8.5, XFontStyleEx.Bold);
+        UseColumns(DocumentType.Quotation);
+    }
 
+    private void UseColumns(DocumentType kind)
+    {
+        Columns = kind == DocumentType.ProformaInvoice ? ProformaColumns : QuotationColumns;
         var fixedWidth = Columns.Sum(c => c.Width);
         _colW = Columns.Select(c => c.Width == 0 ? ContentWidth - fixedWidth : c.Width).ToArray();
         _colX = new double[_colW.Length];
@@ -78,6 +101,16 @@ public sealed class QuotationPdfRenderer
     private static XFont Font(double size, XFontStyleEx style) => new(PdfFonts.Sans, size, style);
 
     public byte[] Render(QuotationDocument doc)
+    {
+        // One document at a time: the column geometry depends on the document type.
+        lock (_renderLock)
+        {
+            UseColumns(doc.Kind);
+            return RenderCore(doc);
+        }
+    }
+
+    private byte[] RenderCore(QuotationDocument doc)
     {
         using var pdf = new PdfDocument();
         pdf.Info.Title = $"{doc.Title} {doc.Number}";
@@ -117,16 +150,18 @@ public sealed class QuotationPdfRenderer
     private const double TableHeaderHeight = 22;
     private const double TotalRowHeight = 16;
     private const double ContinuedHeight = 14;
-    private const double BottomNoteHeight = 12;
+    private static double BottomNoteHeight(QuotationDocument doc) =>
+        doc.Kind == DocumentType.ProformaInvoice && !string.IsNullOrWhiteSpace(doc.Company.Jurisdiction) ? 22 : 12;
 
     internal PageLayout Layout(XGraphics g, QuotationDocument doc)
     {
+        UseColumns(doc.Kind);
         var headerHeight = HeaderHeight(g, doc);
         var footerHeight = FooterHeight(g, doc);
         var summaryHeight = SummaryHeight(doc);
 
         var bodyTop = MarginTop + TitleHeight + headerHeight + TableHeaderHeight;
-        var pageBottom = PageHeight - MarginBottom - BottomNoteHeight;
+        var pageBottom = PageHeight - MarginBottom - BottomNoteHeight(doc);
         var capacityContinued = pageBottom - ContinuedHeight - bodyTop;
         var capacityLast = pageBottom - footerHeight - TotalRowHeight - summaryHeight - bodyTop;
         if (capacityLast < 0)
@@ -266,30 +301,46 @@ public sealed class QuotationPdfRenderer
         return (company, consignee, buyer);
     }
 
-    private List<(string Label, string Value, bool Full)> RightCells(QuotationDocument doc) =>
-    [
-        ("Quotation No.", doc.Number, false),
-        ("Dated", Date(doc.Date), false),
-        ("Buyer's Ref./Order No.", doc.BuyersReference, false),
-        ("Dated", doc.BuyersReferenceDate is { } d ? Date(d) : "", false),
-        ("Dispatched through", doc.DispatchedThrough, false),
-        ("Destination", doc.Destination, false),
-        ("Mode/Terms of Payment", doc.PaymentTerms, true),
-        ("Other References", doc.OtherReferences, true),
-        ("Terms of Delivery", doc.TermsOfDelivery, true),
-    ];
+    /// <summary>A cell of the reference grid; <paramref name="JoinAbove"/> merges it with the cell above (no line between).</summary>
+    private sealed record Cell(string Label, string Value, bool Full = false, bool JoinAbove = false);
 
-    private List<(double Height, (string Label, string Value, bool Full)[] Cells)> RightRows(XGraphics g, QuotationDocument doc)
+    private static List<Cell> RightCells(QuotationDocument doc)
+    {
+        var buyersRef = doc.BuyersReference + (doc.BuyersReferenceDate is { } d && doc.BuyersReference.Length > 0 ? $" dt. {Date(d)}" : "");
+        if (doc.Kind == DocumentType.ProformaInvoice)
+        {
+            return
+            [
+                new("Invoice No.", doc.Number), new("Dated", Date(doc.Date)),
+                new("Delivery Note", doc.DeliveryNote), new("Mode/Terms of Payment", doc.PaymentTerms),
+                new("Reference No. & Date.", $"{doc.Number} dt. {Date(doc.Date)}"), new("Other References", doc.OtherReferences),
+                new("Buyer's Order No.", doc.BuyersReference), new("Dated", doc.BuyersReferenceDate is { } od ? Date(od) : ""),
+                new("Dispatch Doc No.", doc.DispatchDocNo), new("Delivery Note Date", doc.DeliveryNoteDate is { } nd ? Date(nd) : ""),
+                new("Dispatched through", doc.DispatchedThrough), new("Destination", doc.Destination),
+                new("Terms of Delivery", doc.TermsOfDelivery, Full: true),
+            ];
+        }
+        return
+        [
+            new("Quotation No.", doc.Number), new("Dated", Date(doc.Date)),
+            new("", "", JoinAbove: true), new("Mode/Terms of Payment", doc.PaymentTerms),
+            new("Buyer's Ref./Order No.", buyersRef), new("Other References", doc.OtherReferences),
+            new("Dispatched through", doc.DispatchedThrough), new("Destination", doc.Destination),
+            new("Terms of Delivery", doc.TermsOfDelivery, Full: true),
+        ];
+    }
+
+    private List<(double Height, Cell[] Cells)> RightRows(XGraphics g, QuotationDocument doc)
     {
         var cells = RightCells(doc);
-        var rows = new List<(double, (string, string, bool)[])>();
+        var rows = new List<(double, Cell[])>();
         var i = 0;
         while (i < cells.Count)
         {
             var row = cells[i].Full ? new[] { cells[i] } : new[] { cells[i], cells[i + 1] };
             i += row.Length;
             var cellWidth = RightWidth / row.Length - 2 * Pad;
-            var h = row.Max(c => LineHeight(_label) + Math.Max(1, Wrap(g, c.Item2, _bold, cellWidth).Count) * LineHeight(_bold)) + 2 * Pad;
+            var h = row.Max(c => LineHeight(_label) + Math.Max(1, Wrap(g, c.Value, _bold, cellWidth).Count) * LineHeight(_bold)) + 2 * Pad;
             rows.Add((Math.Max(h, 22), row));
         }
         return rows;
@@ -373,7 +424,17 @@ public sealed class QuotationPdfRenderer
                     vy += LineHeight(_bold);
                 }
             }
-            if (r < rows.Count - 1) g.DrawLine(pen, mid, y + h, MarginLeft + ContentWidth, y + h);
+            if (r < rows.Count - 1)
+            {
+                // No line above a cell that is merged with the one above it.
+                var next = rows[r + 1].Cells;
+                var nextWidth = RightWidth / next.Length;
+                for (var c = 0; c < next.Length; c++)
+                {
+                    if (next[c].JoinAbove) continue;
+                    g.DrawLine(pen, mid + c * nextWidth, y + h, mid + (c + 1) * nextWidth, y + h);
+                }
+            }
             y += h;
         }
         g.DrawLine(pen, MarginLeft, top + height, MarginLeft + ContentWidth, top + height);
@@ -411,10 +472,11 @@ public sealed class QuotationPdfRenderer
             DrawAligned(g, line.SlNo.ToString(CultureInfo.InvariantCulture), _text, _colX[ColSl], _colW[ColSl], y, Align.Center);
             DrawCell(g, line.Hsn, _text, ColHsn, y);
             DrawCell(g, line.GstRate is null ? "" : $"{line.GstRate.Value.ToString("0.##", CultureInfo.InvariantCulture)} %", _text, ColGst, y);
-            DrawCell(g, line.DueOn, _text, ColDue, y);
+            if (Columns == ProformaColumns) DrawCell(g, line.PartNumber, _text, ColRef, y);
+            else DrawCell(g, line.DueOn, Font(7, XFontStyleEx.Italic), ColRef, y);
             DrawCell(g, $"{IndianFormat.Quantity(line.Quantity)} {line.Unit}".Trim(), _bold, ColQty, y);
             DrawCell(g, IndianFormat.Amount(line.Rate), _text, ColRate, y);
-            DrawCell(g, line.Unit, _text, ColPer, y);
+            DrawCell(g, line.Unit, Font(6.5, XFontStyleEx.Regular), ColPer, y + 0.8);
             DrawCell(g, line.DiscountPercent == 0 ? "" : $"{line.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture)} %", _text, ColDisc, y);
             DrawCell(g, IndianFormat.Amount(line.Amount), _bold, ColAmount, y);
         }
@@ -444,9 +506,10 @@ public sealed class QuotationPdfRenderer
         y += LineHeight(_text);
         foreach (var s in doc.SummaryRows)
         {
+            if (s.Less) DrawText(g, "Less :", Font(7, XFontStyleEx.Italic), _colX[ColDesc] + Pad, y + 1);
             DrawAligned(g, s.Label, _boldItalic, _colX[ColDesc] + Pad, _colW[ColDesc] - 2 * Pad, y, Align.Right);
             DrawCell(g, s.RateText, _text, ColRate, y);
-            DrawCell(g, IndianFormat.Amount(s.Amount), _bold, ColAmount, y);
+            DrawCell(g, s.Less ? "(-)" + IndianFormat.Amount(Math.Abs(s.Amount)) : IndianFormat.Amount(s.Amount), _bold, ColAmount, y);
             y += LineHeight(_boldItalic) + 1;
         }
         return top + SummaryHeight(doc);
@@ -485,7 +548,10 @@ public sealed class QuotationPdfRenderer
         List<string> Remarks,
         List<string> Terms,
         List<(string Text, XFont Font)> LeftBlock,
-        List<(string Text, XFont Font)> RightBlock);
+        List<(string Text, XFont Font)> RightBlock,
+        List<string> TaxWords);
+
+    private bool IsProforma(QuotationDocument doc) => doc.Kind == DocumentType.ProformaInvoice;
 
     private FooterParts BuildFooter(XGraphics g, QuotationDocument doc)
     {
@@ -505,44 +571,128 @@ public sealed class QuotationPdfRenderer
         {
             if (!string.IsNullOrWhiteSpace(value)) left.AddRange(Wrap(g, label + value, _text, half).Select(l => (l, _text)));
         }
-        AddLeft("Company's PAN : ", c.Pan);
-        AddLeft("MSME No. : ", c.MsmeNumber);
-        AddLeft("IEC : ", c.Iec);
-        if (!string.IsNullOrWhiteSpace(c.Declaration))
+        if (!IsProforma(doc)) AddLeft("Company's PAN : ", c.Pan);
+        AddLeft("Company's MSME No : ", c.MsmeNumber);
+        AddLeft("Company's IEC : ", c.Iec);
+        var declaration = IsProforma(doc) ? c.ProformaDeclaration : c.Declaration;
+        if (!string.IsNullOrWhiteSpace(declaration))
         {
-            left.Add(("Declaration", _bold));
-            left.AddRange(Wrap(g, c.Declaration, _small, half).Select(l => (l, _small)));
+            left.Add(("Declaration", _label));
+            left.AddRange(Wrap(g, declaration, _text, half).Select(l => (l, _text)));
         }
-        var validity = c.ValidityText.Replace("{days}", c.QuotationValidityDays.ToString(CultureInfo.InvariantCulture))
-            .Replace("{date}", Date(doc.Date.AddDays(c.QuotationValidityDays)));
-        if (c.QuotationValidityDays > 0 && !string.IsNullOrWhiteSpace(validity))
+        if (!IsProforma(doc))
         {
-            left.AddRange(Wrap(g, validity, _small, half).Select(l => (l, _small)));
+            var validity = c.ValidityText.Replace("{days}", c.QuotationValidityDays.ToString(CultureInfo.InvariantCulture))
+                .Replace("{date}", Date(doc.Date.AddDays(c.QuotationValidityDays)));
+            if (c.QuotationValidityDays > 0 && !string.IsNullOrWhiteSpace(validity))
+            {
+                left.AddRange(Wrap(g, validity, _small, half).Select(l => (l, _small)));
+            }
         }
 
         var right = new List<(string, XFont)>();
         if (!string.IsNullOrWhiteSpace(c.BankName) || !string.IsNullOrWhiteSpace(c.BankAccountNumber))
         {
-            right.Add(("Company's Bank Details", _label));
+            right.Add(("Company's Bank Details", _text));
             void AddRight(string label, string value)
             {
                 if (!string.IsNullOrWhiteSpace(value)) right.AddRange(Wrap(g, label + value, _text, half).Select(l => (l, _text)));
             }
-            AddRight("A/c Holder's Name : ", string.IsNullOrWhiteSpace(c.BankAccountHolder) ? c.CompanyName : c.BankAccountHolder);
+            AddRight("A/c Holder's Name : ", c.BankAccountHolder);
             AddRight("Bank Name : ", c.BankName);
             AddRight("A/c No. : ", c.BankAccountNumber);
-            var branch = string.Join(" & ", new[] { c.BankBranch, c.BankIfsc }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            var branch = string.Join(" & ", new[] { c.BankBranch, c.BankIfsc }.Where(x => !string.IsNullOrWhiteSpace(x)));
             AddRight("Branch & IFS Code : ", branch);
         }
-        return new FooterParts(words, remarks, terms, left, right);
+        var taxWords = IsProforma(doc) && doc.HsnSummary.Count > 0 && !string.IsNullOrWhiteSpace(doc.TaxAmountInWords)
+            ? Wrap(g, "Tax Amount (in words) :  " + doc.TaxAmountInWords, _bold, fullWidth)
+            : [];
+        return new FooterParts(words, remarks, terms, left, right, taxWords);
     }
 
     private const double SignatureHeight = 46;
+
+    // ---- HSN/SAC-wise tax table (proforma invoice) ----
+    private const double HsnTaxableW = 62, HsnRateW = 26, HsnAmountW = 52, HsnTotalW = 58;
+
+    private double HsnTableHeight(QuotationDocument doc) =>
+        !IsProforma(doc) || doc.HsnSummary.Count == 0 ? 0 : 2 * LineHeight(_label) + 2 + (doc.HsnSummary.Count + 1) * (LineHeight(_text) + 2);
+
+    private double DrawHsnTable(XGraphics g, QuotationDocument doc, double top)
+    {
+        if (HsnTableHeight(doc) == 0) return top;
+        var pen = Pen(0.5);
+        var right = MarginLeft + ContentWidth;
+        var groups = doc.InterState ? new[] { "IGST" } : new[] { "CGST", "SGST/UTGST" };
+        var groupW = HsnRateW + HsnAmountW;
+        var taxableX = right - HsnTotalW - groups.Length * groupW - HsnTaxableW;
+        var headH = 2 * LineHeight(_label) + 2;
+        var rowH = LineHeight(_text) + 2;
+
+        // Heading
+        g.DrawLine(pen, MarginLeft, top, right, top);
+        DrawAligned(g, "HSN/SAC", _label, MarginLeft, taxableX - MarginLeft, top + headH / 2 - LineHeight(_label) / 2, Align.Center);
+        DrawAligned(g, "Taxable", _label, taxableX, HsnTaxableW, top + 1, Align.Center);
+        DrawAligned(g, "Value", _label, taxableX, HsnTaxableW, top + 1 + LineHeight(_label), Align.Center);
+        var x = taxableX + HsnTaxableW;
+        foreach (var name in groups)
+        {
+            DrawAligned(g, name, _label, x, groupW, top + 1, Align.Center);
+            g.DrawLine(pen, x, top + LineHeight(_label) + 1, x + groupW, top + LineHeight(_label) + 1);
+            DrawAligned(g, "Rate", _label, x, HsnRateW, top + 1 + LineHeight(_label), Align.Center);
+            DrawAligned(g, "Amount", _label, x + HsnRateW, HsnAmountW, top + 1 + LineHeight(_label), Align.Center);
+            g.DrawLine(pen, x + HsnRateW, top + LineHeight(_label) + 1, x + HsnRateW, top + headH + (doc.HsnSummary.Count + 1) * rowH);
+            x += groupW;
+        }
+        DrawAligned(g, "Total", _label, x, HsnTotalW, top + 1, Align.Center);
+        DrawAligned(g, "Tax Amount", _label, x, HsnTotalW, top + 1 + LineHeight(_label), Align.Center);
+        var bottom = top + headH + (doc.HsnSummary.Count + 1) * rowH;
+        foreach (var vx in new[] { taxableX, taxableX + HsnTaxableW }.Concat(Enumerable.Range(1, groups.Length).Select(i => taxableX + HsnTaxableW + i * groupW)))
+        {
+            g.DrawLine(pen, vx, top, vx, bottom);
+        }
+        var y = top + headH;
+        g.DrawLine(pen, MarginLeft, y, right, y);
+
+        string Pct(decimal r) => r == 0 ? "" : r.ToString("0.##", CultureInfo.InvariantCulture) + "%";
+        void Row(string hsn, decimal taxable, (decimal Rate, decimal Amount)[] parts, decimal total, bool bold)
+        {
+            var f = bold ? _bold : _text;
+            if (bold) DrawAligned(g, hsn, f, MarginLeft + Pad, taxableX - MarginLeft - 2 * Pad, y + 1, Align.Right);
+            else DrawText(g, hsn, f, MarginLeft + Pad, y + 1);
+            DrawAligned(g, IndianFormat.Amount(taxable), f, taxableX, HsnTaxableW - Pad, y + 1, Align.Right);
+            var px = taxableX + HsnTaxableW;
+            foreach (var (rate, amount) in parts)
+            {
+                if (!bold) DrawAligned(g, Pct(rate), f, px, HsnRateW - 2, y + 1, Align.Right);
+                DrawAligned(g, IndianFormat.Amount(amount), f, px + HsnRateW, HsnAmountW - Pad, y + 1, Align.Right);
+                px += groupW;
+            }
+            DrawAligned(g, IndianFormat.Amount(total), f, px, HsnTotalW - Pad, y + 1, Align.Right);
+            y += rowH;
+        }
+        foreach (var h in doc.HsnSummary)
+        {
+            var parts = doc.InterState
+                ? new[] { (h.IntegratedRate, h.IntegratedAmount) }
+                : new[] { (h.CentralRate, h.CentralAmount), (h.StateRate, h.StateAmount) };
+            Row(h.Hsn, h.TaxableValue, parts, h.TotalTax, bold: false);
+        }
+        g.DrawLine(pen, taxableX, y, right, y);
+        var totals = doc.InterState
+            ? new[] { (0m, doc.HsnSummary.Sum(h => h.IntegratedAmount)) }
+            : new[] { (0m, doc.HsnSummary.Sum(h => h.CentralAmount)), (0m, doc.HsnSummary.Sum(h => h.StateAmount)) };
+        Row("Total", doc.HsnSummary.Sum(h => h.TaxableValue), totals, doc.HsnSummary.Sum(h => h.TotalTax), bold: true);
+        g.DrawLine(pen, MarginLeft, bottom, right, bottom);
+        return bottom;
+    }
 
     private double FooterHeight(XGraphics g, QuotationDocument doc)
     {
         var f = BuildFooter(g, doc);
         var h = Pad + LineHeight(_label) + f.Words.Count * LineHeight(_words) + Pad;
+        h += HsnTableHeight(doc);
+        if (f.TaxWords.Count > 0) h += f.TaxWords.Count * LineHeight(_bold) + 2;
         if (f.Remarks.Count > 0) h += f.Remarks.Count * LineHeight(_text) + 2;
         if (f.Terms.Count > 0) h += LineHeight(_bold) + f.Terms.Count * LineHeight(_small) + 2;
         h += Math.Max(Height(f.LeftBlock), Height(f.RightBlock)) + 2 * Pad;
@@ -564,6 +714,17 @@ public sealed class QuotationPdfRenderer
             y += LineHeight(_words);
         }
         y += Pad;
+        y = DrawHsnTable(g, doc, y);
+        if (f.TaxWords.Count > 0)
+        {
+            y += 1;
+            foreach (var w in f.TaxWords)
+            {
+                DrawText(g, w, _bold, MarginLeft + Pad, y);
+                y += LineHeight(_bold);
+            }
+            y += 1;
+        }
         foreach (var r in f.Remarks)
         {
             DrawText(g, r, _text, MarginLeft + Pad, y);
@@ -587,16 +748,7 @@ public sealed class QuotationPdfRenderer
         var ly = blockTop;
         foreach (var (text, font) in f.LeftBlock)
         {
-            if (text == "Declaration")
-            {
-                DrawText(g, text, font, MarginLeft + Pad, ly);
-                var w = g.MeasureString(text, font).Width;
-                g.DrawLine(Pen(0.4), MarginLeft + Pad, ly + font.Size + 1, MarginLeft + Pad + w, ly + font.Size + 1);
-            }
-            else
-            {
-                DrawText(g, text, font, MarginLeft + Pad, ly);
-            }
+            DrawText(g, text, font, MarginLeft + Pad, ly);
             ly += LineHeight(font);
         }
         var ry = blockTop;
@@ -607,16 +759,25 @@ public sealed class QuotationPdfRenderer
         }
         y = Math.Max(ly, ry) + Pad;
 
-        // Signature block: prepared/verified on the left, "for COMPANY … Authorised Signatory" box on the right.
+        // Signature block: "for COMPANY … Authorised Signatory" box on the right; on the left "Prepared by / Verified by"
+        // (quotation) or "Customer's Seal and Signature" (proforma invoice).
         g.DrawLine(pen, MarginLeft + half, y, MarginLeft + ContentWidth, y);
         g.DrawLine(pen, MarginLeft + half, y, MarginLeft + half, y + SignatureHeight);
         DrawAligned(g, "for " + doc.Company.CompanyName, _bold, MarginLeft + half, half - Pad, y + Pad, Align.Right);
         DrawAligned(g, doc.Company.AuthorisedSignatoryLabel, _text, MarginLeft + half, half - Pad, y + SignatureHeight - Pad - LineHeight(_text), Align.Right);
         var sigBottom = y + SignatureHeight - Pad - LineHeight(_text);
-        DrawText(g, "Prepared by", _text, MarginLeft + Pad, sigBottom);
-        DrawText(g, "Verified by", _text, MarginLeft + half / 2, sigBottom);
-        if (!string.IsNullOrWhiteSpace(doc.PreparedBy)) DrawText(g, doc.PreparedBy, _bold, MarginLeft + Pad, sigBottom - LineHeight(_bold));
-        if (!string.IsNullOrWhiteSpace(doc.VerifiedBy)) DrawText(g, doc.VerifiedBy, _bold, MarginLeft + half / 2, sigBottom - LineHeight(_bold));
+        if (IsProforma(doc))
+        {
+            g.DrawLine(pen, MarginLeft, y, MarginLeft + half, y);
+            DrawText(g, "Customer's Seal and Signature", _text, MarginLeft + Pad, y + Pad);
+        }
+        else
+        {
+            DrawText(g, "Prepared by", _text, MarginLeft + Pad, sigBottom);
+            DrawText(g, "Verified by", _text, MarginLeft + half / 2, sigBottom);
+            if (!string.IsNullOrWhiteSpace(doc.PreparedBy)) DrawText(g, doc.PreparedBy, _bold, MarginLeft + Pad, sigBottom - LineHeight(_bold));
+            if (!string.IsNullOrWhiteSpace(doc.VerifiedBy)) DrawText(g, doc.VerifiedBy, _bold, MarginLeft + half / 2, sigBottom - LineHeight(_bold));
+        }
         return y + SignatureHeight;
     }
 
@@ -631,12 +792,20 @@ public sealed class QuotationPdfRenderer
 
         if (!string.IsNullOrWhiteSpace(doc.Watermark)) DrawWatermark(g, doc.Watermark!);
 
-        // Title line.
-        DrawAligned(g, doc.Title, _title, MarginLeft, ContentWidth, MarginTop + 2, Align.Center);
-        if (pageCount > 1)
+        // "Printed on … By: …" above the title of the first page, as in Tally.
+        if (pageIndex == 0 && doc.Printed is { } printed)
         {
-            DrawAligned(g, $"Page {pageIndex + 1} of {pageCount}", _small, MarginLeft, ContentWidth, MarginTop + 4, Align.Right);
+            var by = "By: " + printed.User;
+            var byFont = Font(8, XFontStyleEx.Regular);
+            var stampY = MarginTop - 12;
+            DrawAligned(g, by, byFont, MarginLeft, ContentWidth, stampY, Align.Right);
+            var at = $"Printed on {printed.LocalTime.ToString("d-MMM-yy", CultureInfo.InvariantCulture)} at {printed.LocalTime.ToString("HH:mm", CultureInfo.InvariantCulture)}";
+            DrawAligned(g, at, Font(7.5, XFontStyleEx.Italic), MarginLeft, ContentWidth - Measure(g, by, byFont) - 36, stampY + 0.5, Align.Right);
         }
+
+        // Title line: "QUOTATION", then "QUOTATION(Page 2)" … on following pages.
+        var title = pageIndex == 0 || pageCount == 1 ? doc.Title : $"{doc.Title}(Page {pageIndex + 1})";
+        DrawAligned(g, title, _title, MarginLeft, ContentWidth, MarginTop + 2, Align.Center);
 
         var boxTop = MarginTop + TitleHeight;
         var y = DrawHeader(g, doc, boxTop);
@@ -644,7 +813,7 @@ public sealed class QuotationPdfRenderer
         y = DrawTableHeader(g, y);
         foreach (var row in layout.Pages[pageIndex]) y = DrawRow(g, row, y);
 
-        var pageBottom = PageHeight - MarginBottom - BottomNoteHeight;
+        var pageBottom = PageHeight - MarginBottom - BottomNoteHeight(doc);
         double boxBottom;
         if (isLast)
         {
@@ -654,15 +823,20 @@ public sealed class QuotationPdfRenderer
             DrawColumnLines(g, tableTop, totalTop + TotalRowHeight);
             DrawTotalRow(g, doc, totalTop);
             boxBottom = DrawFooter(g, doc, footerTop);
-            DrawAligned(g, doc.Company.FooterText, _small, MarginLeft, ContentWidth, boxBottom + 3, Align.Center);
+            var noteY = boxBottom + 3;
+            if (IsProforma(doc) && !string.IsNullOrWhiteSpace(doc.Company.Jurisdiction))
+            {
+                DrawAligned(g, doc.Company.Jurisdiction, _small, MarginLeft, ContentWidth, noteY, Align.Center);
+                noteY += 10;
+            }
+            DrawAligned(g, IsProforma(doc) ? doc.Company.ProformaFooterText : doc.Company.FooterText, _small, MarginLeft, ContentWidth, noteY, Align.Center);
         }
         else
         {
             var tableBottom = pageBottom - ContinuedHeight;
             DrawColumnLines(g, tableTop, tableBottom);
             g.DrawLine(Pen(), MarginLeft, tableBottom, MarginLeft + ContentWidth, tableBottom);
-            DrawAligned(g, $"continued to page number {pageIndex + 2}", Font(7, XFontStyleEx.Italic), MarginLeft, ContentWidth - Pad,
-                tableBottom + 3, Align.Right);
+            DrawAligned(g, "continued ...", Font(7, XFontStyleEx.Italic), MarginLeft, ContentWidth - Pad, tableBottom + 3, Align.Right);
             boxBottom = pageBottom;
         }
         g.DrawRectangle(Pen(), MarginLeft, boxTop, ContentWidth, boxBottom - boxTop);

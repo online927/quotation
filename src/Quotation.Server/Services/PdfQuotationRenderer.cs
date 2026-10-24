@@ -10,14 +10,15 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
 {
     private readonly QuotationPdfRenderer _renderer = new();
 
-    public byte[] Render(QuotationHeader q, CompanySettings company, QuotationSettings settings) =>
-        _renderer.Render(ToDocument(q, company, settings, watermark: null));
+    public byte[] Render(QuotationHeader q, CompanySettings company, QuotationSettings settings, PrintStamp? printed = null) =>
+        _renderer.Render(ToDocument(q, company, settings, watermark: null, printed: printed));
 
-    public byte[] RenderPreview(QuotationHeader q, CompanySettings company, QuotationSettings settings, string provisionalNumber) =>
-        _renderer.Render(ToDocument(q, company, settings, watermark: "DRAFT", provisionalNumber));
+    public byte[] RenderPreview(QuotationHeader q, CompanySettings company, QuotationSettings settings, string provisionalNumber,
+        PrintStamp? printed = null) =>
+        _renderer.Render(ToDocument(q, company, settings, watermark: "DRAFT", provisionalNumber, printed));
 
     public QuotationDocument ToDocument(QuotationHeader q, CompanySettings company, QuotationSettings settings, string? watermark,
-        string? provisionalNumber = null)
+        string? provisionalNumber = null, PrintStamp? printed = null)
     {
         var lines = q.Lines.OrderBy(l => l.LineNo).Select(l => new PdfLine(
             l.LineNo,
@@ -30,22 +31,39 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             l.Unit,
             l.Rate,
             l.DiscountPercent,
-            l.Amount)).ToList();
+            l.Amount,
+            l.PartNumber)).ToList();
 
         var companyState = company.StateCode;
         var placeOfSupply = q.Consignee.StateCode.Length > 0 ? q.Consignee.StateCode : q.Buyer.StateCode;
+        var interState = companyState.Length > 0 && placeOfSupply.Length > 0 && companyState != placeOfSupply;
+        var ordered = q.Lines.OrderBy(l => l.LineNo).ToList();
         var calc = QuotationCalculator.Calculate(new CalcInput(
-            q.Lines.OrderBy(l => l.LineNo).Select(l => new CalcLine(l.Quantity, l.Rate, l.DiscountPercent, l.GstRate ?? 0, l.Unit)).ToList(),
-            q.PackingForwarding, null, settings.TaxPresentation, settings.RoundOffTotal,
-            companyState.Length > 0 && placeOfSupply.Length > 0 && companyState != placeOfSupply));
+            ordered.Select(l => new CalcLine(l.Quantity, l.Rate, l.DiscountPercent, l.GstRate ?? 0, l.Unit)).ToList(),
+            q.PackingForwarding, null, settings.TaxPresentation, settings.RoundOffTotal, interState));
 
+        // As in Tally: one line per tax ledger (SGST, CGST or IGST), then the round off ("Less :" when negative).
         var summary = new List<PdfSummaryRow>();
         if (calc.PackingForwarding != 0) summary.Add(new PdfSummaryRow("Packing & Forwarding", "", calc.PackingForwarding));
-        foreach (var t in calc.Taxes) summary.Add(new PdfSummaryRow(t.Name, $"{t.RatePercent:0.##} %", t.Amount));
-        if (calc.RoundOff != 0) summary.Add(new PdfSummaryRow("Round Off", "", calc.RoundOff));
+        foreach (var name in new[] { "SGST", "CGST", "IGST" })
+        {
+            var amount = calc.Taxes.Where(t => t.Name == name).Sum(t => t.Amount);
+            if (amount != 0) summary.Add(new PdfSummaryRow(name, "", amount));
+        }
+        if (calc.RoundOff != 0) summary.Add(new PdfSummaryRow("Round Off", "", calc.RoundOff, Less: calc.RoundOff < 0));
+        var hsn = q.DocType == DocumentType.ProformaInvoice && calc.Taxes.Count > 0 ? HsnSummary(ordered, calc, interState) : [];
 
         return new QuotationDocument
         {
+            Title = q.DocType == DocumentType.ProformaInvoice ? "PROFORMA INVOICE" : "QUOTATION",
+            Kind = q.DocType,
+            Printed = printed,
+            DeliveryNote = q.DeliveryNote,
+            DispatchDocNo = q.DispatchDocNo,
+            DeliveryNoteDate = q.DeliveryNoteDate,
+            HsnSummary = hsn,
+            InterState = interState,
+            TaxAmountInWords = hsn.Count == 0 ? "" : IndianFormat.AmountInWords(hsn.Sum(h => h.TotalTax), settings.CurrencyWordsPrefix),
             Company = company,
             Logo = LoadLogo(company.LogoPath),
             Number = q.Number ?? provisionalNumber ?? "(not numbered)",
@@ -72,6 +90,53 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             VerifiedBy = q.VerifiedBy,
             Watermark = watermark,
         };
+    }
+
+    /// <summary>
+    /// HSN/SAC-wise taxable value and tax, P&amp;F apportioned like the calculator does; the totals per GST rate are made
+    /// to equal the calculator's tax lines exactly (the paise difference, if any, goes to the largest row of that rate).
+    /// </summary>
+    internal static List<PdfHsnRow> HsnSummary(List<QuotationLine> lines, CalcResult calc, bool interState)
+    {
+        var amounts = lines.Select(l => QuotationCalculator.LineAmount(l.Quantity, l.Rate, l.DiscountPercent)).ToList();
+        var groups = lines.Select((l, i) => (Hsn: l.Hsn.Length > 0 ? l.Hsn : "—", Rate: l.GstRate ?? 0, Amount: amounts[i]))
+            .GroupBy(x => (x.Hsn, x.Rate))
+            .Select(g => (g.Key.Hsn, g.Key.Rate, Value: g.Sum(x => x.Amount)))
+            .ToList();
+        var rows = new List<PdfHsnRow>();
+        foreach (var byRate in groups.GroupBy(g => g.Rate))
+        {
+            var taxLines = calc.Taxes.Where(t => t.RatePercent == (interState ? byRate.Key : byRate.Key / 2)).ToList();
+            var rateTaxable = taxLines.Count > 0 ? taxLines[0].TaxableValue : byRate.Sum(g => g.Value);
+            var rateValue = byRate.Sum(g => g.Value);
+            var items = byRate.ToList();
+            var start = rows.Count;
+            var allocated = 0m;
+            for (var i = 0; i < items.Count; i++)
+            {
+                var taxable = i == items.Count - 1 ? rateTaxable - allocated
+                    : rateValue == 0 ? items[i].Value : QuotationCalculator.Round2(rateTaxable * items[i].Value / rateValue);
+                allocated += taxable;
+                var half = byRate.Key / 2;
+                rows.Add(interState
+                    ? new PdfHsnRow(items[i].Hsn, taxable, 0, 0, 0, 0, byRate.Key, QuotationCalculator.Round2(taxable * byRate.Key / 100))
+                    : new PdfHsnRow(items[i].Hsn, taxable, half, QuotationCalculator.Round2(taxable * half / 100), half,
+                        QuotationCalculator.Round2(taxable * half / 100), 0, 0));
+            }
+            if (byRate.Key <= 0 || rows.Count == start) continue;
+            // Make the rows of this rate add up to the calculator's tax lines.
+            var largest = rows.Skip(start).Select((r, i) => (r, i: i + start)).MaxBy(x => x.r.TaxableValue).i;
+            var central = taxLines.Where(t => t.Name == "CGST").Sum(t => t.Amount) - rows.Skip(start).Sum(r => r.CentralAmount);
+            var state = taxLines.Where(t => t.Name == "SGST").Sum(t => t.Amount) - rows.Skip(start).Sum(r => r.StateAmount);
+            var integrated = taxLines.Where(t => t.Name == "IGST").Sum(t => t.Amount) - rows.Skip(start).Sum(r => r.IntegratedAmount);
+            rows[largest] = rows[largest] with
+            {
+                CentralAmount = rows[largest].CentralAmount + central,
+                StateAmount = rows[largest].StateAmount + state,
+                IntegratedAmount = rows[largest].IntegratedAmount + integrated,
+            };
+        }
+        return rows.Where(r => r.TaxableValue != 0 || r.TotalTax != 0).ToList();
     }
 
     private static PdfParty ToParty(PartySnapshot p, bool includeContact = true) => new(

@@ -21,8 +21,8 @@ public sealed class QuotationException(int status, string code, string message, 
 /// <summary>Produces the PDF file for an approved quotation (implemented by the PDF engine).</summary>
 public interface IQuotationDocumentRenderer
 {
-    /// <summary>Renders the quotation and returns the PDF bytes.</summary>
-    byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings);
+    /// <summary>Renders the quotation and returns the PDF bytes; <paramref name="printed"/> adds "Printed on … By: …".</summary>
+    byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null);
 }
 
 public sealed record UserContext(string UserName, string DisplayName, string Machine);
@@ -67,6 +67,7 @@ public sealed class QuotationService(
             CreatedUtc = now,
             SourceEmailId = sourceEmailId,
             DuplicatedFromId = duplicatedFrom,
+            DocType = request.DocType,
         };
         await ApplyAsync(q, request, isNew: true, ct);
         db.Quotations.Add(q);
@@ -235,7 +236,7 @@ public sealed class QuotationService(
         }
         try
         {
-            var bytes = renderer.Render(q, settings.Company, settings.Quotation);
+            var bytes = renderer.Render(q, settings.Company, settings.Quotation, Stamp(user));
             q.PdfPath = await pdfStorage.SaveAsync(q, bytes, ct);
             q.PdfError = null;
             q.Status = QuotationStatus.Generated;
@@ -284,19 +285,63 @@ public sealed class QuotationService(
     }
 
     /// <summary>Renders the current state with a DRAFT watermark (unapproved) without saving anything.</summary>
-    public async Task<byte[]> PreviewPdfAsync(Guid id, PdfQuotationRenderer pdf, CancellationToken ct)
+    public async Task<byte[]> PreviewPdfAsync(Guid id, PdfQuotationRenderer pdf, CancellationToken ct, UserContext? user = null)
     {
         var q = await LoadAsync(id, ct);
+        var stamp = user is null ? null : Stamp(user);
         if (q.Status is QuotationStatus.Generated or QuotationStatus.Approved)
         {
-            return pdf.Render(q, settings.Company, settings.Quotation);
+            return pdf.Render(q, settings.Company, settings.Quotation, stamp);
         }
-        var provisional = q.Number ?? (await numbering.PreviewAsync(db, fy.GetActive().Year, ct)).Number + " (provisional)";
-        return pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional);
+        var provisional = q.Number ?? (await numbering.PreviewAsync(db, fy.GetActive().Year, ct, q.DocType)).Number + " (provisional)";
+        return pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional, stamp);
     }
 
-    public async Task<NextNumberDto> PreviewNextNumberAsync(DateOnly? date, CancellationToken ct) =>
-        await numbering.PreviewAsync(db, RequireActiveYear(date ?? fy.Today()), ct);
+    /// <summary>
+    /// The PDF of an approved quotation as printed now by <paramref name="user"/> ("Printed on … By: …").
+    /// The copy archived at approval is used only if rendering fails.
+    /// </summary>
+    public async Task<byte[]?> PrintPdfAsync(Guid id, UserContext user, CancellationToken ct)
+    {
+        var q = await LoadAsync(id, ct);
+        if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated)) return null;
+        try
+        {
+            return renderer.Render(q, settings.Company, settings.Quotation, Stamp(user));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            log.LogWarning(ex, "Printing {Number} fresh failed; using the archived PDF", q.Number);
+            var path = pdfStorage.FullPath(q.PdfPath);
+            return path is null ? null : await File.ReadAllBytesAsync(path, ct);
+        }
+    }
+
+    /// <summary>Server local time (the office's time zone) and the logged-in user.</summary>
+    private Quotation.Pdf.PrintStamp Stamp(UserContext user) => new(clock.GetLocalNow().DateTime, user.UserName);
+
+    public async Task<NextNumberDto> PreviewNextNumberAsync(DateOnly? date, CancellationToken ct, DocumentType type = DocumentType.Quotation) =>
+        await numbering.PreviewAsync(db, RequireActiveYear(date ?? fy.Today()), ct, type);
+
+    /// <summary>
+    /// New proforma invoice (own number series, today's date) from a quotation: same customer, references,
+    /// lines and rates. The quotation itself is unchanged. Nothing is created in Tally.
+    /// </summary>
+    public async Task<QuotationDto> ConvertToProformaAsync(Guid id, UserContext user, CancellationToken ct)
+    {
+        var source = await LoadAsync(id, ct);
+        if (source.DocType == DocumentType.ProformaInvoice)
+            throw new QuotationException(409, ApiErrorCodes.InvalidState, "This is already a proforma invoice.");
+        var request = ToRequest(source);
+        request.DocType = DocumentType.ProformaInvoice;
+        request.Date = fy.Today();
+        if (string.IsNullOrWhiteSpace(request.OtherReferences) && source.Number is not null)
+            request.OtherReferences = "Our quotation " + source.Number;
+        var dto = await CreateAsync(request, QuotationSource.Manual, user, ct, duplicatedFrom: source.Id);
+        audit.Add(user.UserName, user.Machine, "ConvertedToProforma", "Quotation", dto.Id.ToString(), $"From {source.Number} to {dto.Number}");
+        await SaveAsync(ct);
+        return dto;
+    }
 
     public List<ValidationIssue> Validate(QuotationHeader q) => QuotationValidator.Validate(new ValidationInput(
         q.CustomerId,
@@ -320,6 +365,9 @@ public sealed class QuotationService(
         q.OtherReferences = Trim(r.OtherReferences, 500);
         q.Destination = Trim(r.Destination, 200);
         q.TermsOfDelivery = Trim(r.TermsOfDelivery, 500);
+        q.DeliveryNote = Trim(r.DeliveryNote, 200);
+        q.DispatchDocNo = Trim(r.DispatchDocNo, 200);
+        q.DeliveryNoteDate = r.DeliveryNoteDate;
         q.Remarks = Trim(r.Remarks, 2000);
         q.TermsAndConditions = Trim(r.TermsAndConditions, 4000);
         q.PreparedBy = Trim(r.PreparedBy, 100);
@@ -369,6 +417,7 @@ public sealed class QuotationService(
                 DiscountPercent = rl.DiscountPercent,
                 Rate = rl.Rate,
                 ItemName = Trim(rl.ItemName, 300),
+                PartNumber = Trim(rl.PartNumber, 100),
                 Hsn = Trim(rl.Hsn, 10),
                 GstRate = rl.GstRate,
                 Unit = Trim(rl.Unit, 20),
@@ -380,6 +429,7 @@ public sealed class QuotationService(
                     throw new QuotationException(400, ApiErrorCodes.Validation, $"Line {lineNo}: the selected product no longer exists in Tally.");
                 }
                 line.ItemName = p.Name;
+                line.PartNumber = p.PartNumber;
                 if (p.Hsn.Length > 0) line.Hsn = p.Hsn;
                 if (p.GstRate is not null) line.GstRate = p.GstRate;
                 if (p.Unit.Length > 0) line.Unit = p.Unit;
@@ -528,6 +578,10 @@ public sealed class QuotationService(
         OtherReferences = q.OtherReferences,
         Destination = q.Destination,
         TermsOfDelivery = q.TermsOfDelivery,
+        DocType = q.DocType,
+        DeliveryNote = q.DeliveryNote,
+        DispatchDocNo = q.DispatchDocNo,
+        DeliveryNoteDate = q.DeliveryNoteDate,
         Remarks = q.Remarks,
         TermsAndConditions = q.TermsAndConditions,
         PackingForwarding = q.PackingForwarding,
@@ -539,7 +593,7 @@ public sealed class QuotationService(
 
     public static QuotationLineDto ToDto(QuotationLine l) => new()
     {
-        LineNo = l.LineNo, ProductId = l.ProductId, ItemName = l.ItemName, Description = l.Description, Hsn = l.Hsn,
+        LineNo = l.LineNo, ProductId = l.ProductId, ItemName = l.ItemName, PartNumber = l.PartNumber, Description = l.Description, Hsn = l.Hsn,
         GstRate = l.GstRate, DueOn = l.DueOn, Quantity = l.Quantity, Unit = l.Unit, Rate = l.Rate, TallyRate = l.TallyRate,
         DiscountPercent = l.DiscountPercent, Amount = l.Amount,
     };
@@ -558,6 +612,7 @@ public sealed class QuotationService(
         {
             Id = q.Id,
             Number = q.Number,
+            DocType = q.DocType,
             FinancialYear = q.FinancialYearStart is { } s ? new FinancialYear(s, qs.FinancialYearStartMonth).Label : null,
             Date = q.Date,
             Status = q.Status,
@@ -574,6 +629,9 @@ public sealed class QuotationService(
             OtherReferences = q.OtherReferences,
             Destination = q.Destination,
             TermsOfDelivery = q.TermsOfDelivery,
+            DeliveryNote = q.DeliveryNote,
+            DispatchDocNo = q.DispatchDocNo,
+            DeliveryNoteDate = q.DeliveryNoteDate,
             Remarks = q.Remarks,
             TermsAndConditions = q.TermsAndConditions,
             PackingForwarding = q.PackingForwarding,

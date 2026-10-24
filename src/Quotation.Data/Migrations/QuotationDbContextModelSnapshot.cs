@@ -568,13 +568,27 @@ namespace Quotation.Data.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DeliveryNote")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("DeliveryNoteDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DispatchDocNo")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DispatchedThrough")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("DocType")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid?>("DuplicatedFromId")
                         .HasColumnType("TEXT");
@@ -673,7 +687,7 @@ namespace Quotation.Data.Migrations
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("FinancialYearStart", "Sequence")
+                    b.HasIndex("DocType", "FinancialYearStart", "Sequence")
                         .IsUnique();
 
                     b.ToTable("Quotations", (string)null);
@@ -712,6 +726,10 @@ namespace Quotation.Data.Migrations
 
                     b.Property<int>("LineNo")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("PartNumber")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("ProductId")
                         .HasColumnType("INTEGER");

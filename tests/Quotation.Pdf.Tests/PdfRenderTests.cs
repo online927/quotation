@@ -101,10 +101,10 @@ public class PdfRenderTests
             var text = Text(pages[i]);
             Assert.Contains("TSQ2526-3247", text);          // header on every page
             Assert.Contains("Description", text);            // column headings on every page
-            Assert.Contains($"Page {i + 1} of {pages.Count}", text);
+            Assert.Contains(i == 0 ? "QUOTATION" : $"QUOTATION(Page {i + 1})", text); // as in Tally
             if (i < pages.Count - 1)
             {
-                Assert.Contains($"continued to page number {i + 2}", text);
+                Assert.Contains("continued ...", text);
                 Assert.DoesNotContain("Chargeable", text);
                 Assert.DoesNotContain("Authorised", text);
             }

@@ -199,7 +199,9 @@ public sealed class TallySyncService(
             }
 
             runtime.SetSync(true, "Saving…");
-            await using var tx = await db.Database.BeginTransactionAsync(ct);
+            // All changes are prepared in memory and written by the single SaveChanges below, which runs in one
+            // transaction: the database is locked for writing only while the rows are written, so quotations
+            // being saved on other PCs never wait behind the preparation of a 20,000-item sync.
             var syncedAt = clock.GetUtcNow().UtcDateTime;
 
             UpsertUnits(db, units, syncedAt);
@@ -264,7 +266,6 @@ public sealed class TallySyncService(
             run.FinishedUtc = clock.GetUtcNow().UtcDateTime;
             run.Message = $"{items.Count} stock items and {ledgers.Count} customers read in {sw.Elapsed.TotalSeconds:0.0} s.";
             await db.SaveChangesAsync(ct);
-            await tx.CommitAsync(ct);
             await settings.SaveAsync(SettingsHashKey, new StateString { Value = settingsHash }, "system", ct);
 
             // Daytime syncs only pick up new quotations/invoices; the complete read runs at night or on request.

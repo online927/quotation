@@ -71,6 +71,21 @@ public class ConcurrencyStressTests(ITestOutputHelper output)
         var syncRun = await sync;
         output.WriteLine($"{numbers.Count} quotations by 6 PCs + full sync in {sw.Elapsed.TotalSeconds:0.0}s; errors: {errors.Count}");
         foreach (var e in errors.Take(10)) output.WriteLine(e);
+        if (!errors.IsEmpty)
+        {
+            // Show the server's side of a failed request (the client only sees "Server error (500)").
+            var logs = Path.Combine(server.DataDirectory, "logs");
+            if (Directory.Exists(logs))
+            {
+                foreach (var file in Directory.GetFiles(logs))
+                {
+                    using var reader = new StreamReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                    var lines = (await reader.ReadToEndAsync()).Split('\n');
+                    foreach (var line in lines.Where(l => l.Contains("[ERR]") || l.Contains("[FTL]") || l.Contains("Exception")).Take(40))
+                        output.WriteLine(line);
+                }
+            }
+        }
 
         Assert.Empty(errors);
         Assert.Equal(SyncStatus.Succeeded, syncRun!.Status);

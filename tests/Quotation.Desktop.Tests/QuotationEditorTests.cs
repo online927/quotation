@@ -238,6 +238,8 @@ public class QuotationEditorTests
     public async Task Item_without_tally_price_is_filled_with_its_last_quoted_rate()
     {
         using var ctx = await SetupAsync();
+        await ctx.Session.Api.StartSyncAsync(SyncKind.LastRates, wait: true);
+        await Task.Delay(500); // search index rebuild
         var editor = await NewEditor(ctx);
         var box = await TypeInto(ctx, "ProductBox", "rsk spirit level");
         Press(ctx, Key.Enter, PhysicalKey.Enter);

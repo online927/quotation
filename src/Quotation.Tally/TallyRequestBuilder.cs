@@ -14,6 +14,13 @@ public sealed class TallyCollectionRequest
     public IReadOnlyDictionary<string, string> Computes { get; init; } = new Dictionary<string, string>();
     /// <summary>Filters: formula name → TDL formula. All filters must be true.</summary>
     public IReadOnlyDictionary<string, string> Filters { get; init; } = new Dictionary<string, string>();
+    /// <summary>
+    /// Restricts the collection to the children of this object, e.g. the vouchers of one voucher type
+    /// (Type "Vouchers : VoucherType"). Tally then reads them through its index instead of scanning everything.
+    /// </summary>
+    public string? ChildOf { get; init; }
+    /// <summary>With <see cref="ChildOf"/>: also include objects of types derived from it.</summary>
+    public bool BelongsTo { get; init; }
 }
 
 /// <summary>
@@ -42,6 +49,11 @@ public static class TallyRequestBuilder
         sb.Append("</STATICVARIABLES><TDL><TDLMESSAGE>");
         sb.Append("<COLLECTION NAME=\"").Append(Esc(c.Name)).Append("\" ISMODIFY=\"No\" ISFIXED=\"No\" ISINITIALIZE=\"No\" ISOPTION=\"No\" ISINTERNAL=\"No\">");
         sb.Append("<TYPE>").Append(Esc(c.Type)).Append("</TYPE>");
+        if (!string.IsNullOrEmpty(c.ChildOf))
+        {
+            sb.Append("<CHILDOF>").Append(Esc(TallyText.TdlString(c.ChildOf))).Append("</CHILDOF>");
+            if (c.BelongsTo) sb.Append("<BELONGSTO>Yes</BELONGSTO>");
+        }
         sb.Append("<NATIVEMETHOD>").Append(Esc(string.Join(", ", c.NativeMethods))).Append("</NATIVEMETHOD>");
         foreach (var (name, formula) in c.Computes)
         {

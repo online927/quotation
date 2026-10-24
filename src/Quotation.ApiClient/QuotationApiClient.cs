@@ -169,6 +169,9 @@ public partial class QuotationApiClient
 public partial class QuotationApiClient
 {
     /// <summary>Starts a sync. With wait=true the call returns when the sync has finished.</summary>
+    /// <summary>Stops a running read of last rates (after the request in progress).</summary>
+    public Task StopLastRatesAsync(CancellationToken ct = default) => SendAsync(HttpMethod.Post, "api/sync/lastrates/stop", null, ct);
+
     public async Task<SyncRunDto?> StartSyncAsync(Quotation.Core.Domain.SyncKind kind, bool wait = false, CancellationToken ct = default)
     {
         var url = $"api/sync/{kind.ToString().ToLowerInvariant()}{(wait ? "?wait=true" : "")}";

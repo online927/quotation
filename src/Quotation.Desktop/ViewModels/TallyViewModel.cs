@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Quotation.ApiClient;
 using Quotation.Contracts;
 using Quotation.Desktop.Services;
 
@@ -63,6 +64,23 @@ public sealed partial class TallyViewModel : ViewModelBase
 
     [RelayCommand]
     private Task IncrementalSyncAsync() => StartSyncAsync(Core.Domain.SyncKind.Incremental);
+
+    [RelayCommand]
+    private Task ReadLastRatesAsync() => StartSyncAsync(Core.Domain.SyncKind.LastRates);
+
+    [RelayCommand]
+    private async Task StopLastRatesAsync()
+    {
+        try
+        {
+            await _session.Api.StopLastRatesAsync();
+            InfoMessage = "Stopping after the current request…";
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
 
     private Task StartSyncAsync(Core.Domain.SyncKind kind) => RunAsync(async () =>
     {

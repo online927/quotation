@@ -50,8 +50,67 @@ public sealed class TallySyncService(
     /// <summary>Tells the search indexes that product data changed outside a sync (e.g. last rates after an approval).</summary>
     public void NotifyDataChanged() => DataChanged?.Invoke();
 
+    private CancellationTokenSource? _lastRatesCts;
+
+    /// <summary>Stops a running last-rate read after the current request. False when none is running.</summary>
+    public bool StopLastRates()
+    {
+        var cts = _lastRatesCts;
+        if (cts is null) return false;
+        cts.Cancel();
+        return true;
+    }
+
+    /// <summary>
+    /// Reads last quoted/sold rates completely from Tally's vouchers (started from the Tally page or by the nightly
+    /// sync). Light on Tally: one voucher type and one week per request, with pauses; can be stopped at any time.
+    /// </summary>
+    public async Task<SyncRunDto> RunLastRatesAsync(string triggeredBy, CancellationToken ct)
+    {
+        if (!await _gate.WaitAsync(0, ct)) throw new SyncAlreadyRunningException();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _lastRatesCts = cts;
+        using var scope = scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
+        var run = new SyncRun { Kind = SyncKind.LastRates, Status = SyncStatus.Running, StartedUtc = clock.GetUtcNow().UtcDateTime, TriggeredBy = triggeredBy };
+        try
+        {
+            db.SyncRuns.Add(run);
+            await db.SaveChangesAsync(ct);
+            runtime.SetSync(true, "Reading last rates from Tally…");
+            var info = await gateway.Companies().GetCompanyInfoAsync(settings.Quotation.FinancialYearStartMonth, cts.Token);
+            var result = await lastRates.RebuildAsync(db, info.Company.MaxVoucherAlterId, fy.Today(), m => runtime.SetSync(true, m), cts.Token);
+            run.Status = result.Failed ? SyncStatus.Failed : SyncStatus.Succeeded;
+            run.ProductsChanged = result.Changed;
+            run.Message = result.Message;
+            if (result.Changed > 0) DataChanged?.Invoke();
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            run.Status = SyncStatus.Failed;
+            run.Message = "Stopped. Tally was not changed; the previous last rates are kept.";
+        }
+        catch (TallyException ex)
+        {
+            run.Status = SyncStatus.Failed;
+            run.Message = "Reading last rates stopped: " + ex.Message;
+        }
+        finally
+        {
+            _lastRatesCts = null;
+            run.FinishedUtc = clock.GetUtcNow().UtcDateTime;
+            foreach (var e in db.ChangeTracker.Entries<Product>().Where(e => e.State != EntityState.Unchanged).ToList()) e.State = EntityState.Detached;
+            await db.SaveChangesAsync(CancellationToken.None);
+            runtime.SetSync(false, null);
+            _gate.Release();
+        }
+        log.LogInformation("Last rates run {Status}: {Message}", run.Status, run.Message);
+        return ToDto(run);
+    }
+
     public async Task<SyncRunDto> RunAsync(SyncKind requested, string triggeredBy, CancellationToken ct)
     {
+        if (requested == SyncKind.LastRates) return await RunLastRatesAsync(triggeredBy, ct);
         if (!await _gate.WaitAsync(0, ct)) throw new SyncAlreadyRunningException();
         try
         {
@@ -79,7 +138,7 @@ public sealed class TallySyncService(
         var tally = settings.Tally;
         var settingsHash = $"v{MappingVersion};{string.Join("|", tally.CustomerGroups)};{tally.RateSource};{tally.PriceLevel};{tally.BrandField};{tally.ManufacturerField};{tally.DerivePartNumberFromName}";
 
-        var lastRun = await db.SyncRuns.Where(r => r.Status == SyncStatus.Succeeded || r.Status == SyncStatus.Skipped)
+        var lastRun = await db.SyncRuns.Where(r => r.Kind != SyncKind.LastRates && (r.Status == SyncStatus.Succeeded || r.Status == SyncStatus.Skipped))
             .OrderByDescending(r => r.Id).FirstOrDefaultAsync(ct);
         var previousHash = settings.Get<StateString>(SettingsHashKey).Value;
         var kind = requested;
@@ -106,7 +165,7 @@ public sealed class TallySyncService(
             if (kind == SyncKind.Incremental && maxAlterId > 0 && maxAlterId == lastRun!.MaxAlterId)
             {
                 // Masters unchanged, but new quotations/invoices may carry newer last rates.
-                var rates = await RefreshLastRatesAsync(db, full: false, info.Company.MaxVoucherAlterId, today, ct);
+                var rates = await UpdateLastRatesAsync(db, info.Company.MaxVoucherAlterId, today, ct);
                 run.Status = SyncStatus.Skipped;
                 run.MaxAlterId = maxAlterId;
                 run.FinishedUtc = clock.GetUtcNow().UtcDateTime;
@@ -208,8 +267,10 @@ public sealed class TallySyncService(
             await tx.CommitAsync(ct);
             await settings.SaveAsync(SettingsHashKey, new StateString { Value = settingsHash }, "system", ct);
 
-            runtime.SetSync(true, "Reading last rates from quotations and invoices…");
-            var lastRateResult = await RefreshLastRatesAsync(db, kind == SyncKind.Full, info.Company.MaxVoucherAlterId, today, ct);
+            // Daytime syncs only pick up new quotations/invoices; the complete read runs at night or on request.
+            var lastRateResult = kind == SyncKind.Incremental || !settings.Tally.UseLastRate
+                ? await UpdateLastRatesAsync(db, info.Company.MaxVoucherAlterId, today, ct)
+                : new LastRateResult(0, lastRates.IsBuilt ? "" : LastRateService.NotReadYetMessage);
             if (lastRateResult.Message.Length > 0)
             {
                 run.Message += " " + lastRateResult.Message;
@@ -239,12 +300,12 @@ public sealed class TallySyncService(
     }
 
     /// <summary>Last rates are an addition: a problem reading vouchers never fails the master sync.</summary>
-    private async Task<LastRateResult> RefreshLastRatesAsync(QuotationDbContext db, bool full, long companyVoucherAlterId, DateOnly today,
+    private async Task<LastRateResult> UpdateLastRatesAsync(QuotationDbContext db, long companyVoucherAlterId, DateOnly today,
         CancellationToken ct)
     {
         try
         {
-            return await lastRates.RefreshAsync(db, full, companyVoucherAlterId, today, ct);
+            return await lastRates.UpdateAsync(db, companyVoucherAlterId, today, ct);
         }
         catch (TallyException ex)
         {

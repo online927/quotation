@@ -7,25 +7,47 @@ using Quotation.Tally;
 
 namespace Quotation.Server.Services;
 
-public sealed record LastRateResult(int Changed, string Message);
+public sealed record LastRateResult(int Changed, string Message, bool Failed = false);
 
 /// <summary>
 /// "Last rate" for items whose Tally master has no selling price: the rate the item was last quoted or sold at,
 /// as TallyPrime itself fills it in. Read (export only) from Tally's Sales and Quotation vouchers, and updated
 /// when a quotation is approved in this app. Tally is never changed.
+/// <para>
+/// TallyPrime answers one request at a time and does not respond to its users meanwhile, so reading vouchers is
+/// kept light: vouchers are requested per voucher type through Tally's index, one week at a time with a pause
+/// between requests, and reading stops at the first slow answer. The complete read (<see cref="RebuildAsync"/>)
+/// only runs when started from the Tally page or by the nightly sync; daytime syncs (<see cref="UpdateAsync"/>)
+/// only ask for vouchers created or altered since the last read, from the last two months.
+/// </para>
 /// </summary>
-public sealed class LastRateService(TallyGateway gateway, SettingsService settings, ILogger<LastRateService> log)
+public sealed class LastRateService(TallyGateway gateway, SettingsService settings, TimeProvider clock, ILogger<LastRateService> log)
 {
     public const string StateKey = "state:lastrate";
+    public const int ChunkDays = 7;
+    public const int RecentMonths = 2;
+
+    /// <summary>Pause between voucher requests, so TallyPrime keeps responding to its users.</summary>
+    public TimeSpan PauseBetweenRequests { get; set; } = TimeSpan.FromSeconds(2);
+
+    /// <summary>Longest a single voucher request may take; slower means Tally is struggling, so reading stops.</summary>
+    public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(45);
+
+    /// <summary>After a failed daytime update, automatic reading pauses for this long.</summary>
+    public TimeSpan Backoff { get; set; } = TimeSpan.FromHours(6);
 
     public sealed class LastRateState
     {
-        /// <summary>Settings the stored rates were built with; a change forces a full rebuild.</summary>
+        /// <summary>Settings the stored rates were built with; empty or different = not built yet.</summary>
         public string Hash { get; set; } = "";
         /// <summary>Tally's voucher alteration counter at the last read (unchanged = no new or edited vouchers).</summary>
         public long CompanyVoucherAlterId { get; set; }
-        /// <summary>Highest voucher AlterID read so far (incremental reads ask only for newer ones).</summary>
+        /// <summary>Highest voucher AlterID read so far (daytime updates ask only for newer ones).</summary>
         public long MaxVoucherAlterId { get; set; }
+        public DateTime? BuiltUtc { get; set; }
+        /// <summary>No automatic reading before this time (set after Tally was slow or refused).</summary>
+        public DateTime? PausedUntilUtc { get; set; }
+        public string LastError { get; set; } = "";
     }
 
     private sealed record Candidate(DateOnly Date, long Order, decimal Rate, string Note);
@@ -43,49 +65,168 @@ public sealed class LastRateService(TallyGateway gateway, SettingsService settin
     public static string NoteFor(QuotationHeader q) =>
         $"Quotation {q.Number} (this app) · {q.Buyer.Name} · {q.Date.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)}";
 
+    private string CurrentHash()
+    {
+        var t = settings.Tally;
+        return $"{Math.Clamp(t.LastRateMonths, 1, 120)};{string.Join("|", t.LastRateVoucherTypes.Select(x => x.Trim()))}";
+    }
+
+    /// <summary>True when last rates have been read completely with the current settings.</summary>
+    public bool IsBuilt => settings.Get<LastRateState>(StateKey).Hash == CurrentHash();
+
+    public const string NotReadYetMessage =
+        "Last rates not read yet: use 'Read last rates' on the Tally Connection page (or wait for the nightly sync).";
+
     /// <summary>
-    /// Refreshes last rates from Tally. A full refresh rebuilds them from the whole look-back window; otherwise only
-    /// vouchers created or altered since the last read are fetched (nothing at all when Tally reports no voucher change).
+    /// Reads last rates completely (look-back window, week by week). Started from the Tally page or by the nightly sync.
+    /// On a slow or failed answer it stops and keeps the previous rates.
     /// </summary>
-    public async Task<LastRateResult> RefreshAsync(QuotationDbContext db, bool full, long companyVoucherAlterId, DateOnly today,
-        CancellationToken ct)
+    public async Task<LastRateResult> RebuildAsync(QuotationDbContext db, long companyVoucherAlterId, DateOnly today,
+        Action<string> progress, CancellationToken ct)
     {
         var tally = settings.Tally;
         if (!tally.UseLastRate) return await ClearAllAsync(db, ct);
 
-        var months = Math.Clamp(tally.LastRateMonths, 1, 120);
-        var hash = $"{months};{string.Join("|", tally.LastRateVoucherTypes.Select(t => t.Trim()))}";
         var state = settings.Get<LastRateState>(StateKey);
-        if (state.Hash != hash) full = true;
-        if (!full && companyVoucherAlterId > 0 && companyVoucherAlterId == state.CompanyVoucherAlterId)
-        {
-            return new LastRateResult(0, "");
-        }
-
-        var vouchers = new TallyVoucherService(gateway.CreateClient());
-        var types = TallyRateVoucherTypes.Select(await vouchers.GetVoucherTypesAsync(ct), tally.LastRateVoucherTypes);
-        if (types.Count == 0)
-        {
-            return new LastRateResult(0, "Last rates: no Sales or Quotation voucher types found in Tally.");
-        }
-
+        var months = Math.Clamp(tally.LastRateMonths, 1, 120);
         var from = new DateOnly(today.Year, today.Month, 1).AddMonths(-months);
-        var to = new DateOnly(today.Year, today.Month, 1).AddMonths(2).AddDays(-1);
+        var to = today.AddDays(31);
         var lines = new List<TallyRateLine>();
-        if (full)
+        IReadOnlyList<string> roots;
+        try
         {
-            // One month per request keeps each Tally response small.
-            for (var start = from; start <= to; start = start.AddMonths(1))
+            var vouchers = new TallyVoucherService(gateway.CreateClient(RequestTimeout));
+            var all = await vouchers.GetVoucherTypesAsync(ct);
+            roots = TallyRateVoucherTypes.RequestRoots(all, TallyRateVoucherTypes.Select(all, tally.LastRateVoucherTypes));
+            if (roots.Count == 0) return new LastRateResult(0, "Last rates: no Sales or Quotation voucher types found in Tally.", Failed: true);
+
+            var chunks = new List<(DateOnly Start, DateOnly End)>();
+            for (var start = from; start <= to; start = start.AddDays(ChunkDays))
             {
-                var end = start.AddMonths(1).AddDays(-1);
-                await foreach (var l in vouchers.GetRateLinesAsync(types, start, end > to ? to : end, null, ct)) lines.Add(l);
+                var end = start.AddDays(ChunkDays - 1);
+                chunks.Add((start, end > to ? to : end));
+            }
+            var total = roots.Count * chunks.Count;
+            var done = 0;
+            foreach (var root in roots)
+            {
+                for (var i = 0; i < chunks.Count; i++)
+                {
+                    var (start, end) = chunks[i];
+                    if (done > 0 && PauseBetweenRequests > TimeSpan.Zero) await Task.Delay(PauseBetweenRequests, ct);
+                    done++;
+                    progress($"Reading last rates from Tally ({done} of {total}): {root}, " +
+                             $"{start.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)} to {end.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)}…");
+                    var got = await vouchers.GetRateLinesAsync(root, start, end, null, ct);
+                    if (got.Any(l => l.Date < start || l.Date > end))
+                    {
+                        // This Tally does not apply the requested period: the answer already holds every voucher of the type.
+                        lines.AddRange(got.Where(l => l.Date >= from && l.Date <= to));
+                        done += chunks.Count - i - 1;
+                        log.LogWarning("Tally ignored the voucher period for {Type}; used one complete answer", root);
+                        break;
+                    }
+                    lines.AddRange(got);
+                }
             }
         }
-        else
+        catch (TallyException ex)
         {
-            await foreach (var l in vouchers.GetRateLinesAsync(types, from, to, state.MaxVoucherAlterId, ct)) lines.Add(l);
+            state.LastError = ex.Message;
+            await settings.SaveAsync(StateKey, state, "system", ct);
+            log.LogWarning("Reading last rates stopped: {Message}", ex.Message);
+            return new LastRateResult(0, $"Reading last rates stopped: {ex.Message} Tally was not changed; the previous last rates are kept. " +
+                                         "Try again when Tally is less busy, or reduce the look-back months in Settings → Tally.", Failed: true);
         }
 
+        var changed = await ApplyAsync(db, lines, full: true, ct);
+        var maxSeen = lines.Count == 0 ? 0 : lines.Max(l => l.AlterId);
+        await settings.SaveAsync(StateKey, new LastRateState
+        {
+            Hash = CurrentHash(),
+            CompanyVoucherAlterId = companyVoucherAlterId,
+            MaxVoucherAlterId = Math.Max(maxSeen, state.MaxVoucherAlterId),
+            BuiltUtc = clock.GetUtcNow().UtcDateTime,
+        }, "system", ct);
+
+        var withRate = await db.Products.CountAsync(p => !p.IsDeleted && p.LastRate != null, ct);
+        log.LogInformation("Last rates read: {Lines} voucher lines ({Types}), {Changed} items changed, {WithRate} items have a last rate",
+            lines.Count, string.Join(", ", roots), changed, withRate);
+        return new LastRateResult(changed, $"Last rates: {withRate} item(s) from {lines.Count} voucher line(s) ({string.Join(", ", roots)} and derived types).");
+    }
+
+    /// <summary>
+    /// Daytime update during a normal sync: only when the complete read was done, Tally reports new or altered
+    /// vouchers, and reading is not paused; asks only for vouchers altered since the last read, from the last months.
+    /// </summary>
+    public async Task<LastRateResult> UpdateAsync(QuotationDbContext db, long companyVoucherAlterId, DateOnly today, CancellationToken ct)
+    {
+        var tally = settings.Tally;
+        if (!tally.UseLastRate) return await ClearAllAsync(db, ct);
+        var state = settings.Get<LastRateState>(StateKey);
+        if (state.Hash != CurrentHash()) return new LastRateResult(0, NotReadYetMessage);
+        var now = clock.GetUtcNow().UtcDateTime;
+        if (state.PausedUntilUtc is { } paused && paused > now) return new LastRateResult(0, "");
+        if (companyVoucherAlterId > 0 && companyVoucherAlterId == state.CompanyVoucherAlterId) return new LastRateResult(0, "");
+
+        var from = new DateOnly(today.Year, today.Month, 1).AddMonths(-RecentMonths);
+        var to = today.AddDays(31);
+        var lines = new List<TallyRateLine>();
+        try
+        {
+            var vouchers = new TallyVoucherService(gateway.CreateClient(RequestTimeout));
+            var all = await vouchers.GetVoucherTypesAsync(ct);
+            var roots = TallyRateVoucherTypes.RequestRoots(all, TallyRateVoucherTypes.Select(all, tally.LastRateVoucherTypes));
+            for (var i = 0; i < roots.Count; i++)
+            {
+                var root = roots[i];
+                if (i > 0 && PauseBetweenRequests > TimeSpan.Zero) await Task.Delay(PauseBetweenRequests, ct);
+                var got = await vouchers.GetRateLinesAsync(root, from, to, state.MaxVoucherAlterId, ct);
+                lines.AddRange(got.Where(l => l.Date >= from && l.Date <= to));
+            }
+        }
+        catch (TallyException ex)
+        {
+            state.PausedUntilUtc = now + Backoff;
+            state.LastError = ex.Message;
+            await settings.SaveAsync(StateKey, state, "system", ct);
+            log.LogWarning("Last rate update paused: {Message}", ex.Message);
+            return new LastRateResult(0, $"Last rate updates paused for a few hours: {ex.Message}", Failed: true);
+        }
+
+        var changed = await ApplyAsync(db, lines, full: false, ct);
+        state.CompanyVoucherAlterId = companyVoucherAlterId;
+        if (lines.Count > 0) state.MaxVoucherAlterId = Math.Max(state.MaxVoucherAlterId, lines.Max(l => l.AlterId));
+        state.LastError = "";
+        await settings.SaveAsync(StateKey, state, "system", ct);
+        return new LastRateResult(changed, changed > 0 ? $"Last rates: {changed} item(s) updated." : "");
+    }
+
+    /// <summary>After a quotation is approved in this app its rates become the items' last rates.</summary>
+    public async Task<bool> ApplyApprovedQuotationAsync(QuotationDbContext db, QuotationHeader q, CancellationToken ct)
+    {
+        if (!settings.Tally.UseLastRate || q.Number is null) return false;
+        var rates = q.Lines.Where(l => l.ProductId is not null && l.Rate > 0)
+            .GroupBy(l => l.ProductId!.Value).ToDictionary(g => g.Key, g => g.OrderBy(l => l.LineNo).Last().Rate);
+        if (rates.Count == 0) return false;
+        var ids = rates.Keys.ToList();
+        var products = await db.Products.Where(p => ids.Contains(p.Id)).ToListAsync(ct);
+        var note = NoteFor(q);
+        var changed = false;
+        foreach (var p in products)
+        {
+            if (p.LastRateDate is { } existing && q.Date < existing) continue;
+            p.LastRate = rates[p.Id];
+            p.LastRateDate = q.Date;
+            p.LastRateNote = note;
+            changed = true;
+        }
+        if (changed) await db.SaveChangesAsync(ct);
+        return changed;
+    }
+
+    private async Task<int> ApplyAsync(QuotationDbContext db, List<TallyRateLine> lines, bool full, CancellationToken ct)
+    {
         var products = await db.Products.Where(p => !p.IsDeleted).ToListAsync(ct);
         var byName = products.GroupBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
@@ -125,44 +266,6 @@ public sealed class LastRateService(TallyGateway gateway, SettingsService settin
             }
         }
         await db.SaveChangesAsync(ct);
-
-        var maxSeen = lines.Count == 0 ? 0 : lines.Max(l => l.AlterId);
-        await settings.SaveAsync(StateKey, new LastRateState
-        {
-            Hash = hash,
-            CompanyVoucherAlterId = companyVoucherAlterId,
-            MaxVoucherAlterId = full ? maxSeen : Math.Max(state.MaxVoucherAlterId, maxSeen),
-        }, "system", ct);
-
-        var withRate = products.Count(p => p.LastRate is not null);
-        log.LogInformation("Last rates {Mode}: {Lines} voucher lines ({Types}), {Changed} items changed, {WithRate} items have a last rate",
-            full ? "rebuilt" : "updated", lines.Count, string.Join(", ", types), changed, withRate);
-        var message = full
-            ? $"Last rates: {withRate} item(s) from {lines.Count} voucher line(s) ({string.Join(", ", types)})."
-            : changed > 0 ? $"Last rates: {changed} item(s) updated." : "";
-        return new LastRateResult(changed, message);
-    }
-
-    /// <summary>After a quotation is approved in this app its rates become the items' last rates.</summary>
-    public async Task<bool> ApplyApprovedQuotationAsync(QuotationDbContext db, QuotationHeader q, CancellationToken ct)
-    {
-        if (!settings.Tally.UseLastRate || q.Number is null) return false;
-        var rates = q.Lines.Where(l => l.ProductId is not null && l.Rate > 0)
-            .GroupBy(l => l.ProductId!.Value).ToDictionary(g => g.Key, g => g.OrderBy(l => l.LineNo).Last().Rate);
-        if (rates.Count == 0) return false;
-        var ids = rates.Keys.ToList();
-        var products = await db.Products.Where(p => ids.Contains(p.Id)).ToListAsync(ct);
-        var note = NoteFor(q);
-        var changed = false;
-        foreach (var p in products)
-        {
-            if (p.LastRateDate is { } existing && q.Date < existing) continue;
-            p.LastRate = rates[p.Id];
-            p.LastRateDate = q.Date;
-            p.LastRateNote = note;
-            changed = true;
-        }
-        if (changed) await db.SaveChangesAsync(ct);
         return changed;
     }
 

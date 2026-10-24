@@ -24,7 +24,7 @@ public sealed class TallySettings
     /// <summary>Voucher types to take last rates from. Empty = every Sales and Quotation type (incl. derived ones).</summary>
     public List<string> LastRateVoucherTypes { get; set; } = [];
     /// <summary>How far back to look for last rates.</summary>
-    public int LastRateMonths { get; set; } = 24;
+    public int LastRateMonths { get; set; } = 12;
     public int IncrementalSyncMinutes { get; set; } = 15;
     /// <summary>Local time (HH:mm) of the nightly full sync. Empty disables it.</summary>
     public string NightlyFullSyncTime { get; set; } = "02:00";

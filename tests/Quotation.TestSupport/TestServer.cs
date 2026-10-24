@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quotation.ApiClient;
 using Quotation.Server.Services;
 using Tally.Simulator;
@@ -52,6 +53,9 @@ public sealed class TestServer : WebApplicationFactory<Program>
                 .ConfigurePrimaryHttpMessageHandler(() => new SimulatorHttpHandler(Tally));
             services.AddSingleton<IAIProviderFactory>(new FixedFactory(this));
             services.AddSingleton<IGmailClientFactory>(new GmailFactory(this));
+            // No pauses between voucher requests against the in-memory simulator.
+            services.AddSingleton(sp => new LastRateService(sp.GetRequiredService<TallyGateway>(), sp.GetRequiredService<SettingsService>(),
+                sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<LastRateService>>()) { PauseBetweenRequests = TimeSpan.Zero });
         });
         if (ConfigureServicesHook is not null) builder.ConfigureServices(ConfigureServicesHook);
     }

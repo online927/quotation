@@ -26,6 +26,12 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
     /// <summary>Artificial delay applied by the HTTP handlers (simulates a slow network/Tally).</summary>
     public TimeSpan ResponseDelay { get; set; } = TimeSpan.Zero;
 
+    /// <summary>Simulates a Tally that does not apply SVFROMDATE/SVTODATE to voucher collections.</summary>
+    public bool IgnorePeriod { get; set; }
+
+    /// <summary>Vouchers Tally had to examine for voucher requests (all vouchers when no voucher-type index is used).</summary>
+    public long VoucherScanCount { get; private set; }
+
     public int RequestCount { get; private set; }
     public int NonExportRequestCount { get; private set; }
     public List<string> RequestLog { get; } = [];
@@ -103,13 +109,19 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
                     foreach (var t in Data.VoucherTypes) WriteVoucherType(sb, t);
                     break;
                 case "voucher":
+                case "vouchers : vouchertype":
                     var statics = desc.Element("STATICVARIABLES");
-                    var from = ParseDate(statics?.Element("SVFROMDATE")?.Value) ?? Data.PeriodFrom;
-                    var to = ParseDate(statics?.Element("SVTODATE")?.Value) ?? Data.PeriodTo;
+                    var from = IgnorePeriod ? DateOnly.MinValue : ParseDate(statics?.Element("SVFROMDATE")?.Value) ?? Data.PeriodFrom;
+                    var to = IgnorePeriod ? DateOnly.MaxValue : ParseDate(statics?.Element("SVTODATE")?.Value) ?? Data.PeriodTo;
                     var types = formulas.Values.SelectMany(f => VoucherTypeRegex().Matches(f))
                         .Select(m => m.Groups[1].Value.Replace("\"\"", "\"")).ToList();
+                    var childOf = Unquote(collection.Element("CHILDOF")?.Value);
+                    var belongsTo = (collection.Element("BELONGSTO")?.Value ?? "").Equals("Yes", StringComparison.OrdinalIgnoreCase);
+                    if (childOf.Length > 0) VoucherScanCount += Data.Vouchers.Count(v => IsOfType(v.Type, childOf, belongsTo));
+                    else VoucherScanCount += Data.Vouchers.Count; // no index: every voucher is examined
                     foreach (var v in Data.Vouchers.Where(v => v.Date >= from && v.Date <= to &&
                                  (types.Count == 0 || types.Contains(v.Type, StringComparer.OrdinalIgnoreCase)) &&
+                                 (childOf.Length == 0 || IsOfType(v.Type, childOf, belongsTo)) &&
                                  filter(new FilterSubject(v.Number, v.AlterId, ""))))
                         WriteVoucher(sb, v);
                     break;
@@ -181,6 +193,24 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
 
     [GeneratedRegex(@"\$VoucherTypeName\s*=\s*""((?:[^""]|"""")*)""", RegexOptions.IgnoreCase)]
     private static partial Regex VoucherTypeRegex();
+
+    private static string Unquote(string? value)
+    {
+        var v = (value ?? "").Trim();
+        return v.Length >= 2 && v[0] == '"' && v[^1] == '"' ? v[1..^1].Replace("\"\"", "\"") : v;
+    }
+
+    private bool IsOfType(string type, string ancestor, bool belongsTo)
+    {
+        var current = type;
+        for (var depth = 0; depth < 20 && current.Length > 0; depth++)
+        {
+            if (current.Equals(ancestor, StringComparison.OrdinalIgnoreCase)) return true;
+            if (!belongsTo) return false;
+            current = Data.VoucherTypes.FirstOrDefault(t => t.Name.Equals(current, StringComparison.OrdinalIgnoreCase))?.Parent ?? "";
+        }
+        return false;
+    }
 
     private static DateOnly? ParseDate(string? value) =>
         DateOnly.TryParseExact(value?.Trim(), ["yyyyMMdd", "d-MMM-yyyy"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;

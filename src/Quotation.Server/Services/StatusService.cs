@@ -38,7 +38,7 @@ public sealed class StatusService(
     }
 
     public async Task<DateTime?> LastSuccessfulSyncUtcAsync(CancellationToken ct) =>
-        await db.SyncRuns.Where(r => r.Status == SyncStatus.Succeeded || r.Status == SyncStatus.Skipped)
+        await db.SyncRuns.Where(r => r.Kind != SyncKind.LastRates && (r.Status == SyncStatus.Succeeded || r.Status == SyncStatus.Skipped))
             .OrderByDescending(r => r.StartedUtc)
             .Select(r => r.FinishedUtc)
             .FirstOrDefaultAsync(ct);

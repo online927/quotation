@@ -48,6 +48,8 @@ public enum SyncKind
 {
     Full = 0,
     Incremental = 1,
+    /// <summary>Complete read of last quoted/sold rates from Tally's vouchers.</summary>
+    LastRates = 2,
 }
 
 public enum SyncStatus

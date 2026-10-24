@@ -29,7 +29,15 @@ public sealed class SyncWorker(
             try
             {
                 var kind = await DecideAsync(stoppingToken);
-                if (kind is not null && !sync.IsRunning) await sync.RunAsync(kind.Value, "scheduler", stoppingToken);
+                if (kind is not null && !sync.IsRunning)
+                {
+                    var run = await sync.RunAsync(kind.Value, "scheduler", stoppingToken);
+                    if (kind == SyncKind.Full && run.Status == SyncStatus.Succeeded && settings.Tally.UseLastRate && IsNightWindow())
+                    {
+                        // The complete read of last rates loads Tally for a few minutes: only at night, never in office hours.
+                        await sync.RunLastRatesAsync("scheduler (nightly)", stoppingToken);
+                    }
+                }
             }
             catch (SyncAlreadyRunningException) { }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -38,6 +46,15 @@ public sealed class SyncWorker(
             }
             try { await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); } catch (OperationCanceledException) { return; }
         }
+    }
+
+    /// <summary>Within four hours after the nightly sync time (local).</summary>
+    internal bool IsNightWindow()
+    {
+        if (!TimeOnly.TryParseExact(settings.Tally.NightlyFullSyncTime, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var nightly))
+            return false;
+        var now = TimeOnly.FromDateTime(clock.GetLocalNow().DateTime);
+        return now.IsBetween(nightly, nightly.AddHours(4));
     }
 
     internal async Task<SyncKind?> DecideAsync(CancellationToken ct)

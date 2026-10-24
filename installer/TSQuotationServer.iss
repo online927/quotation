@@ -35,6 +35,8 @@ Name: "{commonappdata}\TSQuotation"; Permissions: system-full admins-full; Flags
 
 [Run]
 Filename: "{sys}\sc.exe"; Parameters: "create {#ServiceName} binPath= ""{app}\TSQuotation.Server.exe"" start= delayed-auto DisplayName= ""TS Quotation Server"""; Flags: runhidden waituntilterminated; Check: not ServiceExists
+; An existing service may have been set to Manual (e.g. while troubleshooting): always start with Windows again.
+Filename: "{sys}\sc.exe"; Parameters: "config {#ServiceName} start= delayed-auto"; Flags: runhidden waituntilterminated
 Filename: "{sys}\sc.exe"; Parameters: "description {#ServiceName} ""Central quotation server (TallyPrime integration, numbering, PDF, AI, Gmail)"""; Flags: runhidden waituntilterminated
 Filename: "{sys}\sc.exe"; Parameters: "failure {#ServiceName} reset= 86400 actions= restart/60000/restart/60000/restart/60000"; Flags: runhidden waituntilterminated
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""TS Quotation Server"""; Flags: runhidden waituntilterminated

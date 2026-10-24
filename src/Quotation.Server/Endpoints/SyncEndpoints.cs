@@ -17,7 +17,7 @@ public static class SyncEndpoints
         g.MapPost("/{kind}", async (string kind, bool? wait, TallySyncService sync, AuditService audit, HttpContext ctx,
             IHostApplicationLifetime lifetime, ILogger<TallySyncService> log, CancellationToken ct) =>
         {
-            if (!Enum.TryParse<SyncKind>(kind, ignoreCase: true, out var k)) return Results.BadRequest(new ApiError("Use 'full' or 'incremental'."));
+            if (!Enum.TryParse<SyncKind>(kind, ignoreCase: true, out var k)) return Results.BadRequest(new ApiError("Use 'full', 'incremental' or 'lastrates'."));
             if (sync.IsRunning) return Results.Conflict(new ApiError("A synchronization is already running."));
             var user = ctx.User.UserName();
             await audit.WriteAsync(user, ctx.Machine(), "SyncRequested", "Sync", k.ToString(), ct: ct);
@@ -35,10 +35,17 @@ public static class SyncEndpoints
             return Results.Accepted();
         });
 
+        g.MapPost("/lastrates/stop", async (TallySyncService sync, AuditService audit, HttpContext ctx, CancellationToken ct) =>
+        {
+            if (!sync.StopLastRates()) return Results.Conflict(new ApiError("Last rates are not being read."));
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "LastRatesStopped", "Sync", "LastRates", ct: ct);
+            return Results.Accepted();
+        });
+
         g.MapGet("/state", async (QuotationDbContext db, RuntimeStatus runtime, TallySyncService sync, CancellationToken ct) =>
         {
             var last = await db.SyncRuns.OrderByDescending(r => r.Id).FirstOrDefaultAsync(ct);
-            var lastOk = await db.SyncRuns.Where(r => r.Status == SyncStatus.Succeeded || r.Status == SyncStatus.Skipped)
+            var lastOk = await db.SyncRuns.Where(r => r.Kind != SyncKind.LastRates && (r.Status == SyncStatus.Succeeded || r.Status == SyncStatus.Skipped))
                 .OrderByDescending(r => r.Id).FirstOrDefaultAsync(ct);
             return new SyncStateDto(sync.IsRunning, runtime.SyncProgress,
                 last is null ? null : TallySyncService.ToDto(last), lastOk is null ? null : TallySyncService.ToDto(lastOk));

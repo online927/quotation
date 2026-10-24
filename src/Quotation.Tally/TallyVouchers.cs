@@ -110,6 +110,28 @@ public static class TallyRateVoucherTypes
             .Select(t => t.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
+    /// <summary>
+    /// The fewest voucher types to request so that every selected type is covered: a selected type whose parent is
+    /// also selected comes with its parent (requests include derived types).
+    /// </summary>
+    public static IReadOnlyList<string> RequestRoots(IEnumerable<TallyVoucherTypeInfo> all, IReadOnlyList<string> selected)
+    {
+        var types = all.Where(t => t.Name.Length > 0).GroupBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        var chosen = selected.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return selected.Where(name =>
+        {
+            var current = types.TryGetValue(name, out var t) ? t : null;
+            for (var depth = 0; current is not null && depth < 20; depth++)
+            {
+                if (current.Parent.Length == 0 || current.Parent.Equals(current.Name, StringComparison.OrdinalIgnoreCase)) break;
+                if (chosen.Contains(current.Parent)) return false;
+                current = types.TryGetValue(current.Parent, out var p) ? p : null;
+            }
+            return true;
+        }).ToList();
+    }
+
     private static string BaseType(TallyVoucherTypeInfo type, Dictionary<string, TallyVoucherTypeInfo> all)
     {
         var current = type;
@@ -127,7 +149,10 @@ public static class TallyRateVoucherTypes
     }
 }
 
-/// <summary>Reads voucher types and sales/quotation item rates from Tally (export only).</summary>
+/// <summary>
+/// Reads voucher types and sales/quotation item rates from Tally (export only). Vouchers are requested per voucher
+/// type through Tally's own index ("Child Of"), for a limited date range, so Tally never scans every voucher.
+/// </summary>
 public sealed class TallyVoucherService(TallyXmlClient client)
 {
     internal static readonly string[] VoucherMethods =
@@ -149,20 +174,21 @@ public sealed class TallyVoucherService(TallyXmlClient client)
         return list;
     }
 
-    /// <summary>Item lines of the given voucher types dated <paramref name="from"/>..<paramref name="to"/>.</summary>
-    public async IAsyncEnumerable<TallyRateLine> GetRateLinesAsync(IReadOnlyCollection<string> voucherTypes, DateOnly from, DateOnly to,
-        long? changedAfterAlterId = null, [EnumeratorCancellation] CancellationToken ct = default)
+    /// <summary>
+    /// Item lines of the vouchers of <paramref name="voucherType"/> and the types derived from it, dated
+    /// <paramref name="from"/>..<paramref name="to"/> (Tally's period), optionally only those altered after an AlterID.
+    /// </summary>
+    public async Task<IReadOnlyList<TallyRateLine>> GetRateLinesAsync(string voucherType, DateOnly from, DateOnly to,
+        long? changedAfterAlterId = null, CancellationToken ct = default)
     {
-        if (voucherTypes.Count == 0) yield break;
-        var filters = new Dictionary<string, string>
-        {
-            ["QtRateVchType"] = string.Join(" OR ", voucherTypes.Select(t => "$VoucherTypeName = " + TallyText.TdlString(t))),
-        };
+        var filters = new Dictionary<string, string>();
         if (changedAfterAlterId is > 0) filters["QtRateChanged"] = $"$AlterID > {changedAfterAlterId.Value}";
         var request = TallyRequestBuilder.Collection(new TallyCollectionRequest
         {
             Name = "QtRateVouchers",
-            Type = "Voucher",
+            Type = "Vouchers : VoucherType",
+            ChildOf = voucherType,
+            BelongsTo = true,
             NativeMethods = VoucherMethods,
             Filters = filters,
         }, client.Options.CompanyName, new Dictionary<string, string>
@@ -170,9 +196,8 @@ public sealed class TallyVoucherService(TallyXmlClient client)
             ["SVFROMDATE"] = from.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
             ["SVTODATE"] = to.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
         });
-        await foreach (var v in client.StreamObjectsAsync(request, "VOUCHER", ct))
-        {
-            foreach (var line in TallyVoucherParser.ParseRateLines(v)) yield return line;
-        }
+        var lines = new List<TallyRateLine>();
+        await foreach (var v in client.StreamObjectsAsync(request, "VOUCHER", ct)) lines.AddRange(TallyVoucherParser.ParseRateLines(v));
+        return lines;
     }
 }

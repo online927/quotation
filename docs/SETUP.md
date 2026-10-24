@@ -105,7 +105,12 @@ voucher, company setting or anything else in Tally.
      sold at (any customer)**, read (read-only) from Tally's Sales and Quotation vouchers — including types derived
      from them such as *TS Quotation* — and from quotations approved in this app. The screen shows where the rate
      came from (e.g. *Last rate: TS Quotation TSQ2526-3403 · I3 PRECISION · 23-Oct-26*). A Tally selling price, when
-     present, always wins. Optional: list specific voucher types, and how many months to look back (default 24).
+     present, always wins.
+   * **Reading last rates** loads TallyPrime (it answers one request at a time), so it is kept light and controlled:
+     the complete read runs only after the nightly sync, or when you press **Tally Connection → Read last rates**
+     (best at a quiet time; **Stop** ends it at once). It asks for one voucher type and one week at a time, with
+     pauses, and stops at the first slow answer. Normal syncs during the day only pick up new or changed quotations
+     and invoices. Optional: specific voucher types, and how many months to look back (default 12).
    * **Save (Ctrl+S)**.
 2. **Tally Connection → Test connection (Ctrl+T)** → shows the company and the active financial year.
 3. Press **Full sync**. 20,000 items typically take well under a minute. The page shows the counts and

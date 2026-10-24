@@ -58,10 +58,14 @@
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
               <Button Content="Sync changes (F9)" HotKey="F9" Command="{Binding IncrementalSyncCommand}" IsEnabled="{Binding !SyncRunning}" />
               <Button Content="Full sync" Command="{Binding FullSyncCommand}" IsEnabled="{Binding !SyncRunning}" />
+              <Button Content="Read last rates" Command="{Binding ReadLastRatesCommand}" IsEnabled="{Binding !SyncRunning}" />
+              <Button Content="Stop" Command="{Binding StopLastRatesCommand}" IsVisible="{Binding SyncRunning}" />
             </StackPanel>
           </Grid>
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="Changes are synchronized automatically every few minutes and a full sync runs nightly. Use 'Sync changes' after editing items or prices in Tally." />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Read last rates: reads the rate each item was last quoted or sold at from Tally's Sales and Quotation vouchers (read-only), for items without a selling price in Tally. It runs by itself after the nightly sync. Started here it takes a few minutes and TallyPrime may respond a little slower meanwhile; Stop ends it at once." />
           <TextBlock Text="{Binding InfoMessage}" Foreground="{StaticResource AccentBrush}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
           <ItemsControl ItemsSource="{Binding Runs}">
             <ItemsControl.ItemTemplate>

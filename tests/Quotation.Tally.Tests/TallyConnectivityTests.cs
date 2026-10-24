@@ -120,7 +120,8 @@ public class TallyConnectivityTests
         sim.Handler.Latency = TimeSpan.FromSeconds(5);
         var client = new TallyXmlClient(new HttpClient(sim.Handler, false),
             new TallyConnectionOptions("http://tally-sim:9000", "", TimeSpan.FromMilliseconds(200)));
-        await Assert.ThrowsAsync<TallyUnavailableException>(() => new TallyCompanyService(client).GetLoadedCompaniesAsync());
+        // A timeout is reported as "Tally unavailable" (TallyTimeoutException derives from it).
+        await Assert.ThrowsAsync<TallyTimeoutException>(() => new TallyCompanyService(client).GetLoadedCompaniesAsync());
     }
 
     [Fact]

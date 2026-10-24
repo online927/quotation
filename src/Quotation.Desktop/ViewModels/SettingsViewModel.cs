@@ -30,6 +30,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     // Numbering
     [ObservableProperty] private NumberSeriesDto? _series;
     [ObservableProperty] private decimal? _newNextSequence;
+    [ObservableProperty] private NumberSeriesDto? _proformaSeries;
+    [ObservableProperty] private decimal? _newNextProformaSequence;
 
     public bool IsAdmin => _session.IsAdmin;
     public bool IsReadOnly => !IsAdmin;
@@ -75,6 +77,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
             await LoadUsersAsync();
             Series = await _session.Api.NumberSeriesAsync();
             NewNextSequence = Series.NextSequence;
+            ProformaSeries = await _session.Api.NumberSeriesAsync(type: DocumentType.ProformaInvoice);
+            NewNextProformaSequence = ProformaSeries.NextSequence;
         }
         _session.Settings = s;
     });
@@ -87,6 +91,18 @@ public sealed partial class SettingsViewModel : ViewModelBase
         if (await RunAsync(async () => Series = await _session.Api.SetNextSequenceAsync(Series.FinancialYearStart, (int)NewNextSequence.Value)))
         {
             InfoMessage = $"Next quotation number for {Series!.FinancialYear} will be {Series.NextNumberPreview}.";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SetNextProformaNumberAsync()
+    {
+        if (ProformaSeries is null || NewNextProformaSequence is null) return;
+        InfoMessage = null;
+        if (await RunAsync(async () => ProformaSeries = await _session.Api.SetNextSequenceAsync(
+                ProformaSeries.FinancialYearStart, (int)NewNextProformaSequence.Value, DocumentType.ProformaInvoice)))
+        {
+            InfoMessage = $"Next proforma invoice number for {ProformaSeries!.FinancialYear} will be {ProformaSeries.NextNumberPreview}.";
         }
     }
 

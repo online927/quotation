@@ -14,7 +14,7 @@
       <Setter Property="Margin" Value="0,3" />
     </Style>
   </UserControl.Styles>
-  <DockPanel Margin="20">
+  <DockPanel Margin="24,12,24,20">
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
       <TextBlock Classes="h1" Text="Settings" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
@@ -32,7 +32,7 @@
       <TabItem Header="Company">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="200,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="Company name" />
             <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Company.CompanyName}" />
             <TextBlock Grid.Row="1" Text="Address (one line per row)" VerticalAlignment="Top" />
@@ -87,6 +87,12 @@
             <TextBox Grid.Row="22" Grid.Column="1" Text="{Binding Settings.Company.DefaultPaymentTerms}" />
             <TextBlock Grid.Row="23" Text="Footer text" />
             <TextBox Grid.Row="23" Grid.Column="1" Text="{Binding Settings.Company.FooterText}" />
+            <TextBlock Grid.Row="24" Text="Jurisdiction" />
+            <TextBox Grid.Row="24" Grid.Column="1" Text="{Binding Settings.Company.Jurisdiction}" Watermark="SUBJECT TO BANGALORE JURISDICTION" />
+            <TextBlock Grid.Row="25" Text="Proforma declaration" VerticalAlignment="Top" />
+            <TextBox Grid.Row="25" Grid.Column="1" Text="{Binding Settings.Company.ProformaDeclaration}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
+            <TextBlock Grid.Row="26" Text="Proforma footer text" />
+            <TextBox Grid.Row="26" Grid.Column="1" Text="{Binding Settings.Company.ProformaFooterText}" />
           </Grid>
         </ScrollViewer>
       </TabItem>
@@ -94,8 +100,8 @@
       <TabItem Header="Quotation">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-            <TextBlock Grid.Row="0" Text="Number pattern" />
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Text="Quotation number pattern" />
             <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
               <TextBox Text="{Binding Settings.Quotation.NumberPattern}" />
               <Button Grid.Column="1" Margin="6,0,0,0" Content="Preview" Command="{Binding RefreshExampleCommand}" />
@@ -124,7 +130,11 @@
             <NumericUpDown Grid.Row="11" Grid.Column="1" Value="{Binding Settings.Quotation.StaleDataHours}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
             <TextBlock Grid.Row="12" Text="Require HSN/SAC on every line" />
             <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RequireHsn}" />
-            <Border Grid.Row="13" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
+            <TextBlock Grid.Row="13" Text="Proforma invoice number pattern" />
+            <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding Settings.Quotation.ProformaNumberPattern}" Watermark="TSPI{FY}-{SEQ}" />
+            <TextBlock Grid.Row="14" Text="First proforma number of a new year" />
+            <NumericUpDown Grid.Row="14" Grid.Column="1" Value="{Binding Settings.Quotation.ProformaDefaultStartSequence}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
+            <Border Grid.Row="15" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
               <StackPanel Spacing="6">
                 <TextBlock Classes="h2" Text="Next quotation number (active financial year)" />
                 <TextBlock TextWrapping="Wrap" FontSize="12"
@@ -134,6 +144,15 @@
                   <NumericUpDown Value="{Binding NewNextSequence}" Minimum="1" FormatString="0" Width="140" />
                   <Button Content="Set next number" Command="{Binding SetNextNumberCommand}" />
                   <TextBlock VerticalAlignment="Center" Text="{Binding Series.NextNumberPreview, StringFormat='Next: {0}', FallbackValue=''}" FontWeight="SemiBold" />
+                </StackPanel>
+                <TextBlock Classes="h2" Text="Next proforma invoice number" Margin="0,10,0,0" />
+                <TextBlock TextWrapping="Wrap" FontSize="12"
+                           Text="Proforma invoices have their own series. To continue from Tally, enter the number after the last proforma (e.g. last was TSPI2526-12 → enter 13)." />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock VerticalAlignment="Center" Text="{Binding ProformaSeries.FinancialYear, StringFormat='FY {0}:', FallbackValue=''}" />
+                  <NumericUpDown Value="{Binding NewNextProformaSequence}" Minimum="1" FormatString="0" Width="140" />
+                  <Button Content="Set next number" Command="{Binding SetNextProformaNumberCommand}" />
+                  <TextBlock VerticalAlignment="Center" Text="{Binding ProformaSeries.NextNumberPreview, StringFormat='Next: {0}', FallbackValue=''}" FontWeight="SemiBold" />
                 </StackPanel>
               </StackPanel>
             </Border>

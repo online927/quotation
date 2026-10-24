@@ -4,7 +4,7 @@
              xmlns:c="using:Quotation.Contracts"
              x:Class="Quotation.Desktop.Views.CustomersView"
              x:DataType="vm:CustomersViewModel">
-  <Grid Margin="20" ColumnDefinitions="3*,12,2*" RowDefinitions="Auto,Auto,*">
+  <Grid Margin="24,12,24,20" ColumnDefinitions="3*,12,2*" RowDefinitions="Auto,Auto,*">
     <TextBlock Classes="h1" Text="Customers" Grid.ColumnSpan="3" Margin="0,0,0,10" />
     <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,0,8">
       <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search name, GSTIN, phone, e-mail, city…" />

@@ -1,66 +1,140 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Quotation.Desktop.ViewModels"
+             xmlns:svc="using:Quotation.Desktop.Services"
              x:Class="Quotation.Desktop.Views.ShellView"
              x:DataType="vm:ShellViewModel">
   <UserControl.KeyBindings>
     <KeyBinding Gesture="Ctrl+D" Command="{Binding NavigateCommand}" CommandParameter="dashboard" />
     <KeyBinding Gesture="Ctrl+N" Command="{Binding NavigateCommand}" CommandParameter="new" />
+    <KeyBinding Gesture="Ctrl+Shift+N" Command="{Binding NavigateCommand}" CommandParameter="newproforma" />
     <KeyBinding Gesture="Ctrl+I" Command="{Binding NavigateCommand}" CommandParameter="inbox" />
     <KeyBinding Gesture="Ctrl+H" Command="{Binding NavigateCommand}" CommandParameter="history" />
   </UserControl.KeyBindings>
-  <DockPanel>
-    <!-- Header -->
-    <Border DockPanel.Dock="Top" Background="{StaticResource HeaderBrush}" Padding="14,8">
-      <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-        <TextBlock Text="QUOTATION SYSTEM" Foreground="White" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" />
-        <TextBox Grid.Column="1" Name="GlobalSearchBox" Text="{Binding GlobalSearch}" Width="420" HorizontalAlignment="Center"
-                 Watermark="Search quotations: number, customer, GSTIN, product, reference, date (Ctrl+F)">
-          <TextBox.KeyBindings>
-            <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}" />
-          </TextBox.KeyBindings>
-        </TextBox>
-        <TextBlock Grid.Column="2" Text="{Binding UserDisplay}" Foreground="#D6E4F5" VerticalAlignment="Center" Margin="0,0,12,0" />
-        <Button Grid.Column="3" Content="Log out" Command="{Binding LogoutCommand}" Foreground="White" Background="#3A5A80" />
-      </Grid>
-    </Border>
+  <Panel>
+    <DockPanel>
+      <!-- Top bar -->
+      <Border DockPanel.Dock="Top" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="16,9">
+        <Grid ColumnDefinitions="232,*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <Border Width="30" Height="30" CornerRadius="8" Background="{StaticResource AccentBrush}">
+              <TextBlock Text="TS" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="Quotations" FontWeight="SemiBold" FontSize="15" />
+              <TextBlock Text="{Binding Status.TallyCompany, FallbackValue=''}" FontSize="11" Classes="muted" TextTrimming="CharacterEllipsis" MaxWidth="160" />
+            </StackPanel>
+          </StackPanel>
+          <TextBox Grid.Column="1" Name="GlobalSearchBox" Text="{Binding GlobalSearch}" MaxWidth="520" HorizontalAlignment="Stretch" Margin="16,0"
+                   CornerRadius="999" Padding="16,6" Background="{StaticResource FillBrush}" BorderThickness="0"
+                   Watermark="Search quotations — number, customer, GSTIN, product, reference, date   (Ctrl+F)">
+            <TextBox.KeyBindings>
+              <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}" />
+            </TextBox.KeyBindings>
+          </TextBox>
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <Border Width="30" Height="30" CornerRadius="15" Background="{StaticResource FillBrush}">
+              <TextBlock Text="{Binding UserInitials}" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="{Binding UserDisplay}" FontWeight="SemiBold" FontSize="12" />
+              <TextBlock Text="{Binding UserRole}" FontSize="11" Classes="muted" />
+            </StackPanel>
+            <Button Classes="link" Content="Log out" Command="{Binding LogoutCommand}" Margin="6,0,0,0" />
+          </StackPanel>
+        </Grid>
+      </Border>
 
-    <!-- Status bar -->
-    <Border DockPanel.Dock="Bottom" Background="#E4E9F0" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,1,0,0" Padding="12,4">
-      <StackPanel Orientation="Horizontal" Spacing="18">
-        <StackPanel Orientation="Horizontal" Spacing="6">
-          <Ellipse Width="9" Height="9" Fill="{StaticResource OkBrush}" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
-          <Ellipse Width="9" Height="9" Fill="{StaticResource BadBrush}" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
-          <TextBlock FontSize="12" Text="Tally Connected" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
-          <TextBlock FontSize="12" Text="Tally Disconnected" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
+      <!-- Status bar -->
+      <Border DockPanel.Dock="Bottom" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,1,0,0" Padding="16,5">
+        <StackPanel Orientation="Horizontal" Spacing="20">
+          <StackPanel.Styles>
+            <Style Selector="TextBlock">
+              <Setter Property="FontSize" Value="12" />
+              <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+              <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+          </StackPanel.Styles>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Ellipse Width="8" Height="8" Fill="{StaticResource OkBrush}" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
+            <Ellipse Width="8" Height="8" Fill="{StaticResource BadBrush}" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
+            <TextBlock Text="Tally connected" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
+            <TextBlock Text="Tally disconnected" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
+          </StackPanel>
+          <TextBlock Text="{Binding Status.ActiveFinancialYear, StringFormat='FY {0}', FallbackValue=''}" />
+          <TextBlock Text="{Binding LastSyncText}" />
+          <TextBlock Foreground="{StaticResource WarnBrush}" Text="Tally data is stale" IsVisible="{Binding Status.DataIsStale, FallbackValue=False}" />
+          <TextBlock Foreground="{StaticResource WarnBrush}" Text="Tally is busy — background reading paused" IsVisible="{Binding Status.TallyBusy, FallbackValue=False}" />
+          <TextBlock Text="{Binding ServerState}" />
+          <TextBlock Text="{x:Static vm:ShellViewModel.AppVersionText}" />
         </StackPanel>
-        <TextBlock FontSize="12" Text="{Binding Status.TallyCompany, StringFormat='Company: {0}', FallbackValue=''}" />
-        <TextBlock FontSize="12" Text="{Binding Status.ActiveFinancialYear, StringFormat='FY: {0}', FallbackValue=''}" />
-        <TextBlock FontSize="12" Text="{Binding LastSyncText}" />
-        <TextBlock FontSize="12" Foreground="{StaticResource WarnBrush}" Text="Tally data is stale" IsVisible="{Binding Status.DataIsStale, FallbackValue=False}" />
-        <TextBlock FontSize="12" Text="{Binding ServerState}" Foreground="{StaticResource MutedBrush}" />
-        <TextBlock FontSize="12" Text="{x:Static vm:ShellViewModel.AppVersionText}" Foreground="{StaticResource MutedBrush}" />
-      </StackPanel>
-    </Border>
+      </Border>
 
-    <!-- Navigation -->
-    <Border DockPanel.Dock="Left" Width="210" Background="{StaticResource NavBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,1,0">
-      <ItemsControl ItemsSource="{Binding NavItems}" Margin="6,8">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="vm:NavItem">
-            <Button Classes="nav" Classes.selected="{Binding IsSelected}"
-                    Command="{Binding $parent[ItemsControl].((vm:ShellViewModel)DataContext).NavigateCommand}"
-                    CommandParameter="{Binding Key}">
-              <Grid ColumnDefinitions="*,Auto" Width="180">
-                <TextBlock Text="{Binding Title}" />
-                <TextBlock Grid.Column="1" Text="{Binding Shortcut}" FontSize="10" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-              </Grid>
-            </Button>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </Border>
+      <!-- Sidebar -->
+      <Border DockPanel.Dock="Left" Width="248" Background="{StaticResource NavBrush}" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,1,0">
+        <ScrollViewer>
+          <ItemsControl ItemsSource="{Binding NavItems}" Margin="10,10">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:NavItem">
+                <StackPanel>
+                  <TextBlock Classes="eyebrow" Text="{Binding Section}" IsVisible="{Binding HasSection}" Margin="12,14,0,4" />
+                  <Button Classes="nav" Classes.selected="{Binding IsSelected}"
+                          Command="{Binding $parent[ItemsControl].((vm:ShellViewModel)DataContext).NavigateCommand}"
+                          CommandParameter="{Binding Key}">
+                    <Grid ColumnDefinitions="*,Auto" Width="202">
+                      <TextBlock Text="{Binding Title}" FontSize="13" TextTrimming="CharacterEllipsis" Margin="0,0,6,0" />
+                      <TextBlock Grid.Column="1" Text="{Binding Shortcut}" FontSize="10" Foreground="{StaticResource MutedBrush}" FontWeight="Normal" VerticalAlignment="Center" />
+                    </Grid>
+                  </Button>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Border>
 
-    <ContentControl Content="{Binding CurrentPage}" />
-  </DockPanel>
+      <!-- Back / Forward and where you are -->
+      <Border DockPanel.Dock="Top" Padding="20,10,20,0">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Name="BackButton" Classes="round" Content="‹" Command="{Binding GoBackCommand}" IsEnabled="{Binding CanGoBack}" ToolTip.Tip="{Binding BackToolTip}" />
+          <Button Name="ForwardButton" Classes="round" Content="›" Command="{Binding GoForwardCommand}" IsEnabled="{Binding CanGoForward}"
+                  ToolTip.Tip="{Binding ForwardToolTip}" />
+          <ItemsControl ItemsSource="{Binding Breadcrumbs}" VerticalAlignment="Center" Margin="8,0,0,0">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:Crumb">
+                <StackPanel Orientation="Horizontal">
+                  <Button Classes="link" Content="{Binding Title}" FontSize="13" IsVisible="{Binding !IsCurrent}"
+                          Command="{Binding $parent[ItemsControl].((vm:ShellViewModel)DataContext).GoToCrumbCommand}" CommandParameter="{Binding}" />
+                  <TextBlock Text="›" Classes="muted" Margin="4,0" VerticalAlignment="Center" IsVisible="{Binding !IsCurrent}" />
+                  <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0" IsVisible="{Binding IsCurrent}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <ContentControl Content="{Binding CurrentPage}" />
+    </DockPanel>
+
+    <!-- Unsaved changes: Save / Don't Save / Cancel -->
+    <Border Name="PromptPanel" Background="#40000000" IsVisible="{Binding PendingPrompt, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Border Classes="card" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000">
+        <StackPanel Spacing="14">
+          <TextBlock Text="Unsaved changes" FontSize="17" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding PendingPrompt.Message, FallbackValue=''}" TextWrapping="Wrap" />
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     Text="Enter = Save · N = Don't Save · Esc = Cancel (stay on this page)" />
+          <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,6,0,0">
+            <Button Name="PromptDontSave" Content="Don't Save" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.DontSave}" />
+            <Button Grid.Column="2" Name="PromptCancel" Content="Cancel" Margin="0,0,8,0" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.Cancel}" />
+            <Button Grid.Column="3" Name="PromptSave" Classes="primary" Content="Save" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.Save}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Panel>
 </UserControl>

@@ -5,7 +5,7 @@ using Quotation.Desktop.Services;
 
 namespace Quotation.Desktop.ViewModels;
 
-public sealed partial class DashboardViewModel : ViewModelBase
+public sealed partial class DashboardViewModel : ViewModelBase, IReturnablePage
 {
     private readonly AppSession _session;
     private readonly Action<string> _navigate;
@@ -31,6 +31,8 @@ public sealed partial class DashboardViewModel : ViewModelBase
         OnPropertyChanged(nameof(AiText));
         OnPropertyChanged(nameof(LastSyncText));
     }
+
+    public void OnReturnedTo() => _ = LoadAsync();
 
     [RelayCommand]
     private Task LoadAsync() => RunAsync(async () => Data = await _session.Api.DashboardAsync());

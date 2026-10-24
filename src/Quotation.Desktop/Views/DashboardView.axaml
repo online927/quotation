@@ -3,44 +3,63 @@
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.big">
+      <Setter Property="FontSize" Value="40" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,6,0,0" />
+    </Style>
+  </UserControl.Styles>
   <ScrollViewer>
-    <StackPanel Margin="24" Spacing="16">
+    <StackPanel Margin="24,16,24,24" Spacing="18" MaxWidth="1200" HorizontalAlignment="Stretch">
       <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Classes="h1" Text="Dashboard" />
-        <Button Grid.Column="1" Content="Refresh (F5)" Command="{Binding LoadCommand}" HotKey="F5" />
+        <StackPanel>
+          <TextBlock Classes="h1" Text="Dashboard" />
+          <TextBlock Classes="muted" Text="Today at a glance" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Content="Refresh (F5)" Command="{Binding LoadCommand}" HotKey="F5" />
+          <Button Content="New Proforma Invoice" Command="{Binding GoCommand}" CommandParameter="newproforma" />
+          <Button Classes="primary" Content="New Quotation (Ctrl+N)" Command="{Binding GoCommand}" CommandParameter="new" />
+        </StackPanel>
       </Grid>
       <TextBlock Classes="error" Text="{Binding ErrorMessage}"
                  IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-      <UniformGrid Columns="4" >
-        <Border Classes="card" Margin="0,0,10,10">
+      <UniformGrid Columns="4">
+        <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="today">
           <StackPanel>
-            <TextBlock Classes="muted" Text="Today's Quotations" />
-            <TextBlock FontSize="30" FontWeight="Bold" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
+            <TextBlock Classes="eyebrow" Text="TODAY'S QUOTATIONS" />
+            <TextBlock Classes="big" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
           </StackPanel>
-        </Border>
-        <Border Classes="card" Margin="0,0,10,10">
+        </Button>
+        <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
           <StackPanel>
-            <TextBlock Classes="muted" Text="Drafts" />
-            <TextBlock FontSize="30" FontWeight="Bold" Text="{Binding Data.Drafts, FallbackValue='–'}" />
+            <TextBlock Classes="eyebrow" Text="DRAFTS" />
+            <TextBlock Classes="big" Text="{Binding Data.Drafts, FallbackValue='–'}" />
           </StackPanel>
-        </Border>
-        <Border Classes="card" Margin="0,0,10,10">
+        </Button>
+        <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
           <StackPanel>
-            <TextBlock Classes="muted" Text="Pending Review" />
-            <TextBlock FontSize="30" FontWeight="Bold" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
+            <TextBlock Classes="eyebrow" Text="PENDING REVIEW" />
+            <TextBlock Classes="big" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
           </StackPanel>
-        </Border>
-        <Border Classes="card" Margin="0,0,10,10">
+        </Button>
+        <Button Classes="tile" Command="{Binding GoCommand}" CommandParameter="inbox">
           <StackPanel>
-            <TextBlock Classes="muted" Text="AI Inbox needs attention" />
-            <TextBlock FontSize="30" FontWeight="Bold" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–'}" />
+            <TextBlock Classes="eyebrow" Text="AI INBOX — NEEDS ATTENTION" />
+            <TextBlock Classes="big" Foreground="{StaticResource AccentBrush}" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–'}" />
           </StackPanel>
-        </Border>
+        </Button>
       </UniformGrid>
 
       <Border Classes="card">
-        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" >
+        <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <Grid.Styles>
+            <Style Selector="TextBlock">
+              <Setter Property="Margin" Value="0,5" />
+            </Style>
+          </Grid.Styles>
           <TextBlock Classes="h2" Grid.ColumnSpan="2" Text="Connections" Margin="0,0,0,8" />
           <TextBlock Grid.Row="1" Classes="label" Text="Tally" />
           <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TallyText}" FontWeight="SemiBold" />
@@ -69,10 +88,10 @@
       </Border>
 
       <WrapPanel>
-        <Button Classes="primary" Margin="0,0,8,8" Content="New Quotation (Ctrl+N)" Command="{Binding GoCommand}" CommandParameter="new" />
         <Button Margin="0,0,8,8" Content="AI Inbox" Command="{Binding GoCommand}" CommandParameter="inbox" />
         <Button Margin="0,0,8,8" Content="Draft Quotations" Command="{Binding GoCommand}" CommandParameter="drafts" />
         <Button Margin="0,0,8,8" Content="Quotation History" Command="{Binding GoCommand}" CommandParameter="history" />
+        <Button Margin="0,0,8,8" Content="Proforma Invoices" Command="{Binding GoCommand}" CommandParameter="proforma" />
         <Button Margin="0,0,8,8" Content="Tally Connection" Command="{Binding GoCommand}" CommandParameter="tally" />
       </WrapPanel>
     </StackPanel>

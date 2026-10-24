@@ -16,17 +16,18 @@ public sealed record ShipToOption(string Label, AddressDto? Address, bool SameAs
 /// The quotation entry screen. Totals are calculated locally with the same engine the server uses,
 /// so they update while typing; the server recalculates authoritatively on every save.
 /// </summary>
-public sealed partial class QuotationEditorViewModel : ViewModelBase
+public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPage, IUnsavedChangesPage, IReturnablePage
 {
     private readonly AppSession _session;
     private readonly INavigator _navigator;
     private AllSettingsDto _settings = new();
     private bool _loading;
 
-    public QuotationEditorViewModel(AppSession session, INavigator navigator, Guid? id = null)
+    public QuotationEditorViewModel(AppSession session, INavigator navigator, Guid? id = null, DocumentType docType = DocumentType.Quotation)
     {
         _session = session;
         _navigator = navigator;
+        _docType = docType;
         Lines.CollectionChanged += (_, _) => RecalculateTotals();
         ProductPopulator = SearchProductsAsync;
         CustomerPopulator = SearchCustomersAsync;
@@ -35,6 +36,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
 
     // ---------------------------------------------------------------- header
     [ObservableProperty] private Guid? _id;
+    [ObservableProperty] private DocumentType _docType;
     [ObservableProperty] private string? _number;
     [ObservableProperty] private string _numberText = "(assigned on save)";
     [ObservableProperty] private QuotationStatus _status = QuotationStatus.Draft;
@@ -80,6 +82,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     [ObservableProperty] private string _otherReferences = "";
     [ObservableProperty] private string _destination = "";
     [ObservableProperty] private string _termsOfDelivery = "";
+    // Proforma invoice only (printed in the header grid like Tally's invoice).
+    [ObservableProperty] private string _deliveryNote = "";
+    [ObservableProperty] private string _dispatchDocNo = "";
+    [ObservableProperty] private DateTime? _deliveryNoteDate;
     [ObservableProperty] private string _remarks = "";
     [ObservableProperty] private string _termsAndConditions = "";
     [ObservableProperty] private string _preparedBy = "";
@@ -133,7 +139,23 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         QuotationStatus.PendingReview => "PENDING REVIEW",
         _ => Status.ToString().ToUpperInvariant(),
     };
-    public string Title => Number is null ? "New Quotation" : $"Quotation {Number}";
+    public bool IsProforma => DocType == DocumentType.ProformaInvoice;
+    public string DocLabel => IsProforma ? "Proforma Invoice" : "Quotation";
+    public string NumberLabel => IsProforma ? "Invoice No." : "Quotation No.";
+    public string Title => Number is null ? "New " + DocLabel : $"{DocLabel} {Number}";
+    /// <summary>A saved quotation can be turned into a proforma invoice (a new document with its own TSPI number).</summary>
+    public bool CanConvertToProforma => !IsProforma && Id is not null && Status != QuotationStatus.Cancelled;
+    /// <summary>Unsaved header/line changes, or a line typed in the entry row but not added yet.</summary>
+    public bool HasUnsavedChanges => IsEditable && (IsDirty || EntryProduct is not null || EditingLine is not null);
+
+    public Task<bool> SaveChangesAsync() => SaveAsync();
+
+    /// <summary>Coming back (e.g. from the proforma made from this quotation): show the latest saved state.</summary>
+    public void OnReturnedTo()
+    {
+        if (Id is { } id && !HasUnsavedChanges && !IsBusy) _ = RunAsync(async () => Load(await _session.Api.QuotationAsync(id)));
+    }
+
     public string EntryButtonText => EditingLine is null ? "Add line (Enter)" : "Update line";
 
     // ================================================================= loading
@@ -185,7 +207,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         if (Number is not null) return;
         try
         {
-            var next = await _session.Api.NextNumberAsync(Date is null ? null : DateOnly.FromDateTime(Date.Value));
+            var next = await _session.Api.NextNumberAsync(Date is null ? null : DateOnly.FromDateTime(Date.Value), DocType);
             NumberText = $"{next.Number} (provisional)";
         }
         catch (ApiException ex)
@@ -198,6 +220,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     {
         _loading = true;
         Id = q.Id;
+        DocType = q.DocType;
         Number = q.Number;
         NumberText = q.Number ?? "(assigned on save)";
         Status = q.Status;
@@ -227,6 +250,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         OtherReferences = q.OtherReferences;
         Destination = q.Destination;
         TermsOfDelivery = q.TermsOfDelivery;
+        DeliveryNote = q.DeliveryNote;
+        DispatchDocNo = q.DispatchDocNo;
+        DeliveryNoteDate = q.DeliveryNoteDate?.ToDateTime(TimeOnly.MinValue);
         Remarks = q.Remarks;
         TermsAndConditions = q.TermsAndConditions;
         PreparedBy = q.PreparedBy;
@@ -253,7 +279,18 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsFinal));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(CanConvertToProforma));
     }
+
+    partial void OnDocTypeChanged(DocumentType value)
+    {
+        OnPropertyChanged(nameof(IsProforma));
+        OnPropertyChanged(nameof(DocLabel));
+        OnPropertyChanged(nameof(NumberLabel));
+        NotifyState();
+    }
+
+    partial void OnIdChanged(Guid? value) => OnPropertyChanged(nameof(CanConvertToProforma));
 
     partial void OnStatusChanged(QuotationStatus value) => NotifyState();
     partial void OnCustomerIdChanged(int? value) => OnPropertyChanged(nameof(HasRecentCustomers));
@@ -275,6 +312,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
                 or nameof(ConsigneeName) or nameof(ConsigneeAddress) or nameof(ConsigneeGstin) or nameof(ConsigneeState)
                 or nameof(BuyersReference) or nameof(BuyersReferenceDate) or nameof(DispatchedThrough) or nameof(PaymentTerms)
                 or nameof(OtherReferences) or nameof(Destination) or nameof(TermsOfDelivery) or nameof(Remarks)
+                or nameof(DeliveryNote) or nameof(DispatchDocNo) or nameof(DeliveryNoteDate)
                 or nameof(TermsAndConditions) or nameof(PreparedBy) or nameof(VerifiedBy):
                 MarkDirty();
                 break;
@@ -527,6 +565,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     public SaveQuotationRequest BuildRequest() => new()
     {
         Revision = Revision,
+        DocType = DocType,
         Date = DateOnly.FromDateTime(Date ?? DateTime.Today),
         CustomerId = CustomerId,
         Buyer = new PartyDto
@@ -546,6 +585,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         OtherReferences = OtherReferences,
         Destination = Destination,
         TermsOfDelivery = TermsOfDelivery,
+        DeliveryNote = DeliveryNote,
+        DispatchDocNo = DispatchDocNo,
+        DeliveryNoteDate = DeliveryNoteDate is null ? null : DateOnly.FromDateTime(DeliveryNoteDate.Value),
         Remarks = Remarks,
         TermsAndConditions = TermsAndConditions,
         PackingForwarding = PackingForwarding ?? 0,
@@ -667,12 +709,28 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
         _navigator.OpenQuotation(copy.Id);
     });
 
+    /// <summary>Creates a proforma invoice from this quotation (own TSPI number) and opens it.</summary>
+    [RelayCommand]
+    private async Task ConvertToProformaAsync()
+    {
+        if (IsDirty && !await SaveAsync()) return;
+        await RunAsync(async () =>
+        {
+            if (Id is null) return;
+            var proforma = await _session.Api.ConvertToProformaAsync(Id.Value);
+            _navigator.OpenQuotation(proforma.Id);
+        });
+    }
+
     [RelayCommand]
     private Task CancelQuotationAsync() => RunAsync(async () =>
     {
         if (Id is null)
         {
-            _navigator.Navigate("dashboard");
+            // Nothing saved yet: throw the entry away and go back without asking.
+            ClearEntry();
+            IsDirty = false;
+            _navigator.GoBack();
             return;
         }
         Load(await _session.Api.CancelQuotationAsync(Id.Value));
@@ -680,7 +738,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase
     });
 
     [RelayCommand]
-    private void NewQuotation() => _navigator.NewQuotation();
+    private void NewQuotation() => _navigator.Navigate(IsProforma ? "newproforma" : "new");
 
     [RelayCommand]
     private Task PickRecentCustomerAsync(RecentItemDto item) => RunAsync(async () =>

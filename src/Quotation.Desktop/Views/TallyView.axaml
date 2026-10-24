@@ -4,7 +4,7 @@
              x:Class="Quotation.Desktop.Views.TallyView"
              x:DataType="vm:TallyViewModel">
   <ScrollViewer>
-    <StackPanel Margin="24" Spacing="14" MaxWidth="900" HorizontalAlignment="Left">
+    <StackPanel Margin="24,12,24,24" Spacing="14" MaxWidth="980" HorizontalAlignment="Left">
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock Classes="h1" Text="Tally Connection" />
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
@@ -16,6 +16,11 @@
 
       <Border Classes="card">
         <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <Grid.Styles>
+            <Style Selector="TextBlock">
+              <Setter Property="Margin" Value="0,3" />
+            </Style>
+          </Grid.Styles>
           <TextBlock Classes="label" Text="Tally address" />
           <TextBlock Grid.Column="1" Text="{Binding TallyUrl}" />
           <TextBlock Grid.Row="1" Classes="label" Text="Tally connection" />

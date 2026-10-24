@@ -7,26 +7,93 @@
     <local:ViewLocator />
   </Application.DataTemplates>
 
+  <!--
+    Clean, light look in the spirit of apple.com: light grey page, white rounded cards with soft shadows,
+    one blue accent, pill-shaped buttons, quiet hairlines instead of heavy borders.
+  -->
   <Application.Resources>
-    <SolidColorBrush x:Key="HeaderBrush">#1F3A5F</SolidColorBrush>
-    <SolidColorBrush x:Key="NavBrush">#EEF2F7</SolidColorBrush>
-    <SolidColorBrush x:Key="AccentBrush">#1F6FB2</SolidColorBrush>
-    <SolidColorBrush x:Key="OkBrush">#1E8449</SolidColorBrush>
-    <SolidColorBrush x:Key="WarnBrush">#B9770E</SolidColorBrush>
-    <SolidColorBrush x:Key="BadBrush">#B03A2E</SolidColorBrush>
-    <SolidColorBrush x:Key="MutedBrush">#5D6D7E</SolidColorBrush>
-    <SolidColorBrush x:Key="PanelBorderBrush">#C9D3DF</SolidColorBrush>
+    <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI, Inter, Helvetica Neue, Arial</FontFamily>
+
+    <SolidColorBrush x:Key="PageBrush">#F5F5F7</SolidColorBrush>
+    <SolidColorBrush x:Key="CardBrush">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="TextBrush">#1D1D1F</SolidColorBrush>
+    <SolidColorBrush x:Key="MutedBrush">#6E6E73</SolidColorBrush>
+    <SolidColorBrush x:Key="HairlineBrush">#E5E5EA</SolidColorBrush>
+    <SolidColorBrush x:Key="PanelBorderBrush">#D2D2D7</SolidColorBrush>
+    <SolidColorBrush x:Key="FillBrush">#EDEDF0</SolidColorBrush>
+    <SolidColorBrush x:Key="SubtleFillBrush">#FAFAFC</SolidColorBrush>
+    <SolidColorBrush x:Key="AccentBrush">#0071E3</SolidColorBrush>
+    <SolidColorBrush x:Key="AccentSoftBrush">#E8F1FD</SolidColorBrush>
+    <SolidColorBrush x:Key="OkBrush">#248A3D</SolidColorBrush>
+    <SolidColorBrush x:Key="WarnBrush">#B25000</SolidColorBrush>
+    <SolidColorBrush x:Key="WarnSoftBrush">#FFF6E5</SolidColorBrush>
+    <SolidColorBrush x:Key="WarnBorderBrush">#F5C26B</SolidColorBrush>
+    <SolidColorBrush x:Key="BadBrush">#D70015</SolidColorBrush>
+    <SolidColorBrush x:Key="EditingRowBrush">#FFF8E1</SolidColorBrush>
+    <!-- Older names kept for screens that still use them. -->
+    <SolidColorBrush x:Key="HeaderBrush">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="NavBrush">#FBFBFD</SolidColorBrush>
+
+    <!-- Fluent theme overrides -->
+    <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+    <CornerRadius x:Key="OverlayCornerRadius">12</CornerRadius>
+    <SolidColorBrush x:Key="ButtonBackground">#EDEDF0</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonBackgroundPointerOver">#E3E3E8</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonBackgroundPressed">#D8D8DE</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonBackgroundDisabled">#F2F2F4</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonForeground">#1D1D1F</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonForegroundPointerOver">#1D1D1F</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonForegroundPressed">#1D1D1F</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonForegroundDisabled">#AEAEB2</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonBorderBrush">Transparent</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver">Transparent</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonBorderBrushPressed">Transparent</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonBorderBrushDisabled">Transparent</SolidColorBrush>
+    <SolidColorBrush x:Key="TextControlBackground">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="TextControlBackgroundPointerOver">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="TextControlBackgroundFocused">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="TextControlBackgroundDisabled">#F5F5F7</SolidColorBrush>
+    <SolidColorBrush x:Key="TextControlBorderBrush">#D2D2D7</SolidColorBrush>
+    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
+    <SolidColorBrush x:Key="TextControlBorderBrushFocused">#0071E3</SolidColorBrush>
+    <SolidColorBrush x:Key="TextControlBorderBrushDisabled">#E5E5EA</SolidColorBrush>
+    <SolidColorBrush x:Key="TextControlPlaceholderForeground">#8E8E93</SolidColorBrush>
+    <SolidColorBrush x:Key="ComboBoxBackground">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="ComboBoxBorderBrush">#D2D2D7</SolidColorBrush>
+    <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
+    <SolidColorBrush x:Key="CalendarDatePickerBackground">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="CalendarDatePickerBorderBrush">#D2D2D7</SolidColorBrush>
   </Application.Resources>
 
   <Application.Styles>
-    <FluentTheme DensityStyle="Compact" />
+    <FluentTheme DensityStyle="Compact">
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#0071E3" RegionColor="#F5F5F7" BaseHigh="#1D1D1F" ErrorText="#D70015" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+
+    <Style Selector="Window">
+      <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
+      <Setter Property="Background" Value="{StaticResource PageBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+
+    <!-- Typography -->
     <Style Selector="TextBlock.h1">
-      <Setter Property="FontSize" Value="20" />
+      <Setter Property="FontSize" Value="26" />
       <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
     </Style>
     <Style Selector="TextBlock.h2">
       <Setter Property="FontSize" Value="15" />
       <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.eyebrow">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
     </Style>
     <Style Selector="TextBlock.muted">
       <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
@@ -40,28 +107,179 @@
       <Setter Property="Foreground" Value="{StaticResource BadBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
+
+    <!-- Surfaces -->
     <Style Selector="Border.card">
-      <Setter Property="Background" Value="White" />
-      <Setter Property="BorderBrush" Value="{StaticResource PanelBorderBrush}" />
+      <Setter Property="Background" Value="{StaticResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="4" />
-      <Setter Property="Padding" Value="14" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Padding" Value="18" />
+      <Setter Property="BoxShadow" Value="0 1 3 0 #0F000000" />
     </Style>
+    <Style Selector="Border.tablehead">
+      <Setter Property="Background" Value="{StaticResource SubtleFillBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
+      <Setter Property="BorderThickness" Value="1,1,1,1" />
+      <Setter Property="CornerRadius" Value="12,12,0,0" />
+      <Setter Property="Padding" Value="12,8" />
+    </Style>
+    <Style Selector="Border.tablehead TextBlock">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="Border.pill">
+      <Setter Property="Background" Value="{StaticResource FillBrush}" />
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="Padding" Value="10,2" />
+    </Style>
+    <Style Selector="Border.notice">
+      <Setter Property="Background" Value="{StaticResource WarnSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource WarnBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="12,8" />
+    </Style>
+
+    <!-- Lists -->
+    <Style Selector="ListBox">
+      <Setter Property="Background" Value="{StaticResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <Style Selector="ListBox.table">
+      <Setter Property="BorderThickness" Value="1,0,1,1" />
+      <Setter Property="CornerRadius" Value="0,0,12,12" />
+    </Style>
+    <Style Selector="ListBoxItem">
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="BorderBrush" Value="#F0F0F3" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#F5F5F7" />
+    </Style>
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#DCEAFC" />
+    </Style>
+
+    <!-- Buttons: pill shaped; one blue primary action per screen -->
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="Padding" Value="14,5" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Padding" Value="18,6" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.primary /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#0077ED" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#0062C4" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#A9CDF5" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.danger /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="{StaticResource BadBrush}" />
+    </Style>
+    <Style Selector="Button.danger:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="#E8A3AA" />
+    </Style>
+    <!-- Text-only button (links, breadcrumbs) -->
+    <Style Selector="Button.link">
+      <Setter Property="Padding" Value="4,2" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.link /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+    <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#0062C4" />
+    </Style>
+    <!-- Round chevron button (Back / Forward) -->
+    <Style Selector="Button.round">
+      <Setter Property="Width" Value="30" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.round /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.round:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource FillBrush}" />
+    </Style>
+    <Style Selector="Button.round:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <!-- Clickable stat tile (dashboard) -->
+    <Style Selector="Button.tile">
+      <Setter Property="CornerRadius" Value="16" />
+      <Setter Property="Padding" Value="20,16" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Button.tile /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.tile:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="#B9D5F7" />
+    </Style>
+    <Style Selector="Button.small">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Padding" Value="9,2" />
+    </Style>
+
+    <!-- Sidebar -->
     <Style Selector="Button.nav">
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
-      <Setter Property="Background" Value="Transparent" />
       <Setter Property="Padding" Value="12,7" />
-      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Margin" Value="0,1" />
+    </Style>
+    <Style Selector="Button.nav /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#EDEDF0" />
+    </Style>
+    <Style Selector="Button.nav.selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+      <Setter Property="Foreground" Value="#0062C4" />
     </Style>
     <Style Selector="Button.nav.selected">
-      <Setter Property="Background" Value="#D6E4F5" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
-    <Style Selector="Button.primary">
-      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
-      <Setter Property="Foreground" Value="White" />
-      <Setter Property="Padding" Value="14,6" />
+
+    <!-- Tabs: quieter, accent underline -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Padding" Value="12,0" />
     </Style>
   </Application.Styles>
 </Application>

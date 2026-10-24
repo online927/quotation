@@ -3,6 +3,9 @@
     <ProjectReference Include="..\Quotation.TestSupport\Quotation.TestSupport.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="PdfPig" />
+  </ItemGroup>
+  <ItemGroup>
     <Using Include="Quotation.TestSupport" />
   </ItemGroup>
 </Project>

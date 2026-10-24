@@ -3,7 +3,7 @@
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.AiInboxView"
              x:DataType="vm:AiInboxViewModel">
-  <DockPanel Margin="20">
+  <DockPanel Margin="24,12,24,20">
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
       <TextBlock Classes="h1" Text="AI Inbox" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
@@ -25,7 +25,7 @@
               <KeyBinding Gesture="Ctrl+Enter" Command="{Binding AnalyzeCommand}" />
             </TextBox.KeyBindings>
           </TextBox>
-          <Button Grid.Column="2" Classes="primary" VerticalAlignment="Stretch" Content="Analyse" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
+          <Button Grid.Column="2" Classes="primary" VerticalAlignment="Top" Content="Analyse" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
         </Grid>
         <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -47,7 +47,7 @@
                       <Run Text="{Binding When, Mode=OneWay}" />
                     </TextBlock>
                   </StackPanel>
-                  <Border Grid.Column="1" CornerRadius="3" Padding="8,2" VerticalAlignment="Top" Background="#E4E9F0">
+                  <Border Grid.Column="1" Classes="pill" VerticalAlignment="Top">
                     <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="11" />
                   </Border>
                 </Grid>

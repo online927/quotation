@@ -40,9 +40,12 @@ public class HistoryUiTests
         await e2.PickRecentProductCommand.ExecuteAsync(e2.RecentProducts[0]);
         Assert.Equal("187-901-10-UNIVERSAL BEVEL PROTRACTOR", e2.EntryProduct!.Name);
 
-        // Global search.
+        // Global search (the half-filled second quotation is not kept).
         shell.GlobalSearch = e1.Number!;
         shell.SearchCommand.Execute(null);
+        Assert.NotNull(shell.PendingPrompt);
+        shell.AnswerPromptCommand.Execute(LeaveChoice.DontSave);
+        await UiHelpers.WaitUntil(() => shell.CurrentPage is QuotationListViewModel);
         var list = Assert.IsType<QuotationListViewModel>(shell.CurrentPage);
         await UiHelpers.WaitUntil(() => list.Rows.Count == 1);
         Assert.Equal(e1.Number, list.Rows[0].Number);

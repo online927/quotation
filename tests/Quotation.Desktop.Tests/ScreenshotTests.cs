@@ -61,7 +61,12 @@ public class ScreenshotTests
         editor.BuyersReference = "PO/4471";
         await Shot("02-quotation-editor");
 
+        // Leaving unsaved work asks first.
         shell.Navigate("products");
+        await UiHelpers.WaitUntil(() => shell.PendingPrompt is not null);
+        await Shot("07-unsaved-prompt");
+        shell.PendingPrompt!.Choose(LeaveChoice.Save);
+        await UiHelpers.WaitUntil(() => shell.CurrentPage is ProductsViewModel);
         var products = (ProductsViewModel)shell.CurrentPage!;
         products.Query = "3 core 2.5 sqmm cable";
         await UiHelpers.WaitUntil(() => products.Results.Count > 0 && products.ResultInfo.Contains("match"));
@@ -86,6 +91,22 @@ public class ScreenshotTests
         shell.Navigate("settings");
         await Task.Delay(500);
         await Shot("05-settings");
+
+        // Drafts → open a quotation (breadcrumbs and Back) → convert it to a proforma invoice.
+        shell.Navigate("drafts");
+        var drafts = (QuotationListViewModel)shell.CurrentPage!;
+        await UiHelpers.WaitUntil(() => drafts.Rows.Count > 0);
+        await Shot("08-drafts");
+        drafts.OpenCommand.Execute(drafts.Rows.First(r => !r.IsProforma));
+        var opened = (QuotationEditorViewModel)shell.CurrentPage!;
+        await UiHelpers.WaitUntil(() => opened.Lines.Count > 0);
+        await Shot("09-opened-from-drafts");
+        await opened.ConvertToProformaCommand.ExecuteAsync(null);
+        var proforma = (QuotationEditorViewModel)shell.CurrentPage!;
+        await UiHelpers.WaitUntil(() => proforma.IsProforma && proforma.Lines.Count > 0);
+        proforma.DeliveryNote = "DN/118";
+        proforma.DispatchDocNo = "LR 55120";
+        await Shot("10-proforma-invoice");
         shell.Dispose();
     }
 }

@@ -3,11 +3,15 @@
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.LoginView"
              x:DataType="vm:LoginViewModel">
-  <Grid Background="{StaticResource HeaderBrush}">
-    <Border Classes="card" Width="400" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="28">
+  <Grid Background="{StaticResource PageBrush}">
+    <Border Classes="card" Width="420" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="36,32" CornerRadius="20"
+            BoxShadow="0 8 30 0 #14000000">
       <StackPanel Spacing="10">
-        <TextBlock Classes="h1" Text="TS Quotation System" />
-        <TextBlock Classes="muted" Text="Sign in to the Quotation Server" Margin="0,0,0,8" />
+        <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentBrush}" HorizontalAlignment="Center">
+          <TextBlock Text="TS" Foreground="White" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+        <TextBlock Classes="h1" Text="Sign in to Quotations" HorizontalAlignment="Center" Margin="0,6,0,0" />
+        <TextBlock Classes="muted" Text="T.SAIFUDDIN &amp; CO. · Quotation Server" HorizontalAlignment="Center" Margin="0,0,0,12" />
 
         <TextBlock Classes="label" Text="Server address" />
         <Grid ColumnDefinitions="*,Auto">
@@ -28,7 +32,7 @@
 
         <TextBlock Classes="error" Text="{Binding ErrorMessage}"
                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-        <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+        <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="18,9" Margin="0,8,0,0"
                 Content="Sign in" Command="{Binding LoginCommand}" IsDefault="True" IsEnabled="{Binding !IsBusy}" />
       </StackPanel>
     </Border>

@@ -119,7 +119,7 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             guard?.RecordTimeout();
-            throw new TallyTimeoutException($"Tally at {options.Url} did not respond within {options.Timeout.TotalSeconds:0} s.");
+            throw new TallyTimeoutException($"Tally at {options.Url} did not respond within {options.Timeout.TotalSeconds:0.#} s.");
         }
         catch (HttpRequestException ex)
         {

@@ -213,23 +213,28 @@ public partial class QuotationApiClient
         PostAsync<QuotationDto>($"api/quotations/{id}/approve", new ApproveRequest(overrideStaleData, revision), ct);
     public Task<QuotationDto> CancelQuotationAsync(Guid id, CancellationToken ct = default) => PostAsync<QuotationDto>($"api/quotations/{id}/cancel", null, ct);
     public Task<QuotationDto> DuplicateQuotationAsync(Guid id, CancellationToken ct = default) => PostAsync<QuotationDto>($"api/quotations/{id}/duplicate", null, ct);
+    public Task<QuotationDto> ConvertToProformaAsync(Guid id, CancellationToken ct = default) =>
+        PostAsync<QuotationDto>($"api/quotations/{id}/convert-to-proforma", null, ct);
     public Task<QuotationDto> RegeneratePdfAsync(Guid id, CancellationToken ct = default) => PostAsync<QuotationDto>($"api/quotations/{id}/regenerate-pdf", null, ct);
     public Task<byte[]> QuotationPdfAsync(Guid id, CancellationToken ct = default) => GetBytesAsync($"api/quotations/{id}/pdf", ct);
     public Task<List<ValidationErrorDto>> ValidateQuotationAsync(Guid id, CancellationToken ct = default) =>
         GetAsync<List<ValidationErrorDto>>($"api/quotations/{id}/validate", ct);
-    public Task<NextNumberDto> NextNumberAsync(DateOnly? date = null, CancellationToken ct = default) =>
-        GetAsync<NextNumberDto>("api/quotations/next-number" + (date is null ? "" : $"?date={date:yyyy-MM-dd}"), ct);
+    public Task<NextNumberDto> NextNumberAsync(DateOnly? date = null, Quotation.Core.Domain.DocumentType type = Quotation.Core.Domain.DocumentType.Quotation,
+        CancellationToken ct = default) =>
+        GetAsync<NextNumberDto>($"api/quotations/next-number?type={type}{Q("date", date?.ToString("yyyy-MM-dd"))}", ct);
 
     public Task<List<QuotationSummaryDto>> QuotationsAsync(string? q = null, Quotation.Core.Domain.QuotationStatus? status = null,
         DateOnly? from = null, DateOnly? to = null, int? customerId = null, int take = 100, Quotation.Core.Domain.QuotationSource? source = null,
-        CancellationToken ct = default) =>
-        GetAsync<List<QuotationSummaryDto>>($"api/quotations?take={take}{Q("q", q)}{Q("status", status?.ToString())}{Q("source", source?.ToString())}" +
+        Quotation.Core.Domain.DocumentType? type = null, CancellationToken ct = default) =>
+        GetAsync<List<QuotationSummaryDto>>($"api/quotations?take={take}{Q("q", q)}{Q("status", status?.ToString())}{Q("source", source?.ToString())}{Q("type", type?.ToString())}" +
                                             $"{Q("from", from?.ToString("yyyy-MM-dd"))}{Q("to", to?.ToString("yyyy-MM-dd"))}{Q("customerId", customerId?.ToString())}", ct);
 
-    public Task<NumberSeriesDto> NumberSeriesAsync(int? financialYearStart = null, CancellationToken ct = default) =>
-        GetAsync<NumberSeriesDto>("api/numbering" + (financialYearStart is null ? "" : $"?financialYearStart={financialYearStart}"), ct);
-    public Task<NumberSeriesDto> SetNextSequenceAsync(int financialYearStart, int next, CancellationToken ct = default) =>
-        SendAsync<NumberSeriesDto>(HttpMethod.Put, "api/numbering", new SetNextSequenceRequest(financialYearStart, next), ct);
+    public Task<NumberSeriesDto> NumberSeriesAsync(int? financialYearStart = null,
+        Quotation.Core.Domain.DocumentType type = Quotation.Core.Domain.DocumentType.Quotation, CancellationToken ct = default) =>
+        GetAsync<NumberSeriesDto>($"api/numbering?type={type}{Q("financialYearStart", financialYearStart?.ToString())}", ct);
+    public Task<NumberSeriesDto> SetNextSequenceAsync(int financialYearStart, int next,
+        Quotation.Core.Domain.DocumentType type = Quotation.Core.Domain.DocumentType.Quotation, CancellationToken ct = default) =>
+        SendAsync<NumberSeriesDto>(HttpMethod.Put, "api/numbering", new SetNextSequenceRequest(financialYearStart, next, type), ct);
 }
 
 public partial class QuotationApiClient

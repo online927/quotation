@@ -6,6 +6,6 @@
         Title="{Binding Title}"
         Width="1280" Height="800" MinWidth="1024" MinHeight="640"
         WindowStartupLocation="CenterScreen"
-        Background="#F5F7FA">
+        Background="{StaticResource PageBrush}">
   <ContentControl Content="{Binding Content}" />
 </Window>

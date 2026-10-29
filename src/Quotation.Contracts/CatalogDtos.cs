@@ -12,7 +12,9 @@ public sealed record ProductSummaryDto(
     decimal? Rate,
     string Description,
     /// <summary>Empty when <see cref="Rate"/> is the Tally selling price; otherwise where the last rate came from.</summary>
-    string RateNote = "");
+    string RateNote = "",
+    /// <summary>Marked "Do Not Use" in its Tally description (e.g. DNU): not offered when making quotations.</summary>
+    bool Hidden = false);
 
 public sealed record SearchMatchDto(bool AllTermsMatched, bool ExactName, bool ExactIdentifier, bool UsedFuzzy, IReadOnlyList<string> MatchedFields);
 
@@ -40,7 +42,8 @@ public sealed record ProductDetailDto(
     DateOnly? RateDate,
     string RateSource,
     bool IsDeleted,
-    DateTime LastSyncedUtc);
+    DateTime LastSyncedUtc,
+    bool Hidden = false);
 
 public sealed record AddressDto(string Name, IReadOnlyList<string> Lines, string StateName, string StateCode, string Pincode);
 

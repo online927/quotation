@@ -37,6 +37,11 @@ public sealed class TallySettings
     public string ManufacturerField { get; set; } = "None";
     /// <summary>Derive a part number from item names such as "187-901-10-UNIVERSAL BEVEL PROTRACTOR" when Tally has none.</summary>
     public bool DerivePartNumberFromName { get; set; } = true;
+    /// <summary>
+    /// Stock items whose Tally description is one of these words (or starts with it, e.g. "DNU - use 187-901") are not
+    /// offered when making quotations ("Do Not Use").
+    /// </summary>
+    public List<string> HiddenProductMarkers { get; set; } = ["DNU"];
     /// <summary>Optional override of the active financial year start (e.g. 2025). Null = detect from Tally.</summary>
     public int? ActiveFinancialYearOverride { get; set; }
 }
@@ -71,4 +76,11 @@ public sealed class AllSettingsDto
     public TallySettings Tally { get; set; } = new();
     public AiSettings Ai { get; set; } = new();
     public GmailSettings Gmail { get; set; } = new();
+    /// <summary>Write-only: a new 4-digit seal PIN (empty = keep the current one).</summary>
+    public string? SealPin { get; set; }
+    public bool SealPinConfigured { get; set; }
+    public bool SealImageConfigured { get; set; }
 }
+
+/// <summary>Request for a PDF with the company seal.</summary>
+public sealed record SealedPdfRequest(string Pin);

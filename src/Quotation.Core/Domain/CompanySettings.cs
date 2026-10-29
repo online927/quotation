@@ -45,6 +45,12 @@ public sealed class CompanySettings
     public string ProformaDeclaration { get; set; } = "This is a Proforma invoice and not a Tax invoice";
     public string ProformaFooterText { get; set; } = "This is a Computer Generated Invoice";
     public string Jurisdiction { get; set; } = "";
+
+    /// <summary>Width of the company seal on the PDF, in points (72 = 1 inch); the image keeps its proportions.</summary>
+    public double SealWidth { get; set; } = 150;
+    /// <summary>Moves the seal from its standard place over "Authorised Signatory" (points; right and down are positive).</summary>
+    public double SealOffsetX { get; set; }
+    public double SealOffsetY { get; set; }
 }
 
 /// <summary>Quotation behaviour settings.</summary>
@@ -63,8 +69,18 @@ public sealed class QuotationSettings
     /// <summary>Financial year start month (4 = April).</summary>
     public int FinancialYearStartMonth { get; set; } = 4;
 
-    public TaxPresentation TaxPresentation { get; set; } = TaxPresentation.RateOnly;
-    public bool RoundOffTotal { get; set; } = false;
+    /// <summary>As on the Tally print: SGST + CGST (or IGST) lines under the items, total including GST.</summary>
+    public TaxPresentation TaxPresentation { get; set; } = TaxPresentation.ComputeTax;
+    public bool RoundOffTotal { get; set; } = true;
+
+    /// <summary>Users (not admins) may edit or cancel a quotation for this many days after it was first saved.</summary>
+    public int UserEditDays { get; set; } = 7;
+
+    /// <summary>Capitalise the first letter of each word while typing in the quotation's text boxes (like Tally).</summary>
+    public bool TitleCase { get; set; } = true;
+
+    /// <summary>Users who are not administrators may put the company seal on PDFs (with the seal PIN).</summary>
+    public bool AllUsersCanSeal { get; set; }
 
     /// <summary>Default packing &amp; forwarding: either a fixed amount or a percentage of the subtotal.</summary>
     public decimal DefaultPackingForwardingAmount { get; set; }

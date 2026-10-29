@@ -41,6 +41,12 @@ public partial class QuotationApiClient
     public string? Token { get; private set; }
     public UserDto? CurrentUser { get; private set; }
 
+    /// <summary>Keeps the logged-in user's details current after they changed (e.g. "My settings").</summary>
+    public void UpdateCurrentUser(UserDto user)
+    {
+        if (CurrentUser is null || CurrentUser.Id == user.Id) CurrentUser = user;
+    }
+
     /// <summary>Raised when the server rejects the session (expired/revoked) so the UI can return to login.</summary>
     public event EventHandler? SessionExpired;
 
@@ -79,6 +85,15 @@ public partial class QuotationApiClient
         PostAsync<UserDto>($"api/users/{id}/active/{active.ToString().ToLowerInvariant()}", null, ct);
     public Task ResetPasswordAsync(int id, string password, CancellationToken ct = default) =>
         SendAsync(HttpMethod.Post, $"api/users/{id}/reset-password", new CreateUserRequest("", "", password, default), ct);
+    public Task<UserDto> UpdateUserAsync(int id, UpdateUserRequest req, CancellationToken ct = default) =>
+        SendAsync<UserDto>(HttpMethod.Put, $"api/users/{id}", req, ct);
+    public Task<UserDto> SetMyPreferencesAsync(MyPreferencesDto prefs, CancellationToken ct = default) =>
+        SendAsync<UserDto>(HttpMethod.Put, "api/me/preferences", prefs, ct);
+
+    public Task UploadSealAsync(byte[] image, CancellationToken ct = default) => SendAsync(HttpMethod.Put, "api/settings/seal", image, ct);
+    public Task<byte[]> SealImageAsync(CancellationToken ct = default) => GetBytesAsync("api/settings/seal", ct);
+    public Task<byte[]> SealPreviewAsync(CancellationToken ct = default) => GetBytesAsync("api/settings/seal/preview", ct);
+    public Task RemoveSealAsync(CancellationToken ct = default) => SendAsync(HttpMethod.Delete, "api/settings/seal", null, ct);
 
     public Task<DashboardDto> DashboardAsync(CancellationToken ct = default) => GetAsync<DashboardDto>("api/dashboard", ct);
     public Task<SystemStatusDto> StatusAsync(CancellationToken ct = default) => GetAsync<SystemStatusDto>("api/status", ct);
@@ -115,7 +130,8 @@ public partial class QuotationApiClient
     protected async Task<HttpResponseMessage> SendRawAsync(HttpMethod method, string url, object? body, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(method, url);
-        if (body is not null) request.Content = JsonContent.Create(body, body.GetType(), options: JsonOptions);
+        if (body is byte[] bytes) request.Content = new ByteArrayContent(bytes); // file upload (e.g. the seal image)
+        else if (body is not null) request.Content = JsonContent.Create(body, body.GetType(), options: JsonOptions);
         HttpResponseMessage response;
         try
         {
@@ -192,8 +208,9 @@ public partial class QuotationApiClient
 
 public partial class QuotationApiClient
 {
-    public Task<List<ProductSearchHitDto>> SearchProductsAsync(string query, int limit = 20, CancellationToken ct = default) =>
-        GetAsync<List<ProductSearchHitDto>>($"api/products/search?limit={limit}{Q("q", query)}", ct);
+    /// <param name="includeHidden">Also items marked "Do Not Use" (DNU) in Tally (Products page only).</param>
+    public Task<List<ProductSearchHitDto>> SearchProductsAsync(string query, int limit = 20, CancellationToken ct = default, bool includeHidden = false) =>
+        GetAsync<List<ProductSearchHitDto>>($"api/products/search?limit={limit}{Q("q", query)}{(includeHidden ? "&includeHidden=true" : "")}", ct);
 
     public Task<ProductDetailDto> ProductAsync(int id, CancellationToken ct = default) => GetAsync<ProductDetailDto>($"api/products/{id}", ct);
 
@@ -217,6 +234,17 @@ public partial class QuotationApiClient
         PostAsync<QuotationDto>($"api/quotations/{id}/convert-to-proforma", null, ct);
     public Task<QuotationDto> RegeneratePdfAsync(Guid id, CancellationToken ct = default) => PostAsync<QuotationDto>($"api/quotations/{id}/regenerate-pdf", null, ct);
     public Task<byte[]> QuotationPdfAsync(Guid id, CancellationToken ct = default) => GetBytesAsync($"api/quotations/{id}/pdf", ct);
+    public async Task<byte[]> SealedPdfAsync(Guid id, string pin, CancellationToken ct = default)
+    {
+        using var response = await SendRawAsync(HttpMethod.Post, $"api/quotations/{id}/pdf/sealed", new SealedPdfRequest(pin), ct);
+        return await response.Content.ReadAsByteArrayAsync(ct);
+    }
+    public Task DeleteQuotationAsync(Guid id, CancellationToken ct = default) => SendAsync(HttpMethod.Delete, $"api/quotations/{id}", null, ct);
+    public Task<List<DeletedQuotationDto>> DeletedQuotationsAsync(CancellationToken ct = default) =>
+        GetAsync<List<DeletedQuotationDto>>("api/quotations/deleted", ct);
+    public Task<RestoreResultDto> RestoreQuotationAsync(Guid id, CancellationToken ct = default) =>
+        PostAsync<RestoreResultDto>($"api/quotations/deleted/{id}/restore", null, ct);
+    public Task PurgeQuotationAsync(Guid id, CancellationToken ct = default) => SendAsync(HttpMethod.Delete, $"api/quotations/deleted/{id}", null, ct);
     public Task<List<ValidationErrorDto>> ValidateQuotationAsync(Guid id, CancellationToken ct = default) =>
         GetAsync<List<ValidationErrorDto>>($"api/quotations/{id}/validate", ct);
     public Task<NextNumberDto> NextNumberAsync(DateOnly? date = null, Quotation.Core.Domain.DocumentType type = Quotation.Core.Domain.DocumentType.Quotation,

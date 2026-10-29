@@ -69,6 +69,16 @@ public static class QuotationEndpoints
         g.MapPost("/{id:guid}/cancel", (Guid id, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
             Handle(() => svc.CancelAsync(id, User(ctx), ct)));
 
+        // Administrator: delete (to the Deleted list), list deleted, restore, delete permanently.
+        g.MapDelete("/{id:guid}", (Guid id, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
+            Handle(async () => { await svc.DeleteAsync(id, User(ctx), ct); return true; })).RequireAuthorization(SystemEndpoints.AdminPolicy);
+        g.MapGet("/deleted", (QuotationService svc, CancellationToken ct) => Handle(() => svc.DeletedAsync(ct)))
+            .RequireAuthorization(SystemEndpoints.AdminPolicy);
+        g.MapPost("/deleted/{id:guid}/restore", (Guid id, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
+            Handle(() => svc.RestoreAsync(id, User(ctx), ct))).RequireAuthorization(SystemEndpoints.AdminPolicy);
+        g.MapDelete("/deleted/{id:guid}", (Guid id, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
+            Handle(async () => { await svc.PurgeAsync(id, User(ctx), ct); return true; })).RequireAuthorization(SystemEndpoints.AdminPolicy);
+
         g.MapPost("/{id:guid}/duplicate", (Guid id, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
             Handle(() => svc.DuplicateAsync(id, User(ctx), ct)));
 
@@ -94,6 +104,25 @@ public static class QuotationEndpoints
             if (bytes is null) return Results.NotFound(new ApiError("No PDF has been generated for this quotation."));
             await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "PdfDownloaded", "Quotation", id.ToString(), q.Number ?? "", ct);
             return Results.File(bytes, "application/pdf", Path.GetFileName(path));
+        });
+
+        // The PDF with the company seal: by an administrator, or any user when allowed in Settings, with the 4-digit seal PIN.
+        g.MapPost("/{id:guid}/pdf/sealed", async (Guid id, SealedPdfRequest r, QuotationService svc, SealService seal, HttpContext ctx,
+            CancellationToken ct) =>
+        {
+            try
+            {
+                var user = User(ctx);
+                var image = seal.Authorize(user, r.Pin);
+                var bytes = await svc.PrintPdfAsync(id, user, ct, image);
+                return bytes is null
+                    ? Results.Json(new ApiError("Only an approved quotation can be sealed: approve it first.", null, ApiErrorCodes.InvalidState), statusCode: 409)
+                    : Results.File(bytes, "application/pdf");
+            }
+            catch (QuotationException ex)
+            {
+                return Results.Json(new ApiError(ex.Message, null, ex.Code), statusCode: ex.Status);
+            }
         });
 
         g.MapGet("/{id:guid}/preview", async (Guid id, QuotationService svc, PdfQuotationRenderer pdf, HttpContext ctx, CancellationToken ct) =>
@@ -124,7 +153,7 @@ public static class QuotationEndpoints
                 .Select(a => new AuditEntryDto(a.Id, a.AtUtc, a.User, a.Machine, a.Action, a.EntityType, a.EntityId, a.Details))
                 .ToListAsync(ct));
 
-        g.MapGet("/recent-items", async (QuotationDbContext db, HttpContext ctx, CancellationToken ct) =>
+        g.MapGet("/recent-items", async (QuotationDbContext db, CatalogSearchService search, HttpContext ctx, CancellationToken ct) =>
         {
             var user = ctx.User.UserName();
             var recent = await db.Quotations.AsNoTracking().Where(x => x.CreatedBy == user || x.UpdatedBy == user)
@@ -133,8 +162,13 @@ public static class QuotationEndpoints
                 .ToListAsync(ct);
             var customers = recent.Where(r => r.CustomerId != null).Select(r => new RecentItemDto(r.CustomerId!.Value, r.Name))
                 .DistinctBy(c => c.Id).Take(8).ToList();
-            var products = recent.SelectMany(r => r.Lines).Where(l => l.ProductId != null).Select(l => new RecentItemDto(l.ProductId!.Value, l.ItemName))
-                .DistinctBy(p => p.Id).Take(10).ToList();
+            var candidates = recent.SelectMany(r => r.Lines).Where(l => l.ProductId != null).Select(l => new RecentItemDto(l.ProductId!.Value, l.ItemName))
+                .DistinctBy(p => p.Id).Take(30).ToList();
+            // Items marked "Do Not Use" in Tally are not offered again.
+            var ids = candidates.Select(c => c.Id).ToList();
+            var usable = (await db.Products.AsNoTracking().Where(p => ids.Contains(p.Id) && !p.IsDeleted).Select(p => new { p.Id, p.Description }).ToListAsync(ct))
+                .Where(p => !search.IsHidden(p.Description)).Select(p => p.Id).ToHashSet();
+            var products = candidates.Where(c => usable.Contains(c.Id)).Take(10).ToList();
             return new RecentItemsDto(customers, products);
         });
 
@@ -168,7 +202,7 @@ public static class QuotationEndpoints
 
     private static readonly string[] DateFormats = ["d-M-yyyy", "d/M/yyyy", "d-M-yy", "d/M/yy", "d-MMM-yyyy", "d-MMM-yy", "yyyy-MM-dd"];
 
-    internal static UserContext User(HttpContext ctx) => new(ctx.User.UserName(), ctx.User.DisplayName(), ctx.Machine());
+    internal static UserContext User(HttpContext ctx) => new(ctx.User.UserName(), ctx.User.DisplayName(), ctx.Machine(), ctx.User.IsInRole("Admin"));
 
     internal static async Task<IResult> Handle<T>(Func<Task<T>> action)
     {

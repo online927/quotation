@@ -15,6 +15,9 @@ public sealed partial class ProductsViewModel : ViewModelBase
     [ObservableProperty] private ProductSearchHitDto? _selected;
     [ObservableProperty] private ProductDetailDto? _detail;
     [ObservableProperty] private string _resultInfo = "";
+    /// <summary>Also list items marked "Do Not Use" (DNU) in Tally; they are never offered when making quotations.</summary>
+    [ObservableProperty] private bool _showHidden;
+    partial void OnShowHiddenChanged(bool value) => _debounce.Run(ct => SearchAsync(Query, ct));
 
     public ObservableCollection<ProductSearchHitDto> Results { get; } = [];
 
@@ -36,7 +39,7 @@ public sealed partial class ProductsViewModel : ViewModelBase
     {
         try
         {
-            var hits = await _session.Api.SearchProductsAsync(query, 50, ct);
+            var hits = await _session.Api.SearchProductsAsync(query, 50, ct, includeHidden: ShowHidden);
             if (ct.IsCancellationRequested) return;
             Results.Clear();
             foreach (var h in hits) Results.Add(h);

@@ -105,6 +105,27 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
         await SaveAsync(GmailKey, gmail, user, ct);
     }
 
+    public const string UpgradeGstDefaultKey = "state:upgrade.gstdefault";
+
+    private sealed class UpgradeDone
+    {
+        public bool Done { get; set; }
+    }
+
+    /// <summary>One-time changes of defaults for servers installed with an earlier version.</summary>
+    public async Task ApplyUpgradesAsync(CancellationToken ct)
+    {
+        // GST lines (SGST + CGST or IGST) and round off became the default, as on the Tally print.
+        if (!Get<UpgradeDone>(UpgradeGstDefaultKey).Done)
+        {
+            var quotation = Quotation;
+            quotation.TaxPresentation = TaxPresentation.ComputeTax;
+            quotation.RoundOffTotal = true;
+            await SaveAsync(QuotationKey, quotation, "system", ct);
+            await SaveAsync(UpgradeGstDefaultKey, new UpgradeDone { Done = true }, "system", ct);
+        }
+    }
+
     private async Task WriteAsync(string key, string json, string user, CancellationToken ct)
     {
         using var scope = scopes.CreateScope();

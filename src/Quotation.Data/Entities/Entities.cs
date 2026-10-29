@@ -141,6 +141,12 @@ public class QuotationHeader
     public string Remarks { get; set; } = "";
     public string TermsAndConditions { get; set; } = "";
 
+    /// <summary>GST presentation and round-off the totals were calculated with (fixed when the quotation is saved).</summary>
+    public TaxPresentation TaxPresentation { get; set; }
+    public bool RoundOffTotal { get; set; }
+    /// <summary>"Without GST" quotation: 0 % on all lines and P&amp;F, no tax lines.</summary>
+    public bool WithoutGst { get; set; }
+
     public decimal PackingForwarding { get; set; }
     public decimal? PackingForwardingPercent { get; set; }
     public decimal Subtotal { get; set; }
@@ -170,6 +176,13 @@ public class QuotationHeader
     public DateTime? ApprovedUtc { get; set; }
     public string? CancelledBy { get; set; }
     public DateTime? CancelledUtc { get; set; }
+
+    /// <summary>Deleted by an administrator: kept in the Deleted list for 30 days, then removed.</summary>
+    public DateTime? DeletedUtc { get; set; }
+    public string? DeletedBy { get; set; }
+    /// <summary>The number a deleted quotation released (it was the latest one, so the next quotation reuses it).</summary>
+    public string? DeletedNumber { get; set; }
+    public int? DeletedSequence { get; set; }
 
     /// <summary>Optimistic concurrency token; incremented on every update.</summary>
     public int Revision { get; set; }
@@ -255,6 +268,8 @@ public class AppUser
     public UserRole Role { get; set; }
     public bool IsActive { get; set; } = true;
     public bool MustChangePassword { get; set; }
+    /// <summary>"Without GST" for the next quotation this user saves (switches itself off afterwards).</summary>
+    public bool WithoutGstNext { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime? LastLoginUtc { get; set; }
 }

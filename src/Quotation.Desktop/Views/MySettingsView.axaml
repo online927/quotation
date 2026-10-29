@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             x:Class="Quotation.Desktop.Views.MySettingsView"
+             x:DataType="vm:MySettingsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="24,12,24,24" Spacing="16" MaxWidth="820" HorizontalAlignment="Left">
+      <StackPanel>
+        <TextBlock Classes="h1" Text="My Settings" />
+        <TextBlock Classes="muted" Text="{Binding UserName, StringFormat='Only for you ({0}) — every user can change these.'}" />
+      </StackPanel>
+      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Foreground="{StaticResource OkBrush}" Text="{Binding InfoMessage}" TextWrapping="Wrap"
+                 IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Without GST (next quotation only)" />
+          <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
+                     Text="For a company that does not take GST (e.g. SEZ): the next quotation or proforma invoice you make shows 0 % on every item, 'Packing &amp; Forwarding - Without GST' and no SGST/CGST/IGST lines. The switch turns itself off as soon as that document is saved; the document keeps it." />
+          <ToggleSwitch Name="WithoutGstSwitch" IsChecked="{Binding WithoutGstNext}" OnContent="On — next quotation without GST" OffContent="Off" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Save as PDF folder (this PC)" />
+          <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
+                     Text="'Save as PDF' saves the quotation here as 'Number Customer.pdf' without asking. Leave empty for the standard folder." />
+          <Grid ColumnDefinitions="*,8,Auto,8,Auto">
+            <TextBox Text="{Binding PdfFolder}" Watermark="{Binding DefaultPdfFolder}" />
+            <Button Grid.Column="2" Name="BrowseButton" Content="Browse…" Click="OnBrowse" />
+            <Button Grid.Column="4" Classes="primary" Content="Save" Command="{Binding SavePdfFolderCommand}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

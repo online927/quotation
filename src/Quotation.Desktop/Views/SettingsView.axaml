@@ -32,7 +32,7 @@
       <TabItem Header="Company">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="200,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="Company name" />
             <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Company.CompanyName}" />
             <TextBlock Grid.Row="1" Text="Address (one line per row)" VerticalAlignment="Top" />
@@ -93,6 +93,42 @@
             <TextBox Grid.Row="25" Grid.Column="1" Text="{Binding Settings.Company.ProformaDeclaration}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
             <TextBlock Grid.Row="26" Text="Proforma footer text" />
             <TextBox Grid.Row="26" Grid.Column="1" Text="{Binding Settings.Company.ProformaFooterText}" />
+            <Border Grid.Row="27" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="h2" Text="Company seal" />
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                           Text="The seal image is printed over 'for T.SAIFUDDIN &amp; CO. / Authorised Signatory' when someone ticks 'Seal' next to Save as PDF and enters the seal PIN. A PNG with a transparent background looks best." />
+                <Grid ColumnDefinitions="Auto,16,*">
+                  <Border Width="180" Height="110" CornerRadius="10" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1" Background="White">
+                    <Panel>
+                      <Image Source="{Binding SealImage}" Stretch="Uniform" Margin="6" />
+                      <TextBlock Text="No seal image" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasSealImage}" />
+                    </Panel>
+                  </Border>
+                  <StackPanel Grid.Column="2" Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Button Name="UploadSealButton" Content="Choose image…" Click="OnChooseSeal" />
+                      <Button Content="Remove" Command="{Binding RemoveSealCommand}" IsVisible="{Binding HasSealImage}" />
+                      <Button Content="Preview on a page" Command="{Binding PreviewSealCommand}" IsVisible="{Binding HasSealImage}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Classes="label" Text="Width (pt)" />
+                      <NumericUpDown Value="{Binding SealWidth}" Minimum="30" Maximum="280" Increment="10" FormatString="0" Width="110" />
+                      <TextBlock Classes="label" Text="Move right" Margin="8,0,0,0" />
+                      <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="110" />
+                      <TextBlock Classes="label" Text="Move down" Margin="8,0,0,0" />
+                      <NumericUpDown Value="{Binding SealOffsetY}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="110" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Classes="label" Text="New seal PIN (4 digits)" />
+                      <TextBox Text="{Binding NewSealPin}" PasswordChar="●" MaxLength="4" Width="90" Watermark="••••" />
+                      <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding SealPinState}" />
+                    </StackPanel>
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="Size, position and PIN take effect when you press Save (top right)." />
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+            </Border>
           </Grid>
         </ScrollViewer>
       </TabItem>
@@ -100,7 +136,7 @@
       <TabItem Header="Quotation">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="Quotation number pattern" />
             <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
               <TextBox Text="{Binding Settings.Quotation.NumberPattern}" />
@@ -130,6 +166,17 @@
             <NumericUpDown Grid.Row="11" Grid.Column="1" Value="{Binding Settings.Quotation.StaleDataHours}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
             <TextBlock Grid.Row="12" Text="Require HSN/SAC on every line" />
             <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RequireHsn}" />
+            <TextBlock Grid.Row="16" Text="Users can edit for (days)" />
+            <StackPanel Grid.Row="16" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <NumericUpDown Value="{Binding Settings.Quotation.UserEditDays}" Minimum="0" Maximum="365" FormatString="0" Width="120" />
+              <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="after a quotation is first saved; administrators can always edit." />
+            </StackPanel>
+            <TextBlock Grid.Row="17" Text="Title Case while typing" />
+            <CheckBox Grid.Row="17" Grid.Column="1" IsChecked="{Binding Settings.Quotation.TitleCase}"
+                      Content="Capital first letter of each word in the quotation's text boxes (like Tally)" />
+            <TextBlock Grid.Row="18" Text="Company seal" />
+            <CheckBox Grid.Row="18" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllUsersCanSeal}"
+                      Content="All users can use the seal (with the seal PIN); otherwise administrators only" />
             <TextBlock Grid.Row="13" Text="Proforma invoice number pattern" />
             <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding Settings.Quotation.ProformaNumberPattern}" Watermark="TSPI{FY}-{SEQ}" />
             <TextBlock Grid.Row="14" Text="First proforma number of a new year" />
@@ -163,7 +210,7 @@
       <TabItem Header="Tally">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="TallyPrime XML/HTTP address" />
             <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Tally.Url}" Watermark="http://192.168.1.10:9000" />
             <TextBlock Grid.Row="1" Text="Company name (blank = loaded company)" />
@@ -195,6 +242,12 @@
                      Watermark="Blank = all Sales and Quotation types (e.g. Sales, TS Quotation)" />
             <TextBlock Grid.Row="12" Text="Look back for last rate (months)" />
             <NumericUpDown Grid.Row="12" Grid.Column="1" Value="{Binding Settings.Tally.LastRateMonths}" Minimum="1" Maximum="120" FormatString="0" Width="160" HorizontalAlignment="Left" />
+            <TextBlock Grid.Row="13" Text="'Do not use' marks in item description" VerticalAlignment="Top" />
+            <StackPanel Grid.Row="13" Grid.Column="1">
+              <TextBox Text="{Binding HiddenMarkers}" AcceptsReturn="True" Height="50" Watermark="DNU" />
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                         Text="One per line. Items whose Tally description is this word (or starts with it, e.g. 'DNU - use 187-901') are not offered when making quotations." />
+            </StackPanel>
           </Grid>
         </ScrollViewer>
       </TabItem>
@@ -243,12 +296,40 @@
                   <TextBlock Grid.Column="1" Text="{Binding DisplayName}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="2" Text="{Binding Role}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="3" Text="{Binding IsActive, StringFormat='Active: {0}'}" VerticalAlignment="Center" />
-                  <Button Grid.Column="4" HorizontalAlignment="Left" Content="Activate / Deactivate"
-                          Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).ToggleUserCommand}" CommandParameter="{Binding}" />
+                  <Button Grid.Column="4" HorizontalAlignment="Left" Content="Edit"
+                          Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).EditUserCommand}" CommandParameter="{Binding}" />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+          <Border Classes="card" IsVisible="{Binding IsEditingUser}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="h2" Text="{Binding EditingUser.Username, StringFormat='Edit user {0}', FallbackValue=''}" />
+              <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto">
+                <TextBlock Classes="label" Text="Login name (printed as 'By:' on PDFs)" Margin="0,4,12,4" />
+                <TextBox Grid.Column="1" Text="{Binding EditUsername}" />
+                <TextBlock Grid.Row="1" Classes="label" Text="Display name (Prepared by)" Margin="0,4,12,4" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditDisplayName}" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,4">
+                  <CheckBox Content="Administrator" IsChecked="{Binding EditIsAdmin}" />
+                  <CheckBox Content="Active (can log in)" IsChecked="{Binding EditIsActive}" />
+                </StackPanel>
+              </Grid>
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                         Text="Old quotations and the history keep the name used at the time. You cannot remove your own administrator role or deactivate yourself, and one active administrator must remain." />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="primary" Content="Save user" Command="{Binding SaveUserCommand}" />
+                <Button Content="Close" Command="{Binding CancelEditUserCommand}" />
+              </StackPanel>
+              <TextBlock Classes="h2" Text="Reset password" Margin="0,8,0,0" />
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                         Text="Give the user a temporary password: they must choose a new one at their next login, and any PC still logged in as them is logged out." />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox Width="220" Text="{Binding ResetPassword}" PasswordChar="●" Watermark="Temporary password (min. 6)" />
+                <Button Content="Reset password" Command="{Binding ResetUserPasswordCommand}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
           <TextBlock Classes="h2" Text="Add user" />
           <Grid ColumnDefinitions="160,8,220,8,160,8,Auto,8,Auto">
             <TextBox Text="{Binding NewUsername}" Watermark="Username" />

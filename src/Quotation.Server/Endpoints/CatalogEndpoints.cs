@@ -15,23 +15,29 @@ public static class CatalogEndpoints
     {
         var p = app.MapGroup("/api/products").RequireAuthorization();
 
-        p.MapGet("/search", async (string? q, int? limit, CatalogSearchService search, QuotationDbContext db, CancellationToken ct) =>
+        // Items marked "Do Not Use" (DNU) are left out unless includeHidden (the Products page's "Show DNU items").
+        p.MapGet("/search", async (string? q, int? limit, bool? includeHidden, CatalogSearchService search, QuotationDbContext db,
+            CancellationToken ct) =>
         {
             var take = Math.Clamp(limit ?? 20, 1, 100);
+            var withHidden = includeHidden == true;
             if (string.IsNullOrWhiteSpace(q))
             {
-                var first = await db.Products.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Name).Take(take).ToListAsync(ct);
-                return first.Select(x => new ProductSearchHitDto(ToSummary(x), 0, new SearchMatchDto(true, false, false, false, []))).ToList();
+                var first = await db.Products.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Name).Take(take * 3).ToListAsync(ct);
+                return first.Select(x => (Product: x, Hidden: search.IsHidden(x.Description)))
+                    .Where(x => withHidden || !x.Hidden).Take(take)
+                    .Select(x => new ProductSearchHitDto(ToSummary(x.Product, x.Hidden), 0, new SearchMatchDto(true, false, false, false, []))).ToList();
             }
-            var index = await search.ProductsAsync(ct);
-            return index.Search(q, take).Select(h =>
+            var hits = (await search.ProductsAsync(ct)).Search(q, take).ToList();
+            if (withHidden) hits = hits.Concat((await search.HiddenProductsAsync(ct)).Search(q, take)).OrderByDescending(h => h.Score).Take(take).ToList();
+            return hits.Select(h =>
                 new ProductSearchHitDto(CatalogSearchService.ToSummary(h.Item), Math.Round(h.Score, 2), CatalogSearchService.ToMatch(h.Evidence))).ToList();
         });
 
-        p.MapGet("/{id:int}", async (int id, QuotationDbContext db, CancellationToken ct) =>
+        p.MapGet("/{id:int}", async (int id, QuotationDbContext db, CatalogSearchService search, CancellationToken ct) =>
         {
             var x = await db.Products.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct);
-            return x is null ? Results.NotFound() : Results.Ok(ToDetail(x));
+            return x is null ? Results.NotFound() : Results.Ok(ToDetail(x, search.IsHidden(x.Description)));
         });
 
         var c = app.MapGroup("/api/customers").RequireAuthorization();
@@ -56,16 +62,16 @@ public static class CatalogEndpoints
         });
     }
 
-    public static ProductSummaryDto ToSummary(Product x) =>
+    public static ProductSummaryDto ToSummary(Product x, bool hidden = false) =>
         new(x.Id, x.Name, x.PartNumber, x.Brand, x.StockGroup, x.Unit, x.Hsn, x.GstRate, x.Rate ?? x.LastRate, x.Description,
-            x.Rate is null && x.LastRate is not null ? x.LastRateNote : "");
+            x.Rate is null && x.LastRate is not null ? x.LastRateNote : "", hidden);
 
-    public static ProductDetailDto ToDetail(Product x)
+    public static ProductDetailDto ToDetail(Product x, bool hidden = false)
     {
         var rate = LastRateService.Effective(x);
         return new(x.Id, x.Name, SplitLines(x.Aliases), x.PartNumber, x.Brand, x.Manufacturer,
             x.Category, x.StockGroup, x.Unit, x.Description, x.Hsn, x.GstRate, x.GstSource, rate.Rate, rate.Date, rate.Source, x.IsDeleted,
-            x.LastSyncedUtc);
+            x.LastSyncedUtc, hidden);
     }
 
     public static CustomerSummaryDto ToSummary(Customer x) => new(x.Id, x.Name, x.MailingName, x.Address, x.StateName, x.StateCode,

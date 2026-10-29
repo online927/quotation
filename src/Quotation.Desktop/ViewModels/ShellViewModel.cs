@@ -74,10 +74,12 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         NavItems.Add(new NavItem("today", "Today's Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Today)));
         NavItems.Add(new NavItem("history", "Quotation History", "Ctrl+H", () => new QuotationListViewModel(_session, this, QuotationListPreset.History)));
         NavItems.Add(new NavItem("proforma", "Proforma Invoices", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Proforma)));
+        if (session.IsAdmin) NavItems.Add(new NavItem("deleted", "Deleted", "", () => new DeletedQuotationsViewModel(_session, this)));
         NavItems.Add(new NavItem("customers", "Customers", "", () => new CustomersViewModel(_session), "Tally masters"));
         NavItems.Add(new NavItem("products", "Products", "", () => new ProductsViewModel(_session)));
         NavItems.Add(new NavItem("tally", "Tally Connection", "", () => new TallyViewModel(_session), "System"));
         NavItems.Add(new NavItem("gmail", "Gmail Connection", "", () => new GmailViewModel(_session, this)));
+        NavItems.Add(new NavItem("mysettings", "My Settings", "", () => new MySettingsViewModel(_session)));
         NavItems.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session)));
         if (session.IsAdmin) NavItems.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session)));
 
@@ -137,6 +139,32 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
 
     [RelayCommand]
     private void AnswerPrompt(LeaveChoice choice) => PendingPrompt?.Choose(choice);
+
+    // ================================================================= questions over the window
+
+    /// <summary>The Yes/No question or input (e.g. seal PIN) shown over the window.</summary>
+    [ObservableProperty] private ShellDialog? _pendingDialog;
+
+    public async Task<bool> ConfirmAsync(string title, string message, string yes = "Yes", string no = "No") =>
+        await ShowDialogAsync(new ShellDialog(title, message, yes, no)) is not null;
+
+    public async Task<string?> AskAsync(string title, string message, string inputLabel, bool secret = false, string ok = "OK") =>
+        await ShowDialogAsync(new ShellDialog(title, message, ok, "Cancel", inputLabel, secret));
+
+    private async Task<string?> ShowDialogAsync(ShellDialog dialog)
+    {
+        PendingDialog?.Choose(false);
+        PendingDialog = dialog;
+        try { return await dialog.Answer ? dialog.Input : null; }
+        finally { if (PendingDialog == dialog) PendingDialog = null; }
+    }
+
+    [RelayCommand]
+    private void AnswerDialog(bool primary) => PendingDialog?.Choose(primary);
+
+    /// <summary>Top-right menu: change my own password.</summary>
+    [RelayCommand]
+    private void ChangeMyPassword() => _ = OpenAsync(null, () => new ChangePasswordViewModel(_session, forced: false, onDone: GoBack));
 
     private async Task OpenAsync(string? navKey, Func<ViewModelBase> factory)
     {
@@ -294,5 +322,6 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     {
         if (!_cts.IsCancellationRequested) _cts.Cancel();
         PendingPrompt?.Choose(LeaveChoice.Cancel);
+        PendingDialog?.Choose(false);
     }
 }

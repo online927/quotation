@@ -83,8 +83,9 @@ public class QuotationEditorTests
         editor.EntryQuantity = 2;
         editor.CommitEntryCommand.Execute(null);
         Assert.Single(editor.Lines);
-        Assert.Equal("₹ 31,200.00", editor.GrandTotalText);
-        Assert.Equal("INR Thirty One Thousand Two Hundred Only", editor.AmountInWords);
+        // GST lines are on by default, as on the Tally print: 31,200 + 18 %.
+        Assert.Equal("₹ 36,816.00", editor.GrandTotalText);
+        Assert.Equal("INR Thirty Six Thousand Eight Hundred Sixteen Only", editor.AmountInWords);
         Assert.Equal("2 NOS", editor.TotalQuantityText);
 
         Assert.True(await editor.SaveAsync());
@@ -353,8 +354,14 @@ public class QuotationEditorTests
 
         Assert.Equal("SONEPAR INDIA PRIVATE LIMITED", box.InputBox.Text); // Tally ledger name
         Assert.False(box.IsDropDownOpen);
+        // As in Tally: the reference comes next, then Enter goes to the items.
+        var reference = view.FindControl<TextBox>("BuyersRefBox")!;
+        await UiHelpers.WaitUntil(() => reference.IsKeyboardFocusWithin);
+        ctx.Window.KeyTextInput("po/4471");
+        Press(ctx, Key.Enter, PhysicalKey.Enter);
         var product = view.FindControl<SearchPicker>("ProductBox")!;
         await UiHelpers.WaitUntil(() => product.InputBox.IsKeyboardFocusWithin);
+        Assert.Equal("Po/4471", editor.BuyersReference); // Title Case while typing
     }
 
     [AvaloniaFact]

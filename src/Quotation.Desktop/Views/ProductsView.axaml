@@ -7,7 +7,11 @@
   <Grid Margin="24,12,24,20" ColumnDefinitions="3*,12,2*" RowDefinitions="Auto,Auto,*">
     <TextBlock Classes="h1" Text="Products" Grid.ColumnSpan="3" Margin="0,0,0,10" />
     <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,0,8">
-      <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search name, part no., alias, brand, HSN… (e.g. 'universal bevel', '10mm', '187-901')" />
+      <Grid ColumnDefinitions="*,12,Auto">
+        <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search name, part no., alias, brand, HSN… (e.g. 'universal bevel', '10mm', '187-901')" />
+        <CheckBox Grid.Column="2" Content="Show DNU items" IsChecked="{Binding ShowHidden}"
+                  ToolTip.Tip="Items whose Tally description is DNU (do not use) are never offered in quotations" />
+      </Grid>
       <TextBlock Classes="muted" FontSize="11" Text="{Binding ResultInfo}" />
       <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     </StackPanel>
@@ -16,7 +20,12 @@
         <DataTemplate x:DataType="c:ProductSearchHitDto">
           <Grid ColumnDefinitions="*,70,90" Margin="0,1">
             <StackPanel>
-              <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Border Classes="pill" Background="{StaticResource WarnSoftBrush}" Padding="6,0" IsVisible="{Binding Product.Hidden}">
+                  <TextBlock Text="DNU" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource WarnBrush}" />
+                </Border>
+                <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
               <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis">
                 <Run Text="{Binding Product.Brand, Mode=OneWay}" />
                 <Run Text="  HSN " />

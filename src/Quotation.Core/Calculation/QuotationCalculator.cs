@@ -11,7 +11,9 @@ public sealed record CalcInput(
     TaxPresentation TaxPresentation = TaxPresentation.RateOnly,
     bool RoundOff = false,
     /// <summary>True when the buyer's place of supply is in another state (IGST instead of CGST+SGST).</summary>
-    bool InterState = false);
+    bool InterState = false,
+    /// <summary>"Without GST" quotation (e.g. for SEZ buyers): 0 % on every line and on P&amp;F, no tax lines.</summary>
+    bool WithoutGst = false);
 
 public sealed record TaxLine(string Name, decimal RatePercent, decimal TaxableValue, decimal Amount);
 
@@ -54,7 +56,7 @@ public static class QuotationCalculator
         var taxable = subtotal + pf;
 
         var taxes = new List<TaxLine>();
-        if (input.TaxPresentation == TaxPresentation.ComputeTax && input.Lines.Count > 0)
+        if (input.TaxPresentation == TaxPresentation.ComputeTax && !input.WithoutGst && input.Lines.Count > 0)
         {
             // Packing & forwarding is part of the taxable value; it is apportioned to the GST rates
             // in proportion to the line values (the rate of the principal supply when there is one rate).

@@ -45,7 +45,13 @@
       <Border Grid.Column="1" Classes="pill" Margin="12,0" VerticalAlignment="Center">
         <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" FontSize="11" />
       </Border>
-      <TextBlock Grid.Column="2" Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="11" />
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <Border Classes="pill" Background="{StaticResource WarnSoftBrush}" IsVisible="{Binding WithoutGst}"
+                ToolTip.Tip="0 % GST on all items and on packing &amp; forwarding, no tax lines (My Settings → Without GST)">
+          <TextBlock Text="WITHOUT GST" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource WarnBrush}" />
+        </Border>
+        <TextBlock Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="11" />
+      </StackPanel>
       <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,14,0">
         <TextBlock Classes="fl" Text="{Binding NumberLabel}" VerticalAlignment="Center" Margin="0" />
         <TextBlock Text="{Binding NumberText}" FontWeight="Bold" VerticalAlignment="Center" />
@@ -59,6 +65,12 @@
     <!-- Action bar -->
     <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,1,0,0" Padding="0,10,0,0" Margin="0,8,0,0">
       <StackPanel Spacing="6">
+        <Border Classes="notice" IsVisible="{Binding IsLocked}">
+          <TextBlock Text="{Binding LockText}" TextWrapping="Wrap" />
+        </Border>
+        <Border Classes="notice" IsVisible="{Binding DoNotUseWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <TextBlock Text="{Binding DoNotUseWarning}" TextWrapping="Wrap" />
+        </Border>
         <Border Classes="notice" IsVisible="{Binding NeedsStaleOverride}">
           <Grid ColumnDefinitions="*,Auto,Auto">
             <TextBlock Text="{Binding StaleMessage}" TextWrapping="Wrap" VerticalAlignment="Center" />
@@ -77,16 +89,25 @@
         <TextBlock Foreground="{StaticResource WarnBrush}" Text="{Binding DataWarning}" IsVisible="{Binding DataWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <TextBlock Foreground="{StaticResource BadBrush}" Text="{Binding PdfError}" IsVisible="{Binding PdfError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <TextBlock Foreground="{StaticResource OkBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-        <TextBlock Classes="muted" FontSize="11" Text="{Binding LastPdfPath, StringFormat='PDF saved to {0}'}" IsVisible="{Binding LastPdfPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding LastPdfPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
+          <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
+        </StackPanel>
         <WrapPanel>
           <Button Margin="0,0,6,0" Content="Save Draft (Ctrl+S)" Command="{Binding SaveCommand}" IsEnabled="{Binding IsEditable}" />
           <Button Margin="0,0,6,0" Content="Preview (F11)" Command="{Binding PreviewCommand}" HotKey="F11" />
           <Button Classes="primary" Margin="0,0,6,0" Content="Approve &amp; Generate PDF (Ctrl+Enter)" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}" />
+          <Button Name="SaveAsPdfButton" Margin="0,0,6,0" Content="Save as PDF" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
+                  ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)" />
+          <CheckBox Name="SealBox" Margin="0,0,10,0" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
+                    ToolTip.Tip="Put the company seal on the PDF (asks for the 4-digit seal PIN)" />
           <Button Margin="0,0,6,0" Content="Open PDF (Ctrl+P)" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" />
           <Button Margin="0,0,6,0" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding IsFinal}" />
           <Button Margin="0,0,6,0" Content="Duplicate (Ctrl+D)" Command="{Binding DuplicateCommand}" IsEnabled="{Binding Id, Converter={x:Static ObjectConverters.IsNotNull}}" />
           <Button Margin="0,0,6,0" Content="New" Command="{Binding NewQuotationCommand}" />
           <Button Margin="0,0,6,0" Content="Convert to Proforma Invoice" Command="{Binding ConvertToProformaCommand}" IsVisible="{Binding CanConvertToProforma}" />
+          <Button Classes="danger" Margin="0,0,6,0" Content="Delete" Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"
+                  ToolTip.Tip="Administrator: move to the Deleted list (can be restored for 30 days)" />
           <Button Classes="danger" Margin="0,0,6,0" Content="{Binding DocLabel, StringFormat='Cancel {0}'}" Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}" />
           <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0" Text="Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{StaticResource WarnBrush}" />
         </WrapPanel>
@@ -130,9 +151,9 @@
                 </ItemsControl>
               </WrapPanel>
               <TextBlock Classes="fl" Text="Name" />
-              <TextBox Text="{Binding BuyerName}" />
+              <TextBox Text="{Binding BuyerName}" ctl:TitleCase.Enabled="True" />
               <TextBlock Classes="fl" Text="Address" />
-              <TextBox Text="{Binding BuyerAddress}" AcceptsReturn="True" TextWrapping="Wrap" Height="62" />
+              <TextBox Text="{Binding BuyerAddress}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="62" />
               <Grid ColumnDefinitions="*,6,*">
                 <StackPanel>
                   <TextBlock Classes="fl" Text="GSTIN/UIN (from Tally)" />
@@ -146,7 +167,7 @@
               <Grid ColumnDefinitions="*,6,*">
                 <StackPanel>
                   <TextBlock Classes="fl" Text="Contact" />
-                  <TextBox Text="{Binding BuyerContact}" />
+                  <TextBox Text="{Binding BuyerContact}" ctl:TitleCase.Enabled="True" />
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                   <TextBlock Classes="fl" Text="Phone" />
@@ -171,9 +192,9 @@
               </ComboBox>
               <StackPanel IsVisible="{Binding !ConsigneeSameAsBuyer}">
                 <TextBlock Classes="fl" Text="Name" />
-                <TextBox Text="{Binding ConsigneeName}" />
+                <TextBox Text="{Binding ConsigneeName}" ctl:TitleCase.Enabled="True" />
                 <TextBlock Classes="fl" Text="Address" />
-                <TextBox Text="{Binding ConsigneeAddress}" AcceptsReturn="True" TextWrapping="Wrap" Height="62" />
+                <TextBox Text="{Binding ConsigneeAddress}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="62" />
                 <Grid ColumnDefinitions="*,6,*,6,50">
                   <StackPanel>
                     <TextBlock Classes="fl" Text="GSTIN" />
@@ -181,7 +202,7 @@
                   </StackPanel>
                   <StackPanel Grid.Column="2">
                     <TextBlock Classes="fl" Text="State" />
-                    <TextBox Text="{Binding ConsigneeState}" />
+                    <TextBox Text="{Binding ConsigneeState}" ctl:TitleCase.Enabled="True" />
                   </StackPanel>
                   <StackPanel Grid.Column="4">
                     <TextBlock Classes="fl" Text="Code" />
@@ -198,7 +219,7 @@
               <TextBlock Classes="h2" Text="References" Grid.ColumnSpan="3" />
               <StackPanel Grid.Row="1">
                 <TextBlock Classes="fl" Text="Buyer's Ref./Order No." />
-                <TextBox Text="{Binding BuyersReference}" />
+                <TextBox Name="BuyersRefBox" Text="{Binding BuyersReference}" ctl:TitleCase.Enabled="True" />
               </StackPanel>
               <StackPanel Grid.Row="1" Grid.Column="2">
                 <TextBlock Classes="fl" Text="Ref. dated" />
@@ -206,32 +227,32 @@
               </StackPanel>
               <StackPanel Grid.Row="2">
                 <TextBlock Classes="fl" Text="Dispatched through" />
-                <TextBox Text="{Binding DispatchedThrough}" />
+                <TextBox Text="{Binding DispatchedThrough}" ctl:TitleCase.Enabled="True" />
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="2">
                 <TextBlock Classes="fl" Text="Destination" />
-                <TextBox Text="{Binding Destination}" />
+                <TextBox Text="{Binding Destination}" ctl:TitleCase.Enabled="True" />
               </StackPanel>
               <StackPanel Grid.Row="3" Grid.ColumnSpan="3">
                 <TextBlock Classes="fl" Text="Mode/Terms of payment" />
-                <TextBox Text="{Binding PaymentTerms}" />
+                <TextBox Text="{Binding PaymentTerms}" ctl:TitleCase.Enabled="True" />
               </StackPanel>
               <StackPanel Grid.Row="4" Grid.ColumnSpan="3">
                 <TextBlock Classes="fl" Text="Other references" />
-                <TextBox Text="{Binding OtherReferences}" />
+                <TextBox Text="{Binding OtherReferences}" ctl:TitleCase.Enabled="True" />
               </StackPanel>
               <StackPanel Grid.Row="5" Grid.ColumnSpan="3">
                 <TextBlock Classes="fl" Text="Terms of delivery" />
-                <TextBox Text="{Binding TermsOfDelivery}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
+                <TextBox Text="{Binding TermsOfDelivery}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
               </StackPanel>
               <!-- Proforma invoice only -->
               <StackPanel Grid.Row="6" Grid.ColumnSpan="3" IsVisible="{Binding IsProforma}">
                 <TextBlock Classes="fl" Text="Delivery Note" />
-                <TextBox Name="DeliveryNoteBox" Text="{Binding DeliveryNote}" />
+                <TextBox Name="DeliveryNoteBox" Text="{Binding DeliveryNote}" ctl:TitleCase.Enabled="True" />
               </StackPanel>
               <StackPanel Grid.Row="7" IsVisible="{Binding IsProforma}">
                 <TextBlock Classes="fl" Text="Dispatch Doc No." />
-                <TextBox Text="{Binding DispatchDocNo}" />
+                <TextBox Text="{Binding DispatchDocNo}" ctl:TitleCase.Enabled="True" />
               </StackPanel>
               <StackPanel Grid.Row="7" Grid.Column="2" IsVisible="{Binding IsProforma}">
                 <TextBlock Classes="fl" Text="Delivery Note Date" />
@@ -340,7 +361,7 @@
                   </StackPanel>
                   <StackPanel Grid.Column="8">
                     <TextBlock Classes="fl" Text="Due on" />
-                    <TextBox Name="DueOnBox" Text="{Binding EntryDueOn}" />
+                    <TextBox Name="DueOnBox" Text="{Binding EntryDueOn}" ctl:TitleCase.Enabled="True" />
                   </StackPanel>
                   <StackPanel Grid.Column="10" Orientation="Horizontal" VerticalAlignment="Bottom" Spacing="4">
                     <Button Classes="primary" Content="{Binding EntryButtonText}" Command="{Binding CommitEntryCommand}" />
@@ -361,8 +382,8 @@
                 </WrapPanel>
                 <Grid ColumnDefinitions="*,12,Auto">
                   <StackPanel>
-                    <TextBlock Classes="fl" Text="Additional description lines (brand, model, MOQ …) — printed under the item" />
-                    <TextBox Name="DescriptionBox" Text="{Binding EntryDescription}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
+                    <TextBlock Classes="fl" Text="Description lines (brand, model, MOQ …) printed under the item — Shift+Enter = new line · Enter = add the line" />
+                    <TextBox Name="DescriptionBox" Text="{Binding EntryDescription}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
                   </StackPanel>
                   <StackPanel Grid.Column="2" VerticalAlignment="Bottom" IsVisible="{Binding EntryProduct, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}">
@@ -389,17 +410,17 @@
           <Border Classes="card" Padding="14">
             <StackPanel>
               <TextBlock Classes="fl" Text="Remarks (printed on quotation)" />
-              <TextBox Text="{Binding Remarks}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
+              <TextBox Text="{Binding Remarks}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
               <TextBlock Classes="fl" Text="Terms &amp; conditions (one per line)" />
-              <TextBox Text="{Binding TermsAndConditions}" AcceptsReturn="True" TextWrapping="Wrap" Height="80" />
+              <TextBox Text="{Binding TermsAndConditions}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="80" />
               <Grid ColumnDefinitions="*,6,*">
                 <StackPanel>
                   <TextBlock Classes="fl" Text="Prepared by" />
-                  <TextBox Text="{Binding PreparedBy}" />
+                  <TextBox Text="{Binding PreparedBy}" ctl:TitleCase.Enabled="True" />
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                   <TextBlock Classes="fl" Text="Verified by" />
-                  <TextBox Text="{Binding VerifiedBy}" />
+                  <TextBox Text="{Binding VerifiedBy}" ctl:TitleCase.Enabled="True" />
                 </StackPanel>
               </Grid>
             </StackPanel>
@@ -409,7 +430,7 @@
               <TextBlock Text="Subtotal" />
               <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" HorizontalAlignment="Right" />
               <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="4" Margin="0,4">
-                <TextBlock Text="Packing &amp; Forwarding ₹" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding PackingLabel}" VerticalAlignment="Center" />
                 <NumericUpDown Value="{Binding PackingForwarding}" Minimum="0" FormatString="0.00" Width="90" />
                 <TextBlock Text="or %" VerticalAlignment="Center" />
                 <NumericUpDown Value="{Binding PackingForwardingPercent}" Minimum="0" Maximum="100" FormatString="0.##" Width="60" />

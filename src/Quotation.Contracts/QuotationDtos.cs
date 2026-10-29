@@ -62,6 +62,8 @@ public sealed class SaveQuotationRequest
     public decimal? PackingForwardingPercent { get; set; }
     public string PreparedBy { get; set; } = "";
     public string VerifiedBy { get; set; } = "";
+    /// <summary>"Without GST" (0 % on all lines and P&amp;F, no tax lines). Set on create; the document keeps it.</summary>
+    public bool WithoutGst { get; set; }
     public List<QuotationLineDto> Lines { get; set; } = [];
 }
 
@@ -97,6 +99,7 @@ public sealed class QuotationDto
     public decimal? PackingForwardingPercent { get; set; }
     public string PreparedBy { get; set; } = "";
     public string VerifiedBy { get; set; } = "";
+    public bool WithoutGst { get; set; }
     public List<QuotationLineDto> Lines { get; set; } = [];
 
     public decimal Subtotal { get; set; }
@@ -121,7 +124,27 @@ public sealed class QuotationDto
     public DateTime? ApprovedUtc { get; set; }
     public string? CancelledBy { get; set; }
     public DateTime? CancelledUtc { get; set; }
+    /// <summary>Last day (office time) on which users who are not administrators may still edit or cancel it.</summary>
+    public DateOnly EditableUntil { get; set; }
+    /// <summary>Items of this quotation that are now marked "Do Not Use" (DNU) in Tally.</summary>
+    public List<string> DoNotUseItems { get; set; } = [];
 }
+
+/// <summary>A quotation in the administrator's Deleted list (kept 30 days).</summary>
+public sealed record DeletedQuotationDto(
+    Guid Id,
+    string Number,
+    DocumentType DocType,
+    DateOnly Date,
+    string CustomerName,
+    decimal GrandTotal,
+    string DeletedBy,
+    DateTime DeletedUtc,
+    DateTime PurgeUtc,
+    /// <summary>False when the number was given to a new quotation meanwhile: a restore makes an un-numbered draft.</summary>
+    bool NumberStillFree);
+
+public sealed record RestoreResultDto(QuotationDto Quotation, bool NumberKept, string Message);
 
 public sealed record QuotationSummaryDto(
     Guid Id,

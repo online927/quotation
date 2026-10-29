@@ -125,7 +125,7 @@ public sealed class NumberingService(SettingsService settings)
         var sequence = Math.Max(series.NextSequence, maxUsed + 1);
         var number = QuotationNumberFormatter.Format(pattern, fy, sequence);
         // Skip numbers that already exist (e.g. after a pattern change).
-        while (await db.Quotations.AnyAsync(q => q.Number == number, ct))
+        while (await db.Quotations.IgnoreQueryFilters().AnyAsync(q => q.Number == number, ct))
         {
             sequence++;
             number = QuotationNumberFormatter.Format(pattern, fy, sequence);
@@ -133,6 +133,97 @@ public sealed class NumberingService(SettingsService settings)
         return (series, sequence, number);
     }
 
+    // Deleted quotations that kept their number still hold it (IgnoreQueryFilters), so it is never issued twice.
     private static async Task<int> MaxUsedAsync(QuotationDbContext db, FinancialYear fy, DocumentType type, CancellationToken ct) =>
-        await db.Quotations.Where(q => q.FinancialYearStart == fy.StartYear && q.DocType == type).MaxAsync(q => q.Sequence, ct) ?? 0;
+        await db.Quotations.IgnoreQueryFilters().Where(q => q.FinancialYearStart == fy.StartYear && q.DocType == type).MaxAsync(q => q.Sequence, ct) ?? 0;
+
+    /// <summary>
+    /// Deleting: when the quotation has the latest number of its series, the number is released so the next quotation
+    /// gets it again (kept in DeletedNumber for a restore). An older number stays with the deleted quotation (a gap).
+    /// Runs <paramref name="save"/> atomically with the change.
+    /// </summary>
+    public async Task<bool> ReleaseIfLatestAsync(QuotationDbContext db, QuotationHeader q, Func<Task> save, CancellationToken ct)
+    {
+        await _gate.WaitAsync(ct);
+        try
+        {
+            await using var tx = await db.Database.BeginTransactionAsync(ct);
+            var released = false;
+            if (q.Sequence is { } sequence && q.FinancialYearStart is { } start)
+            {
+                var key = KeyOf(q.DocType);
+                var series = await db.NumberSeries.FirstOrDefaultAsync(s => s.SeriesKey == key && s.FinancialYearStart == start, ct);
+                var maxOther = await db.Quotations.IgnoreQueryFilters()
+                    .Where(x => x.Id != q.Id && x.FinancialYearStart == start && x.DocType == q.DocType)
+                    .MaxAsync(x => x.Sequence, ct) ?? 0;
+                if (series is not null && series.NextSequence == sequence + 1 && maxOther < sequence)
+                {
+                    series.NextSequence = sequence;
+                    series.UpdatedUtc = DateTime.UtcNow;
+                    q.DeletedNumber = q.Number;
+                    q.DeletedSequence = sequence;
+                    q.Number = null;
+                    q.Sequence = null;
+                    released = true;
+                }
+            }
+            await save();
+            await tx.CommitAsync(ct);
+            return released;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Restoring a deleted quotation that had released its number: it gets the number back if nobody has it yet,
+    /// otherwise it stays un-numbered (it gets the next number when saved). Returns true when the number was kept.
+    /// </summary>
+    public async Task<bool> ReclaimAsync(QuotationDbContext db, QuotationHeader q, Func<Task> save, CancellationToken ct)
+    {
+        await _gate.WaitAsync(ct);
+        try
+        {
+            await using var tx = await db.Database.BeginTransactionAsync(ct);
+            var kept = q.Number is not null;
+            if (q.Number is null && q.DeletedNumber is { } number && q.DeletedSequence is { } sequence && q.FinancialYearStart is { } start)
+            {
+                var taken = await db.Quotations.IgnoreQueryFilters().AnyAsync(x => x.Id != q.Id &&
+                    (x.Number == number || (x.FinancialYearStart == start && x.DocType == q.DocType && x.Sequence == sequence)), ct);
+                if (!taken)
+                {
+                    q.Number = number;
+                    q.Sequence = sequence;
+                    var key = KeyOf(q.DocType);
+                    var series = await db.NumberSeries.FirstOrDefaultAsync(s => s.SeriesKey == key && s.FinancialYearStart == start, ct);
+                    if (series is not null && series.NextSequence <= sequence)
+                    {
+                        series.NextSequence = sequence + 1;
+                        series.UpdatedUtc = DateTime.UtcNow;
+                    }
+                    kept = true;
+                }
+                else
+                {
+                    q.FinancialYearStart = null;
+                }
+            }
+            q.DeletedNumber = null;
+            q.DeletedSequence = null;
+            await save();
+            await tx.CommitAsync(ct);
+            return kept;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Whether <paramref name="number"/> is still free (used to warn before a restore).</summary>
+    public static async Task<bool> IsNumberFreeAsync(QuotationDbContext db, QuotationHeader q, CancellationToken ct) =>
+        q.DeletedNumber is not { } number || !await db.Quotations.IgnoreQueryFilters().AnyAsync(x => x.Id != q.Id &&
+            (x.Number == number || (x.FinancialYearStart == q.FinancialYearStart && x.DocType == q.DocType && x.Sequence == q.DeletedSequence)), ct);
 }

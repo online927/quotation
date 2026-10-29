@@ -64,6 +64,9 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
             e.OwnsOne(x => x.Consignee, o => o.WithOwner());
             e.Property(x => x.Revision).IsConcurrencyToken();
             e.HasMany(x => x.Lines).WithOne().HasForeignKey(l => l.QuotationId).OnDelete(DeleteBehavior.Cascade);
+            // Deleted quotations are invisible everywhere except the admin's Deleted list (IgnoreQueryFilters).
+            e.HasQueryFilter(x => x.DeletedUtc == null);
+            e.HasIndex(x => x.DeletedUtc);
         });
 
         b.Entity<QuotationLine>(e =>

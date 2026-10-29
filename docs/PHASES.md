@@ -418,16 +418,16 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 * WhatsApp: `IMessageChannel` extension point and message template in `Quotation.Core/Messaging`,
   deliberately **not** implemented or registered in V1.
 
-### Test inventory (331 automated tests)
+### Test inventory (349 automated tests)
 
 | Suite | Tests | Covers |
 |---|---|---|
 | Core | 102 | financial year, numbering patterns, GST/GSTIN/state codes, search & fuzzy matching (20k perf), calculations, amount in words, validation |
 | Tally | 54 | XML client, load guard (one request at a time, slow/timeout → background holds back), last rates from sales/quotation vouchers (per type via Tally's index, weekly), read-only guard (blocked write requests never reach Tally), errors/offline/timeouts, company & FY detection, master parsing (both layouts), GST inheritance, rates, incremental filter |
-| PDF | 16 | Tally print layout (Printed on/By, page titles, header grid, tax lines, proforma HSN summary), all fields, no overlaps/clipping, multi-page, unsplit rows, long descriptions/addresses, watermark, speed |
+| PDF | 18 | Tally print layout (Printed on/By, page titles, header grid, tax lines directly under the items, seal, proforma HSN summary), all fields, no overlaps/clipping, multi-page, unsplit rows, long descriptions/addresses, watermark, speed |
 | AI | 20 | orchestration and safety rules with a scripted model: ambiguity, wrong/invented ids, missing quantity, customers, e-mail framing, strict schemas |
-| Server | 110 | proforma invoices (own series, convert, list filter, PDF), auth/roles/settings/secrets, Tally API, concurrent status checks, re-read after mapping upgrade, last rates (Tally vouchers, app approvals, switch-off, slow Tally, stop, night-only), sync (full/incremental/deleted/failed/interrupted/20k), search API, numbering & concurrency, lifecycle, PDF failure recovery, AI API, Gmail ingestion & duplicates, history/audit/diagnostics, backups, 6-PC stress test |
-| Desktop (headless UI) | 28 | login, navigation with Back/Forward, breadcrumbs and the unsaved-changes question (keyboard and mouse), proforma invoices, Tally page, catalogue pages, quotation entry incl. keyboard flow, Tally-style product/customer lists (↑/↓, Enter, mouse, fast typing, Esc), stale override, lists, AI Inbox, Gmail page, OAuth loopback, search/recent/diagnostics, XAML lint |
+| Server | 121 | GST by default and per document, Without GST, users' editing period, delete/restore with number reuse and 30-day removal, user management and admin recovery, DNU items, seal PIN and blocking, proforma invoices (own series, convert, list filter, PDF), auth/roles/settings/secrets, Tally API, concurrent status checks, re-read after mapping upgrade, last rates (Tally vouchers, app approvals, switch-off, slow Tally, stop, night-only), sync (full/incremental/deleted/failed/interrupted/20k), search API, numbering & concurrency, lifecycle, PDF failure recovery, AI API, Gmail ingestion & duplicates, history/audit/diagnostics, backups, 6-PC stress test |
+| Desktop (headless UI) | 33 | Save as PDF (approve + Number Customer.pdf, seal PIN), Without GST from My Settings, delete/restore, Title Case, login, navigation with Back/Forward, breadcrumbs and the unsaved-changes question (keyboard and mouse), proforma invoices, Tally page, catalogue pages, quotation entry incl. keyboard flow, Tally-style product/customer lists (↑/↓, Enter, mouse, fast typing, Esc), stale override, lists, AI Inbox, Gmail page, OAuth loopback, search/recent/diagnostics, XAML lint |
 | End-to-end | 1 | real processes, restart, outage, log hygiene |
 
 ## After first use — changes requested by T.SAIFUDDIN & CO.
@@ -445,3 +445,21 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
   while Tally is busy.
 
 **How to test**: `dotnet test --filter "ProformaTests|NavigationTests|TallyLoadGuardTests|TallyPrintLayoutTests"`.
+
+### Second round of changes
+
+1. GST lines (SGST + CGST or IGST) and round off by default; each document keeps its own GST presentation.
+2. Title Case while typing in the quotation's text boxes (setting).
+3. User management: edit login/display name, role, active; reset password (logs out); change my password; server-PC
+   recovery command for a forgotten administrator password.
+4. Shift+Enter hint on the description box.
+5. Items whose Tally description is DNU are not offered (Products → Show DNU items).
+6. Save as PDF: approve if needed and save *Number Customer.pdf* into the PC's folder.
+7. Administrators delete to a 30-day Deleted list with restore; the latest number is reused.
+8. Users can edit/cancel for 7 days after first saving; administrators always.
+9. Packing & forwarding, taxes and round off directly under the items, like Tally.
+10. Without GST for one quotation (My Settings; 0 % items, "Packing & Forwarding - Without GST", no tax lines).
+11. Customer → Buyer's Ref./Order No. → Enter → items.
+12. Company seal on the PDF with a 4-digit PIN (blocked after 5 wrong tries).
+
+**How to test**: `dotnet test --filter "GstAndEditingRulesTests|UsersDnuSealTests|OfficeFeaturesUiTests|TallyPrintLayoutTests"`.

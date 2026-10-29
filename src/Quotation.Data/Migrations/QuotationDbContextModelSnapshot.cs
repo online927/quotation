@@ -165,6 +165,9 @@ namespace Quotation.Data.Migrations
                         .HasColumnType("TEXT")
                         .UseCollation("NOCASE");
 
+                    b.Property<bool>("WithoutGstNext")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Username")
@@ -568,6 +571,18 @@ namespace Quotation.Data.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletedNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("DeletedSequence")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("DeletedUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DeliveryNote")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -637,6 +652,9 @@ namespace Quotation.Data.Migrations
                     b.Property<decimal>("RoundOff")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("RoundOffTotal")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("Sequence")
                         .HasColumnType("INTEGER");
 
@@ -651,6 +669,9 @@ namespace Quotation.Data.Migrations
 
                     b.Property<decimal>("Subtotal")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("TaxPresentation")
+                        .HasColumnType("INTEGER");
 
                     b.Property<decimal>("TaxTotal")
                         .HasColumnType("TEXT");
@@ -676,11 +697,16 @@ namespace Quotation.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("WithoutGst")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("Date");
+
+                    b.HasIndex("DeletedUtc");
 
                     b.HasIndex("Number")
                         .IsUnique();

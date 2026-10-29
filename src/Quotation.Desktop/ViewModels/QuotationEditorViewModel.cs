@@ -48,6 +48,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [ObservableProperty] private string? _pdfError;
     [ObservableProperty] private string? _dataWarning;
     [ObservableProperty] private string? _lastPdfPath;
+    /// <summary>"Without GST": 0 % on all items, P&amp;F without GST, no tax lines (from the user's switch in My Settings).</summary>
+    [ObservableProperty] private bool _withoutGst;
+    [ObservableProperty] private DateOnly? _editableUntil;
+    /// <summary>Tick next to "Save as PDF": put the company seal on the PDF (asks for the seal PIN).</summary>
+    [ObservableProperty] private bool _sealPdf;
+    [ObservableProperty] private string? _doNotUseWarning;
 
     // ---------------------------------------------------------------- customer
     [ObservableProperty] private int? _customerId;
@@ -129,10 +135,21 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public string GrandTotalText => "₹ " + IndianFormat.Amount(Totals?.GrandTotal ?? 0);
     public string TotalQuantityText => Totals is null ? "" : $"{IndianFormat.Quantity(Totals.TotalQuantity)} {Totals.TotalQuantityUnit}".Trim();
     public string AmountInWords => IndianFormat.AmountInWords(Totals?.GrandTotal ?? 0, _settings.Quotation.CurrencyWordsPrefix);
-    public bool ShowsTaxes => _settings.Quotation.TaxPresentation == TaxPresentation.ComputeTax;
+    public bool ShowsTaxes => _settings.Quotation.TaxPresentation == TaxPresentation.ComputeTax && !WithoutGst;
 
-    public bool IsEditable => Status != QuotationStatus.Cancelled;
-    public bool CanApprove => Status is QuotationStatus.Draft or QuotationStatus.PendingReview && Lines.Count > 0;
+    public bool IsAdmin => _session.IsAdmin;
+    /// <summary>Older than the editing period (7 days by default) and the user is not an administrator.</summary>
+    public bool IsLocked => !IsAdmin && Id is not null && EditableUntil is { } until && DateOnly.FromDateTime(DateTime.Today) > until;
+    public string LockText => EditableUntil is { } until
+        ? $"Locked — made more than {_settings.Quotation.UserEditDays} days ago (editable until {until:dd-MMM-yyyy}). Ask an administrator to change it, or use Duplicate."
+        : "";
+    public bool IsEditable => Status != QuotationStatus.Cancelled && !IsLocked;
+    public bool CanApprove => Status is QuotationStatus.Draft or QuotationStatus.PendingReview && Lines.Count > 0 && !IsLocked;
+    public bool CanDelete => IsAdmin && Id is not null;
+    /// <summary>The seal can be used here: an image is set up and the user may seal (administrator, or allowed for all users).</summary>
+    public bool CanSeal => _settings.SealImageConfigured && (IsAdmin || _settings.Quotation.AllUsersCanSeal);
+    public bool CanSaveAsPdf => Status != QuotationStatus.Cancelled && (IsFinal || (Lines.Count > 0 && !IsLocked));
+    public string PackingLabel => WithoutGst ? "Packing & Forwarding - Without GST ₹" : "Packing & Forwarding ₹";
     public bool IsFinal => Status is QuotationStatus.Approved or QuotationStatus.Generated;
     public string StatusText => Status switch
     {
@@ -165,7 +182,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         await RunAsync(async () =>
         {
             _settings = await _session.GetSettingsAsync();
+            Controls.TitleCase.IsOn = _settings.Quotation.TitleCase;
             OnPropertyChanged(nameof(ShowsTaxes));
+            OnPropertyChanged(nameof(CanSeal));
             if (id is { } existing)
             {
                 Load(await _session.Api.QuotationAsync(existing));
@@ -173,6 +192,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             else
             {
                 _loading = true;
+                WithoutGst = _session.Api.CurrentUser?.WithoutGstNext == true;
                 PaymentTerms = _settings.Company.DefaultPaymentTerms;
                 TermsOfDelivery = _settings.Company.DefaultTermsOfDelivery;
                 TermsAndConditions = string.Join(Environment.NewLine, _settings.Company.TermsAndConditions);
@@ -221,6 +241,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         _loading = true;
         Id = q.Id;
         DocType = q.DocType;
+        WithoutGst = q.WithoutGst;
+        EditableUntil = q.EditableUntil;
+        DoNotUseWarning = q.DoNotUseItems.Count == 0 ? null
+            : "Marked DNU (do not use) in Tally — replace before sending: " + string.Join(", ", q.DoNotUseItems);
         Number = q.Number;
         NumberText = q.Number ?? "(assigned on save)";
         Status = q.Status;
@@ -263,7 +287,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         PdfError = q.PdfError;
         DataWarning = q.DataFreshnessWarning;
         Lines.Clear();
-        foreach (var l in q.Lines) Lines.Add(QuotationLineViewModel.From(l));
+        foreach (var l in q.Lines)
+        {
+            var line = QuotationLineViewModel.From(l);
+            line.ZeroGst = q.WithoutGst;
+            Lines.Add(line);
+        }
         ClearEntry();
         _loading = false;
         if (CustomerId is { } cid) _ = LoadShipToOptionsAsync(cid, keepCurrent: true);
@@ -280,7 +309,21 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(CanConvertToProforma));
+        OnPropertyChanged(nameof(IsLocked));
+        OnPropertyChanged(nameof(LockText));
+        OnPropertyChanged(nameof(CanDelete));
+        OnPropertyChanged(nameof(CanSaveAsPdf));
     }
+
+    partial void OnWithoutGstChanged(bool value)
+    {
+        foreach (var l in Lines) l.ZeroGst = value;
+        OnPropertyChanged(nameof(ShowsTaxes));
+        OnPropertyChanged(nameof(PackingLabel));
+        RecalculateTotals();
+    }
+
+    partial void OnEditableUntilChanged(DateOnly? value) => NotifyState();
 
     partial void OnDocTypeChanged(DocumentType value)
     {
@@ -465,12 +508,14 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         line.DiscountPercent = EntryDiscount ?? 0;
         line.Description = EntryDescription.Trim();
         line.DueOn = EntryDueOn.Trim();
+        line.ZeroGst = WithoutGst;
         if (EditingLine is null) Lines.Add(line);
         line.IsEditing = false;
         ClearEntry();
         MarkDirty();
         RecalculateTotals();
         OnPropertyChanged(nameof(CanApprove));
+        OnPropertyChanged(nameof(CanSaveAsPdf));
     }
 
     [RelayCommand]
@@ -546,7 +591,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             PackingForwardingPercent,
             _settings.Quotation.TaxPresentation,
             _settings.Quotation.RoundOffTotal,
-            company.Length > 0 && pos.Length > 0 && company != pos));
+            company.Length > 0 && pos.Length > 0 && company != pos,
+            WithoutGst));
     }
 
     partial void OnTotalsChanged(CalcResult? value)
@@ -594,6 +640,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         PackingForwardingPercent = PackingForwardingPercent,
         PreparedBy = PreparedBy,
         VerifiedBy = VerifiedBy,
+        WithoutGst = WithoutGst,
         Lines = Lines.Select(l => l.ToDto()).ToList(),
     };
 
@@ -605,24 +652,30 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         ValidationMessages.Clear();
         var ok = await RunAsync(async () =>
         {
-            var dto = Id is null
+            var created = Id is null;
+            var dto = created
                 ? await _session.Api.CreateQuotationAsync(BuildRequest())
-                : await _session.Api.UpdateQuotationAsync(Id.Value, BuildRequest());
+                : await _session.Api.UpdateQuotationAsync(Id!.Value, BuildRequest());
             Load(dto);
+            // "Without GST" was for this one quotation: the server switched it off; keep the session in step.
+            if (created && dto.WithoutGst && _session.Api.CurrentUser is { } me) _session.Api.UpdateCurrentUser(me with { WithoutGstNext = false });
             InfoMessage = $"Saved {dto.Number ?? "draft"} at {DateTime.Now:HH:mm}.";
         });
         return ok;
     }
 
     [RelayCommand]
-    private async Task ApproveAsync() => await ApproveCoreAsync(overrideStale: false);
+    private async Task ApproveAsync() => await ApproveCoreAsync(overrideStale: false, openPdf: true);
 
     [RelayCommand]
-    private async Task ApproveAnywayAsync() => await ApproveCoreAsync(overrideStale: true);
+    private async Task ApproveAnywayAsync() => await ApproveCoreAsync(overrideStale: true, openPdf: !_saveAsPdfAfterApproval);
 
-    private async Task ApproveCoreAsync(bool overrideStale)
+    private bool _saveAsPdfAfterApproval;
+
+    /// <summary>Approval with all checks. True when the quotation is approved afterwards.</summary>
+    private async Task<bool> ApproveCoreAsync(bool overrideStale, bool openPdf)
     {
-        if ((IsDirty || Id is null) && !await SaveAsync()) return;
+        if ((IsDirty || Id is null) && !await SaveAsync()) return false;
         ValidationMessages.Clear();
         NeedsStaleOverride = false;
         InfoMessage = null;
@@ -635,12 +688,19 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             if (dto.HasPdf)
             {
                 InfoMessage = $"{dto.Number} approved and PDF generated.";
-                await OpenPdfCoreAsync();
+                if (openPdf) await OpenPdfCoreAsync();
             }
             else
             {
                 InfoMessage = $"{dto.Number} approved.";
             }
+            if (_saveAsPdfAfterApproval && overrideStale)
+            {
+                // "Approve anyway" answered the stale-data question raised by Save as PDF: finish saving the PDF.
+                _saveAsPdfAfterApproval = false;
+                await SavePdfFileAsync();
+            }
+            return true;
         }
         catch (ApiException ex) when (ex.Code == ApiErrorCodes.Validation)
         {
@@ -666,6 +726,84 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         finally
         {
             IsBusy = false;
+        }
+        return false;
+    }
+
+    // ================================================================= Save as PDF, seal, delete
+
+    /// <summary>
+    /// One click: a draft is approved first (all the usual checks), then the PDF is saved straight into the folder set in
+    /// My Settings as "Number Customer.pdf" (replacing an earlier copy), optionally with the company seal.
+    /// </summary>
+    [RelayCommand]
+    private async Task SaveAsPdfAsync()
+    {
+        InfoMessage = null;
+        if (!IsFinal || IsDirty)
+        {
+            _saveAsPdfAfterApproval = true;
+            var approved = await ApproveCoreAsync(overrideStale: false, openPdf: false);
+            if (!approved)
+            {
+                // Waiting for "Approve anyway" (stale Tally data) keeps the request; anything else cancels it.
+                if (!NeedsStaleOverride) _saveAsPdfAfterApproval = false;
+                return;
+            }
+            _saveAsPdfAfterApproval = false;
+        }
+        await SavePdfFileAsync();
+    }
+
+    private async Task SavePdfFileAsync()
+    {
+        if (Id is null) return;
+        string? pin = null;
+        if (SealPdf && CanSeal)
+        {
+            pin = await _navigator.AskAsync("Company seal", $"Enter the 4-digit seal PIN to seal {Number}.", "Seal PIN", secret: true, ok: "Seal & Save");
+            if (pin is null) return;
+        }
+        await RunAsync(async () =>
+        {
+            var bytes = pin is null ? await _session.Api.QuotationPdfAsync(Id.Value) : await _session.Api.SealedPdfAsync(Id.Value, pin.Trim());
+            LastPdfPath = _session.Documents.Save(bytes, PdfFileName());
+            InfoMessage = (pin is null ? "Saved to " : "Sealed and saved to ") + LastPdfPath;
+        });
+    }
+
+    /// <summary>"TSQ2526-3403 TATA Electronics System Solutions.pdf": characters Windows does not allow become "-".</summary>
+    public string PdfFileName() => PdfFileName(Number ?? "draft", BuyerName);
+
+    private const string NotInFileNames = "\\/:*?\"<>|";
+
+    public static string PdfFileName(string number, string customer)
+    {
+        var name = new string(customer.Select(c => char.IsControl(c) ? ' ' : NotInFileNames.Contains(c) ? '-' : c).ToArray()).Trim();
+        while (name.Contains("  ", StringComparison.Ordinal)) name = name.Replace("  ", " ");
+        if (name.Length > 60) name = name[..60].TrimEnd();
+        var file = QuotationNumberFormatter.ToFileName(number);
+        return (name.Length > 0 ? $"{file} {name}" : file).TrimEnd('.', ' ') + ".pdf";
+    }
+
+    [RelayCommand]
+    private void OpenPdfFolder()
+    {
+        if (LastPdfPath is { } path) _session.Documents.ShowInFolder(path);
+    }
+
+    /// <summary>Administrator: moves the document to the Deleted list (restorable for 30 days).</summary>
+    [RelayCommand]
+    private async Task DeleteAsync()
+    {
+        if (!CanDelete || Id is null) return;
+        if (!await _navigator.ConfirmAsync("Delete", $"Delete {Number ?? "this draft"} ({BuyerName})? It goes to the Deleted list and can be restored for 30 days.",
+                "Delete", "Cancel")) return;
+        if (await RunAsync(() => _session.Api.DeleteQuotationAsync(Id.Value)))
+        {
+            ClearEntry();
+            IsDirty = false;
+            _navigator.GoBack();
         }
     }
 

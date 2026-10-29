@@ -18,6 +18,23 @@ public class DocumentLauncher(ClientConfig config)
         return path;
     }
 
+    /// <summary>Saves (replacing an earlier copy of the same document) without opening it.</summary>
+    public virtual string Save(byte[] pdf, string fileName) => SaveAndOpen(pdf, fileName, open: false);
+
+    /// <summary>Opens the folder in Explorer with the file selected.</summary>
+    public virtual void ShowInFolder(string path)
+    {
+        try
+        {
+            if (OperatingSystem.IsWindows()) Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
+            else Process.Start(new ProcessStartInfo(Path.GetDirectoryName(path)!) { UseShellExecute = true });
+        }
+        catch (Exception)
+        {
+            // No file manager available: the path is shown in the app.
+        }
+    }
+
     public virtual void Open(string path)
     {
         try

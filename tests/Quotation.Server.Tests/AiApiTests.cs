@@ -43,7 +43,7 @@ public class AiApiTests : QuotationTestBase
         Assert.Equal("90172020", q.Lines[0].Hsn);
         Assert.Equal(18m, q.Lines[0].GstRate);
         Assert.Equal(15600m, q.Lines[0].Rate);
-        Assert.Equal(31200m, q.GrandTotal);
+        Assert.Equal(31200m, q.Subtotal);
 
         // The human reviews and saves → the quotation gets its number; approval requires the human.
         var saved = await Api.UpdateQuotationAsync(q.Id, new SaveQuotationRequest

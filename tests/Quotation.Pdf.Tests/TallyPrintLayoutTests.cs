@@ -77,6 +77,49 @@ public class TallyPrintLayoutTests
     }
 
     [Fact]
+    public void Tax_lines_follow_the_items_and_the_subtotal_only_with_several_items()
+    {
+        // One item (TSPI2526-12): P&F, SGST, CGST and Round Off directly under the item, no subtotal.
+        using (var one = PdfDocument.Open(Renderer.Render(Proforma())))
+        {
+            var words = one.GetPage(1).GetWords().ToList();
+            var itemY = words.First(w => w.Text == "Pcs)").BoundingBox.Bottom; // last description line of the item
+            var pfY = words.First(w => w.Text == "Packing").BoundingBox.Bottom;
+            var totalY = words.First(w => w.Text == "Total").BoundingBox.Bottom;
+            Assert.InRange(itemY - pfY, 5, 40);   // one blank line after the item (PDF y grows upwards)
+            Assert.True(pfY - totalY > 200);       // the empty space is below the tax lines, not above
+            Assert.DoesNotContain(words, w => w.Text == "8,356.00" && w.BoundingBox.Bottom < itemY - 2); // no subtotal
+        }
+
+        // Several items: the subtotal (with a short rule) comes first.
+        var lines = SampleDocuments.ManyLines(3);
+        var doc = SampleDocuments.Build(lines, pf: 700) with
+        {
+            SummaryRows = [new PdfSummaryRow("Packing & Forwarding", "", 700), new PdfSummaryRow("SGST", "", 100), new PdfSummaryRow("CGST", "", 100)],
+        };
+        using var many = PdfDocument.Open(Renderer.Render(doc));
+        var w2 = many.GetPage(1).GetWords().ToList();
+        var packing = w2.First(w => w.Text == "Packing").BoundingBox.Bottom;
+        var subtotal = w2.Where(w => w.Text == IndianFormat.Amount(doc.Subtotal)).Select(w => w.BoundingBox.Bottom).ToList();
+        Assert.Contains(subtotal, y => y > packing && y - packing < 20); // the subtotal line right above P&F
+    }
+
+    [Fact]
+    public void Seal_is_stamped_over_the_authorised_signatory_on_the_last_page()
+    {
+        var png = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAJUlEQVR4nGM4ICDwn5aYYdSCUQtGLRi1YNSCUQtGLRi1YGhYAAC4lDX9H0TkSwAAAABJRU5ErkJggg==");
+        var doc = SampleDocuments.Build(SampleDocuments.ManyLines(30)) with { Seal = png };
+        using var p = PdfDocument.Open(Renderer.Render(doc));
+        Assert.Empty(p.GetPage(1).GetImages());
+        var last = p.GetPage(p.NumberOfPages);
+        var image = Assert.Single(last.GetImages());
+        var signatory = last.GetWords().First(w => w.Text == "Signatory").BoundingBox;
+        Assert.True(image.Bounds.Right > signatory.Left && image.Bounds.Left < signatory.Right);   // over the signatory box
+        Assert.True(image.Bounds.Bottom < signatory.Top && image.Bounds.Top > signatory.Bottom);
+    }
+
+    [Fact]
     public void Round_off_down_is_printed_as_less()
     {
         var doc = SampleDocuments.Build([SampleDocuments.Bevel()]) with

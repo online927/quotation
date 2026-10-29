@@ -9,7 +9,7 @@ using Quotation.Desktop.ViewModels;
 namespace Quotation.Desktop.Views;
 
 /// <summary>
-/// Tally-style keyboard flow: Enter moves to the next field; in the line entry
+/// Tally-style keyboard flow: customer → Buyer's Ref./Order No. → Enter → items. Enter moves to the next field; in the line entry
 /// Product → Quantity → Rate → Disc % → Due on → Description → Enter adds the line and returns to Product
 /// (Shift+Enter starts a new line inside the description).
 /// In the customer and product boxes the first match is highlighted, ↑/↓ choose and Enter accepts.
@@ -29,7 +29,8 @@ public partial class QuotationEditorView : UserControl
         CustomerBox.ItemPicked += async (_, e) =>
         {
             if (e.Item is not CustomerSearchHitDto hit || Vm is not { } vm) return;
-            if (await vm.PickCustomerAsync(hit.Customer.Id)) FocusLater(ProductBox);
+            // As in Tally: after the party comes the reference (Buyer's Ref./Order No.), then the items.
+            if (await vm.PickCustomerAsync(hit.Customer.Id)) FocusLater(BuyersRefBox);
         };
     }
 
@@ -87,6 +88,13 @@ public partial class QuotationEditorView : UserControl
             owner = source.FindAncestorOfType<NumericUpDown>(includeSelf: true) as Control ?? source;
         }
 
+        if (owner == BuyersRefBox)
+        {
+            // The other reference boxes are reached with Tab or the mouse; Enter goes on to the items.
+            ProductBox.Focus();
+            e.Handled = true;
+            return;
+        }
         if (owner == DueOnBox)
         {
             DescriptionBox.Focus();

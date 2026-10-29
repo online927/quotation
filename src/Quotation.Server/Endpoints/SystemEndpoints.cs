@@ -104,28 +104,102 @@ public static class SystemEndpoints
         });
 
         users.MapPost("/{id:int}/reset-password", async (int id, [FromBody] CreateUserRequest req, QuotationDbContext db,
-            AuditService audit, HttpContext ctx, CancellationToken ct) =>
+            AuthService svc, AuditService audit, HttpContext ctx, CancellationToken ct) =>
         {
             var user = await db.Users.FindAsync([id], ct);
             if (user is null) return Results.NotFound();
             var errors = AuthService.ValidatePassword(req.Password);
             if (errors.Count > 0) return Results.BadRequest(new ApiError("Invalid password.", errors));
-            user.PasswordHash = PasswordHasher.Hash(req.Password);
-            user.MustChangePassword = true;
             audit.Add(ctx.User.UserName(), ctx.Machine(), "PasswordReset", "User", user.Username);
-            await db.SaveChangesAsync(ct);
+            await svc.ResetPasswordAsync(user, req.Password, ct);
             return Results.NoContent();
         });
 
-        app.MapGet("/api/settings", (SettingsService s) => s.GetAllForClient()).RequireAuthorization();
-        app.MapPut("/api/settings", async (AllSettingsDto dto, SettingsService s, AuditService audit, HttpContext ctx,
+        users.MapPut("/{id:int}", async (int id, UpdateUserRequest req, QuotationDbContext db, AuthService svc, AuditService audit,
+            HttpContext ctx, CancellationToken ct) =>
+        {
+            var before = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, ct);
+            if (before is null) return Results.NotFound();
+            var (user, error) = await svc.UpdateUserAsync(id, req, ctx.User.UserName(), ct);
+            if (error is not null) return Results.BadRequest(new ApiError(error));
+            var changes = new List<string>();
+            if (before.Username != user!.Username) changes.Add($"login {before.Username} → {user.Username}");
+            if (before.DisplayName != user.DisplayName) changes.Add($"name {before.DisplayName} → {user.DisplayName}");
+            if (before.Role != user.Role) changes.Add($"role {before.Role} → {user.Role}");
+            if (before.IsActive != user.IsActive) changes.Add(user.IsActive ? "activated" : "deactivated");
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "UserChanged", "User", user.Username, string.Join("; ", changes), ct);
+            return Results.Ok(AuthService.ToDto(user));
+        });
+
+        // The current user's own switches.
+        app.MapPut("/api/me/preferences", async (MyPreferencesDto req, HttpContext ctx, QuotationDbContext db, CancellationToken ct) =>
+        {
+            var user = await db.Users.FirstAsync(u => u.Username == ctx.User.UserName(), ct);
+            user.WithoutGstNext = req.WithoutGstNext;
+            await db.SaveChangesAsync(ct);
+            return Results.Ok(AuthService.ToDto(user));
+        }).RequireAuthorization();
+
+        static AllSettingsDto ForClient(SettingsService s, SealService seal)
+        {
+            var dto = s.GetAllForClient();
+            dto.SealPinConfigured = seal.HasPin;
+            dto.SealImageConfigured = seal.HasImage;
+            return dto;
+        }
+
+        app.MapGet("/api/settings", (SettingsService s, SealService seal) => ForClient(s, seal)).RequireAuthorization();
+        app.MapPut("/api/settings", async (AllSettingsDto dto, SettingsService s, SealService seal, AuditService audit, HttpContext ctx,
             CancellationToken ct) =>
         {
             var errors = ValidateSettings(dto);
+            if (!string.IsNullOrEmpty(dto.SealPin) && SealService.ValidatePin(dto.SealPin) is { } pinError) errors.Add(pinError);
             if (errors.Count > 0) return Results.BadRequest(new ApiError("Invalid settings.", errors));
             await s.SaveAllFromClientAsync(dto, ctx.User.UserName(), ct);
+            if (!string.IsNullOrEmpty(dto.SealPin))
+            {
+                await seal.SetPinAsync(dto.SealPin, ctx.User.UserName(), ct);
+                audit.Add(ctx.User.UserName(), ctx.Machine(), "SealPinChanged", "Settings", "seal");
+            }
             await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "SettingsChanged", "Settings", "all", ct: ct);
-            return Results.Ok(s.GetAllForClient());
+            return Results.Ok(ForClient(s, seal));
+        }).RequireAuthorization(AdminPolicy);
+
+        // Company seal image (administrator): upload (PNG/JPG body), view, remove.
+        app.MapPut("/api/settings/seal", async (HttpRequest request, SealService seal, AuditService audit, HttpContext ctx, CancellationToken ct) =>
+        {
+            using var ms = new MemoryStream();
+            await request.Body.CopyToAsync(ms, ct);
+            if (await seal.SaveImageAsync(ms.ToArray(), ct) is { } error) return Results.BadRequest(new ApiError(error));
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "SealImageChanged", "Settings", "seal", ct: ct);
+            return Results.NoContent();
+        }).RequireAuthorization(AdminPolicy);
+        // A sample page with the seal at its current size and position (to adjust it in Settings).
+        app.MapGet("/api/settings/seal/preview", (SealService seal, SettingsService s, PdfQuotationRenderer pdf, HttpContext ctx, TimeProvider clock) =>
+        {
+            if (seal.ReadImage() is not { } image) return Results.NotFound(new ApiError("No seal image yet."));
+            var sample = new QuotationHeader
+            {
+                Number = "SAMPLE",
+                Date = DateOnly.FromDateTime(clock.GetLocalNow().DateTime),
+                Buyer = new PartySnapshot { Name = "Sample Customer", Address = "Seal position preview" },
+                Consignee = new PartySnapshot { Name = "Sample Customer", Address = "Seal position preview" },
+                TaxPresentation = s.Quotation.TaxPresentation,
+                RoundOffTotal = s.Quotation.RoundOffTotal,
+                Status = QuotationStatus.Draft,
+                Lines = [new QuotationLine { LineNo = 1, ItemName = "Sample Item", Hsn = "82051000", GstRate = 18, Quantity = 1, Unit = "NOS", Rate = 1000, Amount = 1000 }],
+            };
+            var bytes = pdf.Render(sample, s.Company, s.Quotation,
+                new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName()), image);
+            return Results.File(bytes, "application/pdf");
+        }).RequireAuthorization(AdminPolicy);
+        app.MapGet("/api/settings/seal", (SealService seal) =>
+            seal.ReadImage() is { } bytes ? Results.File(bytes, "application/octet-stream") : Results.NotFound()).RequireAuthorization(AdminPolicy);
+        app.MapDelete("/api/settings/seal", async (SealService seal, AuditService audit, HttpContext ctx, CancellationToken ct) =>
+        {
+            seal.DeleteImage();
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "SealImageRemoved", "Settings", "seal", ct: ct);
+            return Results.NoContent();
         }).RequireAuthorization(AdminPolicy);
 
         app.MapGet("/api/status", (StatusService s, CancellationToken ct) => s.GetAsync(ct)).RequireAuthorization();

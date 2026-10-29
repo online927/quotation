@@ -144,9 +144,18 @@ conditions (one per line), default payment terms and footer.
 * **Next quotation number**: to continue your Tally quotation series, enter the number after your last Tally
   quotation (last was TSQ2526-3247 → enter **3248**) and press **Set next number**. Stop numbering quotations in
   Tally from that point to avoid overlaps.
-* **GST presentation**: `RateOnly` (GST % per line, totals without GST) or
-  `ComputeTax` (SGST + CGST or IGST lines added under the items, as on the Tally print; requires the company *state code*).
-* Packing & forwarding default, round-off, refresh rates when duplicating, stale-data rules, HSN required.
+* **GST presentation**: `ComputeTax` (the default: SGST + CGST for customers in your state, IGST for other states,
+  printed under the items as on the Tally print; requires the company *state code*) or `RateOnly` (GST % per line
+  only, totals without GST). Each quotation keeps the GST presentation it was saved with, so changing this setting
+  never changes quotations already made.
+* Packing & forwarding default, round-off (on by default), refresh rates when duplicating, stale-data rules, HSN required.
+* **Users can edit for (days)**: default 7. Users who are not administrators can edit or cancel a quotation or
+  proforma invoice for 7 days after it was first saved; after that it is locked for them (they can still open,
+  print, Save as PDF and Duplicate it). Administrators can always edit.
+* **Title Case while typing** (on): the first letter of each word typed in the quotation's text boxes becomes a
+  capital, as in Tally. Capitals you type stay, words starting with a number (`150mm`) stay as typed, and you can
+  correct a letter afterwards. Not used for e-mail, GSTIN, phone or the search boxes.
+* **Company seal → All users can use the seal**: off = administrators only.
 * **Proforma invoice number pattern**: default `TSPI{FY}-{SEQ}` → `TSPI2526-13`, a series of its own. Under
   **Next proforma invoice number** enter the number after your last Tally proforma (last was TSPI2526-12 → **13**).
 
@@ -156,6 +165,8 @@ conditions (one per line), default payment terms and footer.
   do not want a second validity line), **Jurisdiction** = *SUBJECT TO BANGALORE JURISDICTION*. The proforma
   declaration (*This is a Proforma invoice and not a Tax invoice*) and footer (*This is a Computer Generated
   Invoice*) are pre-filled.
+* Packing & forwarding, SGST/CGST/IGST and round off are printed directly under the items (the subtotal only when
+  there is more than one item), as on the Tally print.
 * Every PDF shows *Printed on <date> at <time>  By: <user>* at the top, like Tally. The user is the person logged
   in to the app who downloads/opens the PDF (the copy archived on the server at approval carries the approver).
 
@@ -237,6 +248,34 @@ stays as it is; *Other references* says *Our quotation TSQ…*). The PDF follows
 tax summary, tax amount in words, customer's seal and signature). **Proforma Invoices** in the sidebar lists them;
 every list has an *All documents / Quotations / Proforma invoices* filter.
 
+**Keyboard order**: pick the customer (Enter) → **Buyer's Ref./Order No.** → **Enter** → Product → Qty → Rate →
+Disc % → Due on → Description (**Shift+Enter** = new line) → **Enter** adds the line. The other reference boxes are
+reached with Tab or the mouse.
+
+**Save as PDF**: one click on a quotation or proforma invoice. A draft is approved first (with all the usual
+checks), then the PDF is saved straight into your folder as *Number Customer.pdf*, e.g.
+`TSQ2526-3403 TATA Electronics System Solutions.pdf` (saving again replaces it). The folder is set per PC in
+**My Settings** (default `Documents\Quotations`); **Open folder** shows it.
+
+**Company seal**: tick **Seal** next to *Save as PDF* and enter the 4-digit seal PIN; the seal is printed over
+*for T.SAIFUDDIN & CO. / Authorised Signatory* on the last page. Set up once by an administrator in
+**Settings → Company → Company seal**: choose the image (PNG with transparent background looks best), adjust width
+and position with **Preview on a page**, set the **seal PIN** (any 4 digits) and press **Save**. Five wrong PINs
+block the seal for that user for 15 minutes. Every sealed PDF is recorded in the history.
+
+**Without GST** (e.g. for SEZ customers): **My Settings → Without GST (next quotation only)**. Your next quotation
+or proforma invoice shows 0 % on every item, *Packing & Forwarding - Without GST* and no SGST/CGST/IGST lines, like
+the Tally print. The switch turns itself off once that document is saved; the document keeps it.
+
+**Items marked DNU**: stock items whose Tally description is **DNU** (or starts with it, e.g. *DNU - use 187-901*)
+are not offered in quotations, recent items or the AI. **Products → Show DNU items** lists them. A quotation that
+already contains one shows a warning. Other marks can be added in **Settings → Tally**.
+
+**Deleting (administrators)**: **Delete** on a quotation or proforma invoice moves it to **Deleted** (sidebar),
+where it can be **restored** for 30 days; after that it is removed. Deleting the **latest** number frees it for
+the next document; deleting an older number leaves a gap. A restored document gets its number back if it is still
+free, otherwise it comes back as a draft that gets the next number when saved.
+
 **Moving around**: the **‹ ›** buttons at the top (or **Alt+←** / **Alt+→**, the mouse's back/forward side buttons,
 or **Esc**) go back and forward like a web browser. A list comes back exactly as you left it (search, filter,
 selection, scroll position) and refreshed. The trail next to the buttons (e.g. *Draft Quotations › Quotation
@@ -255,6 +294,15 @@ asked **Save** (Enter) / **Don't Save** (N) / **Cancel** (Esc).
 * **Restore**: stop the service, copy the chosen backup to `C:\ProgramData\TSQuotation\quotation.db`
   (delete `quotation.db-wal`/`-shm` if present), start the service.
 * **Upgrade**: run the new server installer (settings and data are kept), then the new client installer on each PC.
+* **Users** (administrator): **Settings → Users → Edit**: change the login name (printed as *By:* on PDFs), display
+  name, administrator or user, active; **Reset password** gives a temporary password the user must change at the
+  next login (and logs them out on every PC). Everyone can change their own password: click your name at the top
+  right → **Change my password**. Create a second administrator so a forgotten password can always be reset.
+* **Forgotten administrator password** (no other administrator): on the **server PC**, open Command Prompt **as
+  administrator** and run
+  `"C:\Program Files\TSQuotation\Server\TSQuotation.Server.exe" --reset-admin-password NewPassword`
+  (add `--user name` for another administrator). It prints *Password of administrator 'admin' changed*. Log in with
+  the new password.
 * **Moving to another PC**: install the server there, stop both services, copy `C:\ProgramData\TSQuotation`, start.
   Re-enter the Claude API key and reconnect Gmail (secrets are encrypted per machine).
 

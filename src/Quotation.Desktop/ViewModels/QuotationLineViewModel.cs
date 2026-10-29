@@ -20,6 +20,8 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     [ObservableProperty] private decimal? _tallyRate;
     [ObservableProperty] private decimal _discountPercent;
     [ObservableProperty] private bool _isEditing;
+    /// <summary>The quotation is "Without GST": every line shows 0 %.</summary>
+    [ObservableProperty] private bool _zeroGst;
 
     public decimal Amount => QuotationCalculator.LineAmount(Quantity, Rate, DiscountPercent);
     public bool RateOverridden => TallyRate is not null && Rate != TallyRate;
@@ -27,7 +29,7 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     public string QuantityText => IndianFormat.Quantity(Quantity);
     public string RateText => IndianFormat.Amount(Rate);
     public string AmountText => IndianFormat.Amount(Amount);
-    public string GstText => GstRate is null ? "?" : $"{GstRate:0.##}%";
+    public string GstText => ZeroGst ? "0%" : GstRate is null ? "?" : $"{GstRate:0.##}%";
     public string DiscountText => DiscountPercent == 0 ? "" : $"{DiscountPercent:0.##}%";
     public string TallyRateHint => RateOverridden ? $"Tally rate {IndianFormat.Amount(TallyRate!.Value)}" : "";
 
@@ -37,6 +39,7 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     partial void OnTallyRateChanged(decimal? value) => Changed();
     partial void OnDescriptionChanged(string value) => OnPropertyChanged(nameof(HasDescription));
     partial void OnGstRateChanged(decimal? value) => OnPropertyChanged(nameof(GstText));
+    partial void OnZeroGstChanged(bool value) => OnPropertyChanged(nameof(GstText));
 
     private void Changed()
     {

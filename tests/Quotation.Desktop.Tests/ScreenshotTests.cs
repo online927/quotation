@@ -24,7 +24,10 @@ public class ScreenshotTests
         var session = new AppSession(config, _ => server.CreateApi()) { Documents = new RecordingLauncher(config) };
         await session.Api.LoginAsync("admin", "admin123");
         await session.Api.StartSyncAsync(SyncKind.Full, wait: true);
+        await session.Api.UploadSealAsync(Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAJUlEQVR4nGM4ICDwn5aYYdSCUQtGLRi1YNSCUQtGLRi1YGhYAAC4lDX9H0TkSwAAAABJRU5ErkJggg=="));
         var settings = await session.Api.SettingsAsync();
+        settings.SealPin = "1111";
         settings.Company.CompanyName = "T.SAIFUDDIN & CO.";
         settings.Company.StateCode = "29";
         await session.Api.SaveSettingsAsync(settings);
@@ -107,6 +110,17 @@ public class ScreenshotTests
         proforma.DeliveryNote = "DN/118";
         proforma.DispatchDocNo = "LR 55120";
         await Shot("10-proforma-invoice");
+
+        // Office features: My Settings (Without GST, PDF folder), and the admin's Deleted list.
+        shell.Navigate("mysettings");
+        await UiHelpers.WaitUntil(() => shell.PendingPrompt is not null);
+        shell.PendingPrompt!.Choose(LeaveChoice.DontSave);
+        await UiHelpers.WaitUntil(() => shell.CurrentPage is MySettingsViewModel);
+        await Task.Delay(300);
+        await Shot("11-my-settings");
+        shell.Navigate("deleted");
+        await Task.Delay(300);
+        await Shot("12-deleted");
         shell.Dispose();
     }
 }

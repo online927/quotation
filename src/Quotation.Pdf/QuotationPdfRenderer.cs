@@ -493,17 +493,26 @@ public sealed class QuotationPdfRenderer
         return top + row.Height;
     }
 
+    // As in Tally: packing & forwarding, taxes and round off follow the last item after one blank line; the subtotal
+    // (with a short rule above it) is printed only when there is more than one item.
+    private static bool ShowsSubtotal(QuotationDocument doc) => doc.Lines.Count > 1;
+
     private double SummaryHeight(QuotationDocument doc) =>
-        doc.SummaryRows.Count == 0 ? 0 : 2 + LineHeight(_text) + doc.SummaryRows.Count * (LineHeight(_boldItalic) + 1) + Pad;
+        doc.SummaryRows.Count == 0 ? 0
+            : LineHeight(_text) + (ShowsSubtotal(doc) ? 2 + LineHeight(_text) : 0) + doc.SummaryRows.Count * (LineHeight(_boldItalic) + 1) + Pad;
 
     private double DrawSummary(XGraphics g, QuotationDocument doc, double top)
     {
         if (doc.SummaryRows.Count == 0) return top;
-        var y = top + 2;
-        var amountX = _colX[ColAmount];
-        g.DrawLine(Pen(0.5), amountX + 8, y, amountX + _colW[ColAmount] - Pad, y);
-        DrawCell(g, IndianFormat.Amount(doc.Subtotal), _text, ColAmount, y + 1);
-        y += LineHeight(_text);
+        var y = top + LineHeight(_text);
+        if (ShowsSubtotal(doc))
+        {
+            y += 2;
+            var amountX = _colX[ColAmount];
+            g.DrawLine(Pen(0.5), amountX + 8, y, amountX + _colW[ColAmount] - Pad, y);
+            DrawCell(g, IndianFormat.Amount(doc.Subtotal), _text, ColAmount, y + 1);
+            y += LineHeight(_text);
+        }
         foreach (var s in doc.SummaryRows)
         {
             if (s.Less) DrawText(g, "Less :", Font(7, XFontStyleEx.Italic), _colX[ColDesc] + Pad, y + 1);
@@ -778,7 +787,25 @@ public sealed class QuotationPdfRenderer
             if (!string.IsNullOrWhiteSpace(doc.PreparedBy)) DrawText(g, doc.PreparedBy, _bold, MarginLeft + Pad, sigBottom - LineHeight(_bold));
             if (!string.IsNullOrWhiteSpace(doc.VerifiedBy)) DrawText(g, doc.VerifiedBy, _bold, MarginLeft + half / 2, sigBottom - LineHeight(_bold));
         }
+        if (doc.Seal is not null) DrawSeal(g, doc, MarginLeft + half, y, half);
         return y + SignatureHeight;
+    }
+
+    /// <summary>
+    /// The company seal, as stamped by hand on the Tally print: over "for COMPANY … Authorised Signatory", towards the right,
+    /// overlapping the bottom edge of the box. Size and position can be adjusted in the company settings.
+    /// </summary>
+    private static void DrawSeal(XGraphics g, QuotationDocument doc, double boxLeft, double boxTop, double boxWidth)
+    {
+        using var ms = new MemoryStream(doc.Seal!);
+        using var img = XImage.FromStream(ms);
+        var width = Math.Clamp(doc.Company.SealWidth, 30, boxWidth);
+        var height = width * img.PointHeight / img.PointWidth;
+        var centreX = boxLeft + boxWidth * 0.62 + doc.Company.SealOffsetX;
+        var centreY = boxTop + SignatureHeight - 6 + doc.Company.SealOffsetY;
+        var x = Math.Clamp(centreX - width / 2, boxLeft, PageWidth - width);
+        var y = Math.Clamp(centreY - height / 2, 0, PageHeight - height);
+        g.DrawImage(img, x, y, width, height);
     }
 
     // =====================================================================================
@@ -819,7 +846,7 @@ public sealed class QuotationPdfRenderer
         {
             var footerTop = pageBottom - layout.FooterHeight;
             var totalTop = footerTop - TotalRowHeight;
-            DrawSummary(g, doc, totalTop - layout.SummaryHeight);
+            DrawSummary(g, doc, y);
             DrawColumnLines(g, tableTop, totalTop + TotalRowHeight);
             DrawTotalRow(g, doc, totalTop);
             boxBottom = DrawFooter(g, doc, footerTop);

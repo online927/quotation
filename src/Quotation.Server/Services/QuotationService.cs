@@ -22,10 +22,11 @@ public sealed class QuotationException(int status, string code, string message, 
 public interface IQuotationDocumentRenderer
 {
     /// <summary>Renders the quotation and returns the PDF bytes; <paramref name="printed"/> adds "Printed on … By: …".</summary>
-    byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null);
+    byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
+        byte[]? seal = null);
 }
 
-public sealed record UserContext(string UserName, string DisplayName, string Machine);
+public sealed record UserContext(string UserName, string DisplayName, string Machine, bool IsAdmin = false);
 
 /// <summary>
 /// Quotation lifecycle: create/update drafts, approve (validate → freshness check → number →
@@ -42,12 +43,26 @@ public sealed class QuotationService(
     StatusService status,
     TallySyncService sync,
     LastRateService lastRates,
+    CatalogSearchService catalog,
     IQuotationDocumentRenderer renderer,
     PdfStorage pdfStorage,
     TimeProvider clock,
     ILogger<QuotationService> log)
 {
-    public async Task<QuotationDto> GetAsync(Guid id, CancellationToken ct) => ToDto(await LoadAsync(id, ct));
+    public async Task<QuotationDto> GetAsync(Guid id, CancellationToken ct) => await WithNoticesAsync(await LoadAsync(id, ct), ct);
+
+    /// <summary>The quotation plus a warning about items marked "Do Not Use" (DNU) in Tally since it was made.</summary>
+    public async Task<QuotationDto> WithNoticesAsync(QuotationHeader q, CancellationToken ct)
+    {
+        var dto = ToDto(q);
+        var ids = q.Lines.Where(l => l.ProductId is not null).Select(l => l.ProductId!.Value).ToList();
+        if (ids.Count == 0) return dto;
+        var hidden = (await db.Products.AsNoTracking().Where(p => ids.Contains(p.Id)).Select(p => new { p.Id, p.Description }).ToListAsync(ct))
+            .Where(p => catalog.IsHidden(p.Description)).Select(p => p.Id).ToHashSet();
+        dto.DoNotUseItems = q.Lines.OrderBy(l => l.LineNo).Where(l => l.ProductId is { } id && hidden.Contains(id))
+            .Select(l => $"Line {l.LineNo}: {l.ItemName}").ToList();
+        return dto;
+    }
 
     public async Task<QuotationHeader> LoadAsync(Guid id, CancellationToken ct) =>
         await db.Quotations.Include(q => q.Lines).FirstOrDefaultAsync(q => q.Id == id, ct)
@@ -68,9 +83,16 @@ public sealed class QuotationService(
             SourceEmailId = sourceEmailId,
             DuplicatedFromId = duplicatedFrom,
             DocType = request.DocType,
+            WithoutGst = request.WithoutGst,
         };
         await ApplyAsync(q, request, isNew: true, ct);
         db.Quotations.Add(q);
+        if (q.WithoutGst)
+        {
+            // "Without GST" applies to one quotation only: the user's switch turns itself off.
+            var owner = await db.Users.FirstOrDefaultAsync(u => u.Username == user.UserName, ct);
+            if (owner is not null) owner.WithoutGstNext = false;
+        }
         audit.Add(user.UserName, user.Machine, "QuotationCreated", "Quotation", q.Id.ToString(),
             $"Source={source}; Customer={q.Buyer.Name}; Lines={q.Lines.Count}");
 
@@ -90,6 +112,7 @@ public sealed class QuotationService(
     {
         var q = await LoadAsync(id, ct);
         if (q.Status == QuotationStatus.Cancelled) throw new QuotationException(409, ApiErrorCodes.InvalidState, "A cancelled quotation cannot be edited.");
+        EnsureEditable(q, user);
         if (request.Revision != q.Revision)
         {
             throw new QuotationException(409, ApiErrorCodes.Concurrency,
@@ -135,6 +158,7 @@ public sealed class QuotationService(
     {
         var q = await LoadAsync(id, ct);
         if (q.Status == QuotationStatus.Cancelled) throw new QuotationException(409, ApiErrorCodes.InvalidState, "A cancelled quotation cannot be approved.");
+        if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated)) EnsureEditable(q, user);
         if (request.Revision is { } rev && rev != q.Revision)
         {
             throw new QuotationException(409, ApiErrorCodes.Concurrency, "This quotation was changed after you opened it. Reload it first.");
@@ -224,7 +248,7 @@ public sealed class QuotationService(
 
         // 6. PDF.
         await GeneratePdfAsync(q, user, ct);
-        return ToDto(q);
+        return await WithNoticesAsync(q, ct);
     }
 
     /// <summary>Generates (or regenerates) the PDF of an approved quotation.</summary>
@@ -255,6 +279,7 @@ public sealed class QuotationService(
     {
         var q = await LoadAsync(id, ct);
         if (q.Status == QuotationStatus.Cancelled) return ToDto(q);
+        EnsureEditable(q, user);
         q.Status = QuotationStatus.Cancelled;
         q.CancelledBy = user.UserName;
         q.CancelledUtc = clock.GetUtcNow().UtcDateTime;
@@ -262,6 +287,108 @@ public sealed class QuotationService(
         audit.Add(user.UserName, user.Machine, "QuotationCancelled", "Quotation", q.Id.ToString(), q.Number ?? "");
         await SaveAsync(ct);
         return ToDto(q);
+    }
+
+    public static readonly TimeSpan DeletedRetention = TimeSpan.FromDays(30);
+
+    /// <summary>
+    /// Administrator: moves a quotation or proforma invoice to the Deleted list (restorable for 30 days). The latest
+    /// number of a series is released so the next document gets it again; an older number leaves a gap.
+    /// </summary>
+    public async Task DeleteAsync(Guid id, UserContext user, CancellationToken ct)
+    {
+        if (!user.IsAdmin) throw new QuotationException(403, ApiErrorCodes.Forbidden, "Only an administrator can delete quotations.");
+        var q = await LoadAsync(id, ct);
+        var number = q.Number ?? "(not numbered)";
+        q.DeletedUtc = clock.GetUtcNow().UtcDateTime;
+        q.DeletedBy = user.UserName;
+        q.Revision++;
+        audit.Add(user.UserName, user.Machine, "QuotationDeleted", "Quotation", q.Id.ToString(),
+            $"{number}; {q.Buyer.Name}; {q.GrandTotal:0.00}");
+        var released = await numbering.ReleaseIfLatestAsync(db, q, () => SaveAsync(ct), ct);
+        if (released) log.LogInformation("{Number} deleted by {User}; the number will be reused", number, user.UserName);
+    }
+
+    public async Task<List<DeletedQuotationDto>> DeletedAsync(CancellationToken ct)
+    {
+        var list = await db.Quotations.IgnoreQueryFilters().AsNoTracking().Where(q => q.DeletedUtc != null)
+            .OrderByDescending(q => q.DeletedUtc).ToListAsync(ct);
+        var result = new List<DeletedQuotationDto>();
+        foreach (var q in list)
+        {
+            result.Add(new DeletedQuotationDto(q.Id, q.Number ?? q.DeletedNumber ?? "(not numbered)", q.DocType, q.Date, q.Buyer.Name,
+                q.GrandTotal, q.DeletedBy ?? "", q.DeletedUtc!.Value, q.DeletedUtc.Value + DeletedRetention,
+                await NumberingService.IsNumberFreeAsync(db, q, ct)));
+        }
+        return result;
+    }
+
+    /// <summary>Administrator: brings a deleted quotation back (with its number if it is still free).</summary>
+    public async Task<RestoreResultDto> RestoreAsync(Guid id, UserContext user, CancellationToken ct)
+    {
+        if (!user.IsAdmin) throw new QuotationException(403, ApiErrorCodes.Forbidden, "Only an administrator can restore quotations.");
+        var q = await db.Quotations.IgnoreQueryFilters().Include(x => x.Lines).FirstOrDefaultAsync(x => x.Id == id && x.DeletedUtc != null, ct)
+                ?? throw new QuotationException(404, "NOT_FOUND", "Deleted quotation not found.");
+        var oldNumber = q.Number ?? q.DeletedNumber;
+        q.DeletedUtc = null;
+        q.DeletedBy = null;
+        q.Revision++;
+        var kept = await numbering.ReclaimAsync(db, q, async () =>
+        {
+            if (q.Number is null && q.DeletedNumber is null && oldNumber is not null)
+            {
+                // The number went to a new quotation meanwhile: back as a draft that gets the next number when saved.
+                q.Status = QuotationStatus.Draft;
+                q.ApprovedBy = null;
+                q.ApprovedUtc = null;
+                q.PdfPath = null;
+            }
+            audit.Add(user.UserName, user.Machine, "QuotationRestored", "Quotation", q.Id.ToString(), oldNumber ?? "");
+            await SaveAsync(ct);
+        }, ct);
+        var message = kept
+            ? $"{q.Number ?? "The quotation"} restored."
+            : $"Restored as a draft without a number ({oldNumber} was given to another quotation); it gets the next number when saved.";
+        return new RestoreResultDto(ToDto(q), kept, message);
+    }
+
+    /// <summary>Administrator: removes a deleted quotation for good (also its PDF).</summary>
+    public async Task PurgeAsync(Guid id, UserContext user, CancellationToken ct)
+    {
+        if (!user.IsAdmin) throw new QuotationException(403, ApiErrorCodes.Forbidden, "Only an administrator can delete quotations.");
+        var q = await db.Quotations.IgnoreQueryFilters().Include(x => x.Lines).FirstOrDefaultAsync(x => x.Id == id && x.DeletedUtc != null, ct)
+                ?? throw new QuotationException(404, "NOT_FOUND", "Deleted quotation not found.");
+        audit.Add(user.UserName, user.Machine, "QuotationDeletedPermanently", "Quotation", q.Id.ToString(),
+            $"{q.Number ?? q.DeletedNumber}; {q.Buyer.Name}; {q.GrandTotal:0.00}");
+        await RemoveAsync(q, ct);
+    }
+
+    /// <summary>Removes quotations deleted more than 30 days ago (run daily).</summary>
+    public async Task<int> PurgeExpiredAsync(CancellationToken ct)
+    {
+        var cutoff = clock.GetUtcNow().UtcDateTime - DeletedRetention;
+        var expired = await db.Quotations.IgnoreQueryFilters().Include(x => x.Lines)
+            .Where(x => x.DeletedUtc != null && x.DeletedUtc < cutoff).ToListAsync(ct);
+        foreach (var q in expired)
+        {
+            audit.Add("system", "server", "QuotationDeletedPermanently", "Quotation", q.Id.ToString(),
+                $"{q.Number ?? q.DeletedNumber}; {q.Buyer.Name}; after 30 days in the Deleted list");
+            await RemoveAsync(q, ct);
+        }
+        return expired.Count;
+    }
+
+    private async Task RemoveAsync(QuotationHeader q, CancellationToken ct)
+    {
+        var pdf = pdfStorage.FullPath(q.PdfPath);
+        db.QuotationLines.RemoveRange(q.Lines);
+        db.Quotations.Remove(q);
+        await SaveAsync(ct);
+        // The archived PDF is removed only if no other quotation now uses that file name.
+        if (pdf is not null && File.Exists(pdf) && !await db.Quotations.IgnoreQueryFilters().AnyAsync(x => x.PdfPath == q.PdfPath, ct))
+        {
+            try { File.Delete(pdf); } catch (IOException) { }
+        }
     }
 
     /// <summary>New quotation (new number, today's date) with the same customer, products and descriptions.</summary>
@@ -272,6 +399,7 @@ public sealed class QuotationService(
         request.Date = fy.Today();
         request.BuyersReference = "";
         request.BuyersReferenceDate = null;
+        request.WithoutGst = false;
         var refresh = settings.Quotation.RefreshRatesOnDuplicate;
         foreach (var line in request.Lines)
         {
@@ -301,10 +429,18 @@ public sealed class QuotationService(
     /// The PDF of an approved quotation as printed now by <paramref name="user"/> ("Printed on … By: …").
     /// The copy archived at approval is used only if rendering fails.
     /// </summary>
-    public async Task<byte[]?> PrintPdfAsync(Guid id, UserContext user, CancellationToken ct)
+    public async Task<byte[]?> PrintPdfAsync(Guid id, UserContext user, CancellationToken ct, byte[]? seal = null)
     {
         var q = await LoadAsync(id, ct);
         if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated)) return null;
+        if (seal is not null)
+        {
+            // A sealed copy is always rendered fresh (never the unsealed archive) and recorded.
+            var bytes = renderer.Render(q, settings.Company, settings.Quotation, Stamp(user), seal);
+            audit.Add(user.UserName, user.Machine, "PdfSealed", "Quotation", q.Id.ToString(), q.Number ?? "");
+            await SaveAsync(ct);
+            return bytes;
+        }
         try
         {
             return renderer.Render(q, settings.Company, settings.Quotation, Stamp(user));
@@ -374,6 +510,9 @@ public sealed class QuotationService(
         q.VerifiedBy = Trim(r.VerifiedBy, 100);
         q.PackingForwardingPercent = r.PackingForwardingPercent is > 0 ? r.PackingForwardingPercent : null;
         q.PackingForwarding = r.PackingForwarding;
+        // The GST presentation in force when the quotation is saved; reprints use the same, so totals never change.
+        q.TaxPresentation = settings.Quotation.TaxPresentation;
+        q.RoundOffTotal = settings.Quotation.RoundOffTotal;
 
         // Buyer: Tally is authoritative for GSTIN and state; name/address/contact may be edited.
         q.CustomerId = r.CustomerId;
@@ -451,15 +590,42 @@ public sealed class QuotationService(
         Recalculate(q);
     }
 
+    /// <summary>The calculation input of a saved quotation: its own GST presentation, round off and "Without GST".</summary>
+    public static CalcInput CalcInputOf(QuotationHeader q, string companyStateCode, bool usePercent = true)
+    {
+        var placeOfSupply = q.Consignee.StateCode.Length > 0 ? q.Consignee.StateCode : q.Buyer.StateCode;
+        var interState = companyStateCode.Length > 0 && placeOfSupply.Length > 0 && companyStateCode != placeOfSupply;
+        return new CalcInput(
+            q.Lines.OrderBy(l => l.LineNo).Select(l => new CalcLine(l.Quantity, l.Rate, l.DiscountPercent, l.GstRate ?? 0, l.Unit)).ToList(),
+            q.PackingForwarding, usePercent ? q.PackingForwardingPercent : null, q.TaxPresentation, q.RoundOffTotal, interState, q.WithoutGst);
+    }
+
+    /// <summary>
+    /// Users who are not administrators may change a quotation only for <see cref="QuotationSettings.UserEditDays"/>
+    /// days after it was first saved (counted in office days); administrators always.
+    /// </summary>
+    private void EnsureEditable(QuotationHeader q, UserContext user)
+    {
+        if (user.IsAdmin) return;
+        var until = EditableUntil(q);
+        if (DateOnly.FromDateTime(clock.GetLocalNow().DateTime) > until)
+        {
+            throw new QuotationException(403, ApiErrorCodes.Locked,
+                $"{q.Number ?? "This quotation"} is locked: it was made more than {settings.Quotation.UserEditDays} days ago " +
+                $"(editable until {until:dd-MMM-yyyy}). Ask an administrator to change it, or use Duplicate.");
+        }
+    }
+
+    public DateOnly EditableUntil(QuotationHeader q)
+    {
+        var created = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(q.CreatedUtc, DateTimeKind.Utc), clock.LocalTimeZone);
+        return DateOnly.FromDateTime(created).AddDays(Math.Max(settings.Quotation.UserEditDays, 0));
+    }
+
     private void Recalculate(QuotationHeader q)
     {
         var qs = settings.Quotation;
-        var companyState = settings.Company.StateCode;
-        var placeOfSupply = q.Consignee.StateCode.Length > 0 ? q.Consignee.StateCode : q.Buyer.StateCode;
-        var interState = companyState.Length > 0 && placeOfSupply.Length > 0 && companyState != placeOfSupply;
-        var result = QuotationCalculator.Calculate(new CalcInput(
-            q.Lines.OrderBy(l => l.LineNo).Select(l => new CalcLine(l.Quantity, l.Rate, l.DiscountPercent, l.GstRate ?? 0, l.Unit)).ToList(),
-            q.PackingForwarding, q.PackingForwardingPercent, qs.TaxPresentation, qs.RoundOffTotal, interState));
+        var result = QuotationCalculator.Calculate(CalcInputOf(q, settings.Company.StateCode));
         var ordered = q.Lines.OrderBy(l => l.LineNo).ToList();
         for (var i = 0; i < ordered.Count; i++) ordered[i].Amount = result.LineAmounts[i];
         q.Subtotal = result.Subtotal;
@@ -588,6 +754,7 @@ public sealed class QuotationService(
         PackingForwardingPercent = q.PackingForwardingPercent,
         PreparedBy = q.PreparedBy,
         VerifiedBy = q.VerifiedBy,
+        WithoutGst = q.WithoutGst,
         Lines = q.Lines.OrderBy(l => l.LineNo).Select(ToDto).ToList(),
     };
 
@@ -602,12 +769,7 @@ public sealed class QuotationService(
     {
         var request = ToRequest(q);
         var qs = settings.Quotation;
-        var companyState = settings.Company.StateCode;
-        var placeOfSupply = q.Consignee.StateCode.Length > 0 ? q.Consignee.StateCode : q.Buyer.StateCode;
-        var calc = QuotationCalculator.Calculate(new CalcInput(
-            q.Lines.OrderBy(l => l.LineNo).Select(l => new CalcLine(l.Quantity, l.Rate, l.DiscountPercent, l.GstRate ?? 0, l.Unit)).ToList(),
-            q.PackingForwarding, null, qs.TaxPresentation, qs.RoundOffTotal,
-            companyState.Length > 0 && placeOfSupply.Length > 0 && companyState != placeOfSupply));
+        var calc = QuotationCalculator.Calculate(CalcInputOf(q, settings.Company.StateCode, usePercent: false));
         return new QuotationDto
         {
             Id = q.Id,
@@ -638,6 +800,7 @@ public sealed class QuotationService(
             PackingForwardingPercent = q.PackingForwardingPercent,
             PreparedBy = q.PreparedBy,
             VerifiedBy = q.VerifiedBy,
+            WithoutGst = q.WithoutGst,
             Lines = request.Lines,
             Subtotal = q.Subtotal,
             Taxes = calc.Taxes.Select(t => new TaxLineDto(t.Name, t.RatePercent, t.TaxableValue, t.Amount)).ToList(),
@@ -660,6 +823,7 @@ public sealed class QuotationService(
             ApprovedUtc = q.ApprovedUtc,
             CancelledBy = q.CancelledBy,
             CancelledUtc = q.CancelledUtc,
+            EditableUntil = EditableUntil(q),
         };
     }
 }

@@ -18,7 +18,7 @@ public class EndToEndTests(ITestOutputHelper output) : IDisposable
     public void Dispose()
     {
         foreach (var p in _processes) p.Dispose();
-        try { Directory.Delete(_dataDir, true); } catch { }
+        if (Environment.GetEnvironmentVariable("KEEP_E2E") is null) try { Directory.Delete(_dataDir, true); } catch { }
     }
 
     private ProcessHost StartTally(int port)
@@ -98,7 +98,8 @@ public class EndToEndTests(ITestOutputHelper output) : IDisposable
         {
             var text = string.Join(" ", doc.GetPage(1).GetWords().Select(w => w.Text));
             Assert.Contains(q.Number!, text);
-            Assert.Contains("31,700.00", text);
+            Assert.Equal(37406m, approved.GrandTotal);        // 31,200 + P&F 500 + 18 % GST (on by default, as on the Tally print)
+            Assert.Contains("37,406.00", text);
             Assert.Contains("PROTRACTOR", text);
         }
 

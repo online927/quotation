@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             x:Class="Quotation.Desktop.Views.DeletedQuotationsView"
+             x:DataType="vm:DeletedQuotationsViewModel">
+  <DockPanel Margin="24,12,24,20">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+      <StackPanel>
+        <TextBlock Classes="h1" Text="Deleted" />
+        <TextBlock Classes="muted" Text="Quotations and proforma invoices deleted by an administrator. They can be restored for 30 days, then they are removed." TextWrapping="Wrap" />
+      </StackPanel>
+      <Button Grid.Column="1" Content="Refresh (F5)" HotKey="F5" Command="{Binding LoadCommand}" VerticalAlignment="Top" />
+    </Grid>
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Foreground="{StaticResource OkBrush}" Text="{Binding InfoMessage}" TextWrapping="Wrap"
+                 IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+    <Border DockPanel.Dock="Top" Classes="tablehead">
+      <Grid ColumnDefinitions="130,80,100,*,110,220,110,230">
+        <TextBlock Text="Number" />
+        <TextBlock Grid.Column="1" Text="Type" />
+        <TextBlock Grid.Column="2" Text="Date" />
+        <TextBlock Grid.Column="3" Text="Customer" />
+        <TextBlock Grid.Column="4" Text="Total" HorizontalAlignment="Right" />
+        <TextBlock Grid.Column="5" Text="Deleted" Margin="12,0,0,0" />
+        <TextBlock Grid.Column="6" Text="Removed on" />
+      </Grid>
+    </Border>
+    <ListBox Classes="table" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:DeletedRow">
+          <Grid ColumnDefinitions="130,80,100,*,110,220,110,230">
+            <StackPanel>
+              <TextBlock Text="{Binding Number}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding NumberNote}" FontSize="10" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap"
+                         IsVisible="{Binding NumberNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+            <TextBlock Grid.Column="1" Text="{Binding Type}" />
+            <TextBlock Grid.Column="2" Text="{Binding Date}" />
+            <TextBlock Grid.Column="3" Text="{Binding Customer}" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="4" Text="{Binding Total}" HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="5" Text="{Binding Deleted}" Margin="12,0,0,0" FontSize="12" />
+            <TextBlock Grid.Column="6" Text="{Binding RemovedOn}" FontSize="12" />
+            <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+              <Button Classes="small" Content="Restore"
+                      Command="{Binding $parent[UserControl].((vm:DeletedQuotationsViewModel)DataContext).RestoreCommand}" CommandParameter="{Binding}" />
+              <Button Classes="small danger" Content="Delete permanently"
+                      Command="{Binding $parent[UserControl].((vm:DeletedQuotationsViewModel)DataContext).PurgeCommand}" CommandParameter="{Binding}" />
+            </StackPanel>
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</UserControl>

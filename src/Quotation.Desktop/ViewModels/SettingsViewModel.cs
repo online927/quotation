@@ -27,6 +27,27 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _newUserIsAdmin;
     public ObservableCollection<UserDto> Users { get; } = [];
 
+    // Editing a user (administrator)
+    [ObservableProperty] private UserDto? _editingUser;
+    [ObservableProperty] private string _editUsername = "";
+    [ObservableProperty] private string _editDisplayName = "";
+    [ObservableProperty] private bool _editIsAdmin;
+    [ObservableProperty] private bool _editIsActive;
+    [ObservableProperty] private string _resetPassword = "";
+    public bool IsEditingUser => EditingUser is not null;
+    partial void OnEditingUserChanged(UserDto? value) => OnPropertyChanged(nameof(IsEditingUser));
+
+    // Seal (administrator)
+    [ObservableProperty] private string _newSealPin = "";
+    [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _sealImage;
+    [ObservableProperty] private decimal? _sealWidth;
+    [ObservableProperty] private decimal? _sealOffsetX;
+    [ObservableProperty] private decimal? _sealOffsetY;
+    [ObservableProperty] private string _hiddenMarkers = "";
+    public bool HasSealImage => SealImage is not null;
+    public string SealPinState => Settings?.SealPinConfigured == true ? "A seal PIN is set." : "No seal PIN yet.";
+    partial void OnSealImageChanged(Avalonia.Media.Imaging.Bitmap? value) => OnPropertyChanged(nameof(HasSealImage));
+
     // Numbering
     [ObservableProperty] private NumberSeriesDto? _series;
     [ObservableProperty] private decimal? _newNextSequence;
@@ -69,9 +90,14 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Terms = string.Join(Environment.NewLine, s.Company.TermsAndConditions);
         CustomerGroups = string.Join(Environment.NewLine, s.Tally.CustomerGroups);
         LastRateVoucherTypes = string.Join(Environment.NewLine, s.Tally.LastRateVoucherTypes);
+        HiddenMarkers = string.Join(Environment.NewLine, s.Tally.HiddenProductMarkers);
+        SealWidth = (decimal)s.Company.SealWidth;
+        SealOffsetX = (decimal)s.Company.SealOffsetX;
+        SealOffsetY = (decimal)s.Company.SealOffsetY;
         FyOverride = s.Tally.ActiveFinancialYearOverride?.ToString() ?? "";
         Settings = s;
         OnPropertyChanged(nameof(ExampleNumber));
+        OnPropertyChanged(nameof(SealPinState));
         if (IsAdmin)
         {
             await LoadUsersAsync();
@@ -79,6 +105,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
             NewNextSequence = Series.NextSequence;
             ProformaSeries = await _session.Api.NumberSeriesAsync(type: DocumentType.ProformaInvoice);
             NewNextProformaSequence = ProformaSeries.NextSequence;
+            await LoadSealImageAsync();
         }
         _session.Settings = s;
     });
@@ -118,6 +145,17 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Settings.Company.TermsAndConditions = SplitLines(Terms);
         Settings.Tally.CustomerGroups = SplitLines(CustomerGroups);
         Settings.Tally.LastRateVoucherTypes = SplitLines(LastRateVoucherTypes);
+        Settings.Tally.HiddenProductMarkers = SplitLines(HiddenMarkers);
+        Settings.Company.SealWidth = (double)(SealWidth ?? 150);
+        Settings.Company.SealOffsetX = (double)(SealOffsetX ?? 0);
+        Settings.Company.SealOffsetY = (double)(SealOffsetY ?? 0);
+        var pin = NewSealPin.Trim();
+        if (pin.Length > 0 && (pin.Length != 4 || !pin.All(char.IsAsciiDigit)))
+        {
+            ErrorMessage = "The seal PIN must be exactly 4 digits.";
+            return;
+        }
+        Settings.SealPin = pin.Length > 0 ? pin : null;
         if (string.IsNullOrWhiteSpace(FyOverride))
         {
             Settings.Tally.ActiveFinancialYearOverride = null;
@@ -138,9 +176,11 @@ public sealed partial class SettingsViewModel : ViewModelBase
         {
             NewApiKey = "";
             NewGmailClientJson = "";
+            NewSealPin = "";
             _session.Settings = Settings;
             InfoMessage = "Settings saved.";
             OnPropertyChanged(nameof(ExampleNumber));
+            OnPropertyChanged(nameof(SealPinState));
         }
     }
 
@@ -173,6 +213,105 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         await _session.Api.SetUserActiveAsync(user.Id, !user.IsActive);
         await LoadUsersAsync();
+    });
+
+    [RelayCommand]
+    private void EditUser(UserDto? user)
+    {
+        EditingUser = user;
+        if (user is null) return;
+        EditUsername = user.Username;
+        EditDisplayName = user.DisplayName;
+        EditIsAdmin = user.Role == UserRole.Admin;
+        EditIsActive = user.IsActive;
+        ResetPassword = "";
+        InfoMessage = null;
+        ErrorMessage = null;
+    }
+
+    [RelayCommand]
+    private void CancelEditUser() => EditingUser = null;
+
+    /// <summary>Saves login name, display name, role and active; old quotations keep the name used at the time.</summary>
+    [RelayCommand]
+    private async Task SaveUserAsync()
+    {
+        if (EditingUser is not { } user) return;
+        InfoMessage = null;
+        if (await RunAsync(async () =>
+            {
+                var saved = await _session.Api.UpdateUserAsync(user.Id,
+                    new UpdateUserRequest(EditUsername, EditDisplayName, EditIsAdmin ? UserRole.Admin : UserRole.User, EditIsActive));
+                _session.Api.UpdateCurrentUser(saved);
+                await LoadUsersAsync();
+            }))
+        {
+            InfoMessage = $"User '{EditUsername.Trim()}' saved.";
+            EditingUser = null;
+        }
+    }
+
+    /// <summary>Temporary password: the user must choose a new one at the next login; logged out on every PC now.</summary>
+    [RelayCommand]
+    private async Task ResetUserPasswordAsync()
+    {
+        if (EditingUser is not { } user) return;
+        InfoMessage = null;
+        if (ResetPassword.Length < 6)
+        {
+            ErrorMessage = "The temporary password must have at least 6 characters.";
+            return;
+        }
+        if (await RunAsync(() => _session.Api.ResetPasswordAsync(user.Id, ResetPassword)))
+        {
+            InfoMessage = $"Password of '{user.Username}' reset. They log in with the temporary password and then choose a new one.";
+            ResetPassword = "";
+        }
+    }
+
+    // ---------------------------------------------------------------- seal
+
+    private async Task LoadSealImageAsync()
+    {
+        SealImage = null;
+        if (Settings?.SealImageConfigured != true) return;
+        try
+        {
+            using var ms = new MemoryStream(await _session.Api.SealImageAsync());
+            SealImage = new Avalonia.Media.Imaging.Bitmap(ms);
+        }
+        catch (Exception)
+        {
+            // Preview only.
+        }
+    }
+
+    /// <summary>Called by the view with the chosen PNG/JPG file.</summary>
+    public Task UploadSealAsync(byte[] image) => RunAsync(async () =>
+    {
+        await _session.Api.UploadSealAsync(image);
+        Settings = await _session.Api.SettingsAsync();
+        _session.Settings = Settings;
+        await LoadSealImageAsync();
+        InfoMessage = "Seal image saved. Set the seal PIN below (if not set yet) and press Save; 'Preview on a page' shows where it is printed.";
+    });
+
+    [RelayCommand]
+    private Task RemoveSealAsync() => RunAsync(async () =>
+    {
+        await _session.Api.RemoveSealAsync();
+        Settings = await _session.Api.SettingsAsync();
+        _session.Settings = Settings;
+        SealImage = null;
+        InfoMessage = "Seal image removed.";
+    });
+
+    /// <summary>Opens a sample page with the seal at the saved size and position.</summary>
+    [RelayCommand]
+    private Task PreviewSealAsync() => RunAsync(async () =>
+    {
+        var bytes = await _session.Api.SealPreviewAsync();
+        _session.Documents.SaveAndOpen(bytes, "Seal-preview.pdf");
     });
 
     private static List<string> SplitLines(string text) =>

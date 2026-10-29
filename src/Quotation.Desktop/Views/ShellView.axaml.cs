@@ -24,6 +24,25 @@ public partial class ShellView : UserControl
             Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() => GlobalSearchBox.Focus()),
         });
         AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
+        DialogPanel.PropertyChanged += (_, e) =>
+        {
+            if (e.Property != IsVisibleProperty) return;
+            if (DialogPanel.IsVisible)
+            {
+                _focusBeforeDialog = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() as Control;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (Vm?.PendingDialog is { HasInput: true }) DialogInput.Focus();
+                    else DialogPrimary.Focus();
+                }, DispatcherPriority.Input);
+            }
+            else if (_focusBeforeDialog is { } previous)
+            {
+                _focusBeforeDialog = null;
+                Dispatcher.UIThread.Post(() => { if (previous.IsAttachedToVisualTree() && previous.IsEffectivelyVisible) previous.Focus(); },
+                    DispatcherPriority.Input);
+            }
+        };
         PromptPanel.PropertyChanged += (_, e) =>
         {
             if (e.Property != IsVisibleProperty) return;
@@ -43,6 +62,7 @@ public partial class ShellView : UserControl
     }
 
     private Control? _focusBeforePrompt;
+    private Control? _focusBeforeDialog;
     private TopLevel? _topLevel;
 
     // Keys are watched on the window, so Back works even when no field has the keyboard focus.
@@ -66,6 +86,16 @@ public partial class ShellView : UserControl
 
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
+        if (Vm is { PendingDialog: { } dialog })
+        {
+            // Enter = the main answer (unless a button has the focus), Esc = cancel; nothing reaches the page behind.
+            var onButton = e.Source is Button b && DialogPanel.IsVisualAncestorOf(b);
+            if (e.Key == Key.Escape) dialog.Choose(false);
+            else if (e.Key == Key.Enter && !onButton) dialog.Choose(true);
+            else if (e.Source is Visual inDialog && DialogPanel.IsVisualAncestorOf(inDialog)) return; // typing in the box, Tab, Space on a button
+            e.Handled = true;
+            return;
+        }
         if (Vm is not { PendingPrompt: { } prompt }) return;
         // While the question is shown, keys answer it and never reach the page behind.
         var onPromptButton = e.Source is Visual v && PromptPanel.IsVisualAncestorOf(v);

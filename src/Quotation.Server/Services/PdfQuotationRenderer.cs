@@ -10,8 +10,8 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
 {
     private readonly QuotationPdfRenderer _renderer = new();
 
-    public byte[] Render(QuotationHeader q, CompanySettings company, QuotationSettings settings, PrintStamp? printed = null) =>
-        _renderer.Render(ToDocument(q, company, settings, watermark: null, printed: printed));
+    public byte[] Render(QuotationHeader q, CompanySettings company, QuotationSettings settings, PrintStamp? printed = null, byte[]? seal = null) =>
+        _renderer.Render(ToDocument(q, company, settings, watermark: null, printed: printed) with { Seal = seal });
 
     public byte[] RenderPreview(QuotationHeader q, CompanySettings company, QuotationSettings settings, string provisionalNumber,
         PrintStamp? printed = null) =>
@@ -25,7 +25,7 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             l.ItemName,
             SplitLines(l.Description),
             l.Hsn,
-            l.GstRate,
+            q.WithoutGst ? 0m : l.GstRate,
             l.DueOn,
             l.Quantity,
             l.Unit,
@@ -34,17 +34,17 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             l.Amount,
             l.PartNumber)).ToList();
 
-        var companyState = company.StateCode;
-        var placeOfSupply = q.Consignee.StateCode.Length > 0 ? q.Consignee.StateCode : q.Buyer.StateCode;
-        var interState = companyState.Length > 0 && placeOfSupply.Length > 0 && companyState != placeOfSupply;
         var ordered = q.Lines.OrderBy(l => l.LineNo).ToList();
-        var calc = QuotationCalculator.Calculate(new CalcInput(
-            ordered.Select(l => new CalcLine(l.Quantity, l.Rate, l.DiscountPercent, l.GstRate ?? 0, l.Unit)).ToList(),
-            q.PackingForwarding, null, settings.TaxPresentation, settings.RoundOffTotal, interState));
+        // The quotation's own GST presentation and round off (fixed when it was saved), so reprints match its totals.
+        var input = QuotationService.CalcInputOf(q, company.StateCode, usePercent: false);
+        var interState = input.InterState;
+        var calc = QuotationCalculator.Calculate(input);
 
         // As in Tally: one line per tax ledger (SGST, CGST or IGST), then the round off ("Less :" when negative).
+        // A "Without GST" quotation has no tax lines and says so on the packing & forwarding line.
         var summary = new List<PdfSummaryRow>();
-        if (calc.PackingForwarding != 0) summary.Add(new PdfSummaryRow("Packing & Forwarding", "", calc.PackingForwarding));
+        if (calc.PackingForwarding != 0)
+            summary.Add(new PdfSummaryRow(q.WithoutGst ? "Packing & Forwarding - Without GST" : "Packing & Forwarding", "", calc.PackingForwarding));
         foreach (var name in new[] { "SGST", "CGST", "IGST" })
         {
             var amount = calc.Taxes.Where(t => t.Name == name).Sum(t => t.Amount);

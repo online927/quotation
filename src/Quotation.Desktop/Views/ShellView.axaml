@@ -32,15 +32,29 @@
               <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}" />
             </TextBox.KeyBindings>
           </TextBox>
-          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-            <Border Width="30" Height="30" CornerRadius="15" Background="{StaticResource FillBrush}">
-              <TextBlock Text="{Binding UserInitials}" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Border>
-            <StackPanel VerticalAlignment="Center">
-              <TextBlock Text="{Binding UserDisplay}" FontWeight="SemiBold" FontSize="12" />
-              <TextBlock Text="{Binding UserRole}" FontSize="11" Classes="muted" />
-            </StackPanel>
-            <Button Classes="link" Content="Log out" Command="{Binding LogoutCommand}" Margin="6,0,0,0" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <!-- Click the name: change my password, my settings, log out -->
+            <Button Name="UserMenuButton" Classes="link" Padding="4,2" ToolTip.Tip="My account">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Border Width="30" Height="30" CornerRadius="15" Background="{StaticResource FillBrush}">
+                  <TextBlock Text="{Binding UserInitials}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextBrush}"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="{Binding UserDisplay}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextBrush}" />
+                  <TextBlock Text="{Binding UserRole, StringFormat='{}{0}  ▾'}" FontSize="11" Classes="muted" />
+                </StackPanel>
+              </StackPanel>
+              <Button.Flyout>
+                <MenuFlyout Placement="BottomEdgeAlignedRight">
+                  <MenuItem Header="Change my password" Command="{Binding ChangeMyPasswordCommand}" />
+                  <MenuItem Header="My Settings" Command="{Binding NavigateCommand}" CommandParameter="mysettings" />
+                  <Separator />
+                  <MenuItem Header="Log out" Command="{Binding LogoutCommand}" />
+                </MenuFlyout>
+              </Button.Flyout>
+            </Button>
+            <Button Classes="link" Content="Log out" Command="{Binding LogoutCommand}" />
           </StackPanel>
         </Grid>
       </Border>
@@ -133,6 +147,28 @@
             <Button Grid.Column="2" Name="PromptCancel" Content="Cancel" Margin="0,0,8,0" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.Cancel}" />
             <Button Grid.Column="3" Name="PromptSave" Classes="primary" Content="Save" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.Save}" />
           </Grid>
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <!-- Yes/No questions and inputs (delete, restore, seal PIN …) -->
+    <Border Name="DialogPanel" Background="#40000000" IsVisible="{Binding PendingDialog, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Border Classes="card" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000">
+        <StackPanel Spacing="14">
+          <TextBlock Text="{Binding PendingDialog.Title, FallbackValue=''}" FontSize="17" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding PendingDialog.Message, FallbackValue=''}" TextWrapping="Wrap" />
+          <StackPanel Spacing="4" IsVisible="{Binding PendingDialog.HasInput, FallbackValue=False}">
+            <TextBlock Classes="label" Text="{Binding PendingDialog.InputLabel, FallbackValue=''}" />
+            <TextBox Name="DialogInput" Text="{Binding PendingDialog.Input, FallbackValue=''}" PasswordChar="{Binding PendingDialog.SecretChar}" MaxLength="40" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,6,0,0">
+            <Button Name="DialogSecondary" Content="{Binding PendingDialog.SecondaryText, FallbackValue=''}" Command="{Binding AnswerDialogCommand}">
+              <Button.CommandParameter><x:Boolean>False</x:Boolean></Button.CommandParameter>
+            </Button>
+            <Button Name="DialogPrimary" Classes="primary" Content="{Binding PendingDialog.PrimaryText, FallbackValue=''}" Command="{Binding AnswerDialogCommand}">
+              <Button.CommandParameter><x:Boolean>True</x:Boolean></Button.CommandParameter>
+            </Button>
+          </StackPanel>
         </StackPanel>
       </Border>
     </Border>

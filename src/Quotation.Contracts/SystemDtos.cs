@@ -6,7 +6,14 @@ public sealed record LoginRequest(string Username, string Password, string? Clie
 
 public sealed record LoginResponse(string Token, DateTime ExpiresUtc, UserDto User);
 
-public sealed record UserDto(int Id, string Username, string DisplayName, UserRole Role, bool IsActive, bool MustChangePassword);
+public sealed record UserDto(int Id, string Username, string DisplayName, UserRole Role, bool IsActive, bool MustChangePassword,
+    bool WithoutGstNext = false);
+
+/// <summary>Administrator's changes to a user (login name, display name, role, active).</summary>
+public sealed record UpdateUserRequest(string Username, string DisplayName, UserRole Role, bool IsActive);
+
+/// <summary>The current user's own switches ("My settings").</summary>
+public sealed record MyPreferencesDto(bool WithoutGstNext);
 
 public sealed record CreateUserRequest(string Username, string DisplayName, string Password, UserRole Role);
 
@@ -55,6 +62,11 @@ public static class ApiErrorCodes
     public const string RatesChanged = "RATES_CHANGED";
     public const string Concurrency = "CONCURRENCY";
     public const string InvalidState = "INVALID_STATE";
+    /// <summary>Too old to be changed by a user who is not an administrator.</summary>
+    public const string Locked = "LOCKED";
+    public const string Forbidden = "FORBIDDEN";
+    public const string WrongPin = "WRONG_PIN";
+    public const string SealBlocked = "SEAL_BLOCKED";
 }
 
 public sealed record RecentItemDto(int Id, string Name);

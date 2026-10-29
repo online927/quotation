@@ -4,7 +4,7 @@ using Quotation.Desktop.Services;
 
 namespace Quotation.Desktop.ViewModels;
 
-public sealed partial class ChangePasswordViewModel(AppSession session, bool forced, Action onDone) : ViewModelBase
+public sealed partial class ChangePasswordViewModel(AppSession session, bool forced, Action onDone) : ViewModelBase, ITitledPage
 {
     [ObservableProperty] private string _currentPassword = "";
     [ObservableProperty] private string _newPassword = "";
@@ -12,6 +12,7 @@ public sealed partial class ChangePasswordViewModel(AppSession session, bool for
 
     public bool Forced { get; } = forced;
     public string Heading => Forced ? "Please set a new password before continuing" : "Change password";
+    public string Title => "Change my password";
 
     [RelayCommand]
     private async Task SaveAsync()

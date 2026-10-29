@@ -51,6 +51,8 @@ public sealed record QuotationDocument
     public PrintStamp? Printed { get; init; }
     public required CompanySettings Company { get; init; }
     public byte[]? Logo { get; init; }
+    /// <summary>Company seal stamped over "Authorised Signatory" on the last page (only on request, with the seal PIN).</summary>
+    public byte[]? Seal { get; init; }
 
     public required string Number { get; init; }
     public required DateOnly Date { get; init; }

@@ -10,8 +10,9 @@ public sealed class FlakyRenderer(PdfQuotationRenderer real) : IQuotationDocumen
 {
     public bool Fail { get; set; } = true;
 
-    public byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null) =>
-        Fail ? throw new IOException("Disk full (simulated)") : real.Render(quotation, company, settings, printed);
+    public byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
+        byte[]? seal = null) =>
+        Fail ? throw new IOException("Disk full (simulated)") : real.Render(quotation, company, settings, printed, seal);
 }
 
 public class PdfFailureTests : QuotationTestBase

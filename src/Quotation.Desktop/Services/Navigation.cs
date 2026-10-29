@@ -1,3 +1,5 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace Quotation.Desktop.Services;
 
 /// <summary>Lets pages open other pages without knowing the shell.</summary>
@@ -8,6 +10,29 @@ public interface INavigator
     void NewQuotation();
     /// <summary>Returns to the previous page (like a browser's back button).</summary>
     void GoBack();
+    /// <summary>Asks a Yes/No question in the app window; true for <paramref name="yes"/>.</summary>
+    Task<bool> ConfirmAsync(string title, string message, string yes = "Yes", string no = "No");
+    /// <summary>Asks for a value (e.g. the 4-digit seal PIN); null when cancelled.</summary>
+    Task<string?> AskAsync(string title, string message, string inputLabel, bool secret = false, string ok = "OK");
+}
+
+/// <summary>A question shown over the app window (Yes/No, or with an input box).</summary>
+public sealed partial class ShellDialog(string title, string message, string primary, string secondary, string? inputLabel = null, bool secret = false)
+    : ObservableObject
+{
+    private readonly TaskCompletionSource<bool> _answer = new();
+
+    public string Title { get; } = title;
+    public string Message { get; } = message;
+    public string PrimaryText { get; } = primary;
+    public string SecondaryText { get; } = secondary;
+    public string? InputLabel { get; } = inputLabel;
+    public bool HasInput => InputLabel is not null;
+    public char SecretChar => secret ? '●' : '\0';
+    [ObservableProperty] private string _input = "";
+
+    public Task<bool> Answer => _answer.Task;
+    public void Choose(bool primaryChosen) => _answer.TrySetResult(primaryChosen);
 }
 
 /// <summary>A page with a title shown in the breadcrumbs and on the Back button.</summary>

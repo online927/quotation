@@ -36,6 +36,7 @@ builder.Services.AddDbContext<QuotationDbContext>(o => o.UseSqlite(DatabaseIniti
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ISecretProtector>(new SecretProtector(dataDir));
 builder.Services.AddSingleton<SettingsService>();
+builder.Services.AddSingleton<SealService>();
 builder.Services.AddSingleton<RuntimeStatus>();
 builder.Services.AddSingleton<FinancialYearService>();
 builder.Services.AddScoped<AuthService>();
@@ -80,7 +81,31 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
     await DatabaseInitializer.InitializeAsync(db);
     await scope.ServiceProvider.GetRequiredService<AuthService>().EnsureBootstrapAdminAsync(CancellationToken.None);
+    await scope.ServiceProvider.GetRequiredService<SettingsService>().ApplyUpgradesAsync(CancellationToken.None);
     await TallySyncService.RecoverInterruptedAsync(db, DateTime.UtcNow, CancellationToken.None);
+
+    // Recovery when no administrator can log in, run on the server PC (Command Prompt as administrator):
+    //   TSQuotation.Server.exe --reset-admin-password NewPassword [--user admin]
+    var reset = Array.IndexOf(args, "--reset-admin-password");
+    if (reset >= 0)
+    {
+        var userIndex = Array.IndexOf(args, "--user");
+        var password = reset + 1 < args.Length ? args[reset + 1] : "";
+        var name = userIndex >= 0 && userIndex + 1 < args.Length ? args[userIndex + 1] : null;
+        try
+        {
+            var done = await scope.ServiceProvider.GetRequiredService<AuthService>().RecoverAdminAsync(password, name, CancellationToken.None);
+            await scope.ServiceProvider.GetRequiredService<AuditService>()
+                .WriteAsync("server-console", Environment.MachineName, "AdminPasswordRecovered", "User", done, ct: CancellationToken.None);
+            Console.WriteLine($"Password of administrator '{done}' changed. Log in with it in the app.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.WriteLine("Not changed: " + ex.Message);
+            Environment.ExitCode = 1;
+        }
+        return;
+    }
 }
 
 app.UseExceptionHandler();

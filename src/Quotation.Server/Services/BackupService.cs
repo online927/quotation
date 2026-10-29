@@ -51,7 +51,8 @@ public sealed class BackupService(IServiceScopeFactory scopes, IOptions<ServerOp
     }
 }
 
-public sealed class BackupWorker(BackupService backups, IOptions<ServerOptions> options, ILogger<BackupWorker> log) : BackgroundService
+public sealed class BackupWorker(BackupService backups, IServiceScopeFactory scopes, IOptions<ServerOptions> options, ILogger<BackupWorker> log)
+    : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -66,6 +67,17 @@ public sealed class BackupWorker(BackupService backups, IOptions<ServerOptions> 
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 log.LogError(ex, "Database backup failed");
+            }
+            try
+            {
+                // Quotations deleted more than 30 days ago leave the Deleted list for good.
+                using var scope = scopes.CreateScope();
+                var purged = await scope.ServiceProvider.GetRequiredService<QuotationService>().PurgeExpiredAsync(stoppingToken);
+                if (purged > 0) log.LogInformation("{Count} deleted quotation(s) removed after 30 days", purged);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                log.LogError(ex, "Removing expired deleted quotations failed");
             }
             try { await Task.Delay(TimeSpan.FromHours(1), stoppingToken); } catch (OperationCanceledException) { return; }
         }

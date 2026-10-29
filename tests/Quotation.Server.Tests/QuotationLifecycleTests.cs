@@ -29,8 +29,11 @@ public class QuotationLifecycleTests : QuotationTestBase
         Assert.Equal("NOS", line.Unit);
         Assert.Equal(15600m, line.TallyRate);
         Assert.Equal(31200m, line.Amount);
-        Assert.Equal(31200m, q.GrandTotal);
-        Assert.Equal("INR Thirty One Thousand Two Hundred Only", q.AmountInWords);
+        Assert.Equal(31200m, q.Subtotal);
+        // GST lines are on by default (as on the Tally print): 9 % SGST + 9 % CGST.
+        Assert.Equal(36816m, q.GrandTotal);
+        Assert.Equal(["CGST", "SGST"], q.Taxes.Select(t => t.Name).Order());
+        Assert.Equal("INR Thirty Six Thousand Eight Hundred Sixteen Only", q.AmountInWords);
         Assert.True(q.ConsigneeSameAsBuyer);
         Assert.Equal(q.Buyer.Name, q.Consignee.Name);
     }
@@ -45,7 +48,8 @@ public class QuotationLifecycleTests : QuotationTestBase
         var q = await Api.CreateQuotationAsync(request);
         Assert.Equal(42750m, q.Lines[0].Amount);
         Assert.Equal(15600m, q.Lines[0].TallyRate);
-        Assert.Equal(43000m, q.GrandTotal);
+        Assert.Equal(43000m, q.Subtotal + q.PackingForwarding);
+        Assert.Equal(50740m, q.GrandTotal); // GST also on packing & forwarding
     }
 
     [Fact]
@@ -149,7 +153,7 @@ public class QuotationLifecycleTests : QuotationTestBase
 
         var updated = await Api.QuotationAsync(q.Id);
         Assert.Equal(16400m, updated.Lines[0].Rate);
-        Assert.Equal(32800m, updated.GrandTotal);
+        Assert.Equal(32800m, updated.Subtotal);
         var approved = await Api.ApproveQuotationAsync(q.Id);
         Assert.Equal(QuotationStatus.Generated, approved.Status);
     }
@@ -195,7 +199,7 @@ public class QuotationLifecycleTests : QuotationTestBase
         Assert.Equal(QuotationStatus.Draft, edited.Status);
         Assert.Null(edited.ApprovedBy);
         Assert.Equal(q.Number, edited.Number);
-        Assert.Equal(62400m, edited.GrandTotal);
+        Assert.Equal(62400m, edited.Subtotal);
     }
 
     [Fact]

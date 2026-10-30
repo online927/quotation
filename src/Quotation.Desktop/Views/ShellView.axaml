@@ -15,7 +15,7 @@
     <DockPanel>
       <!-- Top bar -->
       <Border DockPanel.Dock="Top" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="16,9">
-        <Grid ColumnDefinitions="232,*,Auto">
+        <Grid ColumnDefinitions="246,*,Auto">
           <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
             <Border Width="30" Height="30" CornerRadius="8" Background="{StaticResource AccentBrush}">
               <TextBlock Text="TS" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -85,19 +85,21 @@
       </Border>
 
       <!-- Sidebar -->
-      <Border DockPanel.Dock="Left" Width="248" Background="{StaticResource NavBrush}" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,1,0">
+      <Border DockPanel.Dock="Left" Width="262" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,1,0">
         <ScrollViewer>
           <ItemsControl ItemsSource="{Binding NavItems}" Margin="10,10">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:NavItem">
                 <StackPanel>
-                  <TextBlock Classes="eyebrow" Text="{Binding Section}" IsVisible="{Binding HasSection}" Margin="12,14,0,4" />
+                  <TextBlock Classes="sidehead" Text="{Binding Section}" IsVisible="{Binding HasSection}" Margin="12,14,0,4" />
                   <Button Classes="nav" Classes.selected="{Binding IsSelected}"
                           Command="{Binding $parent[ItemsControl].((vm:ShellViewModel)DataContext).NavigateCommand}"
                           CommandParameter="{Binding Key}">
-                    <Grid ColumnDefinitions="*,Auto" Width="202">
-                      <TextBlock Text="{Binding Title}" FontSize="13" TextTrimming="CharacterEllipsis" Margin="0,0,6,0" />
-                      <TextBlock Grid.Column="1" Text="{Binding Shortcut}" FontSize="10" Foreground="{StaticResource MutedBrush}" FontWeight="Normal" VerticalAlignment="Center" />
+                    <Grid ColumnDefinitions="26,*,Auto" Width="216">
+                      <Path Classes="icon" Data="{Binding Icon}" StrokeThickness="1.6" Width="17" Height="17" Stretch="Uniform"
+                            StrokeLineCap="Round" StrokeJoin="Round" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                      <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13" TextTrimming="CharacterEllipsis" Margin="0,0,6,0" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Classes="shortcut" Text="{Binding Shortcut}" FontSize="10" FontWeight="Normal" VerticalAlignment="Center" />
                     </Grid>
                   </Button>
                 </StackPanel>

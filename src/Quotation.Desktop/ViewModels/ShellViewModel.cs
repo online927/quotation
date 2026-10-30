@@ -9,6 +9,9 @@ namespace Quotation.Desktop.ViewModels;
 
 public sealed partial class NavItem(string key, string title, string shortcut, Func<ViewModelBase> factory, string section = "") : ObservableObject
 {
+    /// <summary>Line icon (24×24 outline) drawn in the app, so it looks the same on every PC.</summary>
+    public Avalonia.Media.Geometry? Icon { get; } = NavIcons.For(key);
+
     /// <summary>Group heading shown above this item in the sidebar (empty: same group as the item before).</summary>
     public string Section { get; } = section;
     public bool HasSection => Section.Length > 0;
@@ -17,6 +20,33 @@ public sealed partial class NavItem(string key, string title, string shortcut, F
     public string Shortcut { get; } = shortcut;
     public Func<ViewModelBase> Factory { get; } = factory;
     [ObservableProperty] private bool _isSelected;
+}
+
+/// <summary>Outline icons of the sidebar (24×24, drawn as lines).</summary>
+public static class NavIcons
+{
+    private static readonly Dictionary<string, string> Paths = new()
+    {
+        ["dashboard"] = "M4,4 H10 V10 H4 Z M14,4 H20 V10 H14 Z M4,14 H10 V20 H4 Z M14,14 H20 V20 H14 Z",
+        ["new"] = "M6,3 H14 L19,8 V21 H6 Z M14,3 V8 H19 M12.5,11 V18 M9,14.5 H16",
+        ["newproforma"] = "M6,3 H18 V21 L15,19 L12,21 L9,19 L6,21 Z M12,8 V14 M9,11 H15",
+        ["inbox"] = "M12,3 L13.8,9.2 L20,11 L13.8,12.8 L12,19 L10.2,12.8 L4,11 L10.2,9.2 Z",
+        ["drafts"] = "M4,20 V16 L15,5 L19,9 L8,20 Z M13,7 L17,11",
+        ["today"] = "M4,6 H20 V20 H4 Z M4,10 H20 M8,3 V7 M16,3 V7",
+        ["history"] = "M12,3 A9,9 0 1 1 11.99,3 Z M12,7 V12 L15,14",
+        ["proforma"] = "M6,3 H18 V21 L15,19 L12,21 L9,19 L6,21 Z M9,8 H15 M9,12 H15 M9,16 H13",
+        ["deleted"] = "M5,7 H19 M10,7 V4 H14 V7 M7,7 L8,20 H16 L17,7 M10,11 V16 M14,11 V16",
+        ["customers"] = "M9,4 A3.5,3.5 0 1 1 8.99,4 Z M3,20 C3,16 6,14 9,14 C12,14 15,16 15,20 M16,4.5 A3,3 0 0 1 16,10.5 M17,14 C19.5,14.5 21,16.5 21,20",
+        ["products"] = "M12,3 L20,7.5 V16.5 L12,21 L4,16.5 V7.5 Z M4,7.5 L12,12 L20,7.5 M12,12 V21",
+        ["tally"] = "M9,15 L15,9 M10,6 L12,4 A4,4 0 0 1 18,10 L16,12 M14,18 L12,20 A4,4 0 0 1 6,14 L8,12",
+        ["gmail"] = "M3,6 H21 V18 H3 Z M3,6 L12,13 L21,6",
+        ["mysettings"] = "M12,4 A4,4 0 1 1 11.99,4 Z M4,21 C4,16.5 7.5,14.5 12,14.5 C16.5,14.5 20,16.5 20,21",
+        ["settings"] = "M4,7 H20 M4,12 H20 M4,17 H20 M9,5 V9 M15,10 V14 M7,15 V19",
+        ["diagnostics"] = "M3,12 H7 L10,5 L14,19 L17,12 H21",
+    };
+
+    public static Avalonia.Media.Geometry? For(string key) =>
+        Paths.TryGetValue(key, out var data) ? Avalonia.Media.StreamGeometry.Parse(data) : null;
 }
 
 /// <summary>A step in the breadcrumb trail; <see cref="StepsBack"/> is 0 for the page shown now.</summary>

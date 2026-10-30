@@ -156,6 +156,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool CanSaveAsPdf => Status != QuotationStatus.Cancelled && (IsFinal || (Lines.Count > 0 && !IsLocked));
     public string PackingLabel => WithoutGst ? "Packing & Forwarding - Without GST ₹" : "Packing & Forwarding ₹";
     public bool IsFinal => Status is QuotationStatus.Approved or QuotationStatus.Generated;
+    public bool IsPendingReview => Status == QuotationStatus.PendingReview;
+    public bool IsCancelled => Status == QuotationStatus.Cancelled;
     public string StatusText => Status switch
     {
         QuotationStatus.PendingReview => "PENDING REVIEW",
@@ -314,6 +316,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(IsEditable));
         OnPropertyChanged(nameof(CanApprove));
         OnPropertyChanged(nameof(IsFinal));
+        OnPropertyChanged(nameof(IsPendingReview));
+        OnPropertyChanged(nameof(IsCancelled));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(CanConvertToProforma));

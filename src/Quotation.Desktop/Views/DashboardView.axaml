@@ -19,7 +19,7 @@
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
           <Button Content="Refresh (F5)" Command="{Binding LoadCommand}" HotKey="F5" />
-          <Button Content="New Proforma Invoice" Command="{Binding GoCommand}" CommandParameter="newproforma" />
+          <Button Classes="proforma" Content="New Proforma Invoice" Command="{Binding GoCommand}" CommandParameter="newproforma" />
           <Button Classes="primary" Content="New Quotation (Ctrl+N)" Command="{Binding GoCommand}" CommandParameter="new" />
         </StackPanel>
       </Grid>
@@ -30,7 +30,7 @@
         <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="today">
           <StackPanel>
             <TextBlock Classes="eyebrow" Text="TODAY'S QUOTATIONS" />
-            <TextBlock Classes="big" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
+            <TextBlock Classes="big" Foreground="{StaticResource AccentBrush}" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
           </StackPanel>
         </Button>
         <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
@@ -42,13 +42,13 @@
         <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
           <StackPanel>
             <TextBlock Classes="eyebrow" Text="PENDING REVIEW" />
-            <TextBlock Classes="big" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
+            <TextBlock Classes="big" Foreground="{StaticResource OrangeBrush}" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
           </StackPanel>
         </Button>
         <Button Classes="tile" Command="{Binding GoCommand}" CommandParameter="inbox">
           <StackPanel>
             <TextBlock Classes="eyebrow" Text="AI INBOX — NEEDS ATTENTION" />
-            <TextBlock Classes="big" Foreground="{StaticResource AccentBrush}" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–'}" />
+            <TextBlock Classes="big" Foreground="{StaticResource PurpleBrush}" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–'}" />
           </StackPanel>
         </Button>
       </UniformGrid>
@@ -91,7 +91,7 @@
         <Button Margin="0,0,8,8" Content="AI Inbox" Command="{Binding GoCommand}" CommandParameter="inbox" />
         <Button Margin="0,0,8,8" Content="Draft Quotations" Command="{Binding GoCommand}" CommandParameter="drafts" />
         <Button Margin="0,0,8,8" Content="Quotation History" Command="{Binding GoCommand}" CommandParameter="history" />
-        <Button Margin="0,0,8,8" Content="Proforma Invoices" Command="{Binding GoCommand}" CommandParameter="proforma" />
+        <Button Classes="proforma" Margin="0,0,8,8" Content="Proforma Invoices" Command="{Binding GoCommand}" CommandParameter="proforma" />
         <Button Margin="0,0,8,8" Content="Tally Connection" Command="{Binding GoCommand}" CommandParameter="tally" />
       </WrapPanel>
     </StackPanel>

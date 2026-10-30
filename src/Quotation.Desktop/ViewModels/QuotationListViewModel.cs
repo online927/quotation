@@ -28,11 +28,17 @@ public sealed class QuotationRow(QuotationSummaryDto s)
     public string Number => Summary.Number ?? "(not numbered)";
     public bool IsProforma => Summary.DocType == DocumentType.ProformaInvoice;
     public string Type => IsProforma ? "Proforma" : "Quotation";
+    public Avalonia.Media.IBrush TypeBrush => IsProforma
+        ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8944AB"))
+        : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#0071E3"));
     public string Date => Summary.Date.ToString("dd-MMM-yyyy");
     public string Customer => Summary.CustomerName;
     public string Item => Summary.LineCount > 1 ? $"{Summary.FirstItem} (+{Summary.LineCount - 1} more)" : Summary.FirstItem;
     public string Total => IndianFormat.Amount(Summary.GrandTotal);
     public string Status => Summary.Status == QuotationStatus.PendingReview ? "Pending review" : Summary.Status.ToString();
+    public bool IsFinal => Summary.Status is QuotationStatus.Approved or QuotationStatus.Generated;
+    public bool IsPending => Summary.Status == QuotationStatus.PendingReview;
+    public bool IsCancelled => Summary.Status == QuotationStatus.Cancelled;
     public string Source => Summary.Source.ToString();
     public string CreatedBy => Summary.CreatedBy;
 }

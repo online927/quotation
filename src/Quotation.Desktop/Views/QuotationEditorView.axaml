@@ -42,7 +42,8 @@
     <!-- Title bar -->
     <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,0,0,8">
       <TextBlock Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
-      <Border Grid.Column="1" Classes="pill" Margin="12,0" VerticalAlignment="Center">
+      <Border Grid.Column="1" Classes="pill" Classes.ok="{Binding IsFinal}" Classes.pending="{Binding IsPendingReview}" Classes.bad="{Binding IsCancelled}"
+              Margin="12,0" VerticalAlignment="Center">
         <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" FontSize="11" />
       </Border>
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
@@ -94,10 +95,10 @@
           <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
         </StackPanel>
         <WrapPanel>
-          <Button Margin="0,0,6,0" Content="Save Draft (Ctrl+S)" Command="{Binding SaveCommand}" IsEnabled="{Binding IsEditable}" />
+          <Button Classes="save" Margin="0,0,6,0" Content="Save Draft (Ctrl+S)" Command="{Binding SaveCommand}" IsEnabled="{Binding IsEditable}" />
           <Button Margin="0,0,6,0" Content="Preview (F11)" Command="{Binding PreviewCommand}" HotKey="F11" />
           <Button Classes="primary" Margin="0,0,6,0" Content="Approve &amp; Generate PDF (Ctrl+Enter)" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}" />
-          <Button Name="SaveAsPdfButton" Margin="0,0,6,0" Content="Save as PDF" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
+          <Button Name="SaveAsPdfButton" Classes="save" Margin="0,0,6,0" Content="Save as PDF" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
                   ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)" />
           <CheckBox Name="SealBox" Margin="0,0,10,0" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
                     IsEnabled="{Binding SealAvailable}" ToolTip.Tip="{Binding SealHint}" ToolTip.ShowOnDisabled="True" />
@@ -105,7 +106,7 @@
           <Button Margin="0,0,6,0" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding IsFinal}" />
           <Button Margin="0,0,6,0" Content="Duplicate (Ctrl+D)" Command="{Binding DuplicateCommand}" IsEnabled="{Binding Id, Converter={x:Static ObjectConverters.IsNotNull}}" />
           <Button Margin="0,0,6,0" Content="New" Command="{Binding NewQuotationCommand}" />
-          <Button Margin="0,0,6,0" Content="Convert to Proforma Invoice" Command="{Binding ConvertToProformaCommand}" IsVisible="{Binding CanConvertToProforma}" />
+          <Button Classes="proforma" Margin="0,0,6,0" Content="Convert to Proforma Invoice" Command="{Binding ConvertToProformaCommand}" IsVisible="{Binding CanConvertToProforma}" />
           <Button Classes="danger" Margin="0,0,6,0" Content="Delete" Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"
                   ToolTip.Tip="Administrator: move to the Deleted list (can be restored for 30 days)" />
           <Button Classes="danger" Margin="0,0,6,0" Content="{Binding DocLabel, StringFormat='Cancel {0}'}" Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}" />
@@ -120,7 +121,7 @@
         <Grid ColumnDefinitions="*,12,*,12,*">
           <Border Classes="card" Padding="14">
             <StackPanel>
-              <TextBlock Classes="h2" Text="Buyer (Bill to)" />
+              <Border Classes="headbar blue"><TextBlock Classes="h2" Text="Buyer (Bill to)" /></Border>
               <TextBlock Classes="fl" Text="Customer (Tally ledger)" />
               <ctl:SearchPicker Name="CustomerBox" Text="{Binding CustomerSearchText}" Search="{Binding CustomerPopulator}"
                                 MaxDropDownHeight="360" MinDropDownWidth="380" Watermark="Type customer name, GSTIN or phone…"
@@ -181,7 +182,7 @@
 
           <Border Grid.Column="2" Classes="card" Padding="14">
             <StackPanel>
-              <TextBlock Classes="h2" Text="Consignee (Ship to)" />
+              <Border Classes="headbar teal"><TextBlock Classes="h2" Text="Consignee (Ship to)" /></Border>
               <TextBlock Classes="fl" Text="Ship to" />
               <ComboBox ItemsSource="{Binding ShipToOptions}" SelectedItem="{Binding SelectedShipTo}" HorizontalAlignment="Stretch">
                 <ComboBox.ItemTemplate>
@@ -216,7 +217,7 @@
 
           <Border Grid.Column="4" Classes="card" Padding="14">
             <Grid ColumnDefinitions="*,6,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-              <TextBlock Classes="h2" Text="References" Grid.ColumnSpan="3" />
+              <Border Classes="headbar purple" Grid.ColumnSpan="3"><TextBlock Classes="h2" Text="References" /></Border>
               <StackPanel Grid.Row="1">
                 <TextBlock Classes="fl" Text="Buyer's Ref./Order No." />
                 <TextBox Name="BuyersRefBox" Text="{Binding BuyersReference}" ctl:TitleCase.Enabled="True" />
@@ -426,6 +427,8 @@
             </StackPanel>
           </Border>
           <Border Grid.Column="2" Classes="card" Padding="14" Grid.Row="0">
+            <StackPanel>
+            <Border Classes="headbar green"><TextBlock Classes="h2" Text="Totals" /></Border>
             <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Text="Subtotal" />
               <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" HorizontalAlignment="Right" />
@@ -446,6 +449,7 @@
               <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding GrandTotalText}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Right" />
               <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Text="{Binding AmountInWords}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
             </Grid>
+            </StackPanel>
           </Border>
         </Grid>
         <Expander Header="History / audit trail" IsVisible="{Binding Id, Converter={x:Static ObjectConverters.IsNotNull}}" HorizontalAlignment="Stretch">

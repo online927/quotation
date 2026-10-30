@@ -354,14 +354,14 @@ public class QuotationEditorTests
 
         Assert.Equal("SONEPAR INDIA PRIVATE LIMITED", box.InputBox.Text); // Tally ledger name
         Assert.False(box.IsDropDownOpen);
-        // As in Tally: the reference comes next, then Enter goes to the items.
-        var reference = view.FindControl<TextBox>("BuyersRefBox")!;
+        // Other references comes next, then Enter goes to the items.
+        var reference = view.FindControl<TextBox>("OtherRefBox")!;
         await UiHelpers.WaitUntil(() => reference.IsKeyboardFocusWithin);
         ctx.Window.KeyTextInput("po/4471");
         Press(ctx, Key.Enter, PhysicalKey.Enter);
         var product = view.FindControl<SearchPicker>("ProductBox")!;
         await UiHelpers.WaitUntil(() => product.InputBox.IsKeyboardFocusWithin);
-        Assert.Equal("Po/4471", editor.BuyersReference); // Title Case while typing
+        Assert.Equal("Po/4471", editor.OtherReferences); // Title Case while typing
     }
 
     [AvaloniaFact]

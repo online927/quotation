@@ -463,3 +463,9 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 12. Company seal on the PDF with a 4-digit PIN (blocked after 5 wrong tries).
 
 **How to test**: `dotnet test --filter "GstAndEditingRulesTests|UsersDnuSealTests|OfficeFeaturesUiTests|TallyPrintLayoutTests"`.
+
+### Round 3 (office feedback)
+
+1. Customer → **Other references** → Enter → items (Buyer's Ref. and the other boxes with Tab or the mouse).
+2. Editor buttons in groups: row 1 Save Draft, Approve & Generate PDF, Save as PDF + Seal, with Cancel and Delete
+   apart on the right; row 2 Preview, Open PDF, Regenerate PDF | New, Duplicate, Convert to Proforma. Shortcut keys in grey.

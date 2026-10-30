@@ -248,7 +248,7 @@ stays as it is; *Other references* says *Our quotation TSQ…*). The PDF follows
 tax summary, tax amount in words, customer's seal and signature). **Proforma Invoices** in the sidebar lists them;
 every list has an *All documents / Quotations / Proforma invoices* filter.
 
-**Keyboard order**: pick the customer (Enter) → **Buyer's Ref./Order No.** → **Enter** → Product → Qty → Rate →
+**Keyboard order**: pick the customer (Enter) → **Other references** → **Enter** → Product → Qty → Rate →
 Disc % → Due on → Description (**Shift+Enter** = new line) → **Enter** adds the line. The other reference boxes are
 reached with Tab or the mouse.
 

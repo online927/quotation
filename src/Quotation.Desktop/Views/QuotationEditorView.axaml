@@ -264,7 +264,7 @@
               </StackPanel>
               <StackPanel Grid.Row="4" Grid.ColumnSpan="3">
                 <TextBlock Classes="fl" Text="Other references" />
-                <TextBox Text="{Binding OtherReferences}" ctl:TitleCase.Enabled="True" />
+                <TextBox Name="OtherRefBox" Text="{Binding OtherReferences}" ctl:TitleCase.Enabled="True" />
               </StackPanel>
               <StackPanel Grid.Row="5" Grid.ColumnSpan="3">
                 <TextBlock Classes="fl" Text="Terms of delivery" />

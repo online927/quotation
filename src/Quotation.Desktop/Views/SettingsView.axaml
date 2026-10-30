@@ -116,15 +116,16 @@
                       <NumericUpDown Value="{Binding SealWidth}" Minimum="30" Maximum="280" Increment="10" FormatString="0" Width="110" />
                       <TextBlock Classes="label" Text="Move right" Margin="8,0,0,0" />
                       <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="110" />
-                      <TextBlock Classes="label" Text="Move down" Margin="8,0,0,0" />
-                      <NumericUpDown Value="{Binding SealOffsetY}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="110" />
+                      <TextBlock Classes="label" Text="Move up" Margin="8,0,0,0" />
+                      <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-200" Maximum="300" Increment="5" FormatString="0" Width="110" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Classes="label" Text="New seal PIN (4 digits)" />
                       <TextBox Text="{Binding NewSealPin}" PasswordChar="●" MaxLength="4" Width="90" Watermark="••••" />
                       <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding SealPinState}" />
                     </StackPanel>
-                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="Size, position and PIN take effect when you press Save (top right)." />
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                               Text="Points (72 = 1 inch). A minus number moves the other way (left / down). 'Preview on a page' shows the numbers above straight away; press Save (top right) to keep them for all PDFs." />
                   </StackPanel>
                 </Grid>
               </StackPanel>

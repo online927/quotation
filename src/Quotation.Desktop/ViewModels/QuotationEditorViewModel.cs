@@ -146,8 +146,13 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool IsEditable => Status != QuotationStatus.Cancelled && !IsLocked;
     public bool CanApprove => Status is QuotationStatus.Draft or QuotationStatus.PendingReview && Lines.Count > 0 && !IsLocked;
     public bool CanDelete => IsAdmin && Id is not null;
-    /// <summary>The seal can be used here: an image is set up and the user may seal (administrator, or allowed for all users).</summary>
-    public bool CanSeal => _settings.SealImageConfigured && (IsAdmin || _settings.Quotation.AllUsersCanSeal);
+    /// <summary>This user may seal PDFs (administrator, or allowed for all users): the Seal tick-box is shown.</summary>
+    public bool CanSeal => IsAdmin || _settings.Quotation.AllUsersCanSeal;
+    /// <summary>A seal image is set up; without it the tick-box is shown greyed out with the reason.</summary>
+    public bool SealAvailable => _settings.SealImageConfigured;
+    public string SealHint => SealAvailable
+        ? "Put the company seal on the PDF (asks for the 4-digit seal PIN)"
+        : "No seal image yet — an administrator adds it in Settings → Company → Company seal";
     public bool CanSaveAsPdf => Status != QuotationStatus.Cancelled && (IsFinal || (Lines.Count > 0 && !IsLocked));
     public string PackingLabel => WithoutGst ? "Packing & Forwarding - Without GST ₹" : "Packing & Forwarding ₹";
     public bool IsFinal => Status is QuotationStatus.Approved or QuotationStatus.Generated;
@@ -181,10 +186,13 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         await RunAsync(async () =>
         {
-            _settings = await _session.GetSettingsAsync();
+            // Always the current settings: an administrator may have changed them (e.g. added the seal) on another PC.
+            _settings = await _session.GetSettingsAsync(refresh: true);
             Controls.TitleCase.IsOn = _settings.Quotation.TitleCase;
             OnPropertyChanged(nameof(ShowsTaxes));
             OnPropertyChanged(nameof(CanSeal));
+            OnPropertyChanged(nameof(SealAvailable));
+            OnPropertyChanged(nameof(SealHint));
             if (id is { } existing)
             {
                 Load(await _session.Api.QuotationAsync(existing));
@@ -759,7 +767,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         if (Id is null) return;
         string? pin = null;
-        if (SealPdf && CanSeal)
+        if (SealPdf && CanSeal && SealAvailable)
         {
             pin = await _navigator.AskAsync("Company seal", $"Enter the 4-digit seal PIN to seal {Number}.", "Seal PIN", secret: true, ok: "Seal & Save");
             if (pin is null) return;

@@ -801,10 +801,12 @@ public sealed class QuotationPdfRenderer
         using var img = XImage.FromStream(ms);
         var width = Math.Clamp(doc.Company.SealWidth, 30, boxWidth);
         var height = width * img.PointHeight / img.PointWidth;
-        var centreX = boxLeft + boxWidth * 0.62 + doc.Company.SealOffsetX;
-        var centreY = boxTop + SignatureHeight - 6 + doc.Company.SealOffsetY;
-        var x = Math.Clamp(centreX - width / 2, boxLeft, PageWidth - width);
-        var y = Math.Clamp(centreY - height / 2, 0, PageHeight - height);
+        // The standard place is fitted on the page first; the adjustment from Settings is then added in full, so every
+        // point of "Move up / Move right" moves the seal (a tall seal no longer swallows the first points).
+        var baseX = Math.Clamp(boxLeft + boxWidth * 0.62 - width / 2, boxLeft, PageWidth - width);
+        var baseY = Math.Clamp(boxTop + SignatureHeight - 6 - height / 2, 0, PageHeight - height);
+        var x = Math.Clamp(baseX + doc.Company.SealOffsetX, 0, PageWidth - width);
+        var y = Math.Clamp(baseY + doc.Company.SealOffsetY, 0, PageHeight - height);
         g.DrawImage(img, x, y, width, height);
     }
 

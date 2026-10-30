@@ -174,9 +174,15 @@ public static class SystemEndpoints
             await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "SealImageChanged", "Settings", "seal", ct: ct);
             return Results.NoContent();
         }).RequireAuthorization(AdminPolicy);
-        // A sample page with the seal at its current size and position (to adjust it in Settings).
-        app.MapGet("/api/settings/seal/preview", (SealService seal, SettingsService s, PdfQuotationRenderer pdf, HttpContext ctx, TimeProvider clock) =>
+        // A sample page with the seal. Size and position can be given (the values on the Settings screen, not saved yet),
+        // otherwise the saved ones are used.
+        app.MapGet("/api/settings/seal/preview", (double? width, double? offsetX, double? offsetY, SealService seal, SettingsService s,
+            PdfQuotationRenderer pdf, HttpContext ctx, TimeProvider clock) =>
         {
+            var company = s.Company;
+            if (width is { } w) company.SealWidth = w;
+            if (offsetX is { } x) company.SealOffsetX = x;
+            if (offsetY is { } y) company.SealOffsetY = y;
             if (seal.ReadImage() is not { } image) return Results.NotFound(new ApiError("No seal image yet."));
             var sample = new QuotationHeader
             {
@@ -189,7 +195,7 @@ public static class SystemEndpoints
                 Status = QuotationStatus.Draft,
                 Lines = [new QuotationLine { LineNo = 1, ItemName = "Sample Item", Hsn = "82051000", GstRate = 18, Quantity = 1, Unit = "NOS", Rate = 1000, Amount = 1000 }],
             };
-            var bytes = pdf.Render(sample, s.Company, s.Quotation,
+            var bytes = pdf.Render(sample, company, s.Quotation,
                 new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName()), image);
             return Results.File(bytes, "application/pdf");
         }).RequireAuthorization(AdminPolicy);

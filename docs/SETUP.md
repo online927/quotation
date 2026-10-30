@@ -260,7 +260,8 @@ checks), then the PDF is saved straight into your folder as *Number Customer.pdf
 **Company seal**: tick **Seal** next to *Save as PDF* and enter the 4-digit seal PIN; the seal is printed over
 *for T.SAIFUDDIN & CO. / Authorised Signatory* on the last page. Set up once by an administrator in
 **Settings → Company → Company seal**: choose the image (PNG with transparent background looks best), adjust width
-and position with **Preview on a page**, set the **seal PIN** (any 4 digits) and press **Save**. Five wrong PINs
+and position (**Width**, **Move right**, **Move up**; a minus number moves left/down) with **Preview on a page**, which shows
+the numbers on screen before saving,, set the **seal PIN** (any 4 digits) and press **Save**. Five wrong PINs
 block the seal for that user for 15 minutes. Every sealed PDF is recorded in the history.
 
 **Without GST** (e.g. for SEZ customers): **My Settings → Without GST (next quotation only)**. Your next quotation

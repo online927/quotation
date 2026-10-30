@@ -92,7 +92,12 @@ public partial class QuotationApiClient
 
     public Task UploadSealAsync(byte[] image, CancellationToken ct = default) => SendAsync(HttpMethod.Put, "api/settings/seal", image, ct);
     public Task<byte[]> SealImageAsync(CancellationToken ct = default) => GetBytesAsync("api/settings/seal", ct);
-    public Task<byte[]> SealPreviewAsync(CancellationToken ct = default) => GetBytesAsync("api/settings/seal/preview", ct);
+    /// <summary>A sample page with the seal; size/position as given (unsaved values) or else as saved.</summary>
+    public Task<byte[]> SealPreviewAsync(double? width = null, double? offsetX = null, double? offsetY = null, CancellationToken ct = default) =>
+        GetBytesAsync("api/settings/seal/preview?x=1" +
+                      Q("width", width?.ToString(System.Globalization.CultureInfo.InvariantCulture)) +
+                      Q("offsetX", offsetX?.ToString(System.Globalization.CultureInfo.InvariantCulture)) +
+                      Q("offsetY", offsetY?.ToString(System.Globalization.CultureInfo.InvariantCulture)), ct);
     public Task RemoveSealAsync(CancellationToken ct = default) => SendAsync(HttpMethod.Delete, "api/settings/seal", null, ct);
 
     public Task<DashboardDto> DashboardAsync(CancellationToken ct = default) => GetAsync<DashboardDto>("api/dashboard", ct);

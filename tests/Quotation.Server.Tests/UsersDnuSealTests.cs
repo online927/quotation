@@ -128,6 +128,20 @@ public class UsersDnuSealTests : QuotationTestBase
         Assert.Contains(await Api.AuditAsync("Quotation", q.Id.ToString()), a => a.Action == "PdfSealed");
         Assert.NotEmpty(await Api.SealPreviewAsync());
 
+        // Moving the seal up (a negative downward offset) lifts it on the page, before and after saving.
+        static double SealBottom(byte[] pdf)
+        {
+            using var doc = UglyToad.PdfPig.PdfDocument.Open(pdf);
+            return doc.GetPage(doc.NumberOfPages).GetImages().Single().Bounds.Bottom; // PDF y grows upwards
+        }
+        var standard = SealBottom(await Api.SealPreviewAsync());
+        var raised = SealBottom(await Api.SealPreviewAsync(offsetY: -60));
+        Assert.InRange(raised - standard, 55, 65);
+        settings = await Api.SettingsAsync();
+        settings.Company.SealOffsetY = -60;
+        await Api.SaveSettingsAsync(settings);
+        Assert.InRange(SealBottom(await Api.SealedPdfAsync(q.Id, "1111")) - SealBottom(sealedPdf), 55, 65);
+
         // Users only when allowed, and five wrong PINs block the seal for that user.
         var user = Server.CreateApi("USER-PC");
         await Api.CreateUserAsync(new CreateUserRequest("ravi", "Ravi", "ravi-pass", UserRole.User));

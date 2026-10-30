@@ -100,7 +100,7 @@
           <Button Name="SaveAsPdfButton" Margin="0,0,6,0" Content="Save as PDF" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
                   ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)" />
           <CheckBox Name="SealBox" Margin="0,0,10,0" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
-                    ToolTip.Tip="Put the company seal on the PDF (asks for the 4-digit seal PIN)" />
+                    IsEnabled="{Binding SealAvailable}" ToolTip.Tip="{Binding SealHint}" ToolTip.ShowOnDisabled="True" />
           <Button Margin="0,0,6,0" Content="Open PDF (Ctrl+P)" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" />
           <Button Margin="0,0,6,0" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding IsFinal}" />
           <Button Margin="0,0,6,0" Content="Duplicate (Ctrl+D)" Command="{Binding DuplicateCommand}" IsEnabled="{Binding Id, Converter={x:Static ObjectConverters.IsNotNull}}" />

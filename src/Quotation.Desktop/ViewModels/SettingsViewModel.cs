@@ -42,7 +42,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _sealImage;
     [ObservableProperty] private decimal? _sealWidth;
     [ObservableProperty] private decimal? _sealOffsetX;
-    [ObservableProperty] private decimal? _sealOffsetY;
+    /// <summary>Points the seal is moved up (negative = down); stored as the downward offset.</summary>
+    [ObservableProperty] private decimal? _sealMoveUp;
     [ObservableProperty] private string _hiddenMarkers = "";
     public bool HasSealImage => SealImage is not null;
     public string SealPinState => Settings?.SealPinConfigured == true ? "A seal PIN is set." : "No seal PIN yet.";
@@ -93,7 +94,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         HiddenMarkers = string.Join(Environment.NewLine, s.Tally.HiddenProductMarkers);
         SealWidth = (decimal)s.Company.SealWidth;
         SealOffsetX = (decimal)s.Company.SealOffsetX;
-        SealOffsetY = (decimal)s.Company.SealOffsetY;
+        SealMoveUp = -(decimal)s.Company.SealOffsetY;
         FyOverride = s.Tally.ActiveFinancialYearOverride?.ToString() ?? "";
         Settings = s;
         OnPropertyChanged(nameof(ExampleNumber));
@@ -148,7 +149,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Settings.Tally.HiddenProductMarkers = SplitLines(HiddenMarkers);
         Settings.Company.SealWidth = (double)(SealWidth ?? 150);
         Settings.Company.SealOffsetX = (double)(SealOffsetX ?? 0);
-        Settings.Company.SealOffsetY = (double)(SealOffsetY ?? 0);
+        Settings.Company.SealOffsetY = -(double)(SealMoveUp ?? 0);
         var pin = NewSealPin.Trim();
         if (pin.Length > 0 && (pin.Length != 4 || !pin.All(char.IsAsciiDigit)))
         {
@@ -306,11 +307,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
         InfoMessage = "Seal image removed.";
     });
 
-    /// <summary>Opens a sample page with the seal at the saved size and position.</summary>
+    /// <summary>Opens a sample page with the seal at the size and position shown on screen (also before saving).</summary>
     [RelayCommand]
     private Task PreviewSealAsync() => RunAsync(async () =>
     {
-        var bytes = await _session.Api.SealPreviewAsync();
+        // The values on screen, so each change can be checked before pressing Save.
+        var bytes = await _session.Api.SealPreviewAsync((double)(SealWidth ?? 150), (double)(SealOffsetX ?? 0), -(double)(SealMoveUp ?? 0));
         _session.Documents.SaveAndOpen(bytes, "Seal-preview.pdf");
     });
 

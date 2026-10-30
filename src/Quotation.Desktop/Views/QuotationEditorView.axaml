@@ -94,23 +94,47 @@
           <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
           <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
         </StackPanel>
-        <WrapPanel>
-          <Button Classes="save" Margin="0,0,6,0" Content="Save Draft (Ctrl+S)" Command="{Binding SaveCommand}" IsEnabled="{Binding IsEditable}" />
-          <Button Margin="0,0,6,0" Content="Preview (F11)" Command="{Binding PreviewCommand}" HotKey="F11" />
-          <Button Classes="primary" Margin="0,0,6,0" Content="Approve &amp; Generate PDF (Ctrl+Enter)" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}" />
-          <Button Name="SaveAsPdfButton" Classes="save" Margin="0,0,6,0" Content="Save as PDF" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
-                  ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)" />
-          <CheckBox Name="SealBox" Margin="0,0,10,0" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
-                    IsEnabled="{Binding SealAvailable}" ToolTip.Tip="{Binding SealHint}" ToolTip.ShowOnDisabled="True" />
-          <Button Margin="0,0,6,0" Content="Open PDF (Ctrl+P)" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" />
-          <Button Margin="0,0,6,0" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding IsFinal}" />
-          <Button Margin="0,0,6,0" Content="Duplicate (Ctrl+D)" Command="{Binding DuplicateCommand}" IsEnabled="{Binding Id, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          <Button Margin="0,0,6,0" Content="New" Command="{Binding NewQuotationCommand}" />
-          <Button Classes="proforma" Margin="0,0,6,0" Content="Convert to Proforma Invoice" Command="{Binding ConvertToProformaCommand}" IsVisible="{Binding CanConvertToProforma}" />
-          <Button Classes="danger" Margin="0,0,6,0" Content="Delete" Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"
-                  ToolTip.Tip="Administrator: move to the Deleted list (can be restored for 30 days)" />
-          <Button Classes="danger" Margin="0,0,6,0" Content="{Binding DocLabel, StringFormat='Cancel {0}'}" Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}" />
-          <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0" Text="Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{StaticResource WarnBrush}" />
+        <!-- Row 1: save & approve, with Cancel and Delete apart on the right. Row 2: PDF | document. -->
+        <Grid ColumnDefinitions="*,Auto" Margin="0,2,0,0">
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <Button Classes="save" Command="{Binding SaveCommand}" IsEnabled="{Binding IsEditable}">
+              <StackPanel Orientation="Horizontal"><TextBlock Text="Save Draft" /><TextBlock Classes="key" Text="Ctrl+S" /></StackPanel>
+            </Button>
+            <Button Classes="primary" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}">
+              <StackPanel Orientation="Horizontal"><TextBlock Text="Approve &amp; Generate PDF" /><TextBlock Classes="key" Text="Ctrl+Enter" /></StackPanel>
+            </Button>
+            <Button Name="SaveAsPdfButton" Classes="save" Content="Save as PDF" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
+                    ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)" />
+            <CheckBox Name="SealBox" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
+                      IsEnabled="{Binding SealAvailable}" ToolTip.Tip="{Binding SealHint}" ToolTip.ShowOnDisabled="True" />
+            <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{StaticResource WarnBrush}" />
+          </WrapPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Margin="16,0,0,0">
+            <Button Classes="danger" Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}">
+              <TextBlock Text="{Binding DocLabel, StringFormat='Cancel {0}'}" />
+            </Button>
+            <Button Classes="danger" Content="Delete" Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"
+                    ToolTip.Tip="Administrator: move to the Deleted list (can be restored for 30 days)" />
+          </StackPanel>
+        </Grid>
+        <WrapPanel ItemSpacing="8" LineSpacing="8">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding PreviewCommand}" HotKey="F11">
+              <StackPanel Orientation="Horizontal"><TextBlock Text="Preview" /><TextBlock Classes="key" Text="F11" /></StackPanel>
+            </Button>
+            <Button Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}">
+              <StackPanel Orientation="Horizontal"><TextBlock Text="Open PDF" /><TextBlock Classes="key" Text="Ctrl+P" /></StackPanel>
+            </Button>
+            <Button Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding IsFinal}" />
+          </StackPanel>
+          <Border Classes="groupline" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="New" Command="{Binding NewQuotationCommand}" />
+            <Button Command="{Binding DuplicateCommand}" IsEnabled="{Binding Id, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <StackPanel Orientation="Horizontal"><TextBlock Text="Duplicate" /><TextBlock Classes="key" Text="Ctrl+D" /></StackPanel>
+            </Button>
+            <Button Classes="proforma" Content="Convert to Proforma Invoice" Command="{Binding ConvertToProformaCommand}" IsVisible="{Binding CanConvertToProforma}" />
+          </StackPanel>
         </WrapPanel>
       </StackPanel>
     </Border>

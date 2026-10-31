@@ -332,13 +332,13 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _session.Documents.SaveAndOpen(bytes, "Seal-preview.pdf");
     });
 
-    /// <summary>Opens the latest quotation printed with the Party Details options on screen (also before saving).</summary>
+    /// <summary>Opens the latest quotation printed with the heading and Party Details on screen (also before saving).</summary>
     [RelayCommand]
-    private Task PreviewPartyPrintAsync() => RunAsync(async () =>
+    private Task PreviewPrintAsync() => RunAsync(async () =>
     {
         if (Settings is null) return;
-        var bytes = await _session.Api.PartyPrintPreviewAsync(Settings.Quotation.PartyPrint);
-        _session.Documents.SaveAndOpen(bytes, "Party-details-preview.pdf");
+        var bytes = await _session.Api.PrintPreviewAsync(Settings.Quotation);
+        _session.Documents.SaveAndOpen(bytes, "Print-preview.pdf");
     });
 
     private static List<string> SplitLines(string text) =>

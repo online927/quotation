@@ -76,6 +76,34 @@ public class PartyPrintTests : QuotationTestBase
     }
 
     [Fact]
+    public async Task Pdf_headings_are_set_in_settings()
+    {
+        var settings = await Api.SettingsAsync();
+        settings.Quotation.QuotationHeading = "PRICE OFFER";
+        settings.Quotation.ProformaHeading = "  ";
+        await Api.SaveSettingsAsync(settings);
+
+        var q = await Api.CreateQuotationAsync(await BevelRequest());
+        await Api.ApproveQuotationAsync(q.Id, overrideStaleData: true);
+        Assert.Contains("PRICE OFFER", GstAndEditingRulesTests.PdfText(await Api.QuotationPdfAsync(q.Id)));
+        var pi = await Api.ConvertToProformaAsync(q.Id);
+        await Api.ApproveQuotationAsync(pi.Id, overrideStaleData: true);
+        var text = GstAndEditingRulesTests.PdfText(await Api.QuotationPdfAsync(pi.Id));
+        Assert.Contains("PROFORMA INVOICE", text); // empty = the standard heading
+        Assert.DoesNotContain("PRICE OFFER", text);
+
+        var preview = GstAndEditingRulesTests.PdfText(await Api.PrintPreviewAsync(new QuotationSettings { QuotationHeading = "Quotation Cum Offer" }));
+        Assert.Contains("Quotation Cum Offer", preview); // as typed, before saving
+    }
+
+    [Fact]
+    public void Half_width_address_is_passed_to_the_pdf()
+    {
+        Assert.False(PdfQuotationRenderer.ToParty(Typed, new PartyPrintSettings(), Ledger).AddressHalfWidth);
+        Assert.True(PdfQuotationRenderer.ToParty(Typed, new PartyPrintSettings { AddressHalfWidth = true }, Ledger).AddressHalfWidth);
+    }
+
+    [Fact]
     public async Task Saved_options_are_used_on_the_pdf_and_the_preview()
     {
         var settings = await Api.SettingsAsync();
@@ -93,7 +121,7 @@ public class PartyPrintTests : QuotationTestBase
         Assert.DoesNotContain("Consignee", text);
 
         // The preview uses the options on screen, before they are saved.
-        var preview = GstAndEditingRulesTests.PdfText(await Api.PartyPrintPreviewAsync(new PartyPrintSettings { ShowContactPerson = true }));
+        var preview = GstAndEditingRulesTests.PdfText(await Api.PrintPreviewAsync(new QuotationSettings { PartyPrint = new PartyPrintSettings { ShowContactPerson = true } }));
         Assert.Contains("Rahul", preview);
         Assert.Contains("Consignee", preview);
         Assert.DoesNotContain("PAN/IT No", preview);

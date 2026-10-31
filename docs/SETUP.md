@@ -156,6 +156,8 @@ conditions (one per line), default payment terms and footer.
   capital, as in Tally. Capitals you type stay, words starting with a number (`150mm`) stay as typed, and you can
   correct a letter afterwards. Not used for e-mail, GSTIN, phone or the search boxes.
 * **Company seal → All users can use the seal**: off = administrators only.
+* **Heading on quotation PDF** / **Heading on proforma invoice PDF**: the title at the top of the PDF (default
+  QUOTATION / PROFORMA INVOICE), printed exactly as typed; empty = the standard heading. **Preview PDF** next to it.
 * The **quotation date** can be changed by administrators only. For users it is the day the quotation is first saved
   (it stays the same when they edit or approve it later); Duplicate and Convert to Proforma take today's date.
 
@@ -163,7 +165,8 @@ conditions (one per line), default payment terms and footer.
 *Party Details* — Show Contact details (Contact = phone, and E-Mail), Show contact person's name, Name and Address
 from Party master, Address in a continuous line, Display name for Parties (Name Only / Alias Only / Name (Alias) /
 Alias (Name)), GSTIN, PAN / Income Tax No., State Name & Code, Consignee details and PIN code (joined to the last
-address line: *Bangalore - 562111*). The defaults are the office's Tally settings. **Preview PDF** prints the latest
+address line: *Bangalore - 562111*) and **Address width** (half the box: the address wraps in the left half, the
+other lines keep the full width). The defaults are the office's Tally settings. **Preview PDF** prints the latest
 quotation with the options on screen before saving. Labels and colons line up as on the Tally print, and a long address
 line prints in a slightly smaller font to stay on one line. Existing PDFs change only when regenerated.
 * **Proforma invoice number pattern**: default `TSPI{FY}-{SEQ}` → `TSPI2526-13`, a series of its own. Under

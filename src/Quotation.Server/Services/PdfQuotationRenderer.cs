@@ -67,7 +67,7 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
 
         return new QuotationDocument
         {
-            Title = q.DocType == DocumentType.ProformaInvoice ? "PROFORMA INVOICE" : "QUOTATION",
+            Title = Heading(q.DocType, settings),
             Kind = q.DocType,
             Printed = printed,
             DeliveryNote = q.DeliveryNote,
@@ -213,8 +213,14 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             contact && o.ShowContactPerson ? p.ContactPerson : "",
             contact ? p.Phone : "",
             contact ? p.Email : "",
-            o.ShowPan ? master?.Pan ?? "" : "");
+            o.ShowPan ? master?.Pan ?? "" : "",
+            o.AddressHalfWidth);
     }
+
+    /// <summary>The heading set in Settings → Quotation (the standard one when left empty).</summary>
+    internal static string Heading(DocumentType type, QuotationSettings settings) => type == DocumentType.ProformaInvoice
+        ? (string.IsNullOrWhiteSpace(settings.ProformaHeading) ? QuotationSettings.DefaultProformaHeading : settings.ProformaHeading.Trim())
+        : (string.IsNullOrWhiteSpace(settings.QuotationHeading) ? QuotationSettings.DefaultQuotationHeading : settings.QuotationHeading.Trim());
 
     private static List<string> SplitLines(string? s) =>
         string.IsNullOrWhiteSpace(s) ? [] : s.Replace("\r", "").Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();

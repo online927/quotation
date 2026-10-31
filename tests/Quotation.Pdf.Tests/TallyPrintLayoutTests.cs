@@ -163,6 +163,22 @@ public class TallyPrintLayoutTests
     }
 
     [Fact]
+    public void Half_width_address_wraps_in_the_left_half_of_the_box()
+    {
+        var party = Gutslane with { AddressLines = [string.Join(", ", Gutslane.AddressLines)], AddressHalfWidth = true };
+        using var p = PdfDocument.Open(Renderer.Render(WithBuyer(party, null)));
+        var all = p.GetPage(1).GetWords().ToList();
+        var buyer = all.First(w => w.Text == "Buyer").BoundingBox;
+        var gstin = all.Last(w => w.Text == "GSTIN/UIN").BoundingBox.Top;
+        var page = p.GetPage(1).Width;
+        var address = all.Where(w => w.BoundingBox.Bottom < buyer.Bottom && w.BoundingBox.Bottom > gstin && w.BoundingBox.Left < page / 2
+            && w.Text != "GUTSLANE" && w.Text != "PRECITECH").ToList(); // the buyer box, not the reference grid on the right
+        Assert.True(address.Select(w => Math.Round(w.BoundingBox.Bottom)).Distinct().Count() >= 4); // wrapped onto several lines
+        Assert.All(address, w => Assert.True(w.BoundingBox.Right < page / 4 + 40, $"{w.Text} at {w.BoundingBox.Right}"));
+        Assert.Contains(all, w => w.Text == "girishbabu@gutslane.com"); // the other lines keep the full width
+    }
+
+    [Fact]
     public void Round_off_down_is_printed_as_less()
     {
         var doc = SampleDocuments.Build([SampleDocuments.Bevel()]) with

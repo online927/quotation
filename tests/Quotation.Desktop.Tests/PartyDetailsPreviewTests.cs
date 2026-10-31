@@ -40,7 +40,12 @@ public class PartyDetailsPreviewTests
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame()?.Save(Path.Combine(dir, "settings-party-details.png"));
         await File.WriteAllBytesAsync(Path.Combine(dir, "party-details-default.pdf"),
-            await session.Api.PartyPrintPreviewAsync(new PartyPrintSettings()));
+            await session.Api.PrintPreviewAsync(new QuotationSettings()));
+        await File.WriteAllBytesAsync(Path.Combine(dir, "heading-and-half-width.pdf"), await session.Api.PrintPreviewAsync(new QuotationSettings
+        {
+            QuotationHeading = "PRICE QUOTATION",
+            PartyPrint = new PartyPrintSettings { AddressInContinuousLine = true, AddressHalfWidth = true },
+        }));
         shell.Dispose();
         window.Close();
     }

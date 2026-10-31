@@ -476,3 +476,5 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    PIN code, with Preview PDF. Party blocks print as Tally: aligned labels, "Contact" = phone, PIN joined to the
    address ("Bangalore - 562111"), long lines shrunk to one line, consignee with contact details too.
 5. Only administrators change the quotation date; for users it is the day of first saving (server-enforced).
+6. Settings → Quotation: own headings for the quotation and proforma invoice PDFs (empty = standard).
+7. Settings → Party Details → Address width: half the box (the address wraps in the left half).

@@ -137,7 +137,7 @@
       <TabItem Header="Quotation">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="Quotation number pattern" />
             <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
               <TextBox Text="{Binding Settings.Quotation.NumberPattern}" />
@@ -178,6 +178,16 @@
             <TextBlock Grid.Row="18" Text="Company seal" />
             <CheckBox Grid.Row="18" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllUsersCanSeal}"
                       Content="All users can use the seal (with the seal PIN); otherwise administrators only" />
+            <TextBlock Grid.Row="19" Text="Heading on quotation PDF" />
+            <StackPanel Grid.Row="19" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
+              <TextBox Text="{Binding Settings.Quotation.QuotationHeading}" Watermark="QUOTATION" Width="300" />
+              <Button Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
+            </StackPanel>
+            <TextBlock Grid.Row="20" Text="Heading on proforma invoice PDF" />
+            <StackPanel Grid.Row="20" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
+              <TextBox Text="{Binding Settings.Quotation.ProformaHeading}" Watermark="PROFORMA INVOICE" Width="300" />
+              <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="Printed exactly as typed; empty = the standard heading." />
+            </StackPanel>
             <TextBlock Grid.Row="13" Text="Proforma invoice number pattern" />
             <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding Settings.Quotation.ProformaNumberPattern}" Watermark="TSPI{FY}-{SEQ}" />
             <TextBlock Grid.Row="14" Text="First proforma number of a new year" />
@@ -213,7 +223,7 @@
           <StackPanel Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" Spacing="8">
             <TextBlock Classes="muted" TextWrapping="Wrap"
                        Text="How Buyer (Bill to) and Consignee (Ship to) are printed on every PDF, like Tally's print configuration &#x2018;Party Details&#x2019;. PDFs already made change only when they are regenerated." />
-            <Grid Classes="form" ColumnDefinitions="320,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <Grid Classes="form" ColumnDefinitions="320,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Text="Show Contact details" />
               <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" Content="Contact (phone) and E-Mail" />
               <TextBlock Grid.Row="1" Text="     Show contact person's name" />
@@ -236,9 +246,12 @@
               <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowConsignee}" Content="Consignee (Ship to) block" />
               <TextBlock Grid.Row="9" Text="Show PIN code" />
               <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPinCode}" Content="At the end of the address: Bangalore - 562111" />
+              <TextBlock Grid.Row="10" Text="Address width" />
+              <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.AddressHalfWidth}"
+                        Content="Half the width of the box (the address wraps; name, GSTIN, state and contact use the full width)" />
             </Grid>
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Content="Preview PDF" Command="{Binding PreviewPartyPrintCommand}" IsEnabled="{Binding IsAdmin}" />
+              <Button Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
               <TextBlock Classes="muted" VerticalAlignment="Center" Text="Latest quotation with these options (also before Save)" />
             </StackPanel>
           </StackPanel>

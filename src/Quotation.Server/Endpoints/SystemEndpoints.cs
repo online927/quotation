@@ -199,13 +199,13 @@ public static class SystemEndpoints
                 new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName()), image);
             return Results.File(bytes, "application/pdf");
         }).RequireAuthorization(AdminPolicy);
-        // The latest quotation with a Tally customer (or a sample) printed with the Party Details options on the Settings
-        // screen (not saved yet). Nothing is saved.
-        app.MapPost("/api/settings/party/preview", async (PartyPrintSettings options, SettingsService s, QuotationDbContext db,
+        // The latest quotation (not proforma) with a Tally customer (or a sample) printed with the quotation settings on the Settings screen
+        // (heading, Party Details; not saved yet). Nothing is saved.
+        app.MapPost("/api/settings/print/preview", async (QuotationSettings options, SettingsService s, QuotationDbContext db,
             QuotationService quotations, PdfQuotationRenderer pdf, HttpContext ctx, TimeProvider clock, CancellationToken ct) =>
         {
             var q = await db.Quotations.AsNoTracking().Include(x => x.Lines)
-                .Where(x => x.CustomerId != null)
+                .Where(x => x.CustomerId != null && x.DocType == DocumentType.Quotation)
                 .OrderByDescending(x => x.CreatedUtc)
                 .FirstOrDefaultAsync(ct) ?? new QuotationHeader
                 {
@@ -221,9 +221,7 @@ public static class SystemEndpoints
                     RoundOffTotal = s.Quotation.RoundOffTotal,
                     Lines = [new QuotationLine { LineNo = 1, ItemName = "Sample Item", Hsn = "82051000", GstRate = 18, Quantity = 1, Unit = "NOS", Rate = 1000, Amount = 1000 }],
                 };
-            var settings = s.Quotation;
-            settings.PartyPrint = options;
-            var bytes = pdf.RenderPreview(q, s.Company, settings, q.Number ?? "PREVIEW",
+            var bytes = pdf.RenderPreview(q, s.Company, options, q.Number ?? "PREVIEW",
                 new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName()), quotations.MasterOf(q));
             return Results.File(bytes, "application/pdf");
         }).RequireAuthorization(AdminPolicy);

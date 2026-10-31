@@ -299,7 +299,11 @@ public sealed class QuotationPdfRenderer
     {
         var lines = new List<PartyLine> { new(caption, _label) };
         foreach (var l in Wrap(g, p.Name, _bold, width)) lines.Add(new(l, _bold));
-        foreach (var a in p.AddressLines) lines.AddRange(FitOrWrap(g, a, width));
+        // In half width the address wraps at the normal size (shrinking it that far would be too small to read).
+        foreach (var a in p.AddressLines)
+        {
+            lines.AddRange(p.AddressHalfWidth ? Wrap(g, a, _text, width / 2).Select(l => new PartyLine(l, _text)) : FitOrWrap(g, a, width));
+        }
 
         var fields = new List<(string Label, string Value)>();
         if (!string.IsNullOrWhiteSpace(p.Gstin)) fields.Add(("GSTIN/UIN", p.Gstin));

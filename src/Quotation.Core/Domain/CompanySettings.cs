@@ -99,6 +99,13 @@ public sealed class QuotationSettings
 
     public string CurrencyWordsPrefix { get; set; } = "INR";
 
+    /// <summary>Heading printed at the top of a quotation PDF (as typed).</summary>
+    public string QuotationHeading { get; set; } = DefaultQuotationHeading;
+    /// <summary>Heading printed at the top of a proforma invoice PDF (as typed).</summary>
+    public string ProformaHeading { get; set; } = DefaultProformaHeading;
+    public const string DefaultQuotationHeading = "QUOTATION";
+    public const string DefaultProformaHeading = "PROFORMA INVOICE";
+
     /// <summary>How the buyer and consignee are printed (like Tally's "Party Details" print options).</summary>
     public PartyPrintSettings PartyPrint { get; set; } = new();
 }
@@ -138,4 +145,6 @@ public sealed class PartyPrintSettings
     public bool ShowConsignee { get; set; } = true;
     /// <summary>PIN code at the end of the address ("Bangalore - 562111").</summary>
     public bool ShowPinCode { get; set; } = true;
+    /// <summary>The address wraps within half the width of the box (name, GSTIN, state and contact keep the full width).</summary>
+    public bool AddressHalfWidth { get; set; }
 }

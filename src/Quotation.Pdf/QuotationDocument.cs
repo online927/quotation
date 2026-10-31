@@ -12,7 +12,8 @@ public sealed record PdfParty(
     string ContactPerson = "",
     string Phone = "",
     string Email = "",
-    string Pan = "");
+    string Pan = "",
+    bool AddressHalfWidth = false);
 
 public sealed record PdfLine(
     int SlNo,

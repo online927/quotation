@@ -281,7 +281,8 @@ public sealed class QuotationPdfRenderer
         Add("GSTIN/UIN : ", p.Gstin);
         if (!string.IsNullOrWhiteSpace(p.StateName) || !string.IsNullOrWhiteSpace(p.StateCode))
             Add("State Name : ", $"{p.StateName}{(string.IsNullOrWhiteSpace(p.StateCode) ? "" : $", Code : {p.StateCode}")}");
-        Add("Contact : ", string.Join(", ", new[] { p.ContactPerson, p.Phone }.Where(s => !string.IsNullOrWhiteSpace(s))));
+        // As Tally with "Display name for Parties: Name Only": contact details without the person's name.
+        Add("Phone : ", p.Phone);
         Add("E-Mail : ", p.Email);
         return lines;
     }

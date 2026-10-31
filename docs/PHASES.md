@@ -469,3 +469,5 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 1. Customer → **Other references** → Enter → items (Buyer's Ref. and the other boxes with Tab or the mouse).
 2. Editor buttons in groups: row 1 Save Draft, Approve & Generate PDF, Save as PDF + Seal, with Cancel and Delete
    apart on the right; row 2 Preview, Open PDF, Regenerate PDF | New, Duplicate, Convert to Proforma. Shortcut keys in grey.
+3. Party details on the PDF as Tally's "Display name for Parties: Name Only": company name, address, GSTIN, state,
+   **Phone** and E-Mail — the contact person's name is not printed (it stays on the screen).

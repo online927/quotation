@@ -120,6 +120,17 @@ public class TallyPrintLayoutTests
     }
 
     [Fact]
+    public void Party_shows_phone_and_email_without_the_contact_persons_name()
+    {
+        using var p = PdfDocument.Open(Renderer.Render(SampleDocuments.Build([SampleDocuments.Bevel()])));
+        var text = Text(p.GetPage(1));
+        Assert.Contains("Phone : 9822012345", text);
+        Assert.Contains("purchase.pune@sonepar.example", text);
+        Assert.DoesNotContain("Rahul", text);
+        Assert.DoesNotContain("Contact :", text);
+    }
+
+    [Fact]
     public void Round_off_down_is_printed_as_less()
     {
         var doc = SampleDocuments.Build([SampleDocuments.Bevel()]) with

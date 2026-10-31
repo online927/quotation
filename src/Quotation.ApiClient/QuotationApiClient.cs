@@ -98,6 +98,12 @@ public partial class QuotationApiClient
                       Q("width", width?.ToString(System.Globalization.CultureInfo.InvariantCulture)) +
                       Q("offsetX", offsetX?.ToString(System.Globalization.CultureInfo.InvariantCulture)) +
                       Q("offsetY", offsetY?.ToString(System.Globalization.CultureInfo.InvariantCulture)), ct);
+    /// <summary>The latest quotation (or a sample) printed with these Party Details options, which need not be saved yet.</summary>
+    public async Task<byte[]> PartyPrintPreviewAsync(Quotation.Core.Domain.PartyPrintSettings options, CancellationToken ct = default)
+    {
+        using var response = await SendRawAsync(HttpMethod.Post, "api/settings/party/preview", options, ct);
+        return await response.Content.ReadAsByteArrayAsync(ct);
+    }
     public Task RemoveSealAsync(CancellationToken ct = default) => SendAsync(HttpMethod.Delete, "api/settings/seal", null, ct);
 
     public Task<DashboardDto> DashboardAsync(CancellationToken ct = default) => GetAsync<DashboardDto>("api/dashboard", ct);

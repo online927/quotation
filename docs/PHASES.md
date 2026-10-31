@@ -471,3 +471,8 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    apart on the right; row 2 Preview, Open PDF, Regenerate PDF | New, Duplicate, Convert to Proforma. Shortcut keys in grey.
 3. Party details on the PDF as Tally's "Display name for Parties: Name Only": company name, address, GSTIN, state,
    **Phone** and E-Mail — the contact person's name is not printed (it stays on the screen).
+4. Settings → Party Details (administrators), like Tally's print options: contact details, contact person, name and
+   address from the Tally ledger, address in one line, display name (name/alias), GSTIN, PAN, state, consignee and
+   PIN code, with Preview PDF. Party blocks print as Tally: aligned labels, "Contact" = phone, PIN joined to the
+   address ("Bangalore - 562111"), long lines shrunk to one line, consignee with contact details too.
+5. Only administrators change the quotation date; for users it is the day of first saving (server-enforced).

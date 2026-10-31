@@ -267,24 +267,74 @@ public sealed class QuotationPdfRenderer
         return lines;
     }
 
-    private List<(string Text, XFont Font)> PartyLines(XGraphics g, string caption, PdfParty p, double width)
+    /// <summary>
+    /// A printed line of a party block. Labelled lines (GSTIN/UIN, State Name, Contact …) put the colon and the value
+    /// in aligned columns, as Tally does.
+    /// </summary>
+    private sealed record PartyLine(string Text, XFont Font, string Label = "", double ColonOffset = 0, double ValueOffset = 0);
+
+    /// <summary>Address lines shrink down to this size to stay on one line (as on the Tally print) before they wrap.</summary>
+    private const double MinFittedSize = 6;
+
+    private readonly Dictionary<double, XFont> _sizedText = [];
+
+    private XFont TextOfSize(double size)
     {
-        var lines = new List<(string, XFont)> { (caption, _label) };
-        foreach (var l in Wrap(g, p.Name, _bold, width)) lines.Add((l, _bold));
-        foreach (var a in p.AddressLines)
-            foreach (var l in Wrap(g, a, _text, width)) lines.Add((l, _text));
-        void Add(string label, string value)
+        if (!_sizedText.TryGetValue(size, out var f)) _sizedText[size] = f = Font(size, XFontStyleEx.Regular);
+        return f;
+    }
+
+    private IEnumerable<PartyLine> FitOrWrap(XGraphics g, string text, double width)
+    {
+        if (Measure(g, text, _text) <= width) return [new PartyLine(text, _text)];
+        for (var size = _text.Size - 0.5; size >= MinFittedSize; size -= 0.5)
         {
-            if (string.IsNullOrWhiteSpace(value)) return;
-            foreach (var l in Wrap(g, $"{label}{value}", _text, width)) lines.Add((l, _text));
+            var f = TextOfSize(size);
+            if (Measure(g, text, f) <= width) return [new PartyLine(text, f)];
         }
-        Add("GSTIN/UIN : ", p.Gstin);
+        return Wrap(g, text, _text, width).Select(l => new PartyLine(l, _text));
+    }
+
+    private List<PartyLine> PartyLines(XGraphics g, string caption, PdfParty p, double width)
+    {
+        var lines = new List<PartyLine> { new(caption, _label) };
+        foreach (var l in Wrap(g, p.Name, _bold, width)) lines.Add(new(l, _bold));
+        foreach (var a in p.AddressLines) lines.AddRange(FitOrWrap(g, a, width));
+
+        var fields = new List<(string Label, string Value)>();
+        if (!string.IsNullOrWhiteSpace(p.Gstin)) fields.Add(("GSTIN/UIN", p.Gstin));
+        if (!string.IsNullOrWhiteSpace(p.Pan)) fields.Add(("PAN/IT No", p.Pan));
         if (!string.IsNullOrWhiteSpace(p.StateName) || !string.IsNullOrWhiteSpace(p.StateCode))
-            Add("State Name : ", $"{p.StateName}{(string.IsNullOrWhiteSpace(p.StateCode) ? "" : $", Code : {p.StateCode}")}");
-        // As Tally with "Display name for Parties: Name Only": contact details without the person's name.
-        Add("Phone : ", p.Phone);
-        Add("E-Mail : ", p.Email);
+            fields.Add(("State Name", $"{p.StateName}{(string.IsNullOrWhiteSpace(p.StateCode) ? "" : $", Code : {p.StateCode}")}"));
+        var contact = string.Join(", ", new[] { p.ContactPerson, p.Phone }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        if (contact.Length > 0) fields.Add(("Contact", contact));
+        if (!string.IsNullOrWhiteSpace(p.Email)) fields.Add(("E-Mail", p.Email));
+        if (fields.Count == 0) return lines;
+
+        var colon = fields.Max(f => Measure(g, f.Label, _text)) + 4;
+        var value = colon + Measure(g, ": ", _text);
+        foreach (var (label, text) in fields)
+        {
+            var wrapped = Wrap(g, text, _text, width - value);
+            for (var i = 0; i < wrapped.Count; i++) lines.Add(new(wrapped[i], _text, i == 0 ? label : "", colon, value));
+        }
         return lines;
+    }
+
+    private static double Height(IEnumerable<PartyLine> lines) => lines.Sum(l => LineHeight(l.Font));
+
+    private void DrawParty(XGraphics g, string caption, PdfParty p, double x, double y)
+    {
+        foreach (var line in PartyLines(g, caption, p, LeftWidth - 2 * Pad))
+        {
+            if (line.Label.Length > 0)
+            {
+                DrawText(g, line.Label, line.Font, x, y);
+                DrawText(g, ":", line.Font, x + line.ColonOffset, y);
+            }
+            DrawText(g, line.Text, line.Font, x + line.ValueOffset, y);
+            y += LineHeight(line.Font);
+        }
     }
 
     private const double LogoSize = 42;
@@ -297,7 +347,7 @@ public sealed class QuotationPdfRenderer
     {
         var w = LeftWidth - 2 * Pad;
         var company = Math.Max(Height(CompanyLines(g, doc, CompanyTextWidth(doc))), doc.Logo is null ? 0 : LogoSize) + 2 * Pad;
-        var consignee = Height(PartyLines(g, "Consignee (Ship to)", doc.Consignee, w)) + 2 * Pad;
+        var consignee = doc.Consignee is null ? 0 : Height(PartyLines(g, "Consignee (Ship to)", doc.Consignee, w)) + 2 * Pad;
         var buyer = Height(PartyLines(g, "Buyer (Bill to)", doc.Buyer, w)) + 2 * Pad;
         return (company, consignee, buyer);
     }
@@ -387,22 +437,15 @@ public sealed class QuotationPdfRenderer
         }
 
         var consigneeTop = top + companyH;
-        g.DrawLine(pen, left, consigneeTop, mid, consigneeTop);
-        y = consigneeTop + Pad;
-        foreach (var (text, font) in PartyLines(g, "Consignee (Ship to)", doc.Consignee, LeftWidth - 2 * Pad))
+        if (doc.Consignee is not null)
         {
-            DrawText(g, text, font, left + Pad, y);
-            y += LineHeight(font);
+            g.DrawLine(pen, left, consigneeTop, mid, consigneeTop);
+            DrawParty(g, "Consignee (Ship to)", doc.Consignee, left + Pad, consigneeTop + Pad);
         }
 
         var buyerTop = consigneeTop + consigneeH;
         g.DrawLine(pen, left, buyerTop, mid, buyerTop);
-        y = buyerTop + Pad;
-        foreach (var (text, font) in PartyLines(g, "Buyer (Bill to)", doc.Buyer, LeftWidth - 2 * Pad))
-        {
-            DrawText(g, text, font, left + Pad, y);
-            y += LineHeight(font);
-        }
+        DrawParty(g, "Buyer (Bill to)", doc.Buyer, left + Pad, buyerTop + Pad);
 
         // Right column: reference grid; the last row (Terms of Delivery) stretches to the bottom.
         g.DrawLine(pen, mid, top, mid, top + height);

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Quotation.Core.Calculation;
 using Quotation.Core.Domain;
 using Quotation.Data.Entities;
@@ -5,20 +6,31 @@ using Quotation.Pdf;
 
 namespace Quotation.Server.Services;
 
+/// <summary>The buyer's Tally ledger, for "Name and Address from Party master", the alias and the PAN.</summary>
+public sealed record PartyMaster(string Name, string Alias, IReadOnlyList<string> AddressLines, string Pincode, string Pan)
+{
+    public static PartyMaster From(Customer c) => new(
+        c.MailingName.Length > 0 ? c.MailingName : c.Name,
+        c.Aliases.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? "",
+        c.Address.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+        c.Pincode.Trim(), c.Pan.Trim());
+}
+
 /// <summary>Maps a saved quotation to the print model and renders the Tally-style PDF.</summary>
 public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQuotationDocumentRenderer
 {
     private readonly QuotationPdfRenderer _renderer = new();
 
-    public byte[] Render(QuotationHeader q, CompanySettings company, QuotationSettings settings, PrintStamp? printed = null, byte[]? seal = null) =>
-        _renderer.Render(ToDocument(q, company, settings, watermark: null, printed: printed) with { Seal = seal });
+    public byte[] Render(QuotationHeader q, CompanySettings company, QuotationSettings settings, PrintStamp? printed = null, byte[]? seal = null,
+        PartyMaster? master = null) =>
+        _renderer.Render(ToDocument(q, company, settings, watermark: null, printed: printed, master: master) with { Seal = seal });
 
     public byte[] RenderPreview(QuotationHeader q, CompanySettings company, QuotationSettings settings, string provisionalNumber,
-        PrintStamp? printed = null) =>
-        _renderer.Render(ToDocument(q, company, settings, watermark: "DRAFT", provisionalNumber, printed));
+        PrintStamp? printed = null, PartyMaster? master = null) =>
+        _renderer.Render(ToDocument(q, company, settings, watermark: "DRAFT", provisionalNumber, printed, master));
 
     public QuotationDocument ToDocument(QuotationHeader q, CompanySettings company, QuotationSettings settings, string? watermark,
-        string? provisionalNumber = null, PrintStamp? printed = null)
+        string? provisionalNumber = null, PrintStamp? printed = null, PartyMaster? master = null)
     {
         var lines = q.Lines.OrderBy(l => l.LineNo).Select(l => new PdfLine(
             l.LineNo,
@@ -75,8 +87,10 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             PaymentTerms = q.PaymentTerms,
             OtherReferences = q.OtherReferences,
             TermsOfDelivery = q.TermsOfDelivery,
-            Buyer = ToParty(q.Buyer),
-            Consignee = ToParty(q.ConsigneeSameAsBuyer ? q.Buyer : q.Consignee, includeContact: false),
+            Buyer = ToParty(q.Buyer, settings.PartyPrint, master),
+            Consignee = !settings.PartyPrint.ShowConsignee ? null
+                : q.ConsigneeSameAsBuyer ? ToParty(q.Buyer, settings.PartyPrint, master)
+                : ToParty(q.Consignee, settings.PartyPrint, null),
             Lines = lines,
             Subtotal = calc.Subtotal,
             SummaryRows = summary,
@@ -139,9 +153,68 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
         return rows.Where(r => r.TaxableValue != 0 || r.TotalTax != 0).ToList();
     }
 
-    private static PdfParty ToParty(PartySnapshot p, bool includeContact = true) => new(
-        p.Name, SplitLines(p.Address), p.Gstin, p.StateName, p.StateCode,
-        includeContact ? p.ContactPerson : "", includeContact ? p.Phone : "", includeContact ? p.Email : "");
+    /// <summary>A "PIN: 562111" line, as the app adds below the address when a customer is picked.</summary>
+    private static readonly Regex PinLine = new(@"^PIN(\s*CODE)?\s*[:\-]?\s*(?<pin>\d{6})$", RegexOptions.IgnoreCase);
+
+    /// <summary>The party block as set in Settings → Party Details (Tally's "Party Details" print options).</summary>
+    internal static PdfParty ToParty(PartySnapshot p, PartyPrintSettings o, PartyMaster? master)
+    {
+        var fromMaster = o.NameAndAddressFromMaster && master is not null;
+        var name = fromMaster && master!.Name.Length > 0 ? master.Name : p.Name;
+        var address = fromMaster && (master!.AddressLines.Count > 0 || master.Pincode.Length > 0)
+            ? master.AddressLines.ToList()
+            : SplitLines(p.Address);
+        var pins = new List<string>();
+        if (fromMaster && master!.Pincode.Length > 0) pins.Add(master.Pincode);
+        for (var i = address.Count - 1; i >= 0; i--)
+        {
+            if (PinLine.Match(address[i]) is not { Success: true } m) continue;
+            pins.Add(m.Groups["pin"].Value);
+            address.RemoveAt(i);
+        }
+        // An address taken unchanged from the Tally ledger (e.g. a quotation made by the AI) gets the ledger's PIN.
+        if (pins.Count == 0 && master is { Pincode.Length: > 0 }
+            && address.SequenceEqual(master.AddressLines, StringComparer.OrdinalIgnoreCase)) pins.Add(master.Pincode);
+        var pin = pins.FirstOrDefault() ?? "";
+        var last = address.Count - 1;
+        if (o.ShowPinCode)
+        {
+            if (pin.Length > 0 && !address.Any(a => a.Contains(pin, StringComparison.Ordinal)))
+            {
+                if (last < 0) address.Add(pin);
+                else address[last] += $" - {pin}";
+            }
+        }
+        else if ((pin.Length > 0 ? pin : master?.Pincode ?? "") is { Length: > 0 } known && last >= 0
+                 && address[last].EndsWith(known, StringComparison.Ordinal))
+        {
+            // Also drop a PIN typed at the end of the address ("Bangalore - 562111").
+            address[last] = address[last][..^known.Length].TrimEnd(' ', '-', ',');
+            address.RemoveAll(a => a.Length == 0);
+        }
+        if (o.AddressInContinuousLine && address.Count > 1) address = [string.Join(", ", address.Select(a => a.TrimEnd(',', ' ')))];
+
+        var alias = master?.Alias ?? "";
+        if (alias.Length > 0 && !alias.Equals(name, StringComparison.OrdinalIgnoreCase))
+        {
+            name = o.DisplayName switch
+            {
+                PartyDisplayName.AliasOnly => alias,
+                PartyDisplayName.NameAndAlias => $"{name} ({alias})",
+                PartyDisplayName.AliasAndName => $"{alias} ({name})",
+                _ => name,
+            };
+        }
+        var contact = o.ShowContactDetails;
+        return new PdfParty(name, address,
+            o.ShowGstin ? p.Gstin : "",
+            o.ShowStateNameAndCode ? p.StateName : "",
+            o.ShowStateNameAndCode ? p.StateCode : "",
+            contact && o.ShowContactPerson ? p.ContactPerson : "",
+            contact ? p.Phone : "",
+            contact ? p.Email : "",
+            o.ShowPan ? master?.Pan ?? "" : "");
+    }
 
     private static List<string> SplitLines(string? s) =>
         string.IsNullOrWhiteSpace(s) ? [] : s.Replace("\r", "").Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();

@@ -11,7 +11,8 @@ public sealed record PdfParty(
     string StateCode,
     string ContactPerson = "",
     string Phone = "",
-    string Email = "");
+    string Email = "",
+    string Pan = "");
 
 public sealed record PdfLine(
     int SlNo,
@@ -73,7 +74,8 @@ public sealed record QuotationDocument
     public string TaxAmountInWords { get; init; } = "";
 
     public required PdfParty Buyer { get; init; }
-    public required PdfParty Consignee { get; init; }
+    /// <summary>Null when consignee details are not printed.</summary>
+    public PdfParty? Consignee { get; init; }
 
     public required IReadOnlyList<PdfLine> Lines { get; init; }
     public decimal Subtotal { get; init; }

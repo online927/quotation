@@ -59,7 +59,8 @@
       </StackPanel>
       <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6">
         <TextBlock Classes="fl" Text="Dated" VerticalAlignment="Center" Margin="0" />
-        <CalendarDatePicker Name="DateBox" SelectedDate="{Binding Date}" CustomDateFormatString="dd-MMM-yyyy" SelectedDateFormat="Custom" Width="140" />
+        <CalendarDatePicker Name="DateBox" SelectedDate="{Binding Date}" CustomDateFormatString="dd-MMM-yyyy" SelectedDateFormat="Custom" Width="140"
+                            IsEnabled="{Binding CanChangeDate}" ToolTip.Tip="Only administrators can change the date" ToolTip.ShowOnDisabled="True" />
       </StackPanel>
     </Grid>
 

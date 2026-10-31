@@ -199,6 +199,34 @@ public static class SystemEndpoints
                 new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName()), image);
             return Results.File(bytes, "application/pdf");
         }).RequireAuthorization(AdminPolicy);
+        // The latest quotation with a Tally customer (or a sample) printed with the Party Details options on the Settings
+        // screen (not saved yet). Nothing is saved.
+        app.MapPost("/api/settings/party/preview", async (PartyPrintSettings options, SettingsService s, QuotationDbContext db,
+            QuotationService quotations, PdfQuotationRenderer pdf, HttpContext ctx, TimeProvider clock, CancellationToken ct) =>
+        {
+            var q = await db.Quotations.AsNoTracking().Include(x => x.Lines)
+                .Where(x => x.CustomerId != null)
+                .OrderByDescending(x => x.CreatedUtc)
+                .FirstOrDefaultAsync(ct) ?? new QuotationHeader
+                {
+                    Number = "SAMPLE",
+                    Date = DateOnly.FromDateTime(clock.GetLocalNow().DateTime),
+                    Buyer = new PartySnapshot
+                    {
+                        Name = "Sample Customer Private Limited", Address = "Plot No. 12, MIDC Industrial Area\nChakan, Pune\nPIN: 410501",
+                        Gstin = "27AAACS1234F1Z3", StateName = "Maharashtra", StateCode = "27", ContactPerson = "Mr. Sample",
+                        Phone = "9800000000", Email = "purchase@sample.example",
+                    },
+                    TaxPresentation = s.Quotation.TaxPresentation,
+                    RoundOffTotal = s.Quotation.RoundOffTotal,
+                    Lines = [new QuotationLine { LineNo = 1, ItemName = "Sample Item", Hsn = "82051000", GstRate = 18, Quantity = 1, Unit = "NOS", Rate = 1000, Amount = 1000 }],
+                };
+            var settings = s.Quotation;
+            settings.PartyPrint = options;
+            var bytes = pdf.RenderPreview(q, s.Company, settings, q.Number ?? "PREVIEW",
+                new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName()), quotations.MasterOf(q));
+            return Results.File(bytes, "application/pdf");
+        }).RequireAuthorization(AdminPolicy);
         app.MapGet("/api/settings/seal", (SealService seal) =>
             seal.ReadImage() is { } bytes ? Results.File(bytes, "application/octet-stream") : Results.NotFound()).RequireAuthorization(AdminPolicy);
         app.MapDelete("/api/settings/seal", async (SealService seal, AuditService audit, HttpContext ctx, CancellationToken ct) =>

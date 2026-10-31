@@ -58,6 +58,22 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public bool IsAdmin => _session.IsAdmin;
     public bool IsReadOnly => !IsAdmin;
     public IReadOnlyList<TaxPresentation> TaxPresentations { get; } = Enum.GetValues<TaxPresentation>();
+
+    /// <summary>Tally's "Display name for Parties", in the order of <see cref="PartyDisplayName"/>.</summary>
+    public IReadOnlyList<string> PartyDisplayNames { get; } = ["Name Only", "Alias Only", "Name (Alias)", "Alias (Name)"];
+
+    public int PartyDisplayNameIndex
+    {
+        get => (int)(Settings?.Quotation.PartyPrint.DisplayName ?? PartyDisplayName.NameOnly);
+        set
+        {
+            if (Settings is null || value < 0) return;
+            Settings.Quotation.PartyPrint.DisplayName = (PartyDisplayName)value;
+            OnPropertyChanged();
+        }
+    }
+
+    partial void OnSettingsChanged(AllSettingsDto? value) => OnPropertyChanged(nameof(PartyDisplayNameIndex));
     public IReadOnlyList<string> RateSources { get; } = ["StandardPrice", "PriceLevel"];
 
     public string ExampleNumber
@@ -314,6 +330,15 @@ public sealed partial class SettingsViewModel : ViewModelBase
         // The values on screen, so each change can be checked before pressing Save.
         var bytes = await _session.Api.SealPreviewAsync((double)(SealWidth ?? 150), (double)(SealOffsetX ?? 0), -(double)(SealMoveUp ?? 0));
         _session.Documents.SaveAndOpen(bytes, "Seal-preview.pdf");
+    });
+
+    /// <summary>Opens the latest quotation printed with the Party Details options on screen (also before saving).</summary>
+    [RelayCommand]
+    private Task PreviewPartyPrintAsync() => RunAsync(async () =>
+    {
+        if (Settings is null) return;
+        var bytes = await _session.Api.PartyPrintPreviewAsync(Settings.Quotation.PartyPrint);
+        _session.Documents.SaveAndOpen(bytes, "Party-details-preview.pdf");
     });
 
     private static List<string> SplitLines(string text) =>

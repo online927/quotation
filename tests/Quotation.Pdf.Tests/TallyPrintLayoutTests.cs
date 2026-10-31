@@ -119,15 +119,47 @@ public class TallyPrintLayoutTests
         Assert.True(image.Bounds.Bottom < signatory.Top && image.Bounds.Top > signatory.Bottom);
     }
 
+    private static QuotationDocument WithBuyer(PdfParty buyer, PdfParty? consignee) =>
+        SampleDocuments.Build([SampleDocuments.Bevel()]) with { Buyer = buyer, Consignee = consignee };
+
+    private static readonly PdfParty Gutslane = new("GUTSLANE PRECITECH",
+        ["Plot No.238~240, Road No.10,", "Averahalli, KIADB, Dobbaspet 4th",
+         "Phase, Sompura Hobli, Nelamangala Taluk, Bangalore - 562111, Karnataka, India"],
+        "29AZGPG3058H3Z8", "Karnataka", "29", "", "9731966554", "girishbabu@gutslane.com");
+
     [Fact]
-    public void Party_shows_phone_and_email_without_the_contact_persons_name()
+    public void Party_labels_and_colons_line_up_like_Tally()
     {
-        using var p = PdfDocument.Open(Renderer.Render(SampleDocuments.Build([SampleDocuments.Bevel()])));
-        var text = Text(p.GetPage(1));
-        Assert.Contains("Phone : 9822012345", text);
-        Assert.Contains("purchase.pune@sonepar.example", text);
-        Assert.DoesNotContain("Rahul", text);
-        Assert.DoesNotContain("Contact :", text);
+        using var p = PdfDocument.Open(Renderer.Render(WithBuyer(Gutslane, null)));
+        var all = p.GetPage(1).GetWords().ToList();
+        var buyer = all.First(w => w.Text == "Buyer").BoundingBox.Bottom;
+        var words = all.Where(w => w.BoundingBox.Bottom < buyer).ToList(); // the buyer block, not the company's lines
+        var labels = new[] { "GSTIN/UIN", "State", "Contact", "E-Mail" }.Select(l => words.First(w => w.Text == l)).ToList();
+        Assert.All(labels, w => Assert.Equal(labels[0].BoundingBox.Left, w.BoundingBox.Left, 1));
+        // The colon after each label, and the value after it, start at the same place on every line.
+        var colons = labels.Select(l => words.Where(w => w.Text.StartsWith(':') && Math.Abs(w.BoundingBox.Bottom - l.BoundingBox.Bottom) < 1)
+            .MinBy(w => w.BoundingBox.Left)!).ToList();
+        Assert.All(colons, c => Assert.Equal(colons[0].BoundingBox.Left, c.BoundingBox.Left, 1));
+        var values = labels.Zip(colons, (l, c) => words.Where(w => Math.Abs(w.BoundingBox.Bottom - l.BoundingBox.Bottom) < 1
+            && w.BoundingBox.Left > c.BoundingBox.Right - 0.1 && !w.Text.StartsWith(':')).MinBy(w => w.BoundingBox.Left)!).ToList();
+        Assert.Equal(["29AZGPG3058H3Z8", "Karnataka,", "9731966554", "girishbabu@gutslane.com"], values.Select(v => v.Text));
+        Assert.All(values, v => Assert.Equal(values[0].BoundingBox.Left, v.BoundingBox.Left, 1));
+        Assert.True(values[0].BoundingBox.Left > colons[0].BoundingBox.Left);
+    }
+
+    [Fact]
+    public void Long_address_line_prints_smaller_on_one_line_and_consignee_can_be_left_out()
+    {
+        using var p = PdfDocument.Open(Renderer.Render(WithBuyer(Gutslane, null)));
+        var page = p.GetPage(1);
+        var words = page.GetWords().ToList();
+        var phase = words.First(w => w.Text == "Phase,");
+        var india = words.First(w => w.Text == "India");
+        Assert.Equal(phase.BoundingBox.Bottom, india.BoundingBox.Bottom, 1); // one line, not wrapped
+        var plot = words.First(w => w.Text == "Plot");
+        Assert.True(phase.BoundingBox.Height < plot.BoundingBox.Height - 0.5, $"{phase.BoundingBox.Height} vs {plot.BoundingBox.Height}");
+        Assert.DoesNotContain("Consignee", Text(page));
+        Assert.Contains("Buyer (Bill to)", Text(page));
     }
 
     [Fact]

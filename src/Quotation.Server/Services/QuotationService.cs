@@ -23,7 +23,7 @@ public interface IQuotationDocumentRenderer
 {
     /// <summary>Renders the quotation and returns the PDF bytes; <paramref name="printed"/> adds "Printed on … By: …".</summary>
     byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
-        byte[]? seal = null);
+        byte[]? seal = null, PartyMaster? master = null);
 }
 
 public sealed record UserContext(string UserName, string DisplayName, string Machine, bool IsAdmin = false);
@@ -86,6 +86,8 @@ public sealed class QuotationService(
             WithoutGst = request.WithoutGst,
         };
         await ApplyAsync(q, request, isNew: true, ct);
+        // Only administrators choose the date; for everyone else it is the day the quotation is made.
+        if (!user.IsAdmin) q.Date = fy.Today();
         db.Quotations.Add(q);
         if (q.WithoutGst)
         {
@@ -120,7 +122,10 @@ public sealed class QuotationService(
         }
 
         var wasFinal = q.Status is QuotationStatus.Approved or QuotationStatus.Generated;
+        var date = q.Date;
         await ApplyAsync(q, request, isNew: false, ct);
+        // Users keep the date the quotation was first saved with; administrators may change it.
+        if (!user.IsAdmin) q.Date = date;
         if (q.Number is not null && q.FinancialYearStart is { } start && !new FinancialYear(start, settings.Quotation.FinancialYearStartMonth).Contains(q.Date))
         {
             throw new QuotationException(400, ApiErrorCodes.Validation,
@@ -260,7 +265,7 @@ public sealed class QuotationService(
         }
         try
         {
-            var bytes = renderer.Render(q, settings.Company, settings.Quotation, Stamp(user));
+            var bytes = renderer.Render(q, settings.Company, settings.Quotation, Stamp(user), master: MasterOf(q));
             q.PdfPath = await pdfStorage.SaveAsync(q, bytes, ct);
             q.PdfError = null;
             q.Status = QuotationStatus.Generated;
@@ -419,10 +424,10 @@ public sealed class QuotationService(
         var stamp = user is null ? null : Stamp(user);
         if (q.Status is QuotationStatus.Generated or QuotationStatus.Approved)
         {
-            return pdf.Render(q, settings.Company, settings.Quotation, stamp);
+            return pdf.Render(q, settings.Company, settings.Quotation, stamp, master: MasterOf(q));
         }
         var provisional = q.Number ?? (await numbering.PreviewAsync(db, fy.GetActive().Year, ct, q.DocType)).Number + " (provisional)";
-        return pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional, stamp);
+        return pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional, stamp, MasterOf(q));
     }
 
     /// <summary>
@@ -436,14 +441,14 @@ public sealed class QuotationService(
         if (seal is not null)
         {
             // A sealed copy is always rendered fresh (never the unsealed archive) and recorded.
-            var bytes = renderer.Render(q, settings.Company, settings.Quotation, Stamp(user), seal);
+            var bytes = renderer.Render(q, settings.Company, settings.Quotation, Stamp(user), seal, MasterOf(q));
             audit.Add(user.UserName, user.Machine, "PdfSealed", "Quotation", q.Id.ToString(), q.Number ?? "");
             await SaveAsync(ct);
             return bytes;
         }
         try
         {
-            return renderer.Render(q, settings.Company, settings.Quotation, Stamp(user));
+            return renderer.Render(q, settings.Company, settings.Quotation, Stamp(user), master: MasterOf(q));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -455,6 +460,10 @@ public sealed class QuotationService(
 
     /// <summary>Server local time (the office's time zone) and the logged-in user.</summary>
     private Quotation.Pdf.PrintStamp Stamp(UserContext user) => new(clock.GetLocalNow().DateTime, user.UserName);
+
+    /// <summary>The buyer's Tally ledger as last synchronized (null for a party typed by hand).</summary>
+    public PartyMaster? MasterOf(QuotationHeader q) =>
+        q.CustomerId is { } id && db.Customers.AsNoTracking().FirstOrDefault(c => c.Id == id) is { } c ? PartyMaster.From(c) : null;
 
     public async Task<NextNumberDto> PreviewNextNumberAsync(DateOnly? date, CancellationToken ct, DocumentType type = DocumentType.Quotation) =>
         await numbering.PreviewAsync(db, RequireActiveYear(date ?? fy.Today()), ct, type);

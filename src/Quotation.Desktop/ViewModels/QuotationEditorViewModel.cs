@@ -144,6 +144,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         ? $"Locked — made more than {_settings.Quotation.UserEditDays} days ago (editable until {until:dd-MMM-yyyy}). Ask an administrator to change it, or use Duplicate."
         : "";
     public bool IsEditable => Status != QuotationStatus.Cancelled && !IsLocked;
+    /// <summary>Only administrators change the date; for users it is the day the quotation is first saved (enforced by the server).</summary>
+    public bool CanChangeDate => IsAdmin && IsEditable;
     public bool CanApprove => Status is QuotationStatus.Draft or QuotationStatus.PendingReview && Lines.Count > 0 && !IsLocked;
     public bool CanDelete => IsAdmin && Id is not null;
     /// <summary>This user may seal PDFs (administrator, or allowed for all users): the Seal tick-box is shown.</summary>
@@ -314,6 +316,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     private void NotifyState()
     {
         OnPropertyChanged(nameof(IsEditable));
+        OnPropertyChanged(nameof(CanChangeDate));
         OnPropertyChanged(nameof(CanApprove));
         OnPropertyChanged(nameof(IsFinal));
         OnPropertyChanged(nameof(IsPendingReview));

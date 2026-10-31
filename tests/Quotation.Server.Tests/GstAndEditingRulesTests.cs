@@ -14,7 +14,7 @@ public class GstAndEditingRulesTests : QuotationTestBase
 {
     private FinancialYear ActiveFy => FinancialYear.For(Today);
 
-    private static string PdfText(byte[] pdf)
+    internal static string PdfText(byte[] pdf)
     {
         using var doc = UglyToad.PdfPig.PdfDocument.Open(pdf);
         return string.Join("\n", doc.GetPages().Select(p => string.Join(" ", p.GetWords().Select(w => w.Text))));
@@ -38,6 +38,34 @@ public class GstAndEditingRulesTests : QuotationTestBase
         await api.LoginAsync(name, "first-pass");
         await api.ChangePasswordAsync("first-pass", "user-pass");
         return api;
+    }
+
+    [Fact]
+    public async Task Only_administrators_change_the_quotation_date()
+    {
+        var user = await UserAsync();
+        var request = await BevelRequest();
+        request.Date = Today.AddDays(-3);
+        var q = await user.CreateQuotationAsync(request);
+        Assert.Equal(Today, q.Date); // a user's quotation is dated the day it is made
+
+        var change = Req(q);
+        change.Date = Today.AddDays(-1);
+        change.Remarks = "Changed by the user";
+        q = await user.UpdateQuotationAsync(q.Id, change);
+        Assert.Equal(Today, q.Date); // the date stays; the other change is saved
+        Assert.Equal("Changed by the user", q.Remarks);
+
+        change = Req(q);
+        change.Date = Today.AddDays(-1);
+        q = await Api.UpdateQuotationAsync(q.Id, change);
+        Assert.Equal(Today.AddDays(-1), q.Date); // an administrator may change it
+
+        q = await user.UpdateQuotationAsync(q.Id, Req(q));
+        Assert.Equal(Today.AddDays(-1), q.Date); // and a user's later edit keeps it
+
+        var copy = await user.DuplicateQuotationAsync(q.Id);
+        Assert.Equal(Today, copy.Date);
     }
 
     [Fact]

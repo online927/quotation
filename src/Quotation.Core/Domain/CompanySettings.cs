@@ -98,4 +98,44 @@ public sealed class QuotationSettings
     public bool RequireHsn { get; set; } = true;
 
     public string CurrencyWordsPrefix { get; set; } = "INR";
+
+    /// <summary>How the buyer and consignee are printed (like Tally's "Party Details" print options).</summary>
+    public PartyPrintSettings PartyPrint { get; set; } = new();
+}
+
+/// <summary>Tally's "Display name for Parties".</summary>
+public enum PartyDisplayName
+{
+    NameOnly,
+    AliasOnly,
+    /// <summary>Name (Alias)</summary>
+    NameAndAlias,
+    /// <summary>Alias (Name)</summary>
+    AliasAndName,
+}
+
+/// <summary>
+/// Party details on the PDF, as Tally's print configuration "Party Details". The defaults are T.Saifuddin &amp; Co.'s
+/// Tally settings. They apply to the buyer and to the consignee.
+/// </summary>
+public sealed class PartyPrintSettings
+{
+    /// <summary>Contact (phone) and E-Mail lines.</summary>
+    public bool ShowContactDetails { get; set; } = true;
+    /// <summary>The contact person's name before the phone number ("Contact : Mr. X, 98…").</summary>
+    public bool ShowContactPerson { get; set; }
+    /// <summary>Name and address from the Tally ledger instead of what was typed on the quotation.</summary>
+    public bool NameAndAddressFromMaster { get; set; }
+    /// <summary>The address on one line, separated by commas.</summary>
+    public bool AddressInContinuousLine { get; set; }
+    public PartyDisplayName DisplayName { get; set; } = PartyDisplayName.NameOnly;
+    /// <summary>GSTIN/UIN line (Tally: "Show Buyer's Tax Registration No." and "Show Buyer's GSTIN").</summary>
+    public bool ShowGstin { get; set; } = true;
+    /// <summary>PAN/IT No. line, from the Tally ledger.</summary>
+    public bool ShowPan { get; set; }
+    public bool ShowStateNameAndCode { get; set; } = true;
+    /// <summary>The "Consignee (Ship to)" block.</summary>
+    public bool ShowConsignee { get; set; } = true;
+    /// <summary>PIN code at the end of the address ("Bangalore - 562111").</summary>
+    public bool ShowPinCode { get; set; } = true;
 }

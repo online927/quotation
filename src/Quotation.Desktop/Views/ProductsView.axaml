@@ -21,12 +21,12 @@
           <Grid ColumnDefinitions="*,70,90" Margin="0,1">
             <StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="6">
-                <Border Classes="pill" Background="{StaticResource WarnSoftBrush}" Padding="6,0" IsVisible="{Binding Product.Hidden}">
-                  <TextBlock Text="DNU" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource WarnBrush}" />
+                <Border Classes="pill" Background="{DynamicResource WarnSoftBrush}" Padding="6,0" IsVisible="{Binding Product.Hidden}">
+                  <TextBlock Text="DNU" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource WarnBrush}" />
                 </Border>
                 <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
               </StackPanel>
-              <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis">
+              <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis">
                 <Run Text="{Binding Product.Brand, Mode=OneWay}" />
                 <Run Text="  HSN " />
                 <Run Text="{Binding Product.Hsn, Mode=OneWay}" />

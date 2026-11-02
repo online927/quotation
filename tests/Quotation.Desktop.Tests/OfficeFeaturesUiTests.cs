@@ -114,6 +114,58 @@ public class OfficeFeaturesUiTests
     }
 
     [AvaloniaFact]
+    public async Task Dark_mode_switch_changes_the_screens_and_is_saved_for_the_user()
+    {
+        using var ctx = await SetupAsync();
+        try
+        {
+            Assert.False(ThemeService.IsDark);
+            await ctx.Shell.ToggleThemeCommand.ExecuteAsync(null);
+            Assert.True(ThemeService.IsDark);
+            Assert.Equal(AppTheme.Dark, (await ctx.Session.Api.MeAsync()).Theme);
+            Assert.Equal(AppTheme.Dark, ctx.Session.Config.Theme); // the login screen on this PC follows it
+            Assert.Equal("Light mode", ctx.Shell.ThemeTip);
+
+            ctx.Shell.Navigate("mysettings");
+            var mine = Assert.IsType<MySettingsViewModel>(ctx.Shell.CurrentPage);
+            await UiHelpers.WaitUntil(() => !mine.IsBusy && mine.ThemeIndex == 1);
+            mine.ThemeIndex = 0;
+            await UiHelpers.WaitUntil(() => !ThemeService.IsDark && !mine.IsBusy);
+            Assert.Equal(AppTheme.Light, (await ctx.Session.Api.MeAsync()).Theme);
+        }
+        finally
+        {
+            ThemeService.Apply(AppTheme.Light);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Proforma_invoices_are_saved_in_their_own_folder()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await DraftAsync(ctx);
+        await editor.SaveAsPdfCommand.ExecuteAsync(null);
+        Assert.Equal(ctx.Files.Folder, ctx.Files.Folders[^1]);
+
+        var proforma = await ctx.Session.Api.ConvertToProformaAsync(editor.Id!.Value);
+        ctx.Shell.OpenQuotation(proforma.Id);
+        var pi = Assert.IsType<QuotationEditorViewModel>(ctx.Shell.CurrentPage);
+        await UiHelpers.WaitUntil(() => pi.Lines.Count > 0);
+        await pi.SaveAsPdfCommand.ExecuteAsync(null);
+        Assert.Equal(Path.Combine(ctx.Files.Folder, "Proforma Invoices"), ctx.Files.Folders[^1]); // the standard proforma folder
+
+        // My Settings: a folder of its own for proforma invoices.
+        var dir = Path.Combine(ctx.Server.DataDirectory, "PI");
+        ctx.Shell.Navigate("mysettings");
+        var mine = Assert.IsType<MySettingsViewModel>(ctx.Shell.CurrentPage);
+        await UiHelpers.WaitUntil(() => !mine.IsBusy);
+        mine.SetFolder(dir, proforma: true);
+        Assert.Equal(dir, ctx.Session.Config.ProformaPdfFolder);
+        Assert.Equal(dir, ctx.Files.ProformaFolder);
+        Assert.Equal("", ctx.Session.Config.PdfFolder); // the quotation folder is unchanged
+    }
+
+    [AvaloniaFact]
     public async Task Without_gst_from_my_settings_applies_to_the_next_quotation_only()
     {
         using var ctx = await SetupAsync();

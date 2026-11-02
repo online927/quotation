@@ -30,7 +30,7 @@
           <TextBlock Grid.Row="3" Classes="label" Text="Active financial year" />
           <TextBlock Grid.Row="3" Grid.Column="1">
             <Run Text="{Binding Status.ActiveFinancialYear, FallbackValue='–', Mode=OneWay}" />
-            <Run Text="{Binding Status.ActiveFinancialYearSource, StringFormat='  (source: {0})', FallbackValue='', Mode=OneWay}" Foreground="{StaticResource MutedBrush}" />
+            <Run Text="{Binding Status.ActiveFinancialYearSource, StringFormat='  (source: {0})', FallbackValue='', Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" />
           </TextBlock>
           <TextBlock Grid.Row="4" Classes="label" Text="Last checked" />
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastCheckedText}" />
@@ -73,7 +73,7 @@
                      Text="Changes are synchronized automatically every few minutes and a full sync runs nightly. Use 'Sync changes' after editing items or prices in Tally." />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="Read last rates: reads the rate each item was last quoted or sold at from Tally's Sales and Quotation vouchers (read-only), for items without a selling price in Tally. It runs by itself after the nightly sync. Started here it takes a few minutes and TallyPrime may respond a little slower meanwhile; Stop ends it at once." />
-          <TextBlock Text="{Binding InfoMessage}" Foreground="{StaticResource AccentBrush}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding InfoMessage}" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
           <ItemsControl ItemsSource="{Binding Runs}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:SyncRunRow">
@@ -83,7 +83,7 @@
                   <TextBlock Grid.Column="2" Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" />
                   <StackPanel Grid.Column="3">
                     <TextBlock Text="{Binding Changes}" FontSize="12" />
-                    <TextBlock Text="{Binding Message}" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Message}" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
                   </StackPanel>
                 </Grid>
               </DataTemplate>

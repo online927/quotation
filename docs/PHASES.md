@@ -478,3 +478,14 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 5. Only administrators change the quotation date; for users it is the day of first saving (server-enforced).
 6. Settings → Quotation: own headings for the quotation and proforma invoice PDFs (empty = standard).
 7. Settings → Party Details → Address width: half the box (the address wraps in the left half).
+
+### Round 4
+
+1. Show Consignee details: Yes / No / Only when different / Buyer/Consignee when same (default; one block).
+2. Fit on one page (admin, on): a document just over one page prints up to 10 % smaller on one page.
+3. Dark mode per user (top-bar button, My Settings → Appearance: Light / Dark / Same as Windows; saved with the login).
+4. Remarks in bold on the PDF.
+5. Recent customers and recent products removed from the quotation screen.
+6. Proforma invoices saved in their own folder (My Settings; default "Proforma Invoices" in the quotation folder).
+7. Clearer highlight of the chosen row in search lists and tables (light blue with a blue bar).
+8. Due on removed from the item entry, the item list and the PDF.

@@ -18,6 +18,29 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
 
     public DocumentLauncher Documents { get; set; } = new(config);
 
+    /// <summary>Shows the screens light or dark and remembers it on this PC for the login screen.</summary>
+    public void ApplyTheme(string theme)
+    {
+        ThemeService.Apply(theme);
+        if (Config.Theme == theme) return;
+        Config.Theme = theme;
+        try
+        {
+            Config.Save();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Only the login screen's look depends on it.
+        }
+    }
+
+    /// <summary>Saves the signed-in user's light/dark choice on the server (it follows them to every PC).</summary>
+    public async Task SetThemeAsync(string theme)
+    {
+        ApplyTheme(theme);
+        Api.UpdateCurrentUser(await Api.SetMyPreferencesAsync(new Contracts.MyPreferencesDto(Theme: theme)));
+    }
+
     /// <summary>Settings cached for the session (company state, tax presentation, defaults).</summary>
     public Contracts.AllSettingsDto? Settings { get; set; }
 

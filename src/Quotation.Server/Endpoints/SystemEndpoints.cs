@@ -134,8 +134,10 @@ public static class SystemEndpoints
         // The current user's own switches.
         app.MapPut("/api/me/preferences", async (MyPreferencesDto req, HttpContext ctx, QuotationDbContext db, CancellationToken ct) =>
         {
+            if (req.Theme is not null && !AppTheme.IsValid(req.Theme)) return Results.BadRequest(new ApiError("Theme must be Light, Dark or System."));
             var user = await db.Users.FirstAsync(u => u.Username == ctx.User.UserName(), ct);
-            user.WithoutGstNext = req.WithoutGstNext;
+            if (req.WithoutGstNext is { } withoutGst) user.WithoutGstNext = withoutGst;
+            if (req.Theme is { } theme) user.Theme = theme;
             await db.SaveChangesAsync(ct);
             return Results.Ok(AuthService.ToDto(user));
         }).RequireAuthorization();

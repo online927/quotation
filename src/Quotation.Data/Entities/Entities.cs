@@ -270,6 +270,8 @@ public class AppUser
     public bool MustChangePassword { get; set; }
     /// <summary>"Without GST" for the next quotation this user saves (switches itself off afterwards).</summary>
     public bool WithoutGstNext { get; set; }
+    /// <summary>Light, Dark or System (follows Windows): the user's screens, on every PC.</summary>
+    public string Theme { get; set; } = "Light";
     public DateTime CreatedUtc { get; set; }
     public DateTime? LastLoginUtc { get; set; }
 }

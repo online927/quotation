@@ -12,128 +12,245 @@
     one blue accent, pill-shaped buttons, quiet hairlines instead of heavy borders.
   -->
   <Application.Resources>
+    <ResourceDictionary>
     <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI, Inter, Helvetica Neue, Arial</FontFamily>
-
-    <SolidColorBrush x:Key="PageBrush">#F5F5F7</SolidColorBrush>
-    <SolidColorBrush x:Key="CardBrush">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="TextBrush">#1D1D1F</SolidColorBrush>
-    <SolidColorBrush x:Key="MutedBrush">#6E6E73</SolidColorBrush>
-    <SolidColorBrush x:Key="HairlineBrush">#E5E5EA</SolidColorBrush>
-    <SolidColorBrush x:Key="PanelBorderBrush">#D2D2D7</SolidColorBrush>
-    <SolidColorBrush x:Key="FillBrush">#EDEDF0</SolidColorBrush>
-    <SolidColorBrush x:Key="SubtleFillBrush">#FAFAFC</SolidColorBrush>
-    <SolidColorBrush x:Key="AccentBrush">#0071E3</SolidColorBrush>
-    <SolidColorBrush x:Key="AccentSoftBrush">#E8F1FD</SolidColorBrush>
-    <SolidColorBrush x:Key="OkBrush">#248A3D</SolidColorBrush>
-    <SolidColorBrush x:Key="WarnBrush">#B25000</SolidColorBrush>
-    <SolidColorBrush x:Key="WarnSoftBrush">#FFF6E5</SolidColorBrush>
-    <SolidColorBrush x:Key="WarnBorderBrush">#F5C26B</SolidColorBrush>
-    <SolidColorBrush x:Key="BadBrush">#D70015</SolidColorBrush>
-    <SolidColorBrush x:Key="EditingRowBrush">#FFF8E1</SolidColorBrush>
-    <SolidColorBrush x:Key="GreenBrush">#248A3D</SolidColorBrush>
-    <SolidColorBrush x:Key="PurpleBrush">#8944AB</SolidColorBrush>
-    <SolidColorBrush x:Key="TealBrush">#0A8A8A</SolidColorBrush>
-    <SolidColorBrush x:Key="OrangeBrush">#C93400</SolidColorBrush>
-
-    <!-- Sidebar: dark navy (A). The light-blue variant (B) replaces these brushes. -->
-    <SolidColorBrush x:Key="SidebarBrush">#1E2A3A</SolidColorBrush>
-    <SolidColorBrush x:Key="SidebarTextBrush">#E8EDF3</SolidColorBrush>
-    <SolidColorBrush x:Key="SidebarMutedBrush">#8D9BAD</SolidColorBrush>
-    <SolidColorBrush x:Key="SidebarHoverBrush">#2C3B4F</SolidColorBrush>
-    <SolidColorBrush x:Key="SidebarSelectedBrush">#0A84FF</SolidColorBrush>
-    <SolidColorBrush x:Key="SidebarSelectedTextBrush">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="SidebarBorderBrush">#1E2A3A</SolidColorBrush>
-
-    <!-- Older names kept for screens that still use them. -->
-    <SolidColorBrush x:Key="HeaderBrush">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="NavBrush">#FBFBFD</SolidColorBrush>
 
     <!-- Fluent theme overrides -->
     <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
     <CornerRadius x:Key="OverlayCornerRadius">12</CornerRadius>
-    <SolidColorBrush x:Key="ButtonBackground">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonBackgroundPointerOver">#F2F2F5</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonBackgroundPressed">#E6E6EB</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonBackgroundDisabled">#F2F2F4</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonForeground">#1D1D1F</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonForegroundPointerOver">#1D1D1F</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonForegroundPressed">#1D1D1F</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonForegroundDisabled">#AEAEB2</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonBorderBrush">#C7C7CC</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonBorderBrushPressed">#AEAEB2</SolidColorBrush>
-    <SolidColorBrush x:Key="ButtonBorderBrushDisabled">#E5E5EA</SolidColorBrush>
-    <SolidColorBrush x:Key="TextControlBackground">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="TextControlBackgroundPointerOver">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="TextControlBackgroundFocused">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="TextControlBackgroundDisabled">#F5F5F7</SolidColorBrush>
-    <SolidColorBrush x:Key="TextControlBorderBrush">#D2D2D7</SolidColorBrush>
-    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
-    <SolidColorBrush x:Key="TextControlBorderBrushFocused">#0071E3</SolidColorBrush>
-    <SolidColorBrush x:Key="TextControlBorderBrushDisabled">#E5E5EA</SolidColorBrush>
-    <SolidColorBrush x:Key="TextControlPlaceholderForeground">#8E8E93</SolidColorBrush>
-    <SolidColorBrush x:Key="ComboBoxBackground">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="ComboBoxBorderBrush">#D2D2D7</SolidColorBrush>
-    <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
-    <SolidColorBrush x:Key="CalendarDatePickerBackground">#FFFFFF</SolidColorBrush>
-    <SolidColorBrush x:Key="CalendarDatePickerBorderBrush">#D2D2D7</SolidColorBrush>
+
+    <!--
+      Colours for light and dark mode (each user chooses in My Settings or with the button in the top bar).
+      Use them with DynamicResource so the screen follows a switch at once.
+    -->
+    <ResourceDictionary.ThemeDictionaries>
+      <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="PageBrush">#F5F5F7</SolidColorBrush>
+          <SolidColorBrush x:Key="CardBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextBrush">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="MutedBrush">#6E6E73</SolidColorBrush>
+          <SolidColorBrush x:Key="HairlineBrush">#E5E5EA</SolidColorBrush>
+          <SolidColorBrush x:Key="PanelBorderBrush">#D2D2D7</SolidColorBrush>
+          <SolidColorBrush x:Key="FillBrush">#EDEDF0</SolidColorBrush>
+          <SolidColorBrush x:Key="SubtleFillBrush">#FAFAFC</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentBrush">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentSoftBrush">#E8F1FD</SolidColorBrush>
+          <SolidColorBrush x:Key="OkBrush">#248A3D</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnBrush">#B25000</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnSoftBrush">#FFF6E5</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnBorderBrush">#F5C26B</SolidColorBrush>
+          <SolidColorBrush x:Key="BadBrush">#D70015</SolidColorBrush>
+          <SolidColorBrush x:Key="EditingRowBrush">#FFF8E1</SolidColorBrush>
+          <SolidColorBrush x:Key="GreenBrush">#248A3D</SolidColorBrush>
+          <SolidColorBrush x:Key="PurpleBrush">#8944AB</SolidColorBrush>
+          <SolidColorBrush x:Key="TealBrush">#0A8A8A</SolidColorBrush>
+          <SolidColorBrush x:Key="OrangeBrush">#C93400</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBrush">#1E2A3A</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarTextBrush">#E8EDF3</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarMutedBrush">#8D9BAD</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarHoverBrush">#2C3B4F</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarSelectedBrush">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarSelectedTextBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBorderBrush">#1E2A3A</SolidColorBrush>
+          <SolidColorBrush x:Key="HeaderBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="NavBrush">#FBFBFD</SolidColorBrush>
+          <SolidColorBrush x:Key="RowLineBrush">#F0F0F3</SolidColorBrush>
+          <SolidColorBrush x:Key="ListHoverBrush">#EEF3FA</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedBrush">#C6DDF8</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedHoverBrush">#B7D3F5</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedBarBrush">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="GroupLineBrush">#D1D1D6</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryHoverBrush">#0077ED</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryPressedBrush">#0062C4</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryDisabledBrush">#A9CDF5</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveBrush">#248A3D</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveHoverBrush">#1F7A35</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveDisabledBrush">#A8D5B3</SolidColorBrush>
+          <SolidColorBrush x:Key="ProformaHoverBrush">#F6EEFA</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerBrush">#FDECEC</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerBorderBrush">#F5B5B5</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerHoverBrush">#FAD9D9</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerHoverBorderBrush">#EE9A9A</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledBrush">#FDF5F5</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledBorderBrush">#F8DADA</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledTextBrush">#E8A3AA</SolidColorBrush>
+          <SolidColorBrush x:Key="LinkHoverBrush">#0062C4</SolidColorBrush>
+          <SolidColorBrush x:Key="TileHoverBorderBrush">#B9D5F7</SolidColorBrush>
+          <SolidColorBrush x:Key="PillOkBrush">#E3F4E8</SolidColorBrush>
+          <SolidColorBrush x:Key="PillPendingBrush">#FFF0E0</SolidColorBrush>
+          <SolidColorBrush x:Key="PillBadBrush">#FDECEC</SolidColorBrush>
+          <SolidColorBrush x:Key="PopupBorderBrush">#9AABBF</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundPointerOver">#F2F2F5</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundPressed">#E6E6EB</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundDisabled">#F2F2F4</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForeground">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundPointerOver">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundPressed">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundDisabled">#AEAEB2</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrush">#C7C7CC</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushPressed">#AEAEB2</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushDisabled">#E5E5EA</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundPointerOver">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundFocused">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundDisabled">#F5F5F7</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrush">#D2D2D7</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushDisabled">#E5E5EA</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlPlaceholderForeground">#8E8E93</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrush">#D2D2D7</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBackground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBorderBrush">#D2D2D7</SolidColorBrush>
+      </ResourceDictionary>
+      <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="PageBrush">#1C1C1E</SolidColorBrush>
+          <SolidColorBrush x:Key="CardBrush">#2C2C2E</SolidColorBrush>
+          <SolidColorBrush x:Key="TextBrush">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MutedBrush">#A1A1A6</SolidColorBrush>
+          <SolidColorBrush x:Key="HairlineBrush">#3A3A3C</SolidColorBrush>
+          <SolidColorBrush x:Key="PanelBorderBrush">#48484A</SolidColorBrush>
+          <SolidColorBrush x:Key="FillBrush">#3A3A3C</SolidColorBrush>
+          <SolidColorBrush x:Key="SubtleFillBrush">#262628</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentBrush">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentSoftBrush">#1E3A5F</SolidColorBrush>
+          <SolidColorBrush x:Key="OkBrush">#32D74B</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnBrush">#FF9F0A</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnSoftBrush">#3A2E1A</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnBorderBrush">#8A6A2A</SolidColorBrush>
+          <SolidColorBrush x:Key="BadBrush">#FF453A</SolidColorBrush>
+          <SolidColorBrush x:Key="EditingRowBrush">#3A3420</SolidColorBrush>
+          <SolidColorBrush x:Key="GreenBrush">#32B357</SolidColorBrush>
+          <SolidColorBrush x:Key="PurpleBrush">#C77DEB</SolidColorBrush>
+          <SolidColorBrush x:Key="TealBrush">#40C8E0</SolidColorBrush>
+          <SolidColorBrush x:Key="OrangeBrush">#FF9F0A</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBrush">#141A22</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarTextBrush">#E8EDF3</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarMutedBrush">#8D9BAD</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarHoverBrush">#232C38</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarSelectedBrush">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarSelectedTextBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBorderBrush">#141A22</SolidColorBrush>
+          <SolidColorBrush x:Key="HeaderBrush">#242426</SolidColorBrush>
+          <SolidColorBrush x:Key="NavBrush">#242426</SolidColorBrush>
+          <SolidColorBrush x:Key="RowLineBrush">#353538</SolidColorBrush>
+          <SolidColorBrush x:Key="ListHoverBrush">#33404F</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedBrush">#2A4D78</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedHoverBrush">#325A8A</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedBarBrush">#4DA3FF</SolidColorBrush>
+          <SolidColorBrush x:Key="GroupLineBrush">#48484A</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryHoverBrush">#409CFF</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryPressedBrush">#0060DF</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryDisabledBrush">#1E3F66</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveBrush">#248A3D</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveHoverBrush">#2DA14A</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveDisabledBrush">#1F4A2B</SolidColorBrush>
+          <SolidColorBrush x:Key="ProformaHoverBrush">#3A2A45</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerBrush">#3B1F21</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerBorderBrush">#7A3036</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerHoverBrush">#4A2528</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerHoverBorderBrush">#94404A</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledBrush">#2E2324</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledBorderBrush">#4A3335</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledTextBrush">#8A5A5E</SolidColorBrush>
+          <SolidColorBrush x:Key="LinkHoverBrush">#64B0FF</SolidColorBrush>
+          <SolidColorBrush x:Key="TileHoverBorderBrush">#3A6EA5</SolidColorBrush>
+          <SolidColorBrush x:Key="PillOkBrush">#1E3A26</SolidColorBrush>
+          <SolidColorBrush x:Key="PillPendingBrush">#3D2B16</SolidColorBrush>
+          <SolidColorBrush x:Key="PillBadBrush">#3B1F21</SolidColorBrush>
+          <SolidColorBrush x:Key="PopupBorderBrush">#5A6878</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackground">#3A3A3C</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundPointerOver">#48484A</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundPressed">#545456</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundDisabled">#2C2C2E</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForeground">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundPointerOver">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundPressed">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundDisabled">#636366</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrush">#545456</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushPointerOver">#6C6C70</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushPressed">#6C6C70</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushDisabled">#3A3A3C</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackground">#232325</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundPointerOver">#232325</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundFocused">#232325</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundDisabled">#2A2A2C</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrush">#48484A</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushPointerOver">#6C6C70</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushDisabled">#3A3A3C</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlPlaceholderForeground">#8E8E93</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackground">#232325</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#232325</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrush">#48484A</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">#6C6C70</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBackground">#232325</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBorderBrush">#48484A</SolidColorBrush>
+      </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
   </Application.Resources>
 
   <Application.Styles>
     <FluentTheme DensityStyle="Compact">
       <FluentTheme.Palettes>
         <ColorPaletteResources x:Key="Light" Accent="#0071E3" RegionColor="#F5F5F7" BaseHigh="#1D1D1F" ErrorText="#D70015" />
+        <ColorPaletteResources x:Key="Dark" Accent="#0A84FF" RegionColor="#1C1C1E" BaseHigh="#F2F2F7" ErrorText="#FF453A" />
       </FluentTheme.Palettes>
     </FluentTheme>
 
     <Style Selector="Window">
       <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
-      <Setter Property="Background" Value="{StaticResource PageBrush}" />
-      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+      <Setter Property="Background" Value="{DynamicResource PageBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     </Style>
 
     <!-- Typography -->
     <Style Selector="TextBlock.h1">
       <Setter Property="FontSize" Value="26" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     </Style>
     <Style Selector="TextBlock.h2">
       <Setter Property="FontSize" Value="15" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     </Style>
     <Style Selector="TextBlock.eyebrow">
       <Setter Property="FontSize" Value="11" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
     </Style>
     <Style Selector="TextBlock.muted">
-      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
     </Style>
     <Style Selector="TextBlock.label">
-      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
       <Setter Property="FontSize" Value="12" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="TextBlock.error">
-      <Setter Property="Foreground" Value="{StaticResource BadBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource BadBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
     <!-- Surfaces -->
     <Style Selector="Border.card">
-      <Setter Property="Background" Value="{StaticResource CardBrush}" />
-      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="14" />
       <Setter Property="Padding" Value="18" />
       <Setter Property="BoxShadow" Value="0 1 3 0 #0F000000" />
     </Style>
     <Style Selector="Border.tablehead">
-      <Setter Property="Background" Value="{StaticResource SubtleFillBrush}" />
-      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
       <Setter Property="BorderThickness" Value="1,1,1,1" />
       <Setter Property="CornerRadius" Value="12,12,0,0" />
       <Setter Property="Padding" Value="12,8" />
@@ -141,16 +258,16 @@
     <Style Selector="Border.tablehead TextBlock">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
     </Style>
     <Style Selector="Border.pill">
-      <Setter Property="Background" Value="{StaticResource FillBrush}" />
+      <Setter Property="Background" Value="{DynamicResource FillBrush}" />
       <Setter Property="CornerRadius" Value="999" />
       <Setter Property="Padding" Value="10,2" />
     </Style>
     <Style Selector="Border.notice">
-      <Setter Property="Background" Value="{StaticResource WarnSoftBrush}" />
-      <Setter Property="BorderBrush" Value="{StaticResource WarnBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource WarnSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource WarnBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="10" />
       <Setter Property="Padding" Value="12,8" />
@@ -158,8 +275,8 @@
 
     <!-- Lists -->
     <Style Selector="ListBox">
-      <Setter Property="Background" Value="{StaticResource CardBrush}" />
-      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="12" />
     </Style>
@@ -169,17 +286,26 @@
     </Style>
     <Style Selector="ListBoxItem">
       <Setter Property="Padding" Value="12,8" />
-      <Setter Property="BorderBrush" Value="#F0F0F3" />
+      <Setter Property="BorderBrush" Value="{DynamicResource RowLineBrush}" />
       <Setter Property="BorderThickness" Value="0,0,0,1" />
     </Style>
+    <!-- Search lists and tables: a clear (not dark) blue for the chosen row, with a blue bar on its left edge -->
+    <Style Selector="ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
     <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#F5F5F7" />
+      <Setter Property="Background" Value="{DynamicResource ListHoverBrush}" />
     </Style>
     <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ListSelectedBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ListSelectedBarBrush}" />
+      <Setter Property="BorderThickness" Value="3,0,0,1" />
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#DCEAFC" />
+      <Setter Property="Background" Value="{DynamicResource ListSelectedHoverBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ListSelectedBrush}" />
     </Style>
 
     <!-- Editor action bar: a thin line between button groups; grey shortcut keys inside buttons -->
@@ -188,7 +314,7 @@
       <Setter Property="Height" Value="22" />
       <Setter Property="Margin" Value="6,0" />
       <Setter Property="VerticalAlignment" Value="Center" />
-      <Setter Property="Background" Value="#D1D1D6" />
+      <Setter Property="Background" Value="{DynamicResource GroupLineBrush}" />
     </Style>
     <Style Selector="Button TextBlock.key">
       <Setter Property="FontSize" Value="11" />
@@ -207,20 +333,20 @@
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="Button.primary /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
-      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
       <Setter Property="Foreground" Value="White" />
     </Style>
     <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#0077ED" />
+      <Setter Property="Background" Value="{DynamicResource PrimaryHoverBrush}" />
       <Setter Property="Foreground" Value="White" />
     </Style>
     <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#0062C4" />
+      <Setter Property="Background" Value="{DynamicResource PrimaryPressedBrush}" />
       <Setter Property="Foreground" Value="White" />
     </Style>
     <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#A9CDF5" />
+      <Setter Property="Background" Value="{DynamicResource PrimaryDisabledBrush}" />
       <Setter Property="Foreground" Value="White" />
     </Style>
     <!-- Save / PDF: green -->
@@ -228,46 +354,46 @@
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="Button.save /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource GreenBrush}" />
-      <Setter Property="BorderBrush" Value="{StaticResource GreenBrush}" />
+      <Setter Property="Background" Value="{DynamicResource SaveBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SaveBrush}" />
       <Setter Property="Foreground" Value="White" />
     </Style>
     <Style Selector="Button.save:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#1F7A35" />
-      <Setter Property="BorderBrush" Value="#1F7A35" />
+      <Setter Property="Background" Value="{DynamicResource SaveHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SaveHoverBrush}" />
       <Setter Property="Foreground" Value="White" />
     </Style>
     <Style Selector="Button.save:disabled /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#A8D5B3" />
-      <Setter Property="BorderBrush" Value="#A8D5B3" />
+      <Setter Property="Background" Value="{DynamicResource SaveDisabledBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SaveDisabledBrush}" />
       <Setter Property="Foreground" Value="White" />
     </Style>
     <!-- Proforma invoices: purple outline -->
     <Style Selector="Button.proforma /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#FFFFFF" />
-      <Setter Property="BorderBrush" Value="{StaticResource PurpleBrush}" />
-      <Setter Property="Foreground" Value="{StaticResource PurpleBrush}" />
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PurpleBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PurpleBrush}" />
     </Style>
     <Style Selector="Button.proforma:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#F6EEFA" />
-      <Setter Property="BorderBrush" Value="{StaticResource PurpleBrush}" />
-      <Setter Property="Foreground" Value="{StaticResource PurpleBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ProformaHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PurpleBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PurpleBrush}" />
     </Style>
     <!-- Delete / cancel: light red -->
     <Style Selector="Button.danger /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#FDECEC" />
-      <Setter Property="BorderBrush" Value="#F5B5B5" />
-      <Setter Property="Foreground" Value="{StaticResource BadBrush}" />
+      <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DangerBorderBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource BadBrush}" />
     </Style>
     <Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#FAD9D9" />
-      <Setter Property="BorderBrush" Value="#EE9A9A" />
-      <Setter Property="Foreground" Value="{StaticResource BadBrush}" />
+      <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DangerHoverBorderBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource BadBrush}" />
     </Style>
     <Style Selector="Button.danger:disabled /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#FDF5F5" />
-      <Setter Property="BorderBrush" Value="#F8DADA" />
-      <Setter Property="Foreground" Value="#E8A3AA" />
+      <Setter Property="Background" Value="{DynamicResource DangerDisabledBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DangerDisabledBorderBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource DangerDisabledTextBrush}" />
     </Style>
     <!-- Text-only button (links, breadcrumbs) -->
     <Style Selector="Button.link">
@@ -277,12 +403,12 @@
     <Style Selector="Button.link /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="Transparent" />
-      <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
     </Style>
     <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="Transparent" />
-      <Setter Property="Foreground" Value="#0062C4" />
+      <Setter Property="Foreground" Value="{DynamicResource LinkHoverBrush}" />
     </Style>
     <!-- Round chevron button (Back / Forward) -->
     <Style Selector="Button.round">
@@ -294,12 +420,12 @@
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style Selector="Button.round /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource CardBrush}" />
-      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
     <Style Selector="Button.round:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource FillBrush}" />
+      <Setter Property="Background" Value="{DynamicResource FillBrush}" />
     </Style>
     <Style Selector="Button.round:disabled /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
@@ -312,13 +438,13 @@
       <Setter Property="HorizontalContentAlignment" Value="Left" />
     </Style>
     <Style Selector="Button.tile /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource CardBrush}" />
-      <Setter Property="BorderBrush" Value="{StaticResource HairlineBrush}" />
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
     <Style Selector="Button.tile:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource CardBrush}" />
-      <Setter Property="BorderBrush" Value="#B9D5F7" />
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TileHoverBorderBrush}" />
     </Style>
     <Style Selector="Button.small">
       <Setter Property="FontSize" Value="11" />
@@ -371,23 +497,27 @@
 
     <!-- Status badges -->
     <Style Selector="Border.pill.ok">
-      <Setter Property="Background" Value="#E3F4E8" />
+      <Setter Property="Background" Value="{DynamicResource PillOkBrush}" />
     </Style>
     <Style Selector="Border.pill.ok TextBlock">
-      <Setter Property="Foreground" Value="{StaticResource GreenBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource GreenBrush}" />
     </Style>
     <Style Selector="Border.pill.pending">
-      <Setter Property="Background" Value="#FFF0E0" />
+      <Setter Property="Background" Value="{DynamicResource PillPendingBrush}" />
     </Style>
     <Style Selector="Border.pill.pending TextBlock">
-      <Setter Property="Foreground" Value="{StaticResource OrangeBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource OrangeBrush}" />
     </Style>
     <Style Selector="Border.pill.bad">
-      <Setter Property="Background" Value="#FDECEC" />
+      <Setter Property="Background" Value="{DynamicResource PillBadBrush}" />
     </Style>
     <Style Selector="Border.pill.bad TextBlock">
-      <Setter Property="Foreground" Value="{StaticResource BadBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource BadBrush}" />
     </Style>
+
+    <!-- Document type in lists: blue quotation, purple proforma -->
+    <Style Selector="TextBlock.doctype"><Setter Property="Foreground" Value="{DynamicResource AccentBrush}" /></Style>
+    <Style Selector="TextBlock.doctype.proforma"><Setter Property="Foreground" Value="{DynamicResource PurpleBrush}" /></Style>
 
     <!-- Section headings with a coloured edge -->
     <Style Selector="Border.headbar">
@@ -395,10 +525,10 @@
       <Setter Property="Padding" Value="8,0,0,0" />
       <Setter Property="Margin" Value="0,0,0,6" />
     </Style>
-    <Style Selector="Border.headbar.blue"><Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" /></Style>
-    <Style Selector="Border.headbar.teal"><Setter Property="BorderBrush" Value="{StaticResource TealBrush}" /></Style>
-    <Style Selector="Border.headbar.purple"><Setter Property="BorderBrush" Value="{StaticResource PurpleBrush}" /></Style>
-    <Style Selector="Border.headbar.green"><Setter Property="BorderBrush" Value="{StaticResource GreenBrush}" /></Style>
+    <Style Selector="Border.headbar.blue"><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></Style>
+    <Style Selector="Border.headbar.teal"><Setter Property="BorderBrush" Value="{DynamicResource TealBrush}" /></Style>
+    <Style Selector="Border.headbar.purple"><Setter Property="BorderBrush" Value="{DynamicResource PurpleBrush}" /></Style>
+    <Style Selector="Border.headbar.green"><Setter Property="BorderBrush" Value="{DynamicResource GreenBrush}" /></Style>
     <Style Selector="Button.nav.selected">
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>

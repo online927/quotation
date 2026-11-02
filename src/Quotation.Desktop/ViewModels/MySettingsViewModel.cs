@@ -16,10 +16,20 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
 
     [ObservableProperty] private bool _withoutGstNext;
     [ObservableProperty] private string _pdfFolder = "";
+    [ObservableProperty] private string _proformaPdfFolder = "";
+    /// <summary>0 Light, 1 Dark, 2 Same as Windows.</summary>
+    [ObservableProperty] private int _themeIndex;
+
+    public IReadOnlyList<string> ThemeChoices { get; } = ["Light", "Dark", "Same as Windows"];
+    private static readonly string[] Themes = [AppTheme.Light, AppTheme.Dark, AppTheme.System];
 
     public string Title => "My Settings";
     public string UserName => _session.Api.CurrentUser?.DisplayName ?? "";
     public string DefaultPdfFolder => new DocumentLauncher(new ClientConfig()).Folder;
+    /// <summary>Shown in the empty proforma box: "Proforma Invoices" inside the quotation folder.</summary>
+    public string DefaultProformaPdfFolder => new DocumentLauncher(new ClientConfig { PdfFolder = PdfFolder.Trim() }).ProformaFolder;
+
+    partial void OnPdfFolderChanged(string value) => OnPropertyChanged(nameof(DefaultProformaPdfFolder));
 
     public MySettingsViewModel(AppSession session)
     {
@@ -35,9 +45,21 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         _session.Api.UpdateCurrentUser(me);
         _loading = true;
         WithoutGstNext = me.WithoutGstNext;
+        ThemeIndex = Math.Max(0, Array.IndexOf(Themes, me.Theme));
         PdfFolder = _session.Config.PdfFolder;
+        ProformaPdfFolder = _session.Config.ProformaPdfFolder;
         _loading = false;
     });
+
+    partial void OnThemeIndexChanged(int value)
+    {
+        if (_loading || value < 0 || value >= Themes.Length) return;
+        _ = RunAsync(async () =>
+        {
+            await _session.SetThemeAsync(Themes[value]);
+            InfoMessage = $"Screens: {ThemeChoices[value]}. This is saved with your login and used on every PC.";
+        });
+    }
 
     partial void OnWithoutGstNextChanged(bool value)
     {
@@ -51,34 +73,41 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         });
     }
 
+    /// <summary>Saves both folders (quotations, proforma invoices) for this PC.</summary>
     [RelayCommand]
     private void SavePdfFolder()
     {
         var folder = PdfFolder.Trim();
-        if (folder.Length > 0 && !Path.IsPathRooted(folder))
+        var proforma = ProformaPdfFolder.Trim();
+        foreach (var f in new[] { folder, proforma })
         {
-            ErrorMessage = "Enter a full folder path, e.g. D:\\Quotations.";
-            return;
-        }
-        try
-        {
-            if (folder.Length > 0) Directory.CreateDirectory(folder);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = "Cannot use that folder: " + ex.Message;
-            return;
+            if (f.Length > 0 && !Path.IsPathRooted(f))
+            {
+                ErrorMessage = "Enter a full folder path, e.g. D:\\Quotations.";
+                return;
+            }
+            try
+            {
+                if (f.Length > 0) Directory.CreateDirectory(f);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Cannot use that folder: " + ex.Message;
+                return;
+            }
         }
         ErrorMessage = null;
         _session.Config.PdfFolder = folder;
+        _session.Config.ProformaPdfFolder = proforma;
         _session.Config.Save();
-        InfoMessage = "PDFs will be saved in " + _session.Documents.Folder;
+        InfoMessage = $"Quotations will be saved in {_session.Documents.Folder}, proforma invoices in {_session.Documents.ProformaFolder}";
     }
 
     /// <summary>Called by the view after the user picked a folder.</summary>
-    public void SetFolder(string path)
+    public void SetFolder(string path, bool proforma = false)
     {
-        PdfFolder = path;
+        if (proforma) ProformaPdfFolder = path;
+        else PdfFolder = path;
         SavePdfFolder();
     }
 }

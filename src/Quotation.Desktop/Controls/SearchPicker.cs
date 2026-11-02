@@ -85,17 +85,20 @@ public sealed class SearchPicker : UserControl
         });
         _list.AddHandler(PointerReleasedEvent, OnListPointerReleased, RoutingStrategies.Bubble, handledEventsToo: true);
 
-        _noMatch = new TextBlock { Margin = new Thickness(10, 8), Foreground = Brushes.DimGray, IsVisible = false };
+        _noMatch = new TextBlock { Margin = new Thickness(10, 8), IsVisible = false };
+        _noMatch.Bind(TextBlock.ForegroundProperty, _noMatch.GetResourceObservable("MutedBrush"));
 
         _dropDown = new Border
         {
-            Background = Brushes.White,
-            BorderBrush = new SolidColorBrush(Color.Parse("#9AABBF")),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(3),
             BoxShadow = BoxShadows.Parse("0 4 14 0 #33000000"),
             Child = new Panel { Children = { _list, _noMatch } },
         };
+
+        // Light or dark, following the user's choice.
+        _dropDown.Bind(Border.BackgroundProperty, _dropDown.GetResourceObservable("CardBrush"));
+        _dropDown.Bind(Border.BorderBrushProperty, _dropDown.GetResourceObservable("PopupBorderBrush"));
 
         _popup = new Popup
         {

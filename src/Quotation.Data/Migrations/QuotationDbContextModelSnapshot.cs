@@ -160,6 +160,13 @@ namespace Quotation.Data.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Theme")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Light");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("TEXT")

@@ -6,7 +6,7 @@
              x:DataType="vm:SettingsViewModel">
   <UserControl.Styles>
     <Style Selector="Grid.form > TextBlock">
-      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="Margin" Value="0,4,12,4" />
     </Style>
@@ -25,7 +25,7 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
       <TextBlock Classes="muted" Text="Only administrators can change settings." IsVisible="{Binding IsReadOnly}" />
       <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-      <TextBlock Foreground="{StaticResource OkBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Foreground="{DynamicResource OkBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     </StackPanel>
 
     <TabControl IsEnabled="{Binding Settings, Converter={x:Static ObjectConverters.IsNotNull}}">
@@ -99,7 +99,7 @@
                 <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
                            Text="The seal image is printed over 'for T.SAIFUDDIN &amp; CO. / Authorised Signatory' when someone ticks 'Seal' next to Save as PDF and enters the seal PIN. A PNG with a transparent background looks best." />
                 <Grid ColumnDefinitions="Auto,16,*">
-                  <Border Width="180" Height="110" CornerRadius="10" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1" Background="White">
+                  <Border Width="180" Height="110" CornerRadius="10" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1" Background="White">
                     <Panel>
                       <Image Source="{Binding SealImage}" Stretch="Uniform" Margin="6" />
                       <TextBlock Text="No seal image" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasSealImage}" />
@@ -137,14 +137,14 @@
       <TabItem Header="Quotation">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="Quotation number pattern" />
             <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
               <TextBox Text="{Binding Settings.Quotation.NumberPattern}" />
               <Button Grid.Column="1" Margin="6,0,0,0" Content="Preview" Command="{Binding RefreshExampleCommand}" />
             </Grid>
             <TextBlock Grid.Row="1" Text="Example" />
-            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ExampleNumber}" FontWeight="SemiBold" Foreground="Black" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ExampleNumber}" FontWeight="SemiBold" />
             <TextBlock Grid.Row="2" Grid.ColumnSpan="2" FontSize="11" TextWrapping="Wrap"
                        Text="Tokens: {FY}=2526, {FY_LABEL}=2025-26, {FYS2}/{FYE2}=25/26, {FYS4}/{FYE4}=2025/2026, {SEQ} or {SEQ:4} (zero-padded)." />
             <TextBlock Grid.Row="3" Text="First number of a new financial year" />
@@ -178,6 +178,9 @@
             <TextBlock Grid.Row="18" Text="Company seal" />
             <CheckBox Grid.Row="18" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllUsersCanSeal}"
                       Content="All users can use the seal (with the seal PIN); otherwise administrators only" />
+            <TextBlock Grid.Row="21" Text="Fit on one page" />
+            <CheckBox Grid.Row="21" Grid.Column="1" IsChecked="{Binding Settings.Quotation.ShrinkToFitOnePage}"
+                      Content="Shrink slightly (up to 10 %) when a document is just over one page" />
             <TextBlock Grid.Row="19" Text="Heading on quotation PDF" />
             <StackPanel Grid.Row="19" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
               <TextBox Text="{Binding Settings.Quotation.QuotationHeading}" Watermark="QUOTATION" Width="300" />
@@ -243,7 +246,7 @@
               <TextBlock Grid.Row="7" Text="Show State Name &amp; State Code" />
               <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowStateNameAndCode}" />
               <TextBlock Grid.Row="8" Text="Show Consignee details" />
-              <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowConsignee}" Content="Consignee (Ship to) block" />
+              <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding ConsigneeChoices}" SelectedIndex="{Binding ConsigneeChoiceIndex}" Width="260" />
               <TextBlock Grid.Row="9" Text="Show PIN code" />
               <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPinCode}" Content="At the end of the address: Bangalore - 562111" />
               <TextBlock Grid.Row="10" Text="Address width" />
@@ -312,7 +315,7 @@
           <TextBlock Grid.Row="2" Text="API key" />
           <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
             <TextBox Text="{Binding NewApiKey}" PasswordChar="●" Watermark="Enter a new key to replace the stored one" />
-            <TextBlock FontSize="11" Text="A key is stored (encrypted on the server)." IsVisible="{Binding Settings.Ai.ApiKeyConfigured, FallbackValue=False}" Foreground="{StaticResource OkBrush}" />
+            <TextBlock FontSize="11" Text="A key is stored (encrypted on the server)." IsVisible="{Binding Settings.Ai.ApiKeyConfigured, FallbackValue=False}" Foreground="{DynamicResource OkBrush}" />
           </StackPanel>
           <TextBlock Grid.Row="3" Text="Max product candidates sent to AI" />
           <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.Ai.MaxCandidates}" Minimum="3" Maximum="25" FormatString="0" Width="160" HorizontalAlignment="Left" />
@@ -330,7 +333,7 @@
           <TextBlock Grid.Row="3" Text="OAuth client JSON (Desktop app)" VerticalAlignment="Top" />
           <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
             <TextBox Text="{Binding NewGmailClientJson}" AcceptsReturn="True" Height="70" Watermark="Paste client_secret_….json contents to replace the stored one" />
-            <TextBlock FontSize="11" Text="OAuth client is stored (encrypted on the server)." IsVisible="{Binding Settings.Gmail.ClientSecretConfigured, FallbackValue=False}" Foreground="{StaticResource OkBrush}" />
+            <TextBlock FontSize="11" Text="OAuth client is stored (encrypted on the server)." IsVisible="{Binding Settings.Gmail.ClientSecretConfigured, FallbackValue=False}" Foreground="{DynamicResource OkBrush}" />
           </StackPanel>
           <TextBlock Grid.Row="4" Text="Connected account" />
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Gmail.ConnectedAccount, FallbackValue='Not connected', TargetNullValue='Not connected'}" />

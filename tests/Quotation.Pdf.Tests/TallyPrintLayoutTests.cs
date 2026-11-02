@@ -179,6 +179,76 @@ public class TallyPrintLayoutTests
     }
 
     [Fact]
+    public void Just_over_one_page_prints_slightly_smaller_on_one_page_when_allowed()
+    {
+        QuotationDocument Doc(int n, bool shrink) =>
+            SampleDocuments.Build(Enumerable.Range(1, n).Select(i => SampleDocuments.Bevel() with { SlNo = i }).ToList()) with { ShrinkToFitOnePage = shrink };
+        int Pages(QuotationDocument d)
+        {
+            using var p = PdfDocument.Open(Renderer.Render(d));
+            return p.NumberOfPages;
+        }
+        var n = Enumerable.Range(1, 40).First(i => Pages(Doc(i, shrink: false)) == 2); // the first document that needs 2 pages
+        Assert.Equal(1, Pages(Doc(n, shrink: true)));
+        using (var one = PdfDocument.Open(Renderer.Render(Doc(n, shrink: true))))
+        {
+            Assert.Equal(QuotationPdfRenderer.A4Width, one.GetPage(1).Width, 1); // still an A4 page
+            Assert.Contains("Authorised", Text(one.GetPage(1)));
+        }
+        Assert.Equal(2, Pages(Doc(n + 6, shrink: true))); // a really longer document still continues on page 2
+    }
+
+    /// <summary>Like TSPI2627-2: 8 items, buyer and consignee the same, IGST with a 4-row HSN summary.</summary>
+    private static QuotationDocument Tspi2627_2()
+    {
+        var party = new PdfParty("Instatenders Solutions Private Limited",
+            ["No. 149/1, Gandhi Street,", "Kundrathur, Sriperumbudur Main", "Road, Kavanur, Kundrathur, 600069"],
+            "33AAFCI2552K1ZM", "Tamil Nadu", "33", "", "9150081257");
+        var names = new[]
+        {
+            "Height Gauge ( New)", "184-305S-THICKNESS GAGE", "126-126-SCREW THREAD MICROMETER", "GS Magnetic Stand", "A012-Magnetic Vee Block",
+            "345-250-30-DIGIMATIC INSIDE MICROMETER-CALIPER TYPE", "345-251-30-DIGIMATIC INSIDE MICROMETER-CALIPER TYPE",
+            "DMME25-External Digital Micrometer 0-25 Mm",
+        };
+        var lines = names.Select((n, i) => new PdfLine(i + 1, n, ["Mitutoyo 25-50mm"], "90173010", 18, "", 1, "NOS", 10000, 0, 10000, PartNumber: "P" + i)).ToList();
+        return Proforma() with
+        {
+            Buyer = party, Consignee = party, Lines = lines, Subtotal = 80000, InterState = true,
+            SummaryRows = [new PdfSummaryRow("Packing & Forwarding", "", 400), new PdfSummaryRow("IGST", "", 14472), new PdfSummaryRow("Round Off", "", -0.24m, Less: true)],
+            GrandTotal = 94872, TotalQuantity = 8,
+            HsnSummary = Enumerable.Range(0, 4).Select(i => new PdfHsnRow("9017301" + i, 20100, 0, 0, 0, 0, 18, 3618)).ToList(),
+        };
+    }
+
+    [Fact]
+    public void Proforma_like_tspi2627_2_fits_one_page_with_one_buyer_consignee_block_or_shrinking()
+    {
+        int Pages(QuotationDocument d)
+        {
+            using var p = PdfDocument.Open(Renderer.Render(d));
+            return p.NumberOfPages;
+        }
+        var doc = Tspi2627_2();
+        Assert.Equal(2, Pages(doc)); // as printed: buyer and consignee both, no shrinking
+        Assert.Equal(1, Pages(doc with { Consignee = null, BuyerCaption = "Buyer/Consignee" }));
+        Assert.Equal(1, Pages(doc with { ShrinkToFitOnePage = true }));
+        var bytes = Renderer.Render(doc with { Consignee = null, BuyerCaption = "Buyer/Consignee", Remarks = "Delivery within two weeks" });
+        PdfRenderTests.Save("tspi2627-2-one-page.pdf", bytes);
+        using var one = PdfDocument.Open(bytes);
+        Assert.Contains("Buyer/Consignee", Text(one.GetPage(1)));
+        Assert.DoesNotContain("Ship to", Text(one.GetPage(1)));
+    }
+
+    [Fact]
+    public void Remarks_are_bold()
+    {
+        var doc = SampleDocuments.Build([SampleDocuments.Bevel()], remarks: "Delivery within two weeks");
+        using var p = PdfDocument.Open(Renderer.Render(doc));
+        var start = p.GetPage(1).GetWords().First(w => w.Text == "within").Letters[0];
+        Assert.Contains("Bold", start.FontName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Round_off_down_is_printed_as_less()
     {
         var doc = SampleDocuments.Build([SampleDocuments.Bevel()]) with

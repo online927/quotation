@@ -17,6 +17,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var session = new AppSession(ClientConfig.Load(), url => QuotationApiClient.Create(url));
+            ThemeService.Apply(session.Config.Theme);
             desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel(session) };
         }
         base.OnFrameworkInitializationCompleted();

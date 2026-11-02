@@ -158,13 +158,16 @@ conditions (one per line), default payment terms and footer.
 * **Company seal → All users can use the seal**: off = administrators only.
 * **Heading on quotation PDF** / **Heading on proforma invoice PDF**: the title at the top of the PDF (default
   QUOTATION / PROFORMA INVOICE), printed exactly as typed; empty = the standard heading. **Preview PDF** next to it.
+* **Fit on one page** (on): a document that is just over one page (up to 10 %) is printed slightly smaller on one
+  page instead of carrying the last item to page 2.
 * The **quotation date** can be changed by administrators only. For users it is the day the quotation is first saved
   (it stays the same when they edit or approve it later); Duplicate and Convert to Proforma take today's date.
 
 **Settings → Party Details** (administrators): how Buyer and Consignee print, like Tally's print configuration
 *Party Details* — Show Contact details (Contact = phone, and E-Mail), Show contact person's name, Name and Address
 from Party master, Address in a continuous line, Display name for Parties (Name Only / Alias Only / Name (Alias) /
-Alias (Name)), GSTIN, PAN / Income Tax No., State Name & Code, Consignee details and PIN code (joined to the last
+Alias (Name)), GSTIN, PAN / Income Tax No., State Name & Code, Consignee details (Yes / No / Only when different from
+Buyer / **Buyer/Consignee when same** — one block captioned *Buyer/Consignee*, the default) and PIN code (joined to the last
 address line: *Bangalore - 562111*) and **Address width** (half the box: the address wraps in the left half, the
 other lines keep the full width). The defaults are the office's Tally settings. **Preview PDF** prints the latest
 quotation with the options on screen before saving. Labels and colons line up as on the Tally print, and a long address
@@ -239,7 +242,7 @@ enter the quantity → **Create Draft**). Nothing is ever sent to customers auto
 3. In **Product**, type e.g. `universal bevel` or `187-901`. The matching items are listed with the first one
    highlighted: **↑/↓** to choose, **Enter** (or a click) to select → quantity → **Enter** → rate (Tally rate
    pre-filled; if the item has no rate in Tally the box is empty — type it) → **Enter** → discount % → **Enter** →
-   due on → **Enter** → description (brand, model, MOQ …; **Shift+Enter** starts a new line inside it) → **Enter**:
+   description (brand, model, MOQ …; **Shift+Enter** starts a new line inside it) → **Enter**:
    the line is added and the product box is cleared for the next item. Repeat for more lines.
    If you change the product text after selecting, the selection is dropped — select from the list again.
 4. Fill references (buyer's order no., payment terms, delivery …) and packing & forwarding if needed.
@@ -262,13 +265,18 @@ tax summary, tax amount in words, customer's seal and signature). **Proforma Inv
 every list has an *All documents / Quotations / Proforma invoices* filter.
 
 **Keyboard order**: pick the customer (Enter) → **Other references** → **Enter** → Product → Qty → Rate →
-Disc % → Due on → Description (**Shift+Enter** = new line) → **Enter** adds the line. The other reference boxes are
+Disc % → Description (**Shift+Enter** = new line) → **Enter** adds the line. The other reference boxes are
 reached with Tab or the mouse.
 
 **Save as PDF**: one click on a quotation or proforma invoice. A draft is approved first (with all the usual
 checks), then the PDF is saved straight into your folder as *Number Customer.pdf*, e.g.
 `TSQ2526-3403 TATA Electronics System Solutions.pdf` (saving again replaces it). The folder is set per PC in
-**My Settings** (default `Documents\Quotations`); **Open folder** shows it.
+**My Settings** (default `Documents\Quotations`); proforma invoices go to their own folder, also in **My Settings**
+(default `Documents\Quotations\Proforma Invoices`). **Open folder** shows it.
+
+**Light or dark screens**: every user chooses with the moon/sun button in the top bar or **My Settings → Appearance**
+(Light / Dark / Same as Windows). The choice is saved with the login, so it follows the user to every PC; PDFs are
+always white. Remarks print in bold. The item entry has no *Due on* box (and the PDF no Due on column).
 
 **Company seal**: tick **Seal** next to *Save as PDF* and enter the 4-digit seal PIN; the seal is printed over
 *for T.SAIFUDDIN & CO. / Authorised Signatory* on the last page. Set up once by an administrator in

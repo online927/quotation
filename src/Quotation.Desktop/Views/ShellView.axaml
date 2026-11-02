@@ -14,10 +14,10 @@
   <Panel>
     <DockPanel>
       <!-- Top bar -->
-      <Border DockPanel.Dock="Top" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="16,9">
+      <Border DockPanel.Dock="Top" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="16,9">
         <Grid ColumnDefinitions="246,*,Auto">
           <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-            <Border Width="30" Height="30" CornerRadius="8" Background="{StaticResource AccentBrush}">
+            <Border Width="30" Height="30" CornerRadius="8" Background="{DynamicResource AccentBrush}">
               <TextBlock Text="TS" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <StackPanel VerticalAlignment="Center">
@@ -26,22 +26,27 @@
             </StackPanel>
           </StackPanel>
           <TextBox Grid.Column="1" Name="GlobalSearchBox" Text="{Binding GlobalSearch}" MaxWidth="520" HorizontalAlignment="Stretch" Margin="16,0"
-                   CornerRadius="999" Padding="16,6" Background="{StaticResource FillBrush}" BorderThickness="0"
+                   CornerRadius="999" Padding="16,6" Background="{DynamicResource FillBrush}" BorderThickness="0"
                    Watermark="Search quotations — number, customer, GSTIN, product, reference, date   (Ctrl+F)">
             <TextBox.KeyBindings>
               <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}" />
             </TextBox.KeyBindings>
           </TextBox>
           <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <!-- Light / dark mode for this user -->
+            <Button Name="ThemeButton" Classes="round" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{Binding ThemeTip}">
+              <Path Data="{Binding ThemeIcon}" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="16" Height="16" Stretch="Uniform"
+                    StrokeLineCap="Round" StrokeJoin="Round" />
+            </Button>
             <!-- Click the name: change my password, my settings, log out -->
             <Button Name="UserMenuButton" Classes="link" Padding="4,2" ToolTip.Tip="My account">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <Border Width="30" Height="30" CornerRadius="15" Background="{StaticResource FillBrush}">
-                  <TextBlock Text="{Binding UserInitials}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextBrush}"
+                <Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource FillBrush}">
+                  <TextBlock Text="{Binding UserInitials}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextBrush}"
                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
                 <StackPanel VerticalAlignment="Center">
-                  <TextBlock Text="{Binding UserDisplay}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextBrush}" />
+                  <TextBlock Text="{Binding UserDisplay}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextBrush}" />
                   <TextBlock Text="{Binding UserRole, StringFormat='{}{0}  ▾'}" FontSize="11" Classes="muted" />
                 </StackPanel>
               </StackPanel>
@@ -60,25 +65,25 @@
       </Border>
 
       <!-- Status bar -->
-      <Border DockPanel.Dock="Bottom" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,1,0,0" Padding="16,5">
+      <Border DockPanel.Dock="Bottom" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,0" Padding="16,5">
         <StackPanel Orientation="Horizontal" Spacing="20">
           <StackPanel.Styles>
             <Style Selector="TextBlock">
               <Setter Property="FontSize" Value="12" />
-              <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+              <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
               <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
           </StackPanel.Styles>
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Ellipse Width="8" Height="8" Fill="{StaticResource OkBrush}" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
-            <Ellipse Width="8" Height="8" Fill="{StaticResource BadBrush}" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
+            <Ellipse Width="8" Height="8" Fill="{DynamicResource OkBrush}" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
+            <Ellipse Width="8" Height="8" Fill="{DynamicResource BadBrush}" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
             <TextBlock Text="Tally connected" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
             <TextBlock Text="Tally disconnected" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
           </StackPanel>
           <TextBlock Text="{Binding Status.ActiveFinancialYear, StringFormat='FY {0}', FallbackValue=''}" />
           <TextBlock Text="{Binding LastSyncText}" />
-          <TextBlock Foreground="{StaticResource WarnBrush}" Text="Tally data is stale" IsVisible="{Binding Status.DataIsStale, FallbackValue=False}" />
-          <TextBlock Foreground="{StaticResource WarnBrush}" Text="Tally is busy — background reading paused" IsVisible="{Binding Status.TallyBusy, FallbackValue=False}" />
+          <TextBlock Foreground="{DynamicResource WarnBrush}" Text="Tally data is stale" IsVisible="{Binding Status.DataIsStale, FallbackValue=False}" />
+          <TextBlock Foreground="{DynamicResource WarnBrush}" Text="Tally is busy — background reading paused" IsVisible="{Binding Status.TallyBusy, FallbackValue=False}" />
           <TextBlock Text="{Binding ServerState}" />
           <TextBlock Text="{x:Static vm:ShellViewModel.AppVersionText}" />
         </StackPanel>

@@ -30,7 +30,7 @@
         <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="today">
           <StackPanel>
             <TextBlock Classes="eyebrow" Text="TODAY'S QUOTATIONS" />
-            <TextBlock Classes="big" Foreground="{StaticResource AccentBrush}" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
+            <TextBlock Classes="big" Foreground="{DynamicResource AccentBrush}" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
           </StackPanel>
         </Button>
         <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
@@ -42,13 +42,13 @@
         <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
           <StackPanel>
             <TextBlock Classes="eyebrow" Text="PENDING REVIEW" />
-            <TextBlock Classes="big" Foreground="{StaticResource OrangeBrush}" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
+            <TextBlock Classes="big" Foreground="{DynamicResource OrangeBrush}" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
           </StackPanel>
         </Button>
         <Button Classes="tile" Command="{Binding GoCommand}" CommandParameter="inbox">
           <StackPanel>
             <TextBlock Classes="eyebrow" Text="AI INBOX — NEEDS ATTENTION" />
-            <TextBlock Classes="big" Foreground="{StaticResource PurpleBrush}" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–'}" />
+            <TextBlock Classes="big" Foreground="{DynamicResource PurpleBrush}" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–'}" />
           </StackPanel>
         </Button>
       </UniformGrid>
@@ -68,9 +68,9 @@
           <TextBlock Grid.Row="3" Classes="label" Text="Active financial year" />
           <TextBlock Grid.Row="3" Grid.Column="1">
             <Run Text="{Binding Data.Status.ActiveFinancialYear, FallbackValue='–', Mode=OneWay}" />
-            <Run Text="  (source: " Foreground="{StaticResource MutedBrush}" />
-            <Run Text="{Binding Data.Status.ActiveFinancialYearSource, FallbackValue='', Mode=OneWay}" Foreground="{StaticResource MutedBrush}" />
-            <Run Text=")" Foreground="{StaticResource MutedBrush}" />
+            <Run Text="  (source: " Foreground="{DynamicResource MutedBrush}" />
+            <Run Text="{Binding Data.Status.ActiveFinancialYearSource, FallbackValue='', Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" />
+            <Run Text=")" Foreground="{DynamicResource MutedBrush}" />
           </TextBlock>
           <TextBlock Grid.Row="4" Classes="label" Text="Last sync" />
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastSyncText}" />

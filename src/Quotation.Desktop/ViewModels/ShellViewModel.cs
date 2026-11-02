@@ -86,6 +86,36 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public string UserRole { get; }
     public string UserInitials { get; }
 
+    private static readonly Avalonia.Media.Geometry MoonIcon = Avalonia.Media.Geometry.Parse("M20,14.5 A8.5,8.5 0 1 1 9.5,4 A6.5,6.5 0 0 0 20,14.5 Z");
+    private static readonly Avalonia.Media.Geometry SunIcon = Avalonia.Media.Geometry.Parse(
+        "M12,7.5 A4.5,4.5 0 1 1 11.99,7.5 Z M12,1.5 V4 M12,20 V22.5 M4.6,4.6 L6.3,6.3 M17.7,17.7 L19.4,19.4 M1.5,12 H4 M20,12 H22.5 M4.6,19.4 L6.3,17.7 M17.7,6.3 L19.4,4.6");
+
+    /// <summary>The top-bar button shows the moon in light mode (switch to dark) and the sun in dark mode.</summary>
+    public Avalonia.Media.Geometry ThemeIcon => ThemeService.IsDark ? SunIcon : MoonIcon;
+    public string ThemeTip => ThemeService.IsDark ? "Light mode" : "Dark mode";
+
+    /// <summary>Switches between light and dark for this user (saved with their login, so it follows them to any PC).</summary>
+    [RelayCommand]
+    private async Task ToggleThemeAsync()
+    {
+        var theme = ThemeService.IsDark ? AppTheme.Light : AppTheme.Dark;
+        try
+        {
+            await _session.SetThemeAsync(theme);
+        }
+        catch (Quotation.ApiClient.ApiException)
+        {
+            // The screens have switched; the choice is saved again the next time.
+        }
+    }
+
+    /// <summary>The screens changed light/dark (this button, My Settings, or Windows when following Windows).</summary>
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(ThemeIcon));
+        OnPropertyChanged(nameof(ThemeTip));
+    }
+
     public ShellViewModel(AppSession session, Action onLogout)
     {
         _session = session;
@@ -94,6 +124,8 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         UserDisplay = user is null ? "" : user.DisplayName;
         UserRole = user?.Role.ToString() ?? "";
         UserInitials = user is null ? "" : string.Concat(user.DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+        if (user is not null) session.ApplyTheme(user.Theme);
+        if (Avalonia.Application.Current is { } app) app.ActualThemeVariantChanged += OnThemeChanged;
 
         NavItems.Add(new NavItem("dashboard", "Dashboard", "Ctrl+D", () => new DashboardViewModel(_session, Navigate)));
         NavItems.Add(new NavItem("new", "New Quotation", "Ctrl+N", () => new QuotationEditorViewModel(_session, this), "Create"));
@@ -351,6 +383,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public void Dispose()
     {
         if (!_cts.IsCancellationRequested) _cts.Cancel();
+        if (Avalonia.Application.Current is { } app) app.ActualThemeVariantChanged -= OnThemeChanged;
         PendingPrompt?.Choose(LeaveChoice.Cancel);
         PendingDialog?.Choose(false);
     }

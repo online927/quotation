@@ -17,7 +17,7 @@
         <TextBlock Classes="h2" Text="Ask the AI to prepare a quotation" />
         <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
                    Text="Example: Create quotation for Sonepar for 5 universal bevel protractors. The AI only prepares a draft: products and customers are matched against Tally, and you review and approve before any PDF is produced." />
-        <TextBlock Foreground="{StaticResource WarnBrush}" Text="{Binding AiState}" IsVisible="{Binding AiState, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+        <TextBlock Foreground="{DynamicResource WarnBrush}" Text="{Binding AiState}" IsVisible="{Binding AiState, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <Grid ColumnDefinitions="*,8,Auto">
           <TextBox Name="RequestBox" Text="{Binding RequestText}" AcceptsReturn="True" TextWrapping="Wrap" Height="54"
                    Watermark="Type or paste the request… (Ctrl+Enter to send)">
@@ -27,7 +27,7 @@
           </TextBox>
           <Button Grid.Column="2" Classes="primary" VerticalAlignment="Top" Content="Analyse" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
         </Grid>
-        <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+        <TextBlock Foreground="{DynamicResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </Border>
@@ -51,7 +51,7 @@
                     <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="11" />
                   </Border>
                 </Grid>
-                <TextBlock Text="{Binding Input}" FontSize="12" FontStyle="Italic" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+                <TextBlock Text="{Binding Input}" FontSize="12" FontStyle="Italic" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" />
                 <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
                 <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
@@ -59,14 +59,14 @@
                   <Grid ColumnDefinitions="120,*">
                     <TextBlock Classes="label" Text="Customer" />
                     <StackPanel Grid.Column="1" Spacing="2">
-                      <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}">
+                      <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}">
                         <Run Text="{Binding CustomerStatus, Mode=OneWay}" FontWeight="SemiBold" />
                         <Run Text="  — asked for: " />
                         <Run Text="{Binding CustomerQuery, Mode=OneWay}" />
                       </TextBlock>
                       <ComboBox ItemsSource="{Binding CustomerOptions}" SelectedItem="{Binding SelectedCustomer}" HorizontalAlignment="Stretch"
                                 IsEnabled="{Binding CanDecide}" PlaceholderText="Select customer…" />
-                      <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" Text="{Binding CustomerReason}" TextWrapping="Wrap" />
+                      <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" Text="{Binding CustomerReason}" TextWrapping="Wrap" />
                     </StackPanel>
                   </Grid>
                   <ItemsControl ItemsSource="{Binding Lines}">
@@ -79,7 +79,7 @@
                             <ComboBox ItemsSource="{Binding Candidates}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch" PlaceholderText="Select the correct product…"
                                       IsEnabled="{Binding $parent[ItemsControl].((vm:AiRequestItemViewModel)DataContext).CanDecide}" />
                             <TextBlock FontSize="11" Text="{Binding Reason}" TextWrapping="Wrap"
-                                       Foreground="{StaticResource WarnBrush}" IsVisible="{Binding NeedsAttention}" />
+                                       Foreground="{DynamicResource WarnBrush}" IsVisible="{Binding NeedsAttention}" />
                           </StackPanel>
                           <StackPanel Grid.Column="3">
                             <TextBlock Classes="label" Text="Quantity" />
@@ -93,7 +93,7 @@
                   <ItemsControl ItemsSource="{Binding Questions}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="x:String">
-                        <TextBlock Text="{Binding StringFormat='? {0}'}" Foreground="{StaticResource WarnBrush}" FontSize="12" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding StringFormat='? {0}'}" Foreground="{DynamicResource WarnBrush}" FontSize="12" TextWrapping="Wrap" />
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>

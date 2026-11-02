@@ -3,11 +3,11 @@
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.LoginView"
              x:DataType="vm:LoginViewModel">
-  <Grid Background="{StaticResource PageBrush}">
+  <Grid Background="{DynamicResource PageBrush}">
     <Border Classes="card" Width="420" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="36,32" CornerRadius="20"
             BoxShadow="0 8 30 0 #14000000">
       <StackPanel Spacing="10">
-        <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentBrush}" HorizontalAlignment="Center">
+        <Border Width="52" Height="52" CornerRadius="14" Background="{DynamicResource AccentBrush}" HorizontalAlignment="Center">
           <TextBlock Text="TS" Foreground="White" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
         <TextBlock Classes="h1" Text="Sign in to Quotations" HorizontalAlignment="Center" Margin="0,6,0,0" />
@@ -18,7 +18,7 @@
           <TextBox Name="ServerBox" Text="{Binding ServerUrl}" Watermark="http://server-pc:5080" />
           <Button Grid.Column="1" Margin="6,0,0,0" Content="Test" Command="{Binding TestServerCommand}" />
         </Grid>
-        <TextBlock Text="{Binding ServerStatus}" Foreground="{StaticResource OkBrush}" FontSize="12"
+        <TextBlock Text="{Binding ServerStatus}" Foreground="{DynamicResource OkBrush}" FontSize="12"
                    IsVisible="{Binding ServerStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
         <TextBlock Classes="label" Text="Username" />

@@ -9,17 +9,25 @@ public class DocumentLauncher(ClientConfig config)
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.Create), "Quotations")
         : config.PdfFolder;
 
-    public virtual string SaveAndOpen(byte[] pdf, string fileName, bool open = true)
+    /// <summary>Proforma invoices: their own folder, by default "Proforma Invoices" inside the quotation folder.</summary>
+    public string ProformaFolder => string.IsNullOrWhiteSpace(config.ProformaPdfFolder)
+        ? Path.Combine(Folder, "Proforma Invoices")
+        : config.ProformaPdfFolder;
+
+    public string FolderFor(bool proforma) => proforma ? ProformaFolder : Folder;
+
+    public virtual string SaveAndOpen(byte[] pdf, string fileName, bool open = true, string? folder = null)
     {
-        Directory.CreateDirectory(Folder);
-        var path = Path.Combine(Folder, fileName);
+        folder ??= Folder;
+        Directory.CreateDirectory(folder);
+        var path = Path.Combine(folder, fileName);
         File.WriteAllBytes(path, pdf);
         if (open) Open(path);
         return path;
     }
 
     /// <summary>Saves (replacing an earlier copy of the same document) without opening it.</summary>
-    public virtual string Save(byte[] pdf, string fileName) => SaveAndOpen(pdf, fileName, open: false);
+    public virtual string Save(byte[] pdf, string fileName, string? folder = null) => SaveAndOpen(pdf, fileName, open: false, folder);
 
     /// <summary>Opens the folder in Explorer with the file selected.</summary>
     public virtual void ShowInFolder(string path)

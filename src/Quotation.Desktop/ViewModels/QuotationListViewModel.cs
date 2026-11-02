@@ -28,9 +28,6 @@ public sealed class QuotationRow(QuotationSummaryDto s)
     public string Number => Summary.Number ?? "(not numbered)";
     public bool IsProforma => Summary.DocType == DocumentType.ProformaInvoice;
     public string Type => IsProforma ? "Proforma" : "Quotation";
-    public Avalonia.Media.IBrush TypeBrush => IsProforma
-        ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#8944AB"))
-        : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#0071E3"));
     public string Date => Summary.Date.ToString("dd-MMM-yyyy");
     public string Customer => Summary.CustomerName;
     public string Item => Summary.LineCount > 1 ? $"{Summary.FirstItem} (+{Summary.LineCount - 1} more)" : Summary.FirstItem;

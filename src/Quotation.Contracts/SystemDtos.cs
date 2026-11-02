@@ -7,13 +7,24 @@ public sealed record LoginRequest(string Username, string Password, string? Clie
 public sealed record LoginResponse(string Token, DateTime ExpiresUtc, UserDto User);
 
 public sealed record UserDto(int Id, string Username, string DisplayName, UserRole Role, bool IsActive, bool MustChangePassword,
-    bool WithoutGstNext = false);
+    bool WithoutGstNext = false, string Theme = AppTheme.Light);
+
+/// <summary>Light or dark screens, chosen by each user (PDFs are always white).</summary>
+public static class AppTheme
+{
+    public const string Light = "Light";
+    public const string Dark = "Dark";
+    /// <summary>Follows the Windows setting (light or dark apps).</summary>
+    public const string System = "System";
+
+    public static bool IsValid(string? theme) => theme is Light or Dark or System;
+}
 
 /// <summary>Administrator's changes to a user (login name, display name, role, active).</summary>
 public sealed record UpdateUserRequest(string Username, string DisplayName, UserRole Role, bool IsActive);
 
-/// <summary>The current user's own switches ("My settings").</summary>
-public sealed record MyPreferencesDto(bool WithoutGstNext);
+/// <summary>The current user's own switches ("My settings"); a null value is left unchanged.</summary>
+public sealed record MyPreferencesDto(bool? WithoutGstNext = null, string? Theme = null);
 
 public sealed record CreateUserRequest(string Username, string DisplayName, string Password, UserRole Role);
 

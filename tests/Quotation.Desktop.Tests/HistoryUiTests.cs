@@ -31,14 +31,12 @@ public class HistoryUiTests
         await e1.LoadAuditTrailCommand.ExecuteAsync(null);
         Assert.Contains(e1.AuditTrail, a => a.Contains("QuotationCreated"));
 
-        // Second quotation offers the recent customer and product.
+        // A second, half-filled quotation.
         shell.Navigate("new");
         var e2 = (QuotationEditorViewModel)shell.CurrentPage!;
-        await UiHelpers.WaitUntil(() => e2.HasRecentCustomers && e2.HasRecentProducts);
-        await e2.PickRecentCustomerCommand.ExecuteAsync(e2.RecentCustomers[0]);
+        await UiHelpers.WaitUntil(() => e2.NumberText.Contains("provisional"));
+        await e2.SelectCustomerAsync((await session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id);
         Assert.Equal("27AAACS1234F1Z3", e2.BuyerGstin);
-        await e2.PickRecentProductCommand.ExecuteAsync(e2.RecentProducts[0]);
-        Assert.Equal("187-901-10-UNIVERSAL BEVEL PROTRACTOR", e2.EntryProduct!.Name);
 
         // Global search (the half-filled second quotation is not kept).
         shell.GlobalSearch = e1.Number!;

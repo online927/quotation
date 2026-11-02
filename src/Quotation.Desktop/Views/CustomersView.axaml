@@ -16,7 +16,7 @@
         <DataTemplate x:DataType="c:CustomerSearchHitDto">
           <StackPanel Margin="0,1">
             <TextBlock Text="{Binding Customer.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-            <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis">
+            <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis">
               <Run Text="{Binding Customer.StateName, Mode=OneWay}" />
               <Run Text="  " />
               <Run Text="{Binding Customer.Gstin, Mode=OneWay}" />
@@ -47,7 +47,7 @@
           <TextBlock Grid.Row="5" Classes="label" Text="GSTIN/UIN" />
           <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Spacing="8">
             <TextBlock Text="{Binding Detail.Gstin, FallbackValue=''}" />
-            <TextBlock Text="(checksum invalid)" Foreground="{StaticResource WarnBrush}" IsVisible="{Binding !Detail.GstinValid, FallbackValue=False}" />
+            <TextBlock Text="(checksum invalid)" Foreground="{DynamicResource WarnBrush}" IsVisible="{Binding !Detail.GstinValid, FallbackValue=False}" />
           </StackPanel>
           <TextBlock Grid.Row="6" Classes="label" Text="Registration" />
           <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Detail.GstRegistrationType, FallbackValue=''}" />

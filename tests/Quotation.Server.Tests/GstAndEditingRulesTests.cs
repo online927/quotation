@@ -116,6 +116,26 @@ public class GstAndEditingRulesTests : QuotationTestBase
     }
 
     [Fact]
+    public async Task Each_user_keeps_their_own_light_or_dark_choice()
+    {
+        var user = await UserAsync();
+        Assert.Equal(AppTheme.Light, (await user.MeAsync()).Theme);
+        await user.SetMyPreferencesAsync(new MyPreferencesDto(WithoutGstNext: true));
+        var me = await user.SetMyPreferencesAsync(new MyPreferencesDto(Theme: AppTheme.Dark));
+        Assert.Equal(AppTheme.Dark, me.Theme);
+        Assert.True(me.WithoutGstNext); // only the theme changed
+
+        // Another PC: the same login gets the same choice; other users are not affected.
+        var otherPc = Server.CreateApi("OTHER-PC");
+        await otherPc.LoginAsync("keerthana", "user-pass");
+        Assert.Equal(AppTheme.Dark, otherPc.CurrentUser!.Theme);
+        Assert.Equal(AppTheme.Light, (await Api.MeAsync()).Theme);
+
+        Assert.Equal(AppTheme.System, (await user.SetMyPreferencesAsync(new MyPreferencesDto(Theme: AppTheme.System))).Theme);
+        await Assert.ThrowsAsync<ApiException>(() => user.SetMyPreferencesAsync(new MyPreferencesDto(Theme: "Purple")));
+    }
+
+    [Fact]
     public async Task Without_gst_is_for_one_quotation_and_prints_like_tally()
     {
         var me = await Api.SetMyPreferencesAsync(new MyPreferencesDto(true));

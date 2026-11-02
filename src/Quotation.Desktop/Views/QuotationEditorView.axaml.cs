@@ -10,7 +10,7 @@ namespace Quotation.Desktop.Views;
 
 /// <summary>
 /// Tally-style keyboard flow: customer → Other references → Enter → items. Enter moves to the next field; in the line entry
-/// Product → Quantity → Rate → Disc % → Due on → Description → Enter adds the line and returns to Product
+/// Product → Quantity → Rate → Disc % → Description → Enter adds the line and returns to Product
 /// (Shift+Enter starts a new line inside the description).
 /// In the customer and product boxes the first match is highlighted, ↑/↓ choose and Enter accepts.
 /// </summary>
@@ -95,7 +95,7 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
             return;
         }
-        if (owner == DueOnBox)
+        if (owner == DiscountBox)
         {
             DescriptionBox.Focus();
             DescriptionBox.CaretIndex = DescriptionBox.Text?.Length ?? 0;

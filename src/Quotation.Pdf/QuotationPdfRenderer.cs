@@ -20,23 +20,32 @@ namespace Quotation.Pdf;
 public sealed class QuotationPdfRenderer
 {
     // ---- page geometry (points; A4 portrait) ----
-    internal const double PageWidth = 595.28;
-    internal const double PageHeight = 841.89;
+    internal const double A4Width = 595.28;
+    internal const double A4Height = 841.89;
+    /// <summary>Below 1 when a document is printed slightly smaller to fit on one page; layout uses the enlarged page.</summary>
+    private double _scale = 1;
+    /// <summary>The smallest scale used to fit a document on one page (about 10 % smaller).</summary>
+    internal const double MinFitScale = 0.9;
+    internal double PageWidth => A4Width / _scale;
+    internal double PageHeight => A4Height / _scale;
     internal const double MarginLeft = 28;
     internal const double MarginRight = 28;
     internal const double MarginTop = 20;
     internal const double MarginBottom = 20;
-    internal const double ContentWidth = PageWidth - MarginLeft - MarginRight;
+    internal double ContentWidth => PageWidth - MarginLeft - MarginRight;
     internal const double Pad = 3.5;
 
-    // Column widths of the item table (Description takes the rest). Quotations show "Due on", proforma invoices "Part No.".
+    /// <summary>Width of a column that is not printed (it keeps its index so both layouts share the column numbers).</summary>
+    private const double Hidden = -1;
+
+    // Column widths of the item table (Description takes the rest). Proforma invoices show "Part No.".
     private static readonly (string Title, double Width, Align Align)[] QuotationColumns =
     [
         ("Sl\nNo.", 20, Align.Center),
         ("Description of Goods", 0, Align.Left),
         ("HSN/SAC", 46, Align.Left),
         ("GST\nRate", 28, Align.Right),
-        ("Due on", 36, Align.Left),
+        ("", Hidden, Align.Left),
         ("Quantity", 50, Align.Right),
         ("Rate", 52, Align.Right),
         ("per", 26, Align.Left),
@@ -87,8 +96,8 @@ public sealed class QuotationPdfRenderer
     private void UseColumns(DocumentType kind)
     {
         Columns = kind == DocumentType.ProformaInvoice ? ProformaColumns : QuotationColumns;
-        var fixedWidth = Columns.Sum(c => c.Width);
-        _colW = Columns.Select(c => c.Width == 0 ? ContentWidth - fixedWidth : c.Width).ToArray();
+        var fixedWidth = Columns.Sum(c => Math.Max(0, c.Width));
+        _colW = Columns.Select(c => c.Width == 0 ? ContentWidth - fixedWidth : Math.Max(0, c.Width)).ToArray();
         _colX = new double[_colW.Length];
         var x = MarginLeft;
         for (var i = 0; i < _colW.Length; i++)
@@ -121,15 +130,41 @@ public sealed class QuotationPdfRenderer
         // Measure once with a scratch page so layout is deterministic.
         var measurePage = new PdfDocument().AddPage();
         using var measure = XGraphics.FromPdfPage(measurePage);
+        _scale = 1;
         var layout = Layout(measure, doc);
-
-        for (var p = 0; p < layout.Pages.Count; p++)
+        if (doc.ShrinkToFitOnePage && layout.Pages.Count > 1)
         {
-            var page = pdf.AddPage();
-            page.Width = XUnit.FromPoint(PageWidth);
-            page.Height = XUnit.FromPoint(PageHeight);
-            using var gfx = XGraphics.FromPdfPage(page);
-            DrawPage(gfx, doc, layout, p);
+            // Just over one page: print it slightly smaller on one page rather than carry a line or two over.
+            foreach (var scale in new[] { 0.98, 0.96, 0.94, 0.92, MinFitScale })
+            {
+                _scale = scale;
+                var smaller = Layout(measure, doc);
+                if (smaller.Pages.Count != 1) continue;
+                layout = smaller;
+                break;
+            }
+            if (layout.Pages.Count > 1)
+            {
+                _scale = 1;
+                UseColumns(doc.Kind);
+            }
+        }
+
+        try
+        {
+            for (var p = 0; p < layout.Pages.Count; p++)
+            {
+                var page = pdf.AddPage();
+                page.Width = XUnit.FromPoint(A4Width);
+                page.Height = XUnit.FromPoint(A4Height);
+                using var gfx = XGraphics.FromPdfPage(page);
+                if (_scale != 1) gfx.ScaleTransform(_scale);
+                DrawPage(gfx, doc, layout, p);
+            }
+        }
+        finally
+        {
+            _scale = 1;
         }
 
         using var ms = new MemoryStream();
@@ -352,7 +387,7 @@ public sealed class QuotationPdfRenderer
         var w = LeftWidth - 2 * Pad;
         var company = Math.Max(Height(CompanyLines(g, doc, CompanyTextWidth(doc))), doc.Logo is null ? 0 : LogoSize) + 2 * Pad;
         var consignee = doc.Consignee is null ? 0 : Height(PartyLines(g, "Consignee (Ship to)", doc.Consignee, w)) + 2 * Pad;
-        var buyer = Height(PartyLines(g, "Buyer (Bill to)", doc.Buyer, w)) + 2 * Pad;
+        var buyer = Height(PartyLines(g, doc.BuyerCaption, doc.Buyer, w)) + 2 * Pad;
         return (company, consignee, buyer);
     }
 
@@ -449,7 +484,7 @@ public sealed class QuotationPdfRenderer
 
         var buyerTop = consigneeTop + consigneeH;
         g.DrawLine(pen, left, buyerTop, mid, buyerTop);
-        DrawParty(g, "Buyer (Bill to)", doc.Buyer, left + Pad, buyerTop + Pad);
+        DrawParty(g, doc.BuyerCaption, doc.Buyer, left + Pad, buyerTop + Pad);
 
         // Right column: reference grid; the last row (Terms of Delivery) stretches to the bottom.
         g.DrawLine(pen, mid, top, mid, top + height);
@@ -498,6 +533,7 @@ public sealed class QuotationPdfRenderer
         var pen = Pen();
         for (var i = 0; i < Columns.Length; i++)
         {
+            if (_colW[i] == 0) continue;
             var lines = Columns[i].Title.Split('\n');
             var textHeight = lines.Length * LineHeight(_head);
             var y = top + (TableHeaderHeight - textHeight) / 2;
@@ -521,7 +557,6 @@ public sealed class QuotationPdfRenderer
             DrawCell(g, line.Hsn, _text, ColHsn, y);
             DrawCell(g, line.GstRate is null ? "" : $"{line.GstRate.Value.ToString("0.##", CultureInfo.InvariantCulture)} %", _text, ColGst, y);
             if (Columns == ProformaColumns) DrawCell(g, line.PartNumber, _text, ColRef, y);
-            else DrawCell(g, line.DueOn, Font(7, XFontStyleEx.Italic), ColRef, y);
             DrawCell(g, $"{IndianFormat.Quantity(line.Quantity)} {line.Unit}".Trim(), _bold, ColQty, y);
             DrawCell(g, IndianFormat.Amount(line.Rate), _text, ColRate, y);
             DrawCell(g, line.Unit, Font(6.5, XFontStyleEx.Regular), ColPer, y + 0.8);
@@ -575,7 +610,10 @@ public sealed class QuotationPdfRenderer
     private void DrawColumnLines(XGraphics g, double top, double bottom)
     {
         var pen = Pen();
-        for (var i = 1; i < _colX.Length; i++) g.DrawLine(pen, _colX[i], top, _colX[i], bottom);
+        for (var i = 1; i < _colX.Length; i++)
+        {
+            if (_colW[i] > 0) g.DrawLine(pen, _colX[i], top, _colX[i], bottom);
+        }
     }
 
     private double DrawTotalRow(XGraphics g, QuotationDocument doc, double top)
@@ -614,7 +652,7 @@ public sealed class QuotationPdfRenderer
     {
         var fullWidth = ContentWidth - 2 * Pad;
         var words = Wrap(g, doc.AmountInWords, _words, fullWidth);
-        var remarks = string.IsNullOrWhiteSpace(doc.Remarks) ? [] : Wrap(g, "Remarks: " + doc.Remarks, _text, fullWidth);
+        var remarks = string.IsNullOrWhiteSpace(doc.Remarks) ? [] : Wrap(g, "Remarks: " + doc.Remarks, _bold, fullWidth);
         var terms = new List<string>();
         for (var i = 0; i < doc.TermsAndConditions.Count; i++)
         {
@@ -750,7 +788,7 @@ public sealed class QuotationPdfRenderer
         var h = Pad + LineHeight(_label) + f.Words.Count * LineHeight(_words) + Pad;
         h += HsnTableHeight(doc);
         if (f.TaxWords.Count > 0) h += f.TaxWords.Count * LineHeight(_bold) + 2;
-        if (f.Remarks.Count > 0) h += f.Remarks.Count * LineHeight(_text) + 2;
+        if (f.Remarks.Count > 0) h += f.Remarks.Count * LineHeight(_bold) + 2;
         if (f.Terms.Count > 0) h += LineHeight(_bold) + f.Terms.Count * LineHeight(_small) + 2;
         h += Math.Max(Height(f.LeftBlock), Height(f.RightBlock)) + 2 * Pad;
         h += SignatureHeight;
@@ -784,8 +822,8 @@ public sealed class QuotationPdfRenderer
         }
         foreach (var r in f.Remarks)
         {
-            DrawText(g, r, _text, MarginLeft + Pad, y);
-            y += LineHeight(_text);
+            DrawText(g, r, _bold, MarginLeft + Pad, y);
+            y += LineHeight(_bold);
         }
         if (f.Remarks.Count > 0) y += 2;
         if (f.Terms.Count > 0)
@@ -843,7 +881,7 @@ public sealed class QuotationPdfRenderer
     /// The company seal, as stamped by hand on the Tally print: over "for COMPANY … Authorised Signatory", towards the right,
     /// overlapping the bottom edge of the box. Size and position can be adjusted in the company settings.
     /// </summary>
-    private static void DrawSeal(XGraphics g, QuotationDocument doc, double boxLeft, double boxTop, double boxWidth)
+    private void DrawSeal(XGraphics g, QuotationDocument doc, double boxLeft, double boxTop, double boxWidth)
     {
         using var ms = new MemoryStream(doc.Seal!);
         using var img = XImage.FromStream(ms);

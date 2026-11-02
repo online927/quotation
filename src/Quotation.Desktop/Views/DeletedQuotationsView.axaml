@@ -13,7 +13,7 @@
     </Grid>
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
       <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-      <TextBlock Foreground="{StaticResource OkBrush}" Text="{Binding InfoMessage}" TextWrapping="Wrap"
+      <TextBlock Foreground="{DynamicResource OkBrush}" Text="{Binding InfoMessage}" TextWrapping="Wrap"
                  IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     </StackPanel>
     <Border DockPanel.Dock="Top" Classes="tablehead">
@@ -33,7 +33,7 @@
           <Grid ColumnDefinitions="130,80,100,*,110,220,110,230">
             <StackPanel>
               <TextBlock Text="{Binding Number}" FontWeight="SemiBold" />
-              <TextBlock Text="{Binding NumberNote}" FontSize="10" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap"
+              <TextBlock Text="{Binding NumberNote}" FontSize="10" Foreground="{DynamicResource WarnBrush}" TextWrapping="Wrap"
                          IsVisible="{Binding NumberNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             </StackPanel>
             <TextBlock Grid.Column="1" Text="{Binding Type}" />

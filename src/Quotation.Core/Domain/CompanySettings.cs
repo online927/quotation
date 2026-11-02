@@ -106,8 +106,24 @@ public sealed class QuotationSettings
     public const string DefaultQuotationHeading = "QUOTATION";
     public const string DefaultProformaHeading = "PROFORMA INVOICE";
 
+    /// <summary>A document just over one page is printed slightly smaller (down to 90 %) so it fits on one page.</summary>
+    public bool ShrinkToFitOnePage { get; set; } = true;
+
     /// <summary>How the buyer and consignee are printed (like Tally's "Party Details" print options).</summary>
     public PartyPrintSettings PartyPrint { get; set; } = new();
+}
+
+/// <summary>When the "Consignee (Ship to)" block is printed.</summary>
+public enum ConsigneePrint
+{
+    /// <summary>Always a separate consignee block.</summary>
+    Yes,
+    /// <summary>Never; the buyer block only.</summary>
+    No,
+    /// <summary>Only when the goods go elsewhere than the buyer's address.</summary>
+    OnlyWhenDifferent,
+    /// <summary>One block captioned "Buyer/Consignee" when they are the same, otherwise two blocks.</summary>
+    CombinedWhenSame,
 }
 
 /// <summary>Tally's "Display name for Parties".</summary>
@@ -141,8 +157,13 @@ public sealed class PartyPrintSettings
     /// <summary>PAN/IT No. line, from the Tally ledger.</summary>
     public bool ShowPan { get; set; }
     public bool ShowStateNameAndCode { get; set; } = true;
-    /// <summary>The "Consignee (Ship to)" block.</summary>
-    public bool ShowConsignee { get; set; } = true;
+    /// <summary>When the "Consignee (Ship to)" block is printed.</summary>
+    public ConsigneePrint Consignee { get; set; } = ConsigneePrint.CombinedWhenSame;
+    /// <summary>Settings saved before <see cref="Consignee"/> existed: false meant no consignee block.</summary>
+    public bool? ShowConsignee { get; set; }
+
+    /// <summary>The consignee choice, honouring an older "Show Consignee details: No".</summary>
+    public ConsigneePrint EffectiveConsignee => ShowConsignee == false ? ConsigneePrint.No : Consignee;
     /// <summary>PIN code at the end of the address ("Bangalore - 562111").</summary>
     public bool ShowPinCode { get; set; } = true;
     /// <summary>The address wraps within half the width of the box (name, GSTIN, state and contact keep the full width).</summary>

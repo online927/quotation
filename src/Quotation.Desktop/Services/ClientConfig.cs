@@ -8,6 +8,10 @@ public sealed class ClientConfig
     public string ServerUrl { get; set; } = "http://localhost:5080";
     public string LastUsername { get; set; } = "";
     public string PdfFolder { get; set; } = "";
+    /// <summary>Where "Save as PDF" puts proforma invoices; empty = "Proforma Invoices" inside <see cref="PdfFolder"/>.</summary>
+    public string ProformaPdfFolder { get; set; } = "";
+    /// <summary>Light/dark of the last user on this PC, used for the login screen.</summary>
+    public string Theme { get; set; } = "Light";
 
     /// <summary>Where this config is saved; not serialized.</summary>
     [System.Text.Json.Serialization.JsonIgnore]

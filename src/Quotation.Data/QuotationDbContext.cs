@@ -93,6 +93,7 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
             e.ToTable("Users");
             e.Property(x => x.Username).UseCollation("NOCASE");
             e.HasIndex(x => x.Username).IsUnique();
+            e.Property(x => x.Theme).HasMaxLength(10).HasDefaultValue("Light");
         });
 
         b.Entity<ApiSession>(e =>

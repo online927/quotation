@@ -19,7 +19,7 @@
         <TextBlock FontSize="12" Text="{Binding LastPollText, StringFormat='Last checked: {0}'}" />
         <TextBlock FontSize="12" Text="{Binding CountsText}" />
         <TextBlock Classes="error" Text="{Binding Status.LastError, FallbackValue=''}" IsVisible="{Binding Status.LastError, Converter={x:Static StringConverters.IsNotNullOrEmpty}, FallbackValue=False}" />
-        <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+        <TextBlock Foreground="{DynamicResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0" IsVisible="{Binding IsAdmin}">
           <Button Classes="primary" Content="Connect Gmail (Google sign-in)" Command="{Binding ConnectCommand}" />

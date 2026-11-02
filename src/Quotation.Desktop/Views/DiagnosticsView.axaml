@@ -12,7 +12,7 @@
         <Button Content="Refresh (F5)" HotKey="F5" Command="{Binding LoadCommand}" />
       </StackPanel>
     </Grid>
-    <TextBlock DockPanel.Dock="Top" Foreground="{StaticResource OkBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    <TextBlock DockPanel.Dock="Top" Foreground="{DynamicResource OkBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     <TextBlock DockPanel.Dock="Top" Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     <TabControl>
       <TabItem Header="System">
@@ -50,7 +50,7 @@
             <TextBlock Grid.Row="7" Grid.Column="1" TextWrapping="Wrap">
               <Run Text="{Binding Info.Status.TallyConnected, StringFormat='Connected: {0}', FallbackValue='', Mode=OneWay}" />
               <Run Text="  " />
-              <Run Text="{Binding Info.Status.TallyError, FallbackValue='', Mode=OneWay}" Foreground="{StaticResource BadBrush}" />
+              <Run Text="{Binding Info.Status.TallyError, FallbackValue='', Mode=OneWay}" Foreground="{DynamicResource BadBrush}" />
             </TextBlock>
             <TextBlock Grid.Row="8" Classes="label" Text="Gmail / Claude AI" />
             <TextBlock Grid.Row="8" Grid.Column="1">

@@ -103,12 +103,50 @@ public class PartyPrintTests : QuotationTestBase
         Assert.True(PdfQuotationRenderer.ToParty(Typed, new PartyPrintSettings { AddressHalfWidth = true }, Ledger).AddressHalfWidth);
     }
 
+    [Theory]
+    [InlineData(ConsigneePrint.Yes, true, true, "Buyer (Bill to)")]
+    [InlineData(ConsigneePrint.No, true, false, "Buyer (Bill to)")]
+    [InlineData(ConsigneePrint.OnlyWhenDifferent, true, false, "Buyer (Bill to)")]
+    [InlineData(ConsigneePrint.CombinedWhenSame, true, false, "Buyer/Consignee")]
+    [InlineData(ConsigneePrint.Yes, false, true, "Buyer (Bill to)")]
+    [InlineData(ConsigneePrint.No, false, false, "Buyer (Bill to)")]
+    [InlineData(ConsigneePrint.OnlyWhenDifferent, false, true, "Buyer (Bill to)")]
+    [InlineData(ConsigneePrint.CombinedWhenSame, false, true, "Buyer (Bill to)")]
+    public void Consignee_block_follows_the_setting(ConsigneePrint choice, bool same, bool consigneeBlock, string buyerCaption)
+    {
+        var q = new QuotationHeader
+        {
+            Number = "X", Buyer = Typed, ConsigneeSameAsBuyer = same,
+            Consignee = same ? new PartySnapshot() : new PartySnapshot { Name = "Sonepar Warehouse", Address = "Peenya, Bangalore" },
+        };
+        var settings = new QuotationSettings { PartyPrint = new PartyPrintSettings { Consignee = choice } };
+        var doc = new PdfQuotationRenderer(Microsoft.Extensions.Logging.Abstractions.NullLogger<PdfQuotationRenderer>.Instance)
+            .ToDocument(q, new CompanySettings(), settings, watermark: null);
+        Assert.Equal(consigneeBlock, doc.Consignee is not null);
+        Assert.Equal(buyerCaption, doc.BuyerCaption);
+        Assert.True(doc.ShrinkToFitOnePage); // on by default
+    }
+
+    [Fact]
+    public void A_consignee_typed_like_the_buyer_counts_as_the_same_and_old_no_setting_is_kept()
+    {
+        var q = new QuotationHeader
+        {
+            Buyer = Typed, ConsigneeSameAsBuyer = false,
+            Consignee = new PartySnapshot { Name = "SONEPAR INDIA PRIVATE LIMITED", Address = "Plot No. 12, MIDC Industrial Area,\nChakan, Pune\nPIN: 410501" },
+        };
+        Assert.True(PdfQuotationRenderer.SameParty(q));
+        Assert.False(PdfQuotationRenderer.ShowsConsignee(q, new PartyPrintSettings()));
+        // Settings saved by the previous version with "Show Consignee details" off.
+        Assert.Equal(ConsigneePrint.No, new PartyPrintSettings { ShowConsignee = false, Consignee = ConsigneePrint.Yes }.EffectiveConsignee);
+    }
+
     [Fact]
     public async Task Saved_options_are_used_on_the_pdf_and_the_preview()
     {
         var settings = await Api.SettingsAsync();
         settings.Quotation.PartyPrint.ShowPan = true;
-        settings.Quotation.PartyPrint.ShowConsignee = false;
+        settings.Quotation.PartyPrint.Consignee = ConsigneePrint.No;
         await Api.SaveSettingsAsync(settings);
 
         var q = await Api.CreateQuotationAsync(await BevelRequest());

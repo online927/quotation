@@ -17,9 +17,12 @@ internal sealed class RecordingLauncher(ClientConfig config) : DocumentLauncher(
 {
     public List<string> Saved { get; } = [];
 
-    public override string SaveAndOpen(byte[] pdf, string fileName, bool open = true)
+    public List<string> Folders { get; } = [];
+
+    public override string SaveAndOpen(byte[] pdf, string fileName, bool open = true, string? folder = null)
     {
         Saved.Add(fileName);
+        Folders.Add(folder ?? Folder);
         return fileName;
     }
 }
@@ -121,11 +124,7 @@ public class QuotationEditorTests
         ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);   // → discount
         Dispatcher.UIThread.RunJobs();
         ctx.Window.KeyTextInput("10");
-        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);   // → due on
-        Dispatcher.UIThread.RunJobs();
-        Assert.True(view.FindControl<TextBox>("DueOnBox")!.IsKeyboardFocusWithin);
-        ctx.Window.KeyTextInput("2 weeks");
-        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);   // → description
+        ctx.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);   // → description (no Due on)
         Dispatcher.UIThread.RunJobs();
         var description = view.FindControl<TextBox>("DescriptionBox")!;
         Assert.True(description.IsKeyboardFocusWithin);
@@ -143,7 +142,7 @@ public class QuotationEditorTests
         Assert.Equal(3250m, line.Rate);
         Assert.Equal(10m, line.DiscountPercent);
         Assert.Equal(8775m, line.Amount);
-        Assert.Equal("2 weeks", line.DueOn);
+        Assert.Null(view.FindControl<TextBox>("DueOnBox")); // Due on is not asked
         Assert.Equal(["Brand: Mitutoyo", "MOQ: 1"], line.Description.Split('\n').Select(l => l.TrimEnd('\r')));
         await UiHelpers.WaitUntil(() => view.FindControl<SearchPicker>("ProductBox")!.InputBox.IsKeyboardFocusWithin);
         Assert.Null(editor.EntryProduct); // entry cleared for the next product
@@ -206,7 +205,6 @@ public class QuotationEditorTests
         Press(ctx, Key.A, PhysicalKey.A, RawInputModifiers.Control);
         ctx.Window.KeyTextInput("1450");
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // → disc %
-        Press(ctx, Key.Enter, PhysicalKey.Enter);          // → due on
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // → description
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // add line
         await UiHelpers.WaitUntil(() => editor.Lines.Count == 1);
@@ -247,7 +245,6 @@ public class QuotationEditorTests
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // quantity 1 → rate
         ctx.Window.KeyTextInput("2350");
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // → disc %
-        Press(ctx, Key.Enter, PhysicalKey.Enter);          // → due on
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // → description
         Press(ctx, Key.Enter, PhysicalKey.Enter);          // add line
         await UiHelpers.WaitUntil(() => editor.Lines.Count == 1);

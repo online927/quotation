@@ -88,9 +88,11 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             OtherReferences = q.OtherReferences,
             TermsOfDelivery = q.TermsOfDelivery,
             Buyer = ToParty(q.Buyer, settings.PartyPrint, master),
-            Consignee = !settings.PartyPrint.ShowConsignee ? null
-                : q.ConsigneeSameAsBuyer ? ToParty(q.Buyer, settings.PartyPrint, master)
-                : ToParty(q.Consignee, settings.PartyPrint, null),
+            Consignee = ShowsConsignee(q, settings.PartyPrint)
+                ? q.ConsigneeSameAsBuyer ? ToParty(q.Buyer, settings.PartyPrint, master) : ToParty(q.Consignee, settings.PartyPrint, null)
+                : null,
+            BuyerCaption = settings.PartyPrint.EffectiveConsignee == ConsigneePrint.CombinedWhenSame && SameParty(q) ? "Buyer/Consignee" : "Buyer (Bill to)",
+            ShrinkToFitOnePage = settings.ShrinkToFitOnePage,
             Lines = lines,
             Subtotal = calc.Subtotal,
             SummaryRows = summary,
@@ -216,6 +218,21 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             o.ShowPan ? master?.Pan ?? "" : "",
             o.AddressHalfWidth);
     }
+
+    /// <summary>The goods go to the buyer: "Same as buyer", or a consignee with the buyer's name and address.</summary>
+    internal static bool SameParty(QuotationHeader q) =>
+        q.ConsigneeSameAsBuyer
+        || (Normalise(q.Consignee.Name) == Normalise(q.Buyer.Name) && Normalise(q.Consignee.Address) == Normalise(q.Buyer.Address));
+
+    private static string Normalise(string? s) =>
+        string.Join(' ', (s ?? "").Split((char[])[' ', '\n', '\r', ','], StringSplitOptions.RemoveEmptyEntries)).ToUpperInvariant();
+
+    internal static bool ShowsConsignee(QuotationHeader q, PartyPrintSettings o) => o.EffectiveConsignee switch
+    {
+        ConsigneePrint.No => false,
+        ConsigneePrint.Yes => true,
+        _ => !SameParty(q),
+    };
 
     /// <summary>The heading set in Settings → Quotation (the standard one when left empty).</summary>
     internal static string Heading(DocumentType type, QuotationSettings settings) => type == DocumentType.ProformaInvoice

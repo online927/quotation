@@ -9,10 +9,17 @@ public partial class MySettingsView : UserControl
 {
     public MySettingsView() => InitializeComponent();
 
-    private async void OnBrowse(object? sender, RoutedEventArgs e)
+    private void OnBrowse(object? sender, RoutedEventArgs e) => Browse(proforma: false);
+
+    private void OnBrowseProforma(object? sender, RoutedEventArgs e) => Browse(proforma: true);
+
+    private async void Browse(bool proforma)
     {
         if (DataContext is not MySettingsViewModel vm || TopLevel.GetTopLevel(this)?.StorageProvider is not { CanPickFolder: true } storage) return;
-        var picked = await storage.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Folder for saved PDFs", AllowMultiple = false });
-        if (picked.Count > 0 && picked[0].TryGetLocalPath() is { } path) vm.SetFolder(path);
+        var picked = await storage.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = proforma ? "Folder for proforma invoice PDFs" : "Folder for quotation PDFs", AllowMultiple = false,
+        });
+        if (picked.Count > 0 && picked[0].TryGetLocalPath() is { } path) vm.SetFolder(path, proforma);
     }
 }

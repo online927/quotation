@@ -10,7 +10,7 @@
         <TextBlock Classes="muted" Text="{Binding UserName, StringFormat='Only for you ({0}) — every user can change these.'}" />
       </StackPanel>
       <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-      <TextBlock Foreground="{StaticResource OkBrush}" Text="{Binding InfoMessage}" TextWrapping="Wrap"
+      <TextBlock Foreground="{DynamicResource OkBrush}" Text="{Binding InfoMessage}" TextWrapping="Wrap"
                  IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
       <Border Classes="card">
@@ -24,14 +24,29 @@
 
       <Border Classes="card">
         <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Save as PDF folder (this PC)" />
+          <TextBlock Classes="h2" Text="Appearance" />
           <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
-                     Text="'Save as PDF' saves the quotation here as 'Number Customer.pdf' without asking. Leave empty for the standard folder." />
-          <Grid ColumnDefinitions="*,8,Auto,8,Auto">
+                     Text="Light or dark screens, just for you (also the moon/sun button at the top). Saved with your login, so it follows you to every PC. PDFs are always printed white." />
+          <ComboBox Name="ThemeBox" ItemsSource="{Binding ThemeChoices}" SelectedIndex="{Binding ThemeIndex}" Width="200" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Save as PDF folders (this PC)" />
+          <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
+                     Text="'Save as PDF' saves the document here as 'Number Customer.pdf' without asking. Leave a box empty for the standard folder." />
+          <TextBlock Classes="fl" Text="Quotations" />
+          <Grid ColumnDefinitions="*,8,Auto">
             <TextBox Text="{Binding PdfFolder}" Watermark="{Binding DefaultPdfFolder}" />
             <Button Grid.Column="2" Name="BrowseButton" Content="Browse…" Click="OnBrowse" />
-            <Button Grid.Column="4" Classes="primary" Content="Save" Command="{Binding SavePdfFolderCommand}" />
           </Grid>
+          <TextBlock Classes="fl" Text="Proforma invoices" />
+          <Grid ColumnDefinitions="*,8,Auto">
+            <TextBox Text="{Binding ProformaPdfFolder}" Watermark="{Binding DefaultProformaPdfFolder}" />
+            <Button Grid.Column="2" Name="BrowseProformaButton" Content="Browse…" Click="OnBrowseProforma" />
+          </Grid>
+          <Button Classes="primary" Content="Save" Command="{Binding SavePdfFolderCommand}" HorizontalAlignment="Left" />
         </StackPanel>
       </Border>
     </StackPanel>

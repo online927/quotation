@@ -119,11 +119,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [ObservableProperty] private decimal? _packingForwardingPercent;
     [ObservableProperty] private CalcResult? _totals;
     public ObservableCollection<string> ValidationMessages { get; } = [];
-    public ObservableCollection<RecentItemDto> RecentCustomers { get; } = [];
-    public ObservableCollection<RecentItemDto> RecentProducts { get; } = [];
     public ObservableCollection<string> AuditTrail { get; } = [];
-    public bool HasRecentCustomers => RecentCustomers.Count > 0 && CustomerId is null;
-    public bool HasRecentProducts => RecentProducts.Count > 0;
     [ObservableProperty] private bool _needsStaleOverride;
     [ObservableProperty] private string? _staleMessage;
 
@@ -218,18 +214,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 await RefreshNumberPreviewAsync();
                 RecalculateTotals();
                 IsDirty = false;
-            }
-            try
-            {
-                var recent = await _session.Api.RecentItemsAsync();
-                foreach (var c in recent.Customers) RecentCustomers.Add(c);
-                foreach (var p in recent.Products) RecentProducts.Add(p);
-                OnPropertyChanged(nameof(HasRecentCustomers));
-                OnPropertyChanged(nameof(HasRecentProducts));
-            }
-            catch (ApiException)
-            {
-                // Recent items are a convenience only.
             }
         });
     }
@@ -351,7 +335,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     partial void OnIdChanged(Guid? value) => OnPropertyChanged(nameof(CanConvertToProforma));
 
     partial void OnStatusChanged(QuotationStatus value) => NotifyState();
-    partial void OnCustomerIdChanged(int? value) => OnPropertyChanged(nameof(HasRecentCustomers));
     partial void OnNumberChanged(string? value) => OnPropertyChanged(nameof(Title));
     partial void OnEditingLineChanged(QuotationLineViewModel? value) => OnPropertyChanged(nameof(EntryButtonText));
     partial void OnDateChanged(DateTime? value)
@@ -782,7 +765,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         await RunAsync(async () =>
         {
             var bytes = pin is null ? await _session.Api.QuotationPdfAsync(Id.Value) : await _session.Api.SealedPdfAsync(Id.Value, pin.Trim());
-            LastPdfPath = _session.Documents.Save(bytes, PdfFileName());
+            LastPdfPath = _session.Documents.Save(bytes, PdfFileName(), _session.Documents.FolderFor(IsProforma));
             InfoMessage = (pin is null ? "Saved to " : "Sealed and saved to ") + LastPdfPath;
         });
     }
@@ -844,7 +827,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         if (Id is null) return;
         var bytes = await _session.Api.QuotationPdfAsync(Id.Value);
-        LastPdfPath = _session.Documents.SaveAndOpen(bytes, QuotationNumberFormatter.ToFileName(Number ?? Id.ToString()!) + ".pdf");
+        LastPdfPath = _session.Documents.SaveAndOpen(bytes, QuotationNumberFormatter.ToFileName(Number ?? Id.ToString()!) + ".pdf",
+            folder: _session.Documents.FolderFor(IsProforma));
     }
 
     [RelayCommand]
@@ -892,22 +876,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     [RelayCommand]
     private void NewQuotation() => _navigator.Navigate(IsProforma ? "newproforma" : "new");
-
-    [RelayCommand]
-    private Task PickRecentCustomerAsync(RecentItemDto item) => RunAsync(async () =>
-    {
-        await SelectCustomerAsync(item.Id);
-        OnPropertyChanged(nameof(HasRecentCustomers));
-    });
-
-    [RelayCommand]
-    private Task PickRecentProductAsync(RecentItemDto item) => RunAsync(async () =>
-    {
-        var p = await _session.Api.ProductAsync(item.Id);
-        const string last = "Last rate: ";
-        SelectProduct(new ProductSummaryDto(p.Id, p.Name, p.PartNumber, p.Brand, p.StockGroup, p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description,
-            p.RateSource.StartsWith(last, StringComparison.Ordinal) ? p.RateSource[last.Length..] : ""));
-    });
 
     [RelayCommand]
     private Task LoadAuditTrailAsync() => RunAsync(async () =>

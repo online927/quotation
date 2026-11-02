@@ -33,13 +33,14 @@ public class PdfRenderTests
         [
             "QUOTATION", "T.SAIFUDDIN", "N.R.Road,", "GSTIN/UIN:", "29AAAFT0000A1Z0", "Karnataka,", "Consignee", "(Ship", "Buyer", "(Bill",
             "Quotation", "TSQ2526-3247", "Dated", "30-Sep-26", "Buyer's", "PO/4471", "Dispatched", "Destination", "Pune", "Payment",
-            "Other", "References", "Delivery", "Sl", "Description", "Goods", "HSN/SAC", "GST", "Due", "Quantity", "Rate", "per", "Disc.",
+            "Other", "References", "Delivery", "Sl", "Description", "Goods", "HSN/SAC", "GST", "Quantity", "Rate", "per", "Disc.",
             "Amount", "187-901-10-UNIVERSAL", "BEVEL", "PROTRACTOR", "Brand:", "Mitutoyo", "MOQ:", "90172020", "18", "15,600.00",
             "31,200.00", "Packing", "Forwarding", "500.00", "Total", "31,700.00", "Chargeable", "INR", "Thirty", "Seven", "Only", "E.",
             "O.E", "PAN", "AAAFT0000A", "MSME", "IEC", "Declaration", "valid", "Bank", "IFS", "EXMP0000001", "Prepared", "Verified",
             "Authorised", "Signatory", "Computer", "Generated",
         ];
         foreach (var e in expected) Assert.Contains(e, text);
+        Assert.DoesNotContain("Due on", text); // no Due on column
     }
 
     public static IEnumerable<object[]> OverlapCases()

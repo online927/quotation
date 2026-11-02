@@ -93,4 +93,8 @@ public sealed record QuotationDocument
 
     /// <summary>Diagonal watermark (e.g. "DRAFT" for previews of unapproved quotations).</summary>
     public string? Watermark { get; init; }
+    /// <summary>A document just over one page is printed slightly smaller (down to 90 %) to fit on one page.</summary>
+    public bool ShrinkToFitOnePage { get; init; }
+    /// <summary>Caption of the buyer block: "Buyer/Consignee" when one block stands for both.</summary>
+    public string BuyerCaption { get; init; } = "Buyer (Bill to)";
 }

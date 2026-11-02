@@ -73,7 +73,26 @@ public sealed partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    partial void OnSettingsChanged(AllSettingsDto? value) => OnPropertyChanged(nameof(PartyDisplayNameIndex));
+    /// <summary>"Show Consignee details", in the order of <see cref="ConsigneePrint"/>.</summary>
+    public IReadOnlyList<string> ConsigneeChoices { get; } = ["Yes", "No", "Only when different from Buyer", "Buyer/Consignee when same"];
+
+    public int ConsigneeChoiceIndex
+    {
+        get => (int)(Settings?.Quotation.PartyPrint.EffectiveConsignee ?? ConsigneePrint.CombinedWhenSame);
+        set
+        {
+            if (Settings is null || value < 0) return;
+            Settings.Quotation.PartyPrint.Consignee = (ConsigneePrint)value;
+            Settings.Quotation.PartyPrint.ShowConsignee = null; // replaces the older Yes/No setting
+            OnPropertyChanged();
+        }
+    }
+
+    partial void OnSettingsChanged(AllSettingsDto? value)
+    {
+        OnPropertyChanged(nameof(PartyDisplayNameIndex));
+        OnPropertyChanged(nameof(ConsigneeChoiceIndex));
+    }
     public IReadOnlyList<string> RateSources { get; } = ["StandardPrice", "PriceLevel"];
 
     public string ExampleNumber

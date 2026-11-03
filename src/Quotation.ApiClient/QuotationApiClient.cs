@@ -244,12 +244,13 @@ public partial class QuotationApiClient
     public Task<QuotationDto> ConvertToProformaAsync(Guid id, CancellationToken ct = default) =>
         PostAsync<QuotationDto>($"api/quotations/{id}/convert-to-proforma", null, ct);
     public Task<QuotationDto> RegeneratePdfAsync(Guid id, CancellationToken ct = default) => PostAsync<QuotationDto>($"api/quotations/{id}/regenerate-pdf", null, ct);
-    /// <summary>The PDF printed now; <paramref name="modern"/> = the Modern layout (Z button) instead of the Tally style.</summary>
-    public Task<byte[]> QuotationPdfAsync(Guid id, CancellationToken ct = default, bool modern = false) =>
-        GetBytesAsync($"api/quotations/{id}/pdf" + (modern ? "?layout=z" : ""), ct);
-    public async Task<byte[]> SealedPdfAsync(Guid id, string pin, CancellationToken ct = default, bool modern = false)
+    /// <summary>The PDF printed now, in the user's layout (My Settings) or in <paramref name="layout"/> (Tally / Zoho).</summary>
+    public Task<byte[]> QuotationPdfAsync(Guid id, CancellationToken ct = default, string? layout = null) =>
+        GetBytesAsync($"api/quotations/{id}/pdf" + (layout is null ? "" : $"?layout={layout}"), ct);
+    public async Task<byte[]> SealedPdfAsync(Guid id, string pin, CancellationToken ct = default, string? layout = null)
     {
-        using var response = await SendRawAsync(HttpMethod.Post, $"api/quotations/{id}/pdf/sealed" + (modern ? "?layout=z" : ""), new SealedPdfRequest(pin), ct);
+        using var response = await SendRawAsync(HttpMethod.Post, $"api/quotations/{id}/pdf/sealed" + (layout is null ? "" : $"?layout={layout}"),
+            new SealedPdfRequest(pin), ct);
         return await response.Content.ReadAsByteArrayAsync(ct);
     }
     public Task DeleteQuotationAsync(Guid id, CancellationToken ct = default) => SendAsync(HttpMethod.Delete, $"api/quotations/{id}", null, ct);

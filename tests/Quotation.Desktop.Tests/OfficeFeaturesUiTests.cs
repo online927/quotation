@@ -141,17 +141,20 @@ public class OfficeFeaturesUiTests
     }
 
     [AvaloniaFact]
-    public async Task Z_button_saves_the_modern_layout_next_to_the_normal_pdf()
+    public async Task Pdf_layout_is_chosen_in_my_settings_and_there_is_no_z_button()
     {
         using var ctx = await SetupAsync();
+        ctx.Shell.Navigate("mysettings");
+        var mine = Assert.IsType<MySettingsViewModel>(ctx.Shell.CurrentPage);
+        await UiHelpers.WaitUntil(() => !mine.IsBusy && mine.PdfLayout == PdfLayouts.Tally); // the default
+        mine.PdfLayout = PdfLayouts.Zoho;
+        await UiHelpers.WaitUntil(() => !mine.IsBusy && ctx.Session.Api.CurrentUser!.PdfLayout == PdfLayouts.Zoho);
+
         var editor = await DraftAsync(ctx);
-        await editor.SaveAsPdfZCommand.ExecuteAsync(null);
-        Assert.True(editor.IsFinal); // a draft is approved first, as with Save as PDF
-        Assert.Equal($"{editor.Number} Sonepar India Private Limited Z.pdf", ctx.Files.Saved[^1]);
         await editor.SaveAsPdfCommand.ExecuteAsync(null);
-        Assert.Equal($"{editor.Number} Sonepar India Private Limited.pdf", ctx.Files.Saved[^1]);
+        Assert.Equal($"{editor.Number} Sonepar India Private Limited.pdf", ctx.Files.Saved[^1]); // no " Z" any more
         var view = ctx.Window.GetVisualDescendants().OfType<QuotationEditorView>().First();
-        Assert.Equal("Z", Avalonia.Controls.ControlExtensions.FindControl<Avalonia.Controls.Button>(view, "SaveAsPdfZButton")!.Content);
+        Assert.Null(Avalonia.Controls.ControlExtensions.FindControl<Avalonia.Controls.Button>(view, "SaveAsPdfZButton"));
     }
 
     [AvaloniaFact]

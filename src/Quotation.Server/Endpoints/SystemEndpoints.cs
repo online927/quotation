@@ -135,9 +135,11 @@ public static class SystemEndpoints
         app.MapPut("/api/me/preferences", async (MyPreferencesDto req, HttpContext ctx, QuotationDbContext db, CancellationToken ct) =>
         {
             if (req.Theme is not null && !AppTheme.IsValid(req.Theme)) return Results.BadRequest(new ApiError("Theme must be Light, Dark or System."));
+            if (req.PdfLayout is not null && !PdfLayouts.IsValid(req.PdfLayout)) return Results.BadRequest(new ApiError("PDF layout must be Tally or Zoho."));
             var user = await db.Users.FirstAsync(u => u.Username == ctx.User.UserName(), ct);
             if (req.WithoutGstNext is { } withoutGst) user.WithoutGstNext = withoutGst;
             if (req.Theme is { } theme) user.Theme = theme;
+            if (req.PdfLayout is { } layout) user.PdfLayout = layout;
             await db.SaveChangesAsync(ct);
             return Results.Ok(AuthService.ToDto(user));
         }).RequireAuthorization();
@@ -223,8 +225,12 @@ public static class SystemEndpoints
                     RoundOffTotal = s.Quotation.RoundOffTotal,
                     Lines = [new QuotationLine { LineNo = 1, ItemName = "Sample Item", Hsn = "82051000", GstRate = 18, Quantity = 1, Unit = "NOS", Rate = 1000, Amount = 1000 }],
                 };
-            var bytes = pdf.RenderPreview(q, s.Company, options, q.Number ?? "PREVIEW",
-                new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName()), quotations.MasterOf(q));
+            // In the layout this administrator prints with (My Settings), or the default layout on screen.
+            var stamp = new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName());
+            var layout = await quotations.LayoutOfAsync(QuotationEndpoints.User(ctx), ct);
+            var bytes = layout == PdfLayouts.Zoho
+                ? pdf.RenderModernPreview(q, s.Company, options, q.Number ?? "PREVIEW", stamp, quotations.MasterOf(q))
+                : pdf.RenderPreview(q, s.Company, options, q.Number ?? "PREVIEW", stamp, quotations.MasterOf(q));
             return Results.File(bytes, "application/pdf");
         }).RequireAuthorization(AdminPolicy);
         app.MapGet("/api/settings/seal", (SealService seal) =>

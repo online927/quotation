@@ -178,11 +178,13 @@
             <TextBlock Grid.Row="18" Text="Company seal" />
             <CheckBox Grid.Row="18" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllUsersCanSeal}"
                       Content="All users can use the seal (with the seal PIN); otherwise administrators only" />
-            <TextBlock Grid.Row="23" Text="Modern (Z) layout" VerticalAlignment="Top" Margin="0,8,12,4" />
+            <TextBlock Grid.Row="23" Text="PDF layout" VerticalAlignment="Top" Margin="0,8,12,4" />
             <StackPanel Grid.Row="23" Grid.Column="1" Spacing="4" Margin="0,3">
-              <TextBlock Classes="muted" FontSize="11" Text="Heading" />
+              <TextBlock Classes="muted" FontSize="11" Text="Default for users who have not chosen one in My Settings" />
+              <ComboBox ItemsSource="{Binding PdfLayoutChoices}" SelectedItem="{Binding Settings.Quotation.DefaultPdfLayout}" Width="200" />
+              <TextBlock Classes="muted" FontSize="11" Text="Zoho layout: heading" Margin="0,6,0,0" />
               <TextBox Text="{Binding Settings.Quotation.ModernHeading}" Watermark="Quotation/Proforma" Width="300" HorizontalAlignment="Left" />
-              <TextBlock Classes="muted" FontSize="11" Text="Sign-off under the terms (one line per row; {name} = who prepared it)" />
+              <TextBlock Classes="muted" FontSize="11" Text="Zoho layout: sign-off under the terms (one line per row; {name} = who prepared it)" />
               <TextBox Text="{Binding ModernSignOff}" AcceptsReturn="True" Height="64" Width="300" HorizontalAlignment="Left" />
             </StackPanel>
             <TextBlock Grid.Row="22" Text="Part No. column" />

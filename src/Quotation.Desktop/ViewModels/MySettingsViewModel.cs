@@ -21,6 +21,10 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
     [ObservableProperty] private int _themeIndex;
 
     public IReadOnlyList<string> ThemeChoices { get; } = ["Light", "Dark", "Same as Windows"];
+
+    /// <summary>The layout of the PDFs this user makes (saved with the login).</summary>
+    [ObservableProperty] private string _pdfLayout = Core.Domain.PdfLayouts.Tally;
+    public IReadOnlyList<string> PdfLayoutChoices { get; } = [Core.Domain.PdfLayouts.Tally, Core.Domain.PdfLayouts.Zoho];
     private static readonly string[] Themes = [AppTheme.Light, AppTheme.Dark, AppTheme.System];
 
     public string Title => "My Settings";
@@ -46,10 +50,22 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         _loading = true;
         WithoutGstNext = me.WithoutGstNext;
         ThemeIndex = Math.Max(0, Array.IndexOf(Themes, me.Theme));
+        var settings = await _session.GetSettingsAsync(refresh: true);
+        PdfLayout = Core.Domain.PdfLayouts.IsValid(me.PdfLayout) ? me.PdfLayout! : settings.Quotation.DefaultPdfLayout;
         PdfFolder = _session.Config.PdfFolder;
         ProformaPdfFolder = _session.Config.ProformaPdfFolder;
         _loading = false;
     });
+
+    partial void OnPdfLayoutChanged(string value)
+    {
+        if (_loading || !Core.Domain.PdfLayouts.IsValid(value)) return;
+        _ = RunAsync(async () =>
+        {
+            _session.Api.UpdateCurrentUser(await _session.Api.SetMyPreferencesAsync(new MyPreferencesDto(PdfLayout: value)));
+            InfoMessage = $"Your PDFs will be made in the {value} layout (Save as PDF, Approve, Open PDF, Preview). Saved with your login.";
+        });
+    }
 
     partial void OnThemeIndexChanged(int value)
     {

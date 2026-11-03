@@ -272,6 +272,8 @@ public class AppUser
     public bool WithoutGstNext { get; set; }
     /// <summary>Light, Dark or System (follows Windows): the user's screens, on every PC.</summary>
     public string Theme { get; set; } = "Light";
+    /// <summary>Tally or Zoho: the layout of the PDFs this user makes; null = the default in Settings.</summary>
+    public string? PdfLayout { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime? LastLoginUtc { get; set; }
 }

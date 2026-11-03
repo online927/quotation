@@ -45,7 +45,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     /// <summary>Points the seal is moved up (negative = down); stored as the downward offset.</summary>
     [ObservableProperty] private decimal? _sealMoveUp;
     [ObservableProperty] private string _hiddenMarkers = "";
-    /// <summary>Sign-off lines of the Modern (Z) layout, one per row.</summary>
+    /// <summary>Sign-off lines of the Zoho layout, one per row.</summary>
     [ObservableProperty] private string _modernSignOff = "";
     public bool HasSealImage => SealImage is not null;
     public string SealPinState => Settings?.SealPinConfigured == true ? "A seal PIN is set." : "No seal PIN yet.";
@@ -74,6 +74,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
             OnPropertyChanged();
         }
     }
+
+    public IReadOnlyList<string> PdfLayoutChoices { get; } = [PdfLayouts.Tally, PdfLayouts.Zoho];
 
     /// <summary>"Show Consignee details", in the order of <see cref="ConsigneePrint"/>.</summary>
     public IReadOnlyList<string> ConsigneeChoices { get; } = ["Yes", "No", "Only when different from Buyer", "Buyer/Consignee when same"];

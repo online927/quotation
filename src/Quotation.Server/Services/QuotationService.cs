@@ -25,7 +25,7 @@ public interface IQuotationDocumentRenderer
     byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
         byte[]? seal = null, PartyMaster? master = null);
 
-    /// <summary>The "Modern" layout (the Z button).</summary>
+    /// <summary>The Zoho layout (chosen per user in My Settings).</summary>
     byte[] RenderModern(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
         byte[]? seal = null, PartyMaster? master = null);
 }
@@ -269,7 +269,7 @@ public sealed class QuotationService(
         }
         try
         {
-            var bytes = renderer.Render(q, settings.Company, settings.Quotation, Stamp(user), master: MasterOf(q));
+            var bytes = RenderAs(await LayoutOfAsync(user, ct), q, Stamp(user));
             q.PdfPath = await pdfStorage.SaveAsync(q, bytes, ct);
             q.PdfError = null;
             q.Status = QuotationStatus.Generated;
@@ -421,49 +421,57 @@ public sealed class QuotationService(
         return dto;
     }
 
-    /// <summary>Renders the current state with a DRAFT watermark (unapproved) without saving anything.</summary>
+    /// <summary>The PDF layout of <paramref name="user"/>: their choice in My Settings, otherwise the default in Settings.</summary>
+    public async Task<string> LayoutOfAsync(UserContext user, CancellationToken ct, string? requested = null)
+    {
+        if (PdfLayouts.IsValid(requested)) return requested!;
+        var own = await db.Users.AsNoTracking().Where(u => u.Username == user.UserName).Select(u => u.PdfLayout).FirstOrDefaultAsync(ct);
+        return PdfLayouts.IsValid(own) ? own! : PdfLayouts.IsValid(settings.Quotation.DefaultPdfLayout) ? settings.Quotation.DefaultPdfLayout : PdfLayouts.Tally;
+    }
+
+    private byte[] RenderAs(string layout, QuotationHeader q, Quotation.Pdf.PrintStamp? stamp, byte[]? seal = null) =>
+        layout == PdfLayouts.Zoho
+            ? renderer.RenderModern(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q))
+            : renderer.Render(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q));
+
+    /// <summary>Renders the current state with a DRAFT watermark (unapproved) without saving anything, in the user's layout.</summary>
     public async Task<byte[]> PreviewPdfAsync(Guid id, PdfQuotationRenderer pdf, CancellationToken ct, UserContext? user = null)
     {
         var q = await LoadAsync(id, ct);
         var stamp = user is null ? null : Stamp(user);
+        var zoho = user is not null && await LayoutOfAsync(user, ct) == PdfLayouts.Zoho;
         if (q.Status is QuotationStatus.Generated or QuotationStatus.Approved)
         {
-            return pdf.Render(q, settings.Company, settings.Quotation, stamp, master: MasterOf(q));
+            return zoho
+                ? pdf.RenderModern(q, settings.Company, settings.Quotation, stamp, master: MasterOf(q))
+                : pdf.Render(q, settings.Company, settings.Quotation, stamp, master: MasterOf(q));
         }
         var provisional = q.Number ?? (await numbering.PreviewAsync(db, fy.GetActive().Year, ct, q.DocType)).Number + " (provisional)";
-        return pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional, stamp, MasterOf(q));
+        return zoho
+            ? pdf.RenderModernPreview(q, settings.Company, settings.Quotation, provisional, stamp, MasterOf(q))
+            : pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional, stamp, MasterOf(q));
     }
 
     /// <summary>
-    /// The PDF of an approved quotation as printed now by <paramref name="user"/> ("Printed on … By: …").
-    /// The copy archived at approval is used only if rendering fails.
+    /// The PDF of an approved quotation as printed now by <paramref name="user"/> ("Printed on … By: …"), in their layout
+    /// (or <paramref name="layout"/> when given). The copy archived at approval is used only if rendering fails.
     /// </summary>
-    public async Task<byte[]?> PrintPdfAsync(Guid id, UserContext user, CancellationToken ct, byte[]? seal = null, bool modern = false)
+    public async Task<byte[]?> PrintPdfAsync(Guid id, UserContext user, CancellationToken ct, byte[]? seal = null, string? layout = null)
     {
         var q = await LoadAsync(id, ct);
         if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated)) return null;
-        if (modern)
-        {
-            // The Z layout is always printed fresh (the archived copy is the Tally-style one).
-            var z = renderer.RenderModern(q, settings.Company, settings.Quotation, Stamp(user), seal, MasterOf(q));
-            if (seal is not null)
-            {
-                audit.Add(user.UserName, user.Machine, "PdfSealed", "Quotation", q.Id.ToString(), (q.Number ?? "") + " (Z)");
-                await SaveAsync(ct);
-            }
-            return z;
-        }
+        var chosen = await LayoutOfAsync(user, ct, layout);
         if (seal is not null)
         {
             // A sealed copy is always rendered fresh (never the unsealed archive) and recorded.
-            var bytes = renderer.Render(q, settings.Company, settings.Quotation, Stamp(user), seal, MasterOf(q));
-            audit.Add(user.UserName, user.Machine, "PdfSealed", "Quotation", q.Id.ToString(), q.Number ?? "");
+            var bytes = RenderAs(chosen, q, Stamp(user), seal);
+            audit.Add(user.UserName, user.Machine, "PdfSealed", "Quotation", q.Id.ToString(), $"{q.Number} ({chosen})");
             await SaveAsync(ct);
             return bytes;
         }
         try
         {
-            return renderer.Render(q, settings.Company, settings.Quotation, Stamp(user), master: MasterOf(q));
+            return RenderAs(chosen, q, Stamp(user));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

@@ -27,10 +27,15 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
 
     private readonly ModernPdfRenderer _modern = new();
 
-    /// <summary>The "Modern" layout (the Z button).</summary>
+    /// <summary>The Zoho layout (chosen per user in My Settings).</summary>
     public byte[] RenderModern(QuotationHeader q, CompanySettings company, QuotationSettings settings, PrintStamp? printed = null,
         byte[]? seal = null, PartyMaster? master = null) =>
         _modern.Render(ToDocument(q, company, settings, watermark: null, printed: printed, master: master) with { Seal = seal });
+
+    /// <summary>The Zoho layout of an unapproved quotation, with a DRAFT watermark.</summary>
+    public byte[] RenderModernPreview(QuotationHeader q, CompanySettings company, QuotationSettings settings, string provisionalNumber,
+        PrintStamp? printed = null, PartyMaster? master = null) =>
+        _modern.Render(ToDocument(q, company, settings, watermark: "DRAFT", provisionalNumber, printed, master));
 
     public byte[] RenderPreview(QuotationHeader q, CompanySettings company, QuotationSettings settings, string provisionalNumber,
         PrintStamp? printed = null, PartyMaster? master = null) =>

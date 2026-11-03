@@ -94,6 +94,7 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
             e.Property(x => x.Username).UseCollation("NOCASE");
             e.HasIndex(x => x.Username).IsUnique();
             e.Property(x => x.Theme).HasMaxLength(10).HasDefaultValue("Light");
+            e.Property(x => x.PdfLayout).HasMaxLength(10);
         });
 
         b.Entity<ApiSession>(e =>

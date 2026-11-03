@@ -100,8 +100,7 @@ public static class QuotationEndpoints
             var path = storage.FullPath(q?.PdfPath);
             if (q is null || path is null) return Results.NotFound(new ApiError("No PDF has been generated for this quotation."));
             // Printed fresh, so it shows who printed it and when (as Tally does).
-            var modern = IsModern(layout);
-            var bytes = await svc.PrintPdfAsync(id, User(ctx), ct, modern: modern);
+            var bytes = await svc.PrintPdfAsync(id, User(ctx), ct, layout: Layout(layout));
             if (bytes is null) return Results.NotFound(new ApiError("No PDF has been generated for this quotation."));
             await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "PdfDownloaded", "Quotation", id.ToString(), q.Number ?? "", ct);
             return Results.File(bytes, "application/pdf", Path.GetFileName(path));
@@ -115,7 +114,7 @@ public static class QuotationEndpoints
             {
                 var user = User(ctx);
                 var image = seal.Authorize(user, r.Pin);
-                var bytes = await svc.PrintPdfAsync(id, user, ct, image, IsModern(layout));
+                var bytes = await svc.PrintPdfAsync(id, user, ct, image, Layout(layout));
                 return bytes is null
                     ? Results.Json(new ApiError("Only an approved quotation can be sealed: approve it first.", null, ApiErrorCodes.InvalidState), statusCode: 409)
                     : Results.File(bytes, "application/pdf");
@@ -203,9 +202,12 @@ public static class QuotationEndpoints
 
     private static readonly string[] DateFormats = ["d-M-yyyy", "d/M/yyyy", "d-M-yy", "d/M/yy", "d-MMM-yyyy", "d-MMM-yy", "yyyy-MM-dd"];
 
-    /// <summary>"?layout=z" (or "modern") asks for the Modern layout instead of the Tally style.</summary>
-    private static bool IsModern(string? layout) =>
-        layout is not null && (layout.Equals("z", StringComparison.OrdinalIgnoreCase) || layout.Equals("modern", StringComparison.OrdinalIgnoreCase));
+    /// <summary>"?layout=Tally|Zoho" prints in that layout instead of the user's own (My Settings).</summary>
+    private static string? Layout(string? layout) =>
+        layout is null ? null
+        : layout.Equals(PdfLayouts.Zoho, StringComparison.OrdinalIgnoreCase) ? PdfLayouts.Zoho
+        : layout.Equals(PdfLayouts.Tally, StringComparison.OrdinalIgnoreCase) ? PdfLayouts.Tally
+        : null;
 
     internal static UserContext User(HttpContext ctx) => new(ctx.User.UserName(), ctx.User.DisplayName(), ctx.Machine(), ctx.User.IsInRole("Admin"));
 

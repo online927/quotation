@@ -103,9 +103,11 @@ public sealed class QuotationSettings
     public string QuotationHeading { get; set; } = DefaultQuotationHeading;
     /// <summary>Heading printed at the top of a proforma invoice PDF (as typed).</summary>
     public string ProformaHeading { get; set; } = DefaultProformaHeading;
-    /// <summary>Heading of the "Modern" (Z) PDF layout.</summary>
+    /// <summary>PDF layout for users who have not chosen one in My Settings.</summary>
+    public string DefaultPdfLayout { get; set; } = PdfLayouts.Tally;
+    /// <summary>Heading of the Zoho PDF layout.</summary>
     public string ModernHeading { get; set; } = "Quotation/Proforma";
-    /// <summary>Lines under the terms on the Modern layout; {name} is the person who prepared the quotation.</summary>
+    /// <summary>Lines under the terms on the Zoho layout; {name} is the person who prepared the quotation.</summary>
     public List<string> ModernSignOff { get; set; } = ["Regards,", "{name}", "Tsaifuddin and Company"];
     public const string DefaultQuotationHeading = "QUOTATION";
     public const string DefaultProformaHeading = "PROFORMA INVOICE";
@@ -120,6 +122,17 @@ public sealed class QuotationSettings
 
     /// <summary>How the buyer and consignee are printed (like Tally's "Party Details" print options).</summary>
     public PartyPrintSettings PartyPrint { get; set; } = new();
+}
+
+/// <summary>The PDF layouts each user can choose in My Settings.</summary>
+public static class PdfLayouts
+{
+    /// <summary>Like the TallyPrime print (boxes, amount in words, HSN table on proforma invoices).</summary>
+    public const string Tally = "Tally";
+    /// <summary>T.SAIFUDDIN &amp; CO's modern design (logo banner, maroon corners), docs/templates/modern-z.</summary>
+    public const string Zoho = "Zoho";
+
+    public static bool IsValid(string? layout) => layout is Tally or Zoho;
 }
 
 /// <summary>When the "Consignee (Ship to)" block is printed.</summary>

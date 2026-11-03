@@ -24,6 +24,15 @@
 
       <Border Classes="card">
         <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="PDF layout" />
+          <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
+                     Text="The look of the PDFs you make: Tally (like the TallyPrime print) or Zoho (T.SAIFUDDIN &amp; CO logo, modern design). Used for Approve, Save as PDF, Open PDF and Preview. Saved with your login, so it follows you to every PC." />
+          <ComboBox Name="PdfLayoutBox" ItemsSource="{Binding PdfLayoutChoices}" SelectedItem="{Binding PdfLayout}" Width="200" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Appearance" />
           <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
                      Text="Light or dark screens, just for you (also the moon/sun button at the top). Saved with your login, so it follows you to every PC. PDFs are always printed white." />

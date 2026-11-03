@@ -1,3 +1,4 @@
+using Quotation.Contracts;
 using Quotation.Core.Domain;
 using Quotation.Data.Entities;
 using Quotation.Server.Services;
@@ -76,7 +77,7 @@ public class PartyPrintTests : QuotationTestBase
     }
 
     [Fact]
-    public async Task Z_prints_the_modern_layout_with_discount_hsn_and_the_sign_off()
+    public async Task Each_user_prints_in_their_own_layout_tally_or_zoho()
     {
         var settings = await Api.SettingsAsync();
         settings.Quotation.ModernHeading = "Quotation/Proforma";
@@ -89,22 +90,40 @@ public class PartyPrintTests : QuotationTestBase
         var q = await Api.CreateQuotationAsync(request);
         await Api.ApproveQuotationAsync(q.Id, overrideStaleData: true);
 
-        var z = GstAndEditingRulesTests.PdfText(await Api.QuotationPdfAsync(q.Id, modern: true));
-        Assert.Contains("Quotation/Proforma", z);
-        Assert.Contains($"Ref No. {q.Number}", z);
-        Assert.Contains("Disc %", z);
-        Assert.Contains("10%", z);
-        Assert.Contains("90172020", z);                 // HSN/SAC
-        Assert.Contains("Part No. 187-901-10", z);      // the Part No. column is on by default
-        Assert.Contains("Buyer/Consignee", z);
-        Assert.Contains("Sub Total", z);
-        Assert.Matches(@"CGST9 \(9%\)|IGST18 \(18%\)", z); // tax lines by rate
-        Assert.Contains("Keerthana", z);                // {name} = prepared by
-        Assert.DoesNotContain("Amount Chargeable", z);  // not the Tally style
-
+        // Nobody has chosen: the default (Tally).
+        Assert.Null((await Api.MeAsync()).PdfLayout);
         var tally = GstAndEditingRulesTests.PdfText(await Api.QuotationPdfAsync(q.Id));
-        Assert.Contains("Amount Chargeable", tally);    // the normal button is unchanged
+        Assert.Contains("Amount Chargeable", tally);
         Assert.DoesNotContain("Quotation/Proforma", tally);
+
+        // This user chooses Zoho; another user keeps Tally.
+        Assert.Equal(PdfLayouts.Zoho, (await Api.SetMyPreferencesAsync(new MyPreferencesDto(PdfLayout: PdfLayouts.Zoho))).PdfLayout);
+        var zoho = GstAndEditingRulesTests.PdfText(await Api.QuotationPdfAsync(q.Id));
+        Assert.Contains("Quotation/Proforma", zoho);
+        Assert.Contains($"Ref No. {q.Number}", zoho);
+        Assert.Contains("Disc %", zoho);
+        Assert.Contains("10%", zoho);
+        Assert.Contains("90172020", zoho);              // HSN/SAC
+        Assert.Contains("Part No. 187-901-10", zoho);   // the Part No. column is on by default
+        Assert.Contains("Buyer/Consignee", zoho);
+        Assert.Contains("Sub Total", zoho);
+        Assert.Matches(@"CGST9 \(9%\)|IGST18 \(18%\)", zoho); // tax lines by rate
+        Assert.Contains("Keerthana", zoho);             // {name} = prepared by
+        Assert.DoesNotContain("Amount Chargeable", zoho);
+        Assert.Contains("Quotation/Proforma", GstAndEditingRulesTests.PdfText(await Api.PreviewPdfAsync(q.Id)));
+
+        await Api.CreateUserAsync(new CreateUserRequest("rasik", "Rasik", "first-pass", UserRole.User));
+        var rasik = Server.CreateApi("RASIK-PC");
+        await rasik.LoginAsync("rasik", "first-pass");
+        await rasik.ChangePasswordAsync("first-pass", "rasik-pass");
+        Assert.Contains("Amount Chargeable", GstAndEditingRulesTests.PdfText(await rasik.QuotationPdfAsync(q.Id)));
+
+        // The office default for users who have not chosen.
+        settings = await Api.SettingsAsync();
+        settings.Quotation.DefaultPdfLayout = PdfLayouts.Zoho;
+        await Api.SaveSettingsAsync(settings);
+        Assert.Contains("Quotation/Proforma", GstAndEditingRulesTests.PdfText(await rasik.QuotationPdfAsync(q.Id)));
+        await Assert.ThrowsAsync<Quotation.ApiClient.ApiException>(() => rasik.SetMyPreferencesAsync(new MyPreferencesDto(PdfLayout: "Fancy")));
     }
 
     [Fact]

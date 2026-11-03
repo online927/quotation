@@ -106,9 +106,6 @@
             </Button>
             <Button Name="SaveAsPdfButton" Classes="save" Content="Save as PDF" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
                     ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)" />
-            <Button Name="SaveAsPdfZButton" Classes="save small" Content="Z" Command="{Binding SaveAsPdfZCommand}" IsEnabled="{Binding CanSaveAsPdf}"
-                    MinWidth="30" HorizontalContentAlignment="Center"
-                    ToolTip.Tip="Save as PDF in the Modern layout: 'Number Customer Z.pdf' (the seal tick-box works too)" />
             <CheckBox Name="SealBox" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
                       IsEnabled="{Binding SealAvailable}" ToolTip.Tip="{Binding SealHint}" ToolTip.ShowOnDisabled="True" />
             <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{DynamicResource WarnBrush}" />

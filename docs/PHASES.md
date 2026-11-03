@@ -497,3 +497,8 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 2. Part No. column on quotations too; admin switches for quotations and proforma invoices (both on).
 3. Modern (Z) layout from the T.SAIFUDDIN & CO template package (docs/templates/modern-z), with Disc % and HSN/SAC columns,
    wrapped names, further pages for many items, and the seal; the small Z button saves it as "Number Customer Z.pdf".
+
+### Round 6
+
+1. The Z button is replaced by a PDF layout per user (My Settings → PDF layout: Tally / Zoho, saved with the login);
+   Settings → Quotation → Default PDF layout (Tally) for users who have not chosen. Every PDF the user makes follows it.

@@ -7,7 +7,7 @@ public sealed record LoginRequest(string Username, string Password, string? Clie
 public sealed record LoginResponse(string Token, DateTime ExpiresUtc, UserDto User);
 
 public sealed record UserDto(int Id, string Username, string DisplayName, UserRole Role, bool IsActive, bool MustChangePassword,
-    bool WithoutGstNext = false, string Theme = AppTheme.Light);
+    bool WithoutGstNext = false, string Theme = AppTheme.Light, string? PdfLayout = null);
 
 /// <summary>Light or dark screens, chosen by each user (PDFs are always white).</summary>
 public static class AppTheme
@@ -24,7 +24,7 @@ public static class AppTheme
 public sealed record UpdateUserRequest(string Username, string DisplayName, UserRole Role, bool IsActive);
 
 /// <summary>The current user's own switches ("My settings"); a null value is left unchanged.</summary>
-public sealed record MyPreferencesDto(bool? WithoutGstNext = null, string? Theme = null);
+public sealed record MyPreferencesDto(bool? WithoutGstNext = null, string? Theme = null, string? PdfLayout = null);
 
 public sealed record CreateUserRequest(string Username, string DisplayName, string Password, UserRole Role);
 

@@ -1,3 +1,4 @@
+using Avalonia.VisualTree;
 using Avalonia.Headless.XUnit;
 using Quotation.Contracts;
 using Quotation.Core.Domain;
@@ -137,6 +138,20 @@ public class OfficeFeaturesUiTests
         {
             ThemeService.Apply(AppTheme.Light);
         }
+    }
+
+    [AvaloniaFact]
+    public async Task Z_button_saves_the_modern_layout_next_to_the_normal_pdf()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await DraftAsync(ctx);
+        await editor.SaveAsPdfZCommand.ExecuteAsync(null);
+        Assert.True(editor.IsFinal); // a draft is approved first, as with Save as PDF
+        Assert.Equal($"{editor.Number} Sonepar India Private Limited Z.pdf", ctx.Files.Saved[^1]);
+        await editor.SaveAsPdfCommand.ExecuteAsync(null);
+        Assert.Equal($"{editor.Number} Sonepar India Private Limited.pdf", ctx.Files.Saved[^1]);
+        var view = ctx.Window.GetVisualDescendants().OfType<QuotationEditorView>().First();
+        Assert.Equal("Z", Avalonia.Controls.ControlExtensions.FindControl<Avalonia.Controls.Button>(view, "SaveAsPdfZButton")!.Content);
     }
 
     [AvaloniaFact]

@@ -103,8 +103,17 @@ public sealed class QuotationSettings
     public string QuotationHeading { get; set; } = DefaultQuotationHeading;
     /// <summary>Heading printed at the top of a proforma invoice PDF (as typed).</summary>
     public string ProformaHeading { get; set; } = DefaultProformaHeading;
+    /// <summary>Heading of the "Modern" (Z) PDF layout.</summary>
+    public string ModernHeading { get; set; } = "Quotation/Proforma";
+    /// <summary>Lines under the terms on the Modern layout; {name} is the person who prepared the quotation.</summary>
+    public List<string> ModernSignOff { get; set; } = ["Regards,", "{name}", "Tsaifuddin and Company"];
     public const string DefaultQuotationHeading = "QUOTATION";
     public const string DefaultProformaHeading = "PROFORMA INVOICE";
+
+    /// <summary>"Part No." column on quotation PDFs.</summary>
+    public bool PartNumberOnQuotations { get; set; } = true;
+    /// <summary>"Part No." column on proforma invoice PDFs.</summary>
+    public bool PartNumberOnProforma { get; set; } = true;
 
     /// <summary>A document just over one page is printed slightly smaller (down to 90 %) so it fits on one page.</summary>
     public bool ShrinkToFitOnePage { get; set; } = true;

@@ -158,6 +158,13 @@ conditions (one per line), default payment terms and footer.
 * **Company seal → All users can use the seal**: off = administrators only.
 * **Heading on quotation PDF** / **Heading on proforma invoice PDF**: the title at the top of the PDF (default
   QUOTATION / PROFORMA INVOICE), printed exactly as typed; empty = the standard heading. **Preview PDF** next to it.
+* **Part No. column** (on quotations / on proforma invoices, both on): the Part No. from Tally (its Part No. field,
+  otherwise the code at the start of the item name, e.g. *184-305S*-THICKNESS GAGE). Quantity is a narrow column;
+  large quantities and amounts print slightly smaller instead of being cut.
+* **Modern (Z) layout**: heading (default *Quotation/Proforma*) and the sign-off lines under the terms
+  (`{name}` = who prepared the quotation). The small green **Z** button next to *Save as PDF* saves the document in this
+  layout (T.SAIFUDDIN & CO logo, maroon corners, Disc % and HSN/SAC columns) as *Number Customer Z.pdf*; the seal
+  tick-box works with it too. Design and positions: `docs/templates/modern-z/SPEC.md`.
 * **Fit on one page** (on): a document that is just over one page (up to 10 %) is printed slightly smaller on one
   page instead of carrying the last item to page 2.
 * The **quotation date** can be changed by administrators only. For users it is the day the quotation is first saved

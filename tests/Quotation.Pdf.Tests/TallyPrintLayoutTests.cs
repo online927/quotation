@@ -26,6 +26,7 @@ public class TallyPrintLayoutTests
         {
             Title = "PROFORMA INVOICE",
             Kind = DocumentType.ProformaInvoice,
+            ShowPartNumber = true,
             Printed = Stamp with { LocalTime = new DateTime(2026, 10, 22, 12, 6, 0) },
             Company = company,
             Number = "TSPI2526-12",
@@ -237,6 +238,33 @@ public class TallyPrintLayoutTests
         using var one = PdfDocument.Open(bytes);
         Assert.Contains("Buyer/Consignee", Text(one.GetPage(1)));
         Assert.DoesNotContain("Ship to", Text(one.GetPage(1)));
+    }
+
+    [Fact]
+    public void Part_no_column_is_wide_enough_and_quantity_is_never_cut()
+    {
+        var lines = new List<PdfLine>
+        {
+            SampleDocuments.Bevel() with { PartNumber = "345-250-30" },
+            SampleDocuments.Bevel() with { SlNo = 2, PartNumber = "184-305S", Quantity = 1000, Amount = 15600000 },
+            SampleDocuments.Bevel() with { SlNo = 3, PartNumber = "", Quantity = 12.5m, Unit = "MTR" },
+        };
+        var quotation = SampleDocuments.Build(lines) with { ShowPartNumber = true };
+        PdfRenderTests.Save("quotation-part-no.pdf", Renderer.Render(quotation));
+        using (var p = PdfDocument.Open(Renderer.Render(quotation)))
+        {
+            var text = Text(p.GetPage(1));
+            Assert.Contains("Part No.", text);
+            Assert.Contains("345-250-30", text); // in full, not "345-250…"
+            Assert.Contains("1000 NOS", text); // a smaller font, not cut
+            Assert.Contains("12.5 MTR", text);
+            Assert.DoesNotContain("…", text);
+        }
+        using (var p = PdfDocument.Open(Renderer.Render(quotation with { ShowPartNumber = false })))
+        {
+            Assert.DoesNotContain("Part No.", Text(p.GetPage(1)));
+            Assert.DoesNotContain("345-250-30", Text(p.GetPage(1)));
+        }
     }
 
     [Fact]

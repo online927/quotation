@@ -25,6 +25,13 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
         PartyMaster? master = null) =>
         _renderer.Render(ToDocument(q, company, settings, watermark: null, printed: printed, master: master) with { Seal = seal });
 
+    private readonly ModernPdfRenderer _modern = new();
+
+    /// <summary>The "Modern" layout (the Z button).</summary>
+    public byte[] RenderModern(QuotationHeader q, CompanySettings company, QuotationSettings settings, PrintStamp? printed = null,
+        byte[]? seal = null, PartyMaster? master = null) =>
+        _modern.Render(ToDocument(q, company, settings, watermark: null, printed: printed, master: master) with { Seal = seal });
+
     public byte[] RenderPreview(QuotationHeader q, CompanySettings company, QuotationSettings settings, string provisionalNumber,
         PrintStamp? printed = null, PartyMaster? master = null) =>
         _renderer.Render(ToDocument(q, company, settings, watermark: "DRAFT", provisionalNumber, printed, master));
@@ -93,6 +100,10 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
                 : null,
             BuyerCaption = settings.PartyPrint.EffectiveConsignee == ConsigneePrint.CombinedWhenSame && SameParty(q) ? "Buyer/Consignee" : "Buyer (Bill to)",
             ShrinkToFitOnePage = settings.ShrinkToFitOnePage,
+            ShowPartNumber = q.DocType == DocumentType.ProformaInvoice ? settings.PartNumberOnProforma : settings.PartNumberOnQuotations,
+            TaxLines = calc.Taxes.Select(t => new PdfTaxLine(t.Name, t.RatePercent, t.Amount)).ToList(),
+            ModernTitle = string.IsNullOrWhiteSpace(settings.ModernHeading) ? "Quotation/Proforma" : settings.ModernHeading.Trim(),
+            SignOff = settings.ModernSignOff.Select(l => l.Replace("{name}", q.PreparedBy, StringComparison.OrdinalIgnoreCase)).ToList(),
             Lines = lines,
             Subtotal = calc.Subtotal,
             SummaryRows = summary,

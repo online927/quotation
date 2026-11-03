@@ -10,6 +10,8 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     [ObservableProperty] private int _lineNo;
     [ObservableProperty] private int? _productId;
     [ObservableProperty] private string _itemName = "";
+    /// <summary>From Tally (its Part No., or the code at the start of the item name).</summary>
+    [ObservableProperty] private string _partNumber = "";
     [ObservableProperty] private string _description = "";
     [ObservableProperty] private string _hsn = "";
     [ObservableProperty] private decimal? _gstRate;
@@ -26,6 +28,8 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     public decimal Amount => QuotationCalculator.LineAmount(Quantity, Rate, DiscountPercent);
     public bool RateOverridden => TallyRate is not null && Rate != TallyRate;
     public bool HasDescription => Description.Length > 0;
+    public bool HasPartNumber => PartNumber.Length > 0;
+    partial void OnPartNumberChanged(string value) => OnPropertyChanged(nameof(HasPartNumber));
     public string QuantityText => IndianFormat.Quantity(Quantity);
     public string RateText => IndianFormat.Amount(Rate);
     public string AmountText => IndianFormat.Amount(Amount);
@@ -54,14 +58,14 @@ public sealed partial class QuotationLineViewModel : ObservableObject
 
     public static QuotationLineViewModel From(QuotationLineDto d) => new()
     {
-        LineNo = d.LineNo, ProductId = d.ProductId, ItemName = d.ItemName, Description = d.Description, Hsn = d.Hsn,
+        LineNo = d.LineNo, ProductId = d.ProductId, ItemName = d.ItemName, PartNumber = d.PartNumber, Description = d.Description, Hsn = d.Hsn,
         GstRate = d.GstRate, DueOn = d.DueOn, Quantity = d.Quantity, Unit = d.Unit, Rate = d.Rate, TallyRate = d.TallyRate,
         DiscountPercent = d.DiscountPercent,
     };
 
     public QuotationLineDto ToDto() => new()
     {
-        LineNo = LineNo, ProductId = ProductId, ItemName = ItemName, Description = Description, Hsn = Hsn, GstRate = GstRate,
+        LineNo = LineNo, ProductId = ProductId, ItemName = ItemName, PartNumber = PartNumber, Description = Description, Hsn = Hsn, GstRate = GstRate,
         DueOn = DueOn, Quantity = Quantity, Unit = Unit, Rate = Rate, TallyRate = TallyRate, DiscountPercent = DiscountPercent,
     };
 }

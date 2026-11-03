@@ -13,6 +13,9 @@ public sealed class FlakyRenderer(PdfQuotationRenderer real) : IQuotationDocumen
     public byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
         byte[]? seal = null, PartyMaster? master = null) =>
         Fail ? throw new IOException("Disk full (simulated)") : real.Render(quotation, company, settings, printed, seal, master);
+
+    public byte[] RenderModern(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
+        byte[]? seal = null, PartyMaster? master = null) => real.RenderModern(quotation, company, settings, printed, seal, master);
 }
 
 public class PdfFailureTests : QuotationTestBase

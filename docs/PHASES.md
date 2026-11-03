@@ -489,3 +489,11 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 6. Proforma invoices saved in their own folder (My Settings; default "Proforma Invoices" in the quotation folder).
 7. Clearer highlight of the chosen row in search lists and tables (light blue with a blue bar).
 8. Due on removed from the item entry, the item list and the PDF.
+
+### Round 5
+
+1. Wider Part No. column (codes such as 345-250-30 in full), narrowest Quantity column; quantities and amounts that do not
+   fit print slightly smaller instead of being cut.
+2. Part No. column on quotations too; admin switches for quotations and proforma invoices (both on).
+3. Modern (Z) layout from the T.SAIFUDDIN & CO template package (docs/templates/modern-z), with Disc % and HSN/SAC columns,
+   wrapped names, further pages for many items, and the seal; the small Z button saves it as "Number Customer Z.pdf".

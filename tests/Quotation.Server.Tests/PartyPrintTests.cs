@@ -76,6 +76,38 @@ public class PartyPrintTests : QuotationTestBase
     }
 
     [Fact]
+    public async Task Z_prints_the_modern_layout_with_discount_hsn_and_the_sign_off()
+    {
+        var settings = await Api.SettingsAsync();
+        settings.Quotation.ModernHeading = "Quotation/Proforma";
+        settings.Quotation.ModernSignOff = ["Regards,", "{name}", "Tsaifuddin and Company"];
+        await Api.SaveSettingsAsync(settings);
+
+        var request = await BevelRequest();
+        request.Lines[0].DiscountPercent = 10;
+        request.PreparedBy = "Keerthana";
+        var q = await Api.CreateQuotationAsync(request);
+        await Api.ApproveQuotationAsync(q.Id, overrideStaleData: true);
+
+        var z = GstAndEditingRulesTests.PdfText(await Api.QuotationPdfAsync(q.Id, modern: true));
+        Assert.Contains("Quotation/Proforma", z);
+        Assert.Contains($"Ref No. {q.Number}", z);
+        Assert.Contains("Disc %", z);
+        Assert.Contains("10%", z);
+        Assert.Contains("90172020", z);                 // HSN/SAC
+        Assert.Contains("Part No. 187-901-10", z);      // the Part No. column is on by default
+        Assert.Contains("Buyer/Consignee", z);
+        Assert.Contains("Sub Total", z);
+        Assert.Matches(@"CGST9 \(9%\)|IGST18 \(18%\)", z); // tax lines by rate
+        Assert.Contains("Keerthana", z);                // {name} = prepared by
+        Assert.DoesNotContain("Amount Chargeable", z);  // not the Tally style
+
+        var tally = GstAndEditingRulesTests.PdfText(await Api.QuotationPdfAsync(q.Id));
+        Assert.Contains("Amount Chargeable", tally);    // the normal button is unchanged
+        Assert.DoesNotContain("Quotation/Proforma", tally);
+    }
+
+    [Fact]
     public async Task Pdf_headings_are_set_in_settings()
     {
         var settings = await Api.SettingsAsync();

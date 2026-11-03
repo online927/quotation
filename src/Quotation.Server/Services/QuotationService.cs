@@ -24,6 +24,10 @@ public interface IQuotationDocumentRenderer
     /// <summary>Renders the quotation and returns the PDF bytes; <paramref name="printed"/> adds "Printed on … By: …".</summary>
     byte[] Render(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
         byte[]? seal = null, PartyMaster? master = null);
+
+    /// <summary>The "Modern" layout (the Z button).</summary>
+    byte[] RenderModern(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
+        byte[]? seal = null, PartyMaster? master = null);
 }
 
 public sealed record UserContext(string UserName, string DisplayName, string Machine, bool IsAdmin = false);
@@ -434,10 +438,21 @@ public sealed class QuotationService(
     /// The PDF of an approved quotation as printed now by <paramref name="user"/> ("Printed on … By: …").
     /// The copy archived at approval is used only if rendering fails.
     /// </summary>
-    public async Task<byte[]?> PrintPdfAsync(Guid id, UserContext user, CancellationToken ct, byte[]? seal = null)
+    public async Task<byte[]?> PrintPdfAsync(Guid id, UserContext user, CancellationToken ct, byte[]? seal = null, bool modern = false)
     {
         var q = await LoadAsync(id, ct);
         if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated)) return null;
+        if (modern)
+        {
+            // The Z layout is always printed fresh (the archived copy is the Tally-style one).
+            var z = renderer.RenderModern(q, settings.Company, settings.Quotation, Stamp(user), seal, MasterOf(q));
+            if (seal is not null)
+            {
+                audit.Add(user.UserName, user.Machine, "PdfSealed", "Quotation", q.Id.ToString(), (q.Number ?? "") + " (Z)");
+                await SaveAsync(ct);
+            }
+            return z;
+        }
         if (seal is not null)
         {
             // A sealed copy is always rendered fresh (never the unsealed archive) and recorded.

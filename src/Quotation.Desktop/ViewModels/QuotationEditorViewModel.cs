@@ -496,6 +496,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             line.ProductId = p.Id;
             line.ItemName = p.Name;
+            line.PartNumber = p.PartNumber;
             line.Hsn = p.Hsn;
             line.GstRate = p.GstRate;
             line.Unit = p.Unit;
@@ -735,9 +736,18 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// My Settings as "Number Customer.pdf" (replacing an earlier copy), optionally with the company seal.
     /// </summary>
     [RelayCommand]
-    private async Task SaveAsPdfAsync()
+    private Task SaveAsPdfAsync() => SaveAsPdfCoreAsync(modern: false);
+
+    /// <summary>The small Z button: the same as Save as PDF, in the Modern layout ("Number Customer Z.pdf").</summary>
+    [RelayCommand]
+    private Task SaveAsPdfZAsync() => SaveAsPdfCoreAsync(modern: true);
+
+    private bool _saveModern;
+
+    private async Task SaveAsPdfCoreAsync(bool modern)
     {
         InfoMessage = null;
+        _saveModern = modern;
         if (!IsFinal || IsDirty)
         {
             _saveAsPdfAfterApproval = true;
@@ -764,8 +774,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         }
         await RunAsync(async () =>
         {
-            var bytes = pin is null ? await _session.Api.QuotationPdfAsync(Id.Value) : await _session.Api.SealedPdfAsync(Id.Value, pin.Trim());
-            LastPdfPath = _session.Documents.Save(bytes, PdfFileName(), _session.Documents.FolderFor(IsProforma));
+            var modern = _saveModern;
+            var bytes = pin is null
+                ? await _session.Api.QuotationPdfAsync(Id.Value, modern: modern)
+                : await _session.Api.SealedPdfAsync(Id.Value, pin.Trim(), modern: modern);
+            var file = modern ? PdfFileName()[..^4] + " Z.pdf" : PdfFileName();
+            LastPdfPath = _session.Documents.Save(bytes, file, _session.Documents.FolderFor(IsProforma));
             InfoMessage = (pin is null ? "Saved to " : "Sealed and saved to ") + LastPdfPath;
         });
     }

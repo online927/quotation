@@ -1,0 +1,4 @@
+Ubuntu Regular and Ubuntu Bold (Ubuntu-Regular.ttf, Ubuntu-Bold.ttf) are licensed under the
+Ubuntu Font Licence, Version 1.0, which allows embedding and redistribution with software.
+Full text: https://ubuntu.com/legal/font-licence
+Supplied with the T.SAIFUDDIN & CO "Modern" (Z) quotation template package.

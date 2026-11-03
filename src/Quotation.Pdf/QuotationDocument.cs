@@ -35,6 +35,9 @@ public sealed record PdfLine(
 /// </summary>
 public sealed record PdfSummaryRow(string Label, string RateText, decimal Amount, bool Less = false);
 
+/// <summary>One tax line by rate, e.g. IGST at 18 % (the "Modern" layout prints "IGST18 (18%)").</summary>
+public sealed record PdfTaxLine(string Name, decimal RatePercent, decimal Amount);
+
 /// <summary>One row of the HSN/SAC-wise tax table of a proforma invoice.</summary>
 public sealed record PdfHsnRow(string Hsn, decimal TaxableValue, decimal CentralRate, decimal CentralAmount, decimal StateRate,
     decimal StateAmount, decimal IntegratedRate, decimal IntegratedAmount)
@@ -95,6 +98,16 @@ public sealed record QuotationDocument
     public string? Watermark { get; init; }
     /// <summary>A document just over one page is printed slightly smaller (down to 90 %) to fit on one page.</summary>
     public bool ShrinkToFitOnePage { get; init; }
+    /// <summary>The item table has a "Part No." column.</summary>
+    public bool ShowPartNumber { get; init; }
     /// <summary>Caption of the buyer block: "Buyer/Consignee" when one block stands for both.</summary>
     public string BuyerCaption { get; init; } = "Buyer (Bill to)";
+
+    // "Modern" (Z) layout.
+    /// <summary>Tax lines by rate, for "IGST18 (18%)" / "CGST9 (9%)" rows.</summary>
+    public IReadOnlyList<PdfTaxLine> TaxLines { get; init; } = [];
+    /// <summary>Heading of the Modern layout, e.g. "Quotation/Proforma".</summary>
+    public string ModernTitle { get; init; } = "Quotation/Proforma";
+    /// <summary>Lines under the terms, e.g. "Regards," / name / "Tsaifuddin and Company".</summary>
+    public IReadOnlyList<string> SignOff { get; init; } = [];
 }

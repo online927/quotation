@@ -10,6 +10,7 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Fonts\*.ttf" />
+    <EmbeddedResource Include="Assets\*.svg" />
     <None Include="Fonts\*.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>

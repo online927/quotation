@@ -137,7 +137,7 @@
       <TabItem Header="Quotation">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="Quotation number pattern" />
             <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
               <TextBox Text="{Binding Settings.Quotation.NumberPattern}" />
@@ -178,6 +178,18 @@
             <TextBlock Grid.Row="18" Text="Company seal" />
             <CheckBox Grid.Row="18" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllUsersCanSeal}"
                       Content="All users can use the seal (with the seal PIN); otherwise administrators only" />
+            <TextBlock Grid.Row="23" Text="Modern (Z) layout" VerticalAlignment="Top" Margin="0,8,12,4" />
+            <StackPanel Grid.Row="23" Grid.Column="1" Spacing="4" Margin="0,3">
+              <TextBlock Classes="muted" FontSize="11" Text="Heading" />
+              <TextBox Text="{Binding Settings.Quotation.ModernHeading}" Watermark="Quotation/Proforma" Width="300" HorizontalAlignment="Left" />
+              <TextBlock Classes="muted" FontSize="11" Text="Sign-off under the terms (one line per row; {name} = who prepared it)" />
+              <TextBox Text="{Binding ModernSignOff}" AcceptsReturn="True" Height="64" Width="300" HorizontalAlignment="Left" />
+            </StackPanel>
+            <TextBlock Grid.Row="22" Text="Part No. column" />
+            <StackPanel Grid.Row="22" Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,3">
+              <CheckBox IsChecked="{Binding Settings.Quotation.PartNumberOnQuotations}" Content="On quotations" />
+              <CheckBox IsChecked="{Binding Settings.Quotation.PartNumberOnProforma}" Content="On proforma invoices" />
+            </StackPanel>
             <TextBlock Grid.Row="21" Text="Fit on one page" />
             <CheckBox Grid.Row="21" Grid.Column="1" IsChecked="{Binding Settings.Quotation.ShrinkToFitOnePage}"
                       Content="Shrink slightly (up to 10 %) when a document is just over one page" />

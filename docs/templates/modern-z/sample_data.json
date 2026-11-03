@@ -1,0 +1,67 @@
+{
+  "title": "Quotation/Proforma",
+  "ref_no": "100186",
+  "other_ref": "R",
+  "date": "02 Nov 2026",
+  "terms": "",
+  "seller": {
+    "name": "T.SAIFUDDIN & CO",
+    "lines": [
+      "No.72 N.R.Road",
+      "Bangalore",
+      "Karnataka 560002",
+      "+917019740620",
+      "+919739394657",
+      "GSTIN 29AADFT8885H1ZF"
+    ]
+  },
+  "buyer": {
+    "label": "Buyer/Consignee",
+    "name": "BuyersHub",
+    "lines": [
+      "Plot 27 , PRT Colony , Karmanghat",
+      "Hyderabad Telangana 500079",
+      "India",
+      "GSTIN 36AAZFB2304B1ZQ",
+      "+919182706754",
+      "sales@buyershub.org.in"
+    ]
+  },
+  "items": [
+    {
+      "name": "Vernier Hook Depth Gauge",
+      "desc": [
+        "Make - Insize",
+        "Model : 1234-2001"
+      ],
+      "qty": "5",
+      "unit": "Nos",
+      "rate": "12011"
+    }
+  ],
+  "taxes": [
+    {
+      "label": "IGST18 (18%)",
+      "percent": "18"
+    }
+  ],
+  "terms_and_conditions": [
+    "1. Payment: 100% Against Proforma",
+    "2. Packing and forwarding charges extra"
+  ],
+  "sign_off": [
+    "Regards,",
+    "Name,",
+    "Tsaifuddin and Company"
+  ],
+  "_expected": {
+    "item_amounts": [
+      "60,055.00"
+    ],
+    "sub_total": "60,055.00",
+    "tax_amounts": [
+      "10,809.90"
+    ],
+    "total": "₹70,864.90"
+  }
+}

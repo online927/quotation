@@ -45,6 +45,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     /// <summary>Points the seal is moved up (negative = down); stored as the downward offset.</summary>
     [ObservableProperty] private decimal? _sealMoveUp;
     [ObservableProperty] private string _hiddenMarkers = "";
+    /// <summary>Sign-off lines of the Modern (Z) layout, one per row.</summary>
+    [ObservableProperty] private string _modernSignOff = "";
     public bool HasSealImage => SealImage is not null;
     public string SealPinState => Settings?.SealPinConfigured == true ? "A seal PIN is set." : "No seal PIN yet.";
     partial void OnSealImageChanged(Avalonia.Media.Imaging.Bitmap? value) => OnPropertyChanged(nameof(HasSealImage));
@@ -127,6 +129,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         CustomerGroups = string.Join(Environment.NewLine, s.Tally.CustomerGroups);
         LastRateVoucherTypes = string.Join(Environment.NewLine, s.Tally.LastRateVoucherTypes);
         HiddenMarkers = string.Join(Environment.NewLine, s.Tally.HiddenProductMarkers);
+        ModernSignOff = string.Join(Environment.NewLine, s.Quotation.ModernSignOff);
         SealWidth = (decimal)s.Company.SealWidth;
         SealOffsetX = (decimal)s.Company.SealOffsetX;
         SealMoveUp = -(decimal)s.Company.SealOffsetY;
@@ -182,6 +185,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Settings.Tally.CustomerGroups = SplitLines(CustomerGroups);
         Settings.Tally.LastRateVoucherTypes = SplitLines(LastRateVoucherTypes);
         Settings.Tally.HiddenProductMarkers = SplitLines(HiddenMarkers);
+        Settings.Quotation.ModernSignOff = SplitLines(ModernSignOff);
         Settings.Company.SealWidth = (double)(SealWidth ?? 150);
         Settings.Company.SealOffsetX = (double)(SealOffsetX ?? 0);
         Settings.Company.SealOffsetY = -(double)(SealMoveUp ?? 0);

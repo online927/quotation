@@ -38,34 +38,26 @@ public sealed class QuotationPdfRenderer
     /// <summary>Width of a column that is not printed (it keeps its index so both layouts share the column numbers).</summary>
     private const double Hidden = -1;
 
-    // Column widths of the item table (Description takes the rest). Proforma invoices show "Part No.".
-    private static readonly (string Title, double Width, Align Align)[] QuotationColumns =
+    // Column widths of the item table (Description takes the rest). "Part No." is shown when switched on in Settings.
+    private const double PartNoWidth = 62;
+    private const double QtyWidth = 38;
+
+    private static (string Title, double Width, Align Align)[] ColumnsFor(bool partNumber) =>
     [
         ("Sl\nNo.", 20, Align.Center),
         ("Description of Goods", 0, Align.Left),
         ("HSN/SAC", 46, Align.Left),
         ("GST\nRate", 28, Align.Right),
-        ("", Hidden, Align.Left),
-        ("Quantity", 50, Align.Right),
+        partNumber ? ("Part No.", PartNoWidth, Align.Left) : ("", Hidden, Align.Left),
+        ("Quantity", QtyWidth, Align.Right),
         ("Rate", 52, Align.Right),
         ("per", 26, Align.Left),
         ("Disc.\n%", 26, Align.Right),
         ("Amount", 64, Align.Right),
     ];
 
-    private static readonly (string Title, double Width, Align Align)[] ProformaColumns =
-    [
-        ("Sl\nNo.", 20, Align.Center),
-        ("Description of Goods", 0, Align.Left),
-        ("HSN/SAC", 46, Align.Left),
-        ("GST\nRate", 28, Align.Right),
-        ("Part No.", 46, Align.Left),
-        ("Quantity", 50, Align.Right),
-        ("Rate", 52, Align.Right),
-        ("per", 26, Align.Left),
-        ("Disc.\n%", 26, Align.Right),
-        ("Amount", 64, Align.Right),
-    ];
+    private static readonly (string Title, double Width, Align Align)[] WithPartNo = ColumnsFor(true);
+    private static readonly (string Title, double Width, Align Align)[] WithoutPartNo = ColumnsFor(false);
 
     private const int ColSl = 0, ColDesc = 1, ColHsn = 2, ColGst = 3, ColRef = 4, ColQty = 5, ColRate = 6, ColPer = 7, ColDisc = 8, ColAmount = 9;
 
@@ -73,7 +65,7 @@ public sealed class QuotationPdfRenderer
 
     private readonly XFont _title, _company, _label, _text, _bold, _italic, _boldItalic, _head, _small, _words;
     private readonly Lock _renderLock = new();
-    private (string Title, double Width, Align Align)[] Columns = QuotationColumns;
+    private (string Title, double Width, Align Align)[] Columns = WithoutPartNo;
     private double[] _colX = [];
     private double[] _colW = [];
 
@@ -90,12 +82,12 @@ public sealed class QuotationPdfRenderer
         _head = Font(7.5, XFontStyleEx.Bold);
         _small = Font(7, XFontStyleEx.Regular);
         _words = Font(8.5, XFontStyleEx.Bold);
-        UseColumns(DocumentType.Quotation);
+        UseColumns(showPartNumber: false);
     }
 
-    private void UseColumns(DocumentType kind)
+    private void UseColumns(bool showPartNumber)
     {
-        Columns = kind == DocumentType.ProformaInvoice ? ProformaColumns : QuotationColumns;
+        Columns = showPartNumber ? WithPartNo : WithoutPartNo;
         var fixedWidth = Columns.Sum(c => Math.Max(0, c.Width));
         _colW = Columns.Select(c => c.Width == 0 ? ContentWidth - fixedWidth : Math.Max(0, c.Width)).ToArray();
         _colX = new double[_colW.Length];
@@ -114,7 +106,7 @@ public sealed class QuotationPdfRenderer
         // One document at a time: the column geometry depends on the document type.
         lock (_renderLock)
         {
-            UseColumns(doc.Kind);
+            UseColumns(doc.ShowPartNumber);
             return RenderCore(doc);
         }
     }
@@ -146,7 +138,7 @@ public sealed class QuotationPdfRenderer
             if (layout.Pages.Count > 1)
             {
                 _scale = 1;
-                UseColumns(doc.Kind);
+                UseColumns(doc.ShowPartNumber);
             }
         }
 
@@ -190,7 +182,7 @@ public sealed class QuotationPdfRenderer
 
     internal PageLayout Layout(XGraphics g, QuotationDocument doc)
     {
-        UseColumns(doc.Kind);
+        UseColumns(doc.ShowPartNumber);
         var headerHeight = HeaderHeight(g, doc);
         var footerHeight = FooterHeight(g, doc);
         var summaryHeight = SummaryHeight(doc);
@@ -556,12 +548,12 @@ public sealed class QuotationPdfRenderer
             DrawAligned(g, line.SlNo.ToString(CultureInfo.InvariantCulture), _text, _colX[ColSl], _colW[ColSl], y, Align.Center);
             DrawCell(g, line.Hsn, _text, ColHsn, y);
             DrawCell(g, line.GstRate is null ? "" : $"{line.GstRate.Value.ToString("0.##", CultureInfo.InvariantCulture)} %", _text, ColGst, y);
-            if (Columns == ProformaColumns) DrawCell(g, line.PartNumber, _text, ColRef, y);
-            DrawCell(g, $"{IndianFormat.Quantity(line.Quantity)} {line.Unit}".Trim(), _bold, ColQty, y);
-            DrawCell(g, IndianFormat.Amount(line.Rate), _text, ColRate, y);
+            if (_colW[ColRef] > 0) DrawFitted(g, line.PartNumber, _text, ColRef, y);
+            DrawFitted(g, $"{IndianFormat.Quantity(line.Quantity)} {line.Unit}".Trim(), _bold, ColQty, y);
+            DrawFitted(g, IndianFormat.Amount(line.Rate), _text, ColRate, y);
             DrawCell(g, line.Unit, Font(6.5, XFontStyleEx.Regular), ColPer, y + 0.8);
             DrawCell(g, line.DiscountPercent == 0 ? "" : $"{line.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture)} %", _text, ColDisc, y);
-            DrawCell(g, IndianFormat.Amount(line.Amount), _bold, ColAmount, y);
+            DrawFitted(g, IndianFormat.Amount(line.Amount), _bold, ColAmount, y);
         }
         foreach (var n in row.NameLines)
         {
@@ -593,7 +585,7 @@ public sealed class QuotationPdfRenderer
             y += 2;
             var amountX = _colX[ColAmount];
             g.DrawLine(Pen(0.5), amountX + 8, y, amountX + _colW[ColAmount] - Pad, y);
-            DrawCell(g, IndianFormat.Amount(doc.Subtotal), _text, ColAmount, y + 1);
+            DrawFitted(g, IndianFormat.Amount(doc.Subtotal), _text, ColAmount, y + 1);
             y += LineHeight(_text);
         }
         foreach (var s in doc.SummaryRows)
@@ -601,7 +593,7 @@ public sealed class QuotationPdfRenderer
             if (s.Less) DrawText(g, "Less :", Font(7, XFontStyleEx.Italic), _colX[ColDesc] + Pad, y + 1);
             DrawAligned(g, s.Label, _boldItalic, _colX[ColDesc] + Pad, _colW[ColDesc] - 2 * Pad, y, Align.Right);
             DrawCell(g, s.RateText, _text, ColRate, y);
-            DrawCell(g, s.Less ? "(-)" + IndianFormat.Amount(Math.Abs(s.Amount)) : IndianFormat.Amount(s.Amount), _bold, ColAmount, y);
+            DrawFitted(g, s.Less ? "(-)" + IndianFormat.Amount(Math.Abs(s.Amount)) : IndianFormat.Amount(s.Amount), _bold, ColAmount, y);
             y += LineHeight(_boldItalic) + 1;
         }
         return top + SummaryHeight(doc);
@@ -625,10 +617,22 @@ public sealed class QuotationPdfRenderer
         var qty = doc.TotalQuantityUnit.Length > 0
             ? $"{IndianFormat.Quantity(doc.TotalQuantity)} {doc.TotalQuantityUnit}"
             : "";
-        DrawCell(g, qty, _bold, ColQty, y);
-        DrawCell(g, "₹ " + IndianFormat.Amount(doc.GrandTotal), _bold, ColAmount, y);
+        DrawFitted(g, qty, _bold, ColQty, y);
+        DrawFitted(g, "₹ " + IndianFormat.Amount(doc.GrandTotal), _bold, ColAmount, y);
         g.DrawLine(pen, MarginLeft, top + TotalRowHeight, MarginLeft + ContentWidth, top + TotalRowHeight);
         return top + TotalRowHeight;
+    }
+
+    /// <summary>A cell that must not be cut (amounts, quantity, part number): a slightly smaller font when it is too wide.</summary>
+    private void DrawFitted(XGraphics g, string text, XFont font, int col, double y)
+    {
+        var width = _colW[col] - 2 * Pad;
+        var f = font;
+        for (var size = font.Size - 0.5; Measure(g, text, f) > width && size >= MinFittedSize; size -= 0.5)
+        {
+            f = Font(size, font.Style);
+        }
+        DrawAligned(g, Fit(g, text, f, width), f, _colX[col] + Pad, width, y + (font.Size - f.Size) * 0.6, Columns[col].Align);
     }
 
     private void DrawCell(XGraphics g, string text, XFont font, int col, double y) =>

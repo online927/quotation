@@ -6,12 +6,14 @@ namespace Quotation.Pdf;
 /// <summary>
 /// Bundled fonts so every PC renders identical PDFs: Liberation Sans (metrically compatible
 /// with Arial, the font of Tally's print) and DejaVu Sans for the ₹ symbol. Both are freely
-/// redistributable (SIL OFL / Bitstream Vera licences, see Fonts/).
+/// redistributable (SIL OFL / Bitstream Vera licences, see Fonts/). Ubuntu is the font of the "Modern" (Z) layout
+/// (Ubuntu Font Licence).
 /// </summary>
 internal sealed class PdfFonts : IFontResolver
 {
     public const string Sans = "Liberation Sans";
     public const string Symbols = "DejaVu Sans";
+    public const string Ubuntu = "Ubuntu";
 
     private static readonly Lock Gate = new();
     private static bool _installed;
@@ -34,6 +36,10 @@ internal sealed class PdfFonts : IFontResolver
         if (familyName.Equals(Symbols, StringComparison.OrdinalIgnoreCase))
         {
             return new FontResolverInfo("DejaVuSans", bold, italic);
+        }
+        if (familyName.Equals(Ubuntu, StringComparison.OrdinalIgnoreCase))
+        {
+            return new FontResolverInfo(bold ? "Ubuntu-Bold" : "Ubuntu-Regular", false, italic);
         }
         var face = (bold, italic) switch
         {

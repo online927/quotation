@@ -93,28 +93,29 @@ public static class QuotationEndpoints
                 return svc.ToDto(q);
             }));
 
-        g.MapGet("/{id:guid}/pdf", async (Guid id, QuotationDbContext db, QuotationService svc, PdfStorage storage, AuditService audit,
+        g.MapGet("/{id:guid}/pdf", async (Guid id, string? layout, QuotationDbContext db, QuotationService svc, PdfStorage storage, AuditService audit,
             HttpContext ctx, CancellationToken ct) =>
         {
             var q = await db.Quotations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
             var path = storage.FullPath(q?.PdfPath);
             if (q is null || path is null) return Results.NotFound(new ApiError("No PDF has been generated for this quotation."));
             // Printed fresh, so it shows who printed it and when (as Tally does).
-            var bytes = await svc.PrintPdfAsync(id, User(ctx), ct);
+            var modern = IsModern(layout);
+            var bytes = await svc.PrintPdfAsync(id, User(ctx), ct, modern: modern);
             if (bytes is null) return Results.NotFound(new ApiError("No PDF has been generated for this quotation."));
             await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "PdfDownloaded", "Quotation", id.ToString(), q.Number ?? "", ct);
             return Results.File(bytes, "application/pdf", Path.GetFileName(path));
         });
 
         // The PDF with the company seal: by an administrator, or any user when allowed in Settings, with the 4-digit seal PIN.
-        g.MapPost("/{id:guid}/pdf/sealed", async (Guid id, SealedPdfRequest r, QuotationService svc, SealService seal, HttpContext ctx,
+        g.MapPost("/{id:guid}/pdf/sealed", async (Guid id, string? layout, SealedPdfRequest r, QuotationService svc, SealService seal, HttpContext ctx,
             CancellationToken ct) =>
         {
             try
             {
                 var user = User(ctx);
                 var image = seal.Authorize(user, r.Pin);
-                var bytes = await svc.PrintPdfAsync(id, user, ct, image);
+                var bytes = await svc.PrintPdfAsync(id, user, ct, image, IsModern(layout));
                 return bytes is null
                     ? Results.Json(new ApiError("Only an approved quotation can be sealed: approve it first.", null, ApiErrorCodes.InvalidState), statusCode: 409)
                     : Results.File(bytes, "application/pdf");
@@ -201,6 +202,10 @@ public static class QuotationEndpoints
     }
 
     private static readonly string[] DateFormats = ["d-M-yyyy", "d/M/yyyy", "d-M-yy", "d/M/yy", "d-MMM-yyyy", "d-MMM-yy", "yyyy-MM-dd"];
+
+    /// <summary>"?layout=z" (or "modern") asks for the Modern layout instead of the Tally style.</summary>
+    private static bool IsModern(string? layout) =>
+        layout is not null && (layout.Equals("z", StringComparison.OrdinalIgnoreCase) || layout.Equals("modern", StringComparison.OrdinalIgnoreCase));
 
     internal static UserContext User(HttpContext ctx) => new(ctx.User.UserName(), ctx.User.DisplayName(), ctx.Machine(), ctx.User.IsInRole("Admin"));
 

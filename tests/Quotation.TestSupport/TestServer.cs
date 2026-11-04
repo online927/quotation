@@ -77,6 +77,37 @@ public sealed class TestServer : WebApplicationFactory<Program>
         return api;
     }
 
+    /// <summary>Error lines from the server's own log, to explain a "Server error (500)" in a test failure.</summary>
+    public string ServerErrors(int max = 40)
+    {
+        var logs = Path.Combine(DataDirectory, "logs");
+        if (!Directory.Exists(logs)) return "";
+        var lines = new List<string>();
+        foreach (var file in Directory.GetFiles(logs, "*.log"))
+        {
+            try
+            {
+                using var reader = new StreamReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                lines.AddRange(reader.ReadToEnd().Split('\n').Where(l => l.Contains("[ERR]") || l.Contains("[FTL]") || l.Contains("Exception") || l.StartsWith("   at ")));
+            }
+            catch (IOException) { }
+        }
+        return string.Join("\n", lines.Take(max));
+    }
+
+    /// <summary>A full sync; waits while another sync (e.g. the quick one an approval runs) is still busy.</summary>
+    public static async Task<Quotation.Contracts.SyncRunDto?> FullSyncAsync(QuotationApiClient api)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try { return await api.StartSyncAsync(Quotation.Core.Domain.SyncKind.Full, wait: true); }
+            catch (ApiException ex) when (ex.Status == System.Net.HttpStatusCode.Conflict && attempt < 200)
+            {
+                await Task.Delay(50);
+            }
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);

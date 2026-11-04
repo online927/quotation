@@ -37,7 +37,8 @@ public class ConcurrencyStressTests(ITestOutputHelper output)
         var numbers = new ConcurrentBag<string>();
         var sw = Stopwatch.StartNew();
 
-        var sync = admin.StartSyncAsync(SyncKind.Full, wait: true);
+        // The PCs' approvals run quick syncs too: the full sync waits its turn instead of failing with "already running".
+        var sync = TestServer.FullSyncAsync(admin);
         var work = clients.Select((api, i) => Task.Run(async () =>
         {
             for (var n = 0; n < 15; n++)

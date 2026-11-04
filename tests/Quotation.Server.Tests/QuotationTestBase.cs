@@ -14,7 +14,14 @@ public abstract class QuotationTestBase : IAsyncLifetime
     public virtual async Task InitializeAsync()
     {
         Api = await Server.LoginAsAdminAsync();
-        await Api.StartSyncAsync(SyncKind.Full, wait: true);
+        try
+        {
+            await Api.StartSyncAsync(SyncKind.Full, wait: true);
+        }
+        catch (ApiException ex)
+        {
+            throw new InvalidOperationException($"The first full sync failed: {ex.Message}\nServer log:\n{Server.ServerErrors()}", ex);
+        }
     }
 
     public Task DisposeAsync()

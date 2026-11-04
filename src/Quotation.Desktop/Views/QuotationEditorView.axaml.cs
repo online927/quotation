@@ -90,7 +90,8 @@ public partial class QuotationEditorView : UserControl
 
         if (owner == OtherRefBox)
         {
-            // The other reference boxes are reached with Tab or the mouse; Enter goes on to the items.
+            // The other reference boxes are reached with Tab or the mouse; Enter folds the header and goes on to the items.
+            Vm?.FoldHeader();
             ProductBox.Focus();
             e.Handled = true;
             return;

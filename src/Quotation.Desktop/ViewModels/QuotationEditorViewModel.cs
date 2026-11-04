@@ -57,6 +57,27 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     // ---------------------------------------------------------------- customer
     [ObservableProperty] private int? _customerId;
+    /// <summary>
+    /// Buyer, consignee and references folded into one line (customer name and other references) once they are filled in;
+    /// the eye button shows them in full.
+    /// </summary>
+    [ObservableProperty] private bool _headerCollapsed;
+    private bool _headerFoldDecided;
+
+    public bool CanCollapseHeader => !string.IsNullOrWhiteSpace(BuyerName);
+    public string HeaderSummaryOtherRef => string.IsNullOrWhiteSpace(OtherReferences) ? "—" : OtherReferences;
+
+    partial void OnBuyerNameChanged(string value) => OnPropertyChanged(nameof(CanCollapseHeader));
+    partial void OnOtherReferencesChanged(string value) => OnPropertyChanged(nameof(HeaderSummaryOtherRef));
+
+    [RelayCommand]
+    private void ToggleHeader() => HeaderCollapsed = !HeaderCollapsed && CanCollapseHeader;
+
+    /// <summary>Folds the header after the customer and other references are entered (Enter from Other references).</summary>
+    public void FoldHeader()
+    {
+        if (CanCollapseHeader) HeaderCollapsed = true;
+    }
     [ObservableProperty] private string _customerSearchText = "";
     [ObservableProperty] private string _buyerName = "";
     [ObservableProperty] private string _buyerAddress = "";
@@ -295,6 +316,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         RecalculateTotals();
         IsDirty = false;
         NotifyState();
+        if (!_headerFoldDecided)
+        {
+            // An existing quotation opens with the header folded; a new one starts open.
+            _headerFoldDecided = true;
+            HeaderCollapsed = CanCollapseHeader;
+        }
     }
 
     private void NotifyState()

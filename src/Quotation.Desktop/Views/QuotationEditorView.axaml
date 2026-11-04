@@ -142,11 +142,32 @@
 
     <ScrollViewer>
       <StackPanel Spacing="10" IsEnabled="{Binding IsEditable}">
-        <!-- Parties and references -->
-        <Grid ColumnDefinitions="*,12,*,12,*">
+        <!-- Parties and references: folded to one line (customer, other references) with an eye button to show them in full -->
+        <Border Classes="card" Padding="14,8" IsVisible="{Binding HeaderCollapsed}">
+          <Grid ColumnDefinitions="Auto,*,Auto,2*,Auto">
+            <TextBlock Classes="fl" Text="Customer" VerticalAlignment="Center" Margin="0,0,10,0" />
+            <TextBlock Grid.Column="1" Text="{Binding BuyerName}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="2" Classes="fl" Text="Other ref." VerticalAlignment="Center" Margin="18,0,10,0" />
+            <TextBlock Grid.Column="3" Text="{Binding HeaderSummaryOtherRef}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <Button Grid.Column="4" Name="ShowHeaderButton" Classes="round" Command="{Binding ToggleHeaderCommand}" ToolTip.Tip="Show buyer, consignee and references">
+              <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z"
+                    Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="17" Height="17" Stretch="Uniform" />
+            </Button>
+          </Grid>
+        </Border>
+        <Grid ColumnDefinitions="*,12,*,12,*" IsVisible="{Binding !HeaderCollapsed}">
           <Border Classes="card" Padding="14">
             <StackPanel>
-              <Border Classes="headbar blue"><TextBlock Classes="h2" Text="Buyer (Bill to)" /></Border>
+              <Border Classes="headbar blue">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Classes="h2" Text="Buyer (Bill to)" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Name="HideHeaderButton" Classes="round" Width="26" Height="26" Command="{Binding ToggleHeaderCommand}"
+                          IsVisible="{Binding CanCollapseHeader}" ToolTip.Tip="Hide: show only the customer and other references">
+                    <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z M3,3 L21,21"
+                          Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.6" Width="15" Height="15" Stretch="Uniform" />
+                  </Button>
+                </Grid>
+              </Border>
               <TextBlock Classes="fl" Text="Customer (Tally ledger)" />
               <ctl:SearchPicker Name="CustomerBox" Text="{Binding CustomerSearchText}" Search="{Binding CustomerPopulator}"
                                 MaxDropDownHeight="360" MinDropDownWidth="380" Watermark="Type customer name, GSTIN or phone…"

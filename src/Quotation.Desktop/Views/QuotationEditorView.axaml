@@ -8,7 +8,6 @@
   <UserControl.KeyBindings>
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
     <KeyBinding Gesture="Ctrl+Enter" Command="{Binding ApproveCommand}" />
-    <KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateCommand}" />
     <KeyBinding Gesture="Ctrl+P" Command="{Binding OpenPdfCommand}" />
   </UserControl.KeyBindings>
   <UserControl.Styles>
@@ -95,12 +94,9 @@
           <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
           <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
         </StackPanel>
-        <!-- Row 1: save & approve, with Cancel and Delete apart on the right. Row 2: PDF | document. -->
+        <!-- Row 1: approve and save as PDF, with Cancel and Delete apart on the right. Row 2: PDF. Ctrl+S still saves a draft. -->
         <Grid ColumnDefinitions="*,Auto" Margin="0,2,0,0">
           <WrapPanel ItemSpacing="8" LineSpacing="8">
-            <Button Classes="save" Command="{Binding SaveCommand}" IsEnabled="{Binding IsEditable}">
-              <StackPanel Orientation="Horizontal"><TextBlock Text="Save Draft" /><TextBlock Classes="key" Text="Ctrl+S" /></StackPanel>
-            </Button>
             <Button Classes="primary" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}">
               <StackPanel Orientation="Horizontal"><TextBlock Text="Approve &amp; Generate PDF" /><TextBlock Classes="key" Text="Ctrl+Enter" /></StackPanel>
             </Button>
@@ -127,14 +123,6 @@
               <StackPanel Orientation="Horizontal"><TextBlock Text="Open PDF" /><TextBlock Classes="key" Text="Ctrl+P" /></StackPanel>
             </Button>
             <Button Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding IsFinal}" />
-          </StackPanel>
-          <Border Classes="groupline" />
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="New" Command="{Binding NewQuotationCommand}" />
-            <Button Command="{Binding DuplicateCommand}" IsEnabled="{Binding Id, Converter={x:Static ObjectConverters.IsNotNull}}">
-              <StackPanel Orientation="Horizontal"><TextBlock Text="Duplicate" /><TextBlock Classes="key" Text="Ctrl+D" /></StackPanel>
-            </Button>
-            <Button Classes="proforma" Content="Convert to Proforma Invoice" Command="{Binding ConvertToProformaCommand}" IsVisible="{Binding CanConvertToProforma}" />
           </StackPanel>
         </WrapPanel>
       </StackPanel>

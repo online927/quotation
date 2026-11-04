@@ -365,6 +365,25 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         }
     }
 
+    /// <summary>The speed check: how long the server took to answer the last status check (every 30 seconds).</summary>
+    [ObservableProperty] private int? _serverMs;
+
+    public string SpeedText => !ServerReachable ? "⚡ no answer" : ServerMs is { } ms ? $"⚡ {ms} ms" : "";
+    public bool SpeedOk => ServerReachable && ServerMs is < 300;
+    public bool SpeedSlow => ServerReachable && ServerMs is >= 1000;
+    public bool SpeedBad => !ServerReachable;
+
+    partial void OnServerMsChanged(int? value) => NotifySpeed();
+    partial void OnServerReachableChanged(bool value) => NotifySpeed();
+
+    private void NotifySpeed()
+    {
+        OnPropertyChanged(nameof(SpeedText));
+        OnPropertyChanged(nameof(SpeedOk));
+        OnPropertyChanged(nameof(SpeedSlow));
+        OnPropertyChanged(nameof(SpeedBad));
+    }
+
     private async Task LoadStatusAsync()
     {
         try
@@ -372,11 +391,13 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
             Status = await _session.Api.StatusAsync(_cts.Token);
             ServerReachable = true;
             ServerState = $"Server: {_session.Config.ServerUrl}";
+            ServerMs = _session.Api.LastStatusTime is { } t ? (int)Math.Round(t.TotalMilliseconds) : null;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             ServerReachable = false;
             ServerState = "Quotation Server unreachable";
+            ServerMs = null;
         }
     }
 

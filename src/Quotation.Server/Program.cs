@@ -38,6 +38,7 @@ builder.Services.AddSingleton<ISecretProtector>(new SecretProtector(dataDir));
 builder.Services.AddSingleton<SettingsService>();
 builder.Services.AddSingleton<SealService>();
 builder.Services.AddSingleton<RuntimeStatus>();
+builder.Services.AddSingleton(sp => new SlowRequestLog(dataDir, sp.GetRequiredService<ILogger<SlowRequestLog>>()));
 builder.Services.AddSingleton<FinancialYearService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuditService>();
@@ -110,6 +111,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseExceptionHandler();
 app.UseAuthentication();
+app.UseMiddleware<SlowRequestMiddleware>(); // after authentication (knows the user), before authorization (times every answer)
 app.UseAuthorization();
 app.MapSystemEndpoints();
 app.MapTallyEndpoints();

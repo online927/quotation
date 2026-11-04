@@ -106,8 +106,9 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
     }
 
     public const string UpgradeGstDefaultKey = "state:upgrade.gstdefault";
+    public const string UpgradeSyncLastRateKey = "state:upgrade.sync3h.lastrate";
 
-    private sealed class UpgradeDone
+    internal sealed class UpgradeDone
     {
         public bool Done { get; set; }
     }
@@ -123,6 +124,29 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
             quotation.RoundOffTotal = true;
             await SaveAsync(QuotationKey, quotation, "system", ct);
             await SaveAsync(UpgradeGstDefaultKey, new UpgradeDone { Done = true }, "system", ct);
+        }
+
+        // Syncs every 3 hours instead of 15 minutes, and no last rates read from Tally's vouchers (the app's own stay).
+        if (!Get<UpgradeDone>(UpgradeSyncLastRateKey).Done)
+        {
+            var tally = Tally;
+            if (tally.IncrementalSyncMinutes == 15) tally.IncrementalSyncMinutes = 180;
+            tally.ReadLastRatesFromTally = false;
+            await SaveAsync(TallyKey, tally, "system", ct);
+            using (var scope = scopes.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
+                var fromTally = await db.Products
+                    .Where(p => p.LastRate != null && !p.LastRateNote.Contains(LastRateService.AppNoteMarker)).ToListAsync(ct);
+                foreach (var p in fromTally)
+                {
+                    p.LastRate = null;
+                    p.LastRateDate = null;
+                    p.LastRateNote = "";
+                }
+                await db.SaveChangesAsync(ct);
+            }
+            await SaveAsync(UpgradeSyncLastRateKey, new UpgradeDone { Done = true }, "system", ct);
         }
     }
 

@@ -174,7 +174,7 @@ public class TallyPrintLayoutTests
         var page = p.GetPage(1).Width;
         var address = all.Where(w => w.BoundingBox.Bottom < buyer.Bottom && w.BoundingBox.Bottom > gstin && w.BoundingBox.Left < page / 2
             && w.Text != "GUTSLANE" && w.Text != "PRECITECH").ToList(); // the buyer box, not the reference grid on the right
-        Assert.True(address.Select(w => Math.Round(w.BoundingBox.Bottom)).Distinct().Count() >= 4); // wrapped onto several lines
+        Assert.Equal(3, address.Select(w => Math.Round(w.BoundingBox.Bottom)).Distinct().Count()); // wrapped, at most 3 lines
         Assert.All(address, w => Assert.True(w.BoundingBox.Right < page / 4 + 40, $"{w.Text} at {w.BoundingBox.Right}"));
         Assert.Contains(all, w => w.Text == "girishbabu@gutslane.com"); // the other lines keep the full width
     }

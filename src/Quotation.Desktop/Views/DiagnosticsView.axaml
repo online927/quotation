@@ -90,6 +90,38 @@
           </ListBox>
         </DockPanel>
       </TabItem>
+      <TabItem Header="Slow requests">
+        <DockPanel Margin="0,8">
+          <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,6"
+                     Text="Requests that took longer than 1 second (last 500). Total = on the user's PC, from click to answer; Server = the server's own time. Total slow but Server quick means the network or finding the server PC; Server slow means the server PC was busy." />
+          <Border DockPanel.Dock="Top" Classes="tablehead">
+            <Grid ColumnDefinitions="120,170,150,70,70,150,*">
+              <TextBlock Text="When" />
+              <TextBlock Grid.Column="1" Text="PC / User" />
+              <TextBlock Grid.Column="2" Text="What" />
+              <TextBlock Grid.Column="3" Text="Total" />
+              <TextBlock Grid.Column="4" Text="Server" />
+              <TextBlock Grid.Column="5" Text="Server busy with" />
+              <TextBlock Grid.Column="6" Text="Likely cause" />
+            </Grid>
+          </Border>
+          <ListBox Classes="table" ItemsSource="{Binding SlowRequests}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SlowRequestRow">
+                <Grid ColumnDefinitions="120,170,150,70,70,150,*">
+                  <TextBlock Text="{Binding When}" FontSize="11" />
+                  <TextBlock Grid.Column="1" Text="{Binding Who}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="2" Text="{Binding What}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="3" Text="{Binding Total}" FontSize="11" />
+                  <TextBlock Grid.Column="4" Text="{Binding Server}" FontSize="11" />
+                  <TextBlock Grid.Column="5" Text="{Binding Busy}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="6" Text="{Binding Cause}" FontSize="11" Foreground="{DynamicResource WarnBrush}" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </TabItem>
       <TabItem Header="Server log">
         <TextBox Margin="0,8" Text="{Binding LogText}" IsReadOnly="True" AcceptsReturn="True" FontFamily="Consolas,Menlo,monospace" FontSize="11" TextWrapping="NoWrap" />
       </TabItem>

@@ -14,7 +14,19 @@ public static class DiagnosticsEndpoints
 {
     public static void MapDiagnosticsEndpoints(this IEndpointRouteBuilder app)
     {
+        // Every client PC reports its slow requests (time from click to answer); administrators read the list.
+        app.MapPost("/api/diagnostics/slow", (SlowRequestReport r, SlowRequestLog slow, HttpContext ctx, TimeProvider clock) =>
+        {
+            if (r.TotalMs < SlowRequestLog.Threshold.TotalMilliseconds || r.TotalMs > TimeSpan.FromHours(1).TotalMilliseconds) return Results.NoContent();
+            // The client sends "GET /api/…"; the list shows it in words ("Search products", "Customer details" …).
+            var parts = r.What.Split(' ', 2);
+            var what = parts.Length == 2 ? SlowRequestLog.Describe(parts[0], parts[1]) : r.What;
+            slow.ClientReport(r with { What = what }, ctx.User.UserName(), ctx.Machine(), clock.GetUtcNow().UtcDateTime);
+            return Results.NoContent();
+        }).RequireAuthorization();
+
         var g = app.MapGroup("/api/diagnostics").RequireAuthorization(SystemEndpoints.AdminPolicy);
+        g.MapGet("/slow", (SlowRequestLog slow) => slow.Recent());
 
         g.MapGet("/", async (QuotationDbContext db, StatusService status, IOptions<ServerOptions> options, CancellationToken ct) =>
         {

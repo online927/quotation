@@ -515,6 +515,12 @@
       <Setter Property="Foreground" Value="{DynamicResource BadBrush}" />
     </Style>
 
+    <!-- Speed check in the status bar: green fast, orange slow, red no answer -->
+    <Style Selector="TextBlock.speed"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></Style>
+    <Style Selector="TextBlock.speed.ok"><Setter Property="Foreground" Value="{DynamicResource OkBrush}" /></Style>
+    <Style Selector="TextBlock.speed.slow"><Setter Property="Foreground" Value="{DynamicResource WarnBrush}" /></Style>
+    <Style Selector="TextBlock.speed.bad"><Setter Property="Foreground" Value="{DynamicResource BadBrush}" /></Style>
+
     <!-- Document type in lists: blue quotation, purple proforma -->
     <Style Selector="TextBlock.doctype"><Setter Property="Foreground" Value="{DynamicResource AccentBrush}" /></Style>
     <Style Selector="TextBlock.doctype.proforma"><Setter Property="Foreground" Value="{DynamicResource PurpleBrush}" /></Style>

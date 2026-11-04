@@ -108,6 +108,35 @@ public partial class QuotationApiClient
 
     public Task<DashboardDto> DashboardAsync(CancellationToken ct = default) => GetAsync<DashboardDto>("api/dashboard", ct);
     public Task<SystemStatusDto> StatusAsync(CancellationToken ct = default) => GetAsync<SystemStatusDto>("api/status", ct);
+    /// <summary>Administrators: requests that took longer than a second (Diagnostics → Slow requests).</summary>
+    public Task<List<SlowRequestDto>> SlowRequestsAsync(CancellationToken ct = default) => GetAsync<List<SlowRequestDto>>("api/diagnostics/slow", ct);
+
+    /// <summary>
+    /// Tells the server about a request that took long from click to answer, with the server's own time from the answer,
+    /// so Diagnostics shows whether the network or the server was slow. Never fails the request itself.
+    /// </summary>
+    private void ReportIfSlow(HttpMethod method, string url, TimeSpan elapsed, HttpResponseMessage? response)
+    {
+        if (elapsed < SlowThreshold || url.StartsWith("api/diagnostics/slow", StringComparison.Ordinal) || CurrentUser is null) return;
+        static string? Header(HttpResponseMessage? r, string name) =>
+            r is not null && r.Headers.TryGetValues(name, out var v) ? v.FirstOrDefault() : null;
+        double? serverMs = double.TryParse(Header(response, "X-Server-Ms"), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var ms) ? ms : null;
+        var path = "/" + url.Split('?')[0];
+        var report = new SlowRequestReport(Header(response, "X-Request-Id"), $"{method.Method} {path}", Math.Round(elapsed.TotalMilliseconds),
+            serverMs, Header(response, "X-Server-Busy"));
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var r = await _http.PostAsJsonAsync("api/diagnostics/slow", report, JsonOptions);
+            }
+            catch (Exception)
+            {
+                // Reporting is best effort.
+            }
+        });
+    }
     public Task<AllSettingsDto> SettingsAsync(CancellationToken ct = default) => GetAsync<AllSettingsDto>("api/settings", ct);
     public Task<AllSettingsDto> SaveSettingsAsync(AllSettingsDto dto, CancellationToken ct = default) =>
         SendAsync<AllSettingsDto>(HttpMethod.Put, "api/settings", dto, ct);
@@ -138,24 +167,35 @@ public partial class QuotationApiClient
         return await response.Content.ReadAsByteArrayAsync(ct);
     }
 
+    /// <summary>A request slower than this (click to answer) is reported to the server's slow-request list.</summary>
+    public static readonly TimeSpan SlowThreshold = TimeSpan.FromSeconds(1);
+
+    /// <summary>How long the last status check took, from request to answer: the status bar's speed check.</summary>
+    public TimeSpan? LastStatusTime { get; private set; }
+
     protected async Task<HttpResponseMessage> SendRawAsync(HttpMethod method, string url, object? body, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(method, url);
         if (body is byte[] bytes) request.Content = new ByteArrayContent(bytes); // file upload (e.g. the seal image)
         else if (body is not null) request.Content = JsonContent.Create(body, body.GetType(), options: JsonOptions);
         HttpResponseMessage response;
+        var watch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             response = await _http.SendAsync(request, ct);
         }
         catch (HttpRequestException ex)
         {
+            ReportIfSlow(method, url, watch.Elapsed, null);
             throw new ApiException(0, $"Cannot reach the Quotation Server at {_http.BaseAddress}. {ex.Message}");
         }
         catch (TaskCanceledException) when (!ct.IsCancellationRequested)
         {
+            ReportIfSlow(method, url, watch.Elapsed, null);
             throw new ApiException(0, $"The Quotation Server at {_http.BaseAddress} did not respond in time.");
         }
+        if (url == "api/status") LastStatusTime = watch.Elapsed;
+        ReportIfSlow(method, url, watch.Elapsed, response);
 
         if (response.IsSuccessStatusCode) return response;
 

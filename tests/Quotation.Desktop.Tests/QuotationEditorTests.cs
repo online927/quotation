@@ -102,7 +102,8 @@ public class QuotationEditorTests
         Assert.Equal(QuotationStatus.Generated, editor.Status);
         Assert.True(editor.HasPdf);
         var launcher = (RecordingLauncher)ctx.Session.Documents;
-        Assert.Contains(editor.Number + ".pdf", launcher.Saved);
+        Assert.Contains(editor.PdfFileName(), launcher.Saved); // "Number Customer.pdf", the same file as Save as PDF
+        Assert.EndsWith(" Sonepar India Private Limited.pdf", editor.PdfFileName());
     }
 
     [AvaloniaFact]
@@ -257,7 +258,16 @@ public class QuotationEditorTests
     public async Task Item_without_tally_price_is_filled_with_its_last_quoted_rate()
     {
         using var ctx = await SetupAsync();
-        await ctx.Session.Api.StartSyncAsync(SyncKind.LastRates, wait: true);
+        // The rate it was last quoted at in this app (Tally's vouchers are not read by default).
+        var api = ctx.Session.Api;
+        var level = (await api.SearchProductsAsync("rsk spirit level")).First().Product;
+        var customer = (await api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer;
+        var earlier = await api.CreateQuotationAsync(new SaveQuotationRequest
+        {
+            Date = DateOnly.FromDateTime(DateTime.Today), CustomerId = customer.Id,
+            Lines = [new QuotationLineDto { ProductId = level.Id, Quantity = 1, Rate = 11250m }],
+        });
+        var approved = await api.ApproveQuotationAsync(earlier.Id, overrideStaleData: true);
         await Task.Delay(500); // search index rebuild
         var editor = await NewEditor(ctx);
         var box = await TypeInto(ctx, "ProductBox", "rsk spirit level");
@@ -265,8 +275,8 @@ public class QuotationEditorTests
         await UiHelpers.WaitUntil(() => editor.EntryProduct is not null);
 
         Assert.Equal("-Rsk Spirit Level 200Mm", box.InputBox.Text);
-        Assert.Equal(10500m, editor.EntryRate); // as Tally fills it: last quoted rate
-        Assert.StartsWith("Last rate: TS Quotation TSQ-3403", editor.EntryRateNoteText);
+        Assert.Equal(11250m, editor.EntryRate);
+        Assert.StartsWith($"Last rate: Quotation {approved.Number} (this app)", editor.EntryRateNoteText);
     }
 
     [AvaloniaFact]

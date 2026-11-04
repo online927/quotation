@@ -72,7 +72,7 @@
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="Changes are synchronized automatically every few minutes and a full sync runs nightly. Use 'Sync changes' after editing items or prices in Tally." />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Read last rates: reads the rate each item was last quoted or sold at from Tally's Sales and Quotation vouchers (read-only), for items without a selling price in Tally. It runs by itself after the nightly sync. Started here it takes a few minutes and TallyPrime may respond a little slower meanwhile; Stop ends it at once." />
+                     Text="Read last rates: only when 'Also read last rates from Tally' is switched on in Settings → Tally (off by default; the app then remembers the rates of its own approved quotations). It reads the rate each item was last quoted or sold at from Tally's Sales and Quotation vouchers (read-only). Started here it takes a few minutes and TallyPrime may respond a little slower meanwhile; Stop ends it at once." />
           <TextBlock Text="{Binding InfoMessage}" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
           <ItemsControl ItemsSource="{Binding Runs}">
             <ItemsControl.ItemTemplate>

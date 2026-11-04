@@ -21,11 +21,16 @@ public sealed class TallySettings
     /// (Tally sales/quotation vouchers and quotations approved in this app), as Tally itself does.
     /// </summary>
     public bool UseLastRate { get; set; } = true;
+    /// <summary>
+    /// Also read last rates from Tally's Sales and Quotation vouchers. Off: only quotations approved in this app are used,
+    /// and Tally is not asked for vouchers at all (lighter syncs).
+    /// </summary>
+    public bool ReadLastRatesFromTally { get; set; }
     /// <summary>Voucher types to take last rates from. Empty = every Sales and Quotation type (incl. derived ones).</summary>
     public List<string> LastRateVoucherTypes { get; set; } = [];
     /// <summary>How far back to look for last rates.</summary>
     public int LastRateMonths { get; set; } = 12;
-    public int IncrementalSyncMinutes { get; set; } = 15;
+    public int IncrementalSyncMinutes { get; set; } = 180;
     /// <summary>Local time (HH:mm) of the nightly full sync. Empty disables it.</summary>
     public string NightlyFullSyncTime { get; set; } = "02:00";
     public int ConnectionCheckSeconds { get; set; } = 60;

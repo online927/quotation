@@ -502,3 +502,16 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 
 1. The Z button is replaced by a PDF layout per user (My Settings → PDF layout: Tally / Zoho, saved with the login);
    Settings → Quotation → Default PDF layout (Tally) for users who have not chosen. Every PDF the user makes follows it.
+
+### Round 7
+
+1. Buyer/consignee address printed in at most 3 lines (both layouts): long addresses run on with commas and shrink a
+   little when needed, never cut.
+2. Speed check in the status bar (⚡ ms) and Diagnostics → Slow requests (client and server time, server busy with,
+   likely cause).
+3. Sync every 3 hours (180 minutes) instead of 15.
+4. No last rates from Tally vouchers (switch in Settings → Tally, off); the app remembers its own approved rates.
+5. Save Draft, New, Duplicate and Convert to Proforma removed from the quotation screen (Ctrl+S kept, Ctrl+D removed;
+   Duplicate stays in the lists).
+6. Approve & Generate PDF and Open PDF save "Number Customer.pdf" (the same file as Save as PDF).
+7. Buyer, consignee and references fold into one line (customer, other ref.) with an eye button.

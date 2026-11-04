@@ -322,15 +322,41 @@ public sealed class QuotationPdfRenderer
         return Wrap(g, text, _text, width).Select(l => new PartyLine(l, _text));
     }
 
+    /// <summary>The address is printed in at most this many lines.</summary>
+    internal const int MaxAddressLines = 3;
+    /// <summary>The smallest size an address is printed at to stay within <see cref="MaxAddressLines"/> (it is never cut).</summary>
+    internal const double MinAddressSize = 5.5;
+
+    /// <summary>
+    /// The address as typed when it fits in three lines (a long line shrinks a little to stay on one line, as on the
+    /// Tally print; in half width lines wrap). A longer address runs on, separated by commas, in three lines, in a
+    /// smaller size when needed; nothing is cut off.
+    /// </summary>
+    private IEnumerable<PartyLine> AddressLines(XGraphics g, PdfParty p, double width)
+    {
+        var w = p.AddressHalfWidth ? width / 2 : width;
+        var asTyped = p.AddressLines
+            .SelectMany(a => p.AddressHalfWidth ? Wrap(g, a, _text, w).Select(l => new PartyLine(l, _text)) : FitOrWrap(g, a, w))
+            .ToList();
+        if (asTyped.Count <= MaxAddressLines) return asTyped;
+        var joined = JoinAddress(p.AddressLines);
+        for (var size = _text.Size; ; size -= 0.5)
+        {
+            var f = size == _text.Size ? _text : TextOfSize(size);
+            var wrapped = Wrap(g, joined, f, w);
+            if (wrapped.Count <= MaxAddressLines || size - 0.5 < MinAddressSize) return wrapped.Select(l => new PartyLine(l, f));
+        }
+    }
+
+    /// <summary>"No. 149/1, Gandhi Street, Kundrathur, …": the address lines joined by commas.</summary>
+    internal static string JoinAddress(IEnumerable<string> lines) =>
+        string.Join(", ", lines.Select(a => a.Trim().TrimEnd(',').Trim()).Where(a => a.Length > 0));
+
     private List<PartyLine> PartyLines(XGraphics g, string caption, PdfParty p, double width)
     {
         var lines = new List<PartyLine> { new(caption, _label) };
         foreach (var l in Wrap(g, p.Name, _bold, width)) lines.Add(new(l, _bold));
-        // In half width the address wraps at the normal size (shrinking it that far would be too small to read).
-        foreach (var a in p.AddressLines)
-        {
-            lines.AddRange(p.AddressHalfWidth ? Wrap(g, a, _text, width / 2).Select(l => new PartyLine(l, _text)) : FitOrWrap(g, a, width));
-        }
+        lines.AddRange(AddressLines(g, p, width));
 
         var fields = new List<(string Label, string Value)>();
         if (!string.IsNullOrWhiteSpace(p.Gstin)) fields.Add(("GSTIN/UIN", p.Gstin));

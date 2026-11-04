@@ -12,6 +12,15 @@ public class LastRateTests : QuotationTestBase
     private const string VoucherRequest = "Vouchers : VoucherType";
 
     private LastRateService Service => Server.Services.GetRequiredService<LastRateService>();
+
+    /// <summary>These tests read last rates from Tally, which is switched off by default.</summary>
+    public override async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
+        var s = await Api.SettingsAsync();
+        s.Tally.ReadLastRatesFromTally = true;
+        await Api.SaveSettingsAsync(s);
+    }
     private int VoucherRequests => Server.Tally.RequestLog.Count(t => t == VoucherRequest);
 
     private async Task<ProductSummaryDto> WaitForRate(string name, decimal? rate)
@@ -168,6 +177,64 @@ public class LastRateTests : QuotationTestBase
         // A complete re-read keeps it (app quotations are not in Tally).
         await Api.StartSyncAsync(SyncKind.LastRates, wait: true);
         Assert.Equal(11250m, (await WaitForRate(Level, 11250m)).Rate);
+    }
+
+    [Fact]
+    public async Task By_default_tally_vouchers_are_not_read_and_the_app_remembers_its_own_rates()
+    {
+        var s = await Api.SettingsAsync();
+        s.Tally.ReadLastRatesFromTally = false;
+        await Api.SaveSettingsAsync(s);
+        var before = VoucherRequests;
+        await Api.StartSyncAsync(SyncKind.Full, wait: true);
+        var lastRates = await Api.StartSyncAsync(SyncKind.LastRates, wait: true);
+        await Api.StartSyncAsync(SyncKind.Incremental, wait: true);
+        Assert.Equal(before, VoucherRequests); // Tally is not asked for vouchers
+        Assert.Contains("only from quotations approved in this app", lastRates!.Message);
+        Assert.Null((await Product(Level)).Rate);
+
+        var customer = await Customer("SONEPAR INDIA PRIVATE LIMITED");
+        var level = await Product(Level);
+        var q = await Api.CreateQuotationAsync(new SaveQuotationRequest
+        {
+            Date = Today, CustomerId = customer.Id,
+            Lines = [new QuotationLineDto { ProductId = level.Id, Quantity = 1, Rate = 11250m }],
+        });
+        var approved = await Api.ApproveQuotationAsync(q.Id, overrideStaleData: true);
+        var after = await WaitForRate(Level, 11250m);
+        Assert.Equal(11250m, after.Rate);
+        Assert.Contains($"Quotation {approved.Number} (this app)", after.RateNote);
+    }
+
+    [Fact]
+    public async Task Upgrade_drops_last_rates_from_tally_keeps_the_apps_and_syncs_every_3_hours()
+    {
+        await Api.StartSyncAsync(SyncKind.LastRates, wait: true);
+        await WaitForRate(Level, 10500m); // read from a Tally voucher
+        using (var scope = Server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<Quotation.Data.QuotationDbContext>();
+            var other = db.Products.First(p => p.Name != Level && p.Rate == null);
+            other.LastRate = 999;
+            other.LastRateNote = "Quotation TSQ2627-1 (this app) · X · 01-Nov-26";
+            db.SaveChanges();
+        }
+        var settings = Server.Services.GetRequiredService<SettingsService>();
+        var tally = settings.Tally;
+        tally.IncrementalSyncMinutes = 15;
+        tally.ReadLastRatesFromTally = true;
+        await settings.SaveAsync(SettingsService.TallyKey, tally, "test", default);
+        await settings.SaveAsync(SettingsService.UpgradeSyncLastRateKey, new SettingsService.UpgradeDone { Done = false }, "test", default);
+
+        await settings.ApplyUpgradesAsync(default);
+        Assert.Equal(180, settings.Tally.IncrementalSyncMinutes);
+        Assert.False(settings.Tally.ReadLastRatesFromTally);
+        using (var scope = Server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<Quotation.Data.QuotationDbContext>();
+            Assert.Null(db.Products.Single(p => p.Name == Level).LastRate);   // from Tally: dropped
+            Assert.Contains(db.Products, p => p.LastRate == 999);              // from this app: kept
+        }
     }
 
     [Fact]

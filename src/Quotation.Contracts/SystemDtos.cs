@@ -97,3 +97,13 @@ public sealed record DiagnosticsDto(
     int PdfFiles,
     SystemStatusDto Status,
     IReadOnlyList<string> LogFiles);
+
+/// <summary>
+/// A request that took longer than a second: <paramref name="TotalMs"/> measured on the client PC (click to answer),
+/// <paramref name="ServerMs"/> by the server; <paramref name="Busy"/> is what else the server was doing (e.g. "Tally sync").
+/// </summary>
+public sealed record SlowRequestDto(string Id, DateTime WhenUtc, string User, string Machine, string What, double? TotalMs,
+    double? ServerMs, string Busy);
+
+/// <summary>Sent by a client PC after a slow request.</summary>
+public sealed record SlowRequestReport(string? RequestId, string What, double TotalMs, double? ServerMs, string? ServerBusy);

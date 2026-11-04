@@ -15,6 +15,8 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
     [ObservableProperty] private string _logText = "";
     [ObservableProperty] private string _auditFilter = "";
     public ObservableCollection<AuditEntryDto> Audit { get; } = [];
+    /// <summary>Requests slower than a second, newest first (client and server times, what the server was doing).</summary>
+    public ObservableCollection<SlowRequestRow> SlowRequests { get; } = [];
 
     public DiagnosticsViewModel(AppSession session)
     {
@@ -32,6 +34,8 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
     {
         Info = await _session.Api.DiagnosticsAsync();
         await LoadAuditCoreAsync();
+        SlowRequests.Clear();
+        foreach (var s in await _session.Api.SlowRequestsAsync()) SlowRequests.Add(new SlowRequestRow(s));
         LogText = await _session.Api.ServerLogAsync(300);
     });
 
@@ -57,4 +61,26 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
             Audit.Add(a);
         }
     }
+}
+
+/// <summary>One slow request as listed in Diagnostics, with the likely cause.</summary>
+public sealed class SlowRequestRow(SlowRequestDto s)
+{
+    public string When => s.WhenUtc.ToLocalTime().ToString("dd-MMM HH:mm:ss");
+    public string Who => string.Join(" / ", new[] { s.Machine, s.User }.Where(x => !string.IsNullOrWhiteSpace(x)));
+    public string What => s.What;
+    public string Total => Seconds(s.TotalMs);
+    public string Server => Seconds(s.ServerMs);
+    public string Busy => string.IsNullOrWhiteSpace(s.Busy) ? "—" : s.Busy;
+
+    /// <summary>Total slow but the server quick: the network or finding the server PC; the server slow: the server PC.</summary>
+    public string Cause => s switch
+    {
+        { ServerMs: >= 1000 } => string.IsNullOrWhiteSpace(s.Busy) ? "Server PC slow" : "Server busy: " + s.Busy,
+        { TotalMs: not null, ServerMs: null } => "No answer (network / server off)",
+        { TotalMs: not null, ServerMs: < 1000 } => "Network or PC name",
+        _ => "",
+    };
+
+    private static string Seconds(double? ms) => ms is null ? "—" : $"{ms.Value / 1000:0.00} s";
 }

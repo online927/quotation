@@ -106,3 +106,56 @@ public class ModernLayoutTests
         for (var i = 1; i <= 14; i++) Assert.Single(all, t => t.Contains($"Part No. P-{i} ", StringComparison.Ordinal) || t.EndsWith($"Part No. P-{i}", StringComparison.Ordinal));
     }
 }
+
+/// <summary>Buyer and consignee addresses are printed in at most three lines (Tally and Zoho layouts), never cut.</summary>
+public class AddressLinesTests
+{
+    private static readonly PdfParty LongAddress = new("Instatenders Solutions Private Limited",
+        ["No. 149/1, Gandhi Street,", "Kundrathur,", "Sriperumbudur Main Road,", "Kavanur,", "Kundrathur, Chennai - 600069",
+         "Near the big water tank opposite the old bus stand, Tamil Nadu, India"],
+        "33AAFCI2552K1ZM", "Tamil Nadu", "33", "", "9150081257");
+
+    private static int AddressLineCount(UglyToad.PdfPig.Content.Page page, string from, string until)
+    {
+        var words = page.GetWords().ToList();
+        var top = words.First(w => w.Text == from).BoundingBox.Bottom;
+        var bottom = words.First(w => w.Text == until && w.BoundingBox.Bottom < top).BoundingBox.Bottom;
+        return words.Where(w => w.BoundingBox.Bottom < top - 1 && w.BoundingBox.Bottom > bottom + 1 && w.BoundingBox.Left < page.Width / 2)
+            .Select(w => Math.Round(w.BoundingBox.Bottom)).Distinct().Count();
+    }
+
+    [Fact]
+    public void Tally_layout_prints_a_long_address_in_three_lines()
+    {
+        var doc = SampleDocuments.Build([SampleDocuments.Bevel()]) with { Buyer = LongAddress, Consignee = null };
+        using var p = PdfDocument.Open(new QuotationPdfRenderer().Render(doc));
+        var page = p.GetPage(1);
+        Assert.Equal(3, AddressLineCount(page, "Instatenders", "GSTIN/UIN"));
+        var text = string.Join(" ", page.GetWords().Select(w => w.Text));
+        foreach (var word in new[] { "149/1,", "Sriperumbudur", "Kavanur,", "600069,", "opposite", "India" }) Assert.Contains(word, text); // nothing cut
+    }
+
+    [Fact]
+    public void Zoho_layout_prints_a_long_address_in_three_lines()
+    {
+        var doc = ModernLayoutTests.Sample() with { Buyer = LongAddress };
+        var bytes = new ModernPdfRenderer().Render(doc);
+        PdfRenderTests.Save("modern-long-address.pdf", bytes);
+        using var p = PdfDocument.Open(bytes);
+        var page = p.GetPage(1);
+        Assert.InRange(AddressLineCount(page, "Instatenders", "Code"), 1, 3); // wider box: it may need fewer
+        var text = string.Join(" ", page.GetWords().Select(w => w.Text));
+        foreach (var word in new[] { "149/1,", "Sriperumbudur", "Kavanur,", "600069,", "opposite", "India" }) Assert.Contains(word, text);
+    }
+
+    [Fact]
+    public void A_short_address_is_printed_as_typed()
+    {
+        var doc = SampleDocuments.Build([SampleDocuments.Bevel()]) with { Consignee = null };
+        using var p = PdfDocument.Open(new QuotationPdfRenderer().Render(doc));
+        var page = p.GetPage(1);
+        Assert.Equal(3, AddressLineCount(page, "Sonepar", "GSTIN/UIN")); // Plot No. 12 … / Chakan, Pune / PIN: 410501
+        var words = page.GetWords().ToList();
+        Assert.Equal(words.First(w => w.Text == "Plot").BoundingBox.Left, words.First(w => w.Text == "Chakan,").BoundingBox.Left, 1); // own lines
+    }
+}

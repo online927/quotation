@@ -33,7 +33,7 @@ public sealed class SyncWorker(
                 if (kind is not null && !sync.IsRunning)
                 {
                     var run = await sync.RunAsync(kind.Value, "scheduler", stoppingToken);
-                    if (kind == SyncKind.Full && run.Status == SyncStatus.Succeeded && settings.Tally.UseLastRate && IsNightWindow())
+                    if (kind == SyncKind.Full && run.Status == SyncStatus.Succeeded && settings.Tally.UseLastRate && settings.Tally.ReadLastRatesFromTally && IsNightWindow())
                     {
                         // The complete read of last rates loads Tally for a few minutes: only at night, never in office hours.
                         await sync.RunLastRatesAsync("scheduler (nightly)", stoppingToken);

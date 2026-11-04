@@ -62,8 +62,14 @@ public sealed class LastRateService(TallyGateway gateway, SettingsService settin
     public static string NoteFor(TallyRateLine l) =>
         $"{l.VoucherType} {l.VoucherNumber} · {l.Party} · {l.Date.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)}".Replace("  ", " ");
 
+    public const string FromTallyOffMessage =
+        "Last rates are taken only from quotations approved in this app (reading them from Tally is switched off in Settings → Tally).";
+
+    /// <summary>Last rates that came from quotations approved in this app (not from Tally vouchers).</summary>
+    public const string AppNoteMarker = "(this app)";
+
     public static string NoteFor(QuotationHeader q) =>
-        $"Quotation {q.Number} (this app) · {q.Buyer.Name} · {q.Date.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)}";
+        $"Quotation {q.Number} {AppNoteMarker} · {q.Buyer.Name} · {q.Date.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)}";
 
     private string CurrentHash()
     {
@@ -86,6 +92,7 @@ public sealed class LastRateService(TallyGateway gateway, SettingsService settin
     {
         var tally = settings.Tally;
         if (!tally.UseLastRate) return await ClearAllAsync(db, ct);
+        if (!tally.ReadLastRatesFromTally) return new LastRateResult(0, FromTallyOffMessage);
 
         var state = settings.Get<LastRateState>(StateKey);
         var months = Math.Clamp(tally.LastRateMonths, 1, 120);
@@ -164,6 +171,7 @@ public sealed class LastRateService(TallyGateway gateway, SettingsService settin
     {
         var tally = settings.Tally;
         if (!tally.UseLastRate) return await ClearAllAsync(db, ct);
+        if (!tally.ReadLastRatesFromTally) return new LastRateResult(0, "");
         var state = settings.Get<LastRateState>(StateKey);
         if (state.Hash != CurrentHash()) return new LastRateResult(0, NotReadYetMessage);
         var now = clock.GetUtcNow().UtcDateTime;

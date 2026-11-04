@@ -223,17 +223,33 @@ public sealed class ModernPdfRenderer
         return lines;
     }
 
-    private List<string> PartyLines(XGraphics g, PdfParty p, double width)
+    /// <summary>Address lines (at most three, smaller when needed, never cut) and then GSTIN, state and contact, with their sizes.</summary>
+    private List<(string Text, double Size)> PartyLines(XGraphics g, PdfParty p, double width)
     {
-        var lines = new List<string>();
-        foreach (var a in p.AddressLines) lines.AddRange(Wrap(g, a, F(8), width));
+        var lines = new List<(string, double)>();
+        var address = p.AddressLines.SelectMany(a => Wrap(g, a, F(8), width)).ToList();
+        if (address.Count <= QuotationPdfRenderer.MaxAddressLines)
+        {
+            lines.AddRange(address.Select(a => (a, 8.0)));
+        }
+        else
+        {
+            var joined = QuotationPdfRenderer.JoinAddress(p.AddressLines);
+            for (var size = 8.0; ; size -= 0.5)
+            {
+                var wrapped = Wrap(g, joined, F(size), width);
+                if (wrapped.Count > QuotationPdfRenderer.MaxAddressLines && size - 0.5 >= QuotationPdfRenderer.MinAddressSize) continue;
+                lines.AddRange(wrapped.Select(l => (l, size)));
+                break;
+            }
+        }
         if (!string.IsNullOrWhiteSpace(p.StateName))
-            lines.Add(p.StateName + (string.IsNullOrWhiteSpace(p.StateCode) ? "" : $", Code {p.StateCode}"));
-        if (!string.IsNullOrWhiteSpace(p.Gstin)) lines.Add("GSTIN " + p.Gstin);
-        if (!string.IsNullOrWhiteSpace(p.Pan)) lines.Add("PAN " + p.Pan);
+            lines.Add((p.StateName + (string.IsNullOrWhiteSpace(p.StateCode) ? "" : $", Code {p.StateCode}"), 8));
+        if (!string.IsNullOrWhiteSpace(p.Gstin)) lines.Add(("GSTIN " + p.Gstin, 8));
+        if (!string.IsNullOrWhiteSpace(p.Pan)) lines.Add(("PAN " + p.Pan, 8));
         var contact = string.Join(", ", new[] { p.ContactPerson, p.Phone }.Where(s => !string.IsNullOrWhiteSpace(s)));
-        if (contact.Length > 0) lines.Add(contact);
-        if (!string.IsNullOrWhiteSpace(p.Email)) lines.Add(p.Email);
+        if (contact.Length > 0) lines.Add((contact, 8));
+        if (!string.IsNullOrWhiteSpace(p.Email)) lines.Add((p.Email, 8));
         return lines;
     }
 
@@ -294,9 +310,9 @@ public sealed class ModernPdfRenderer
             Text(g, x, y, n, 9, true);
             y += 10.5;
         }
-        foreach (var l in PartyLines(g, p, width))
+        foreach (var (text, size) in PartyLines(g, p, width))
         {
-            Text(g, x, y, l, 8);
+            Text(g, x, y + (8 - size) * 0.85, text, size);
             y += LineStep;
         }
     }

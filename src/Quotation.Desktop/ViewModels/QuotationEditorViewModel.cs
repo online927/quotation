@@ -856,7 +856,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         if (Id is null) return;
         var bytes = await _session.Api.QuotationPdfAsync(Id.Value);
-        LastPdfPath = _session.Documents.SaveAndOpen(bytes, QuotationNumberFormatter.ToFileName(Number ?? Id.ToString()!) + ".pdf",
+        // The same file as Save as PDF: "Number Customer.pdf".
+        LastPdfPath = _session.Documents.SaveAndOpen(bytes, PdfFileName(),
             folder: _session.Documents.FolderFor(IsProforma));
     }
 

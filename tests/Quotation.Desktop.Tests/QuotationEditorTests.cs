@@ -432,6 +432,36 @@ public class QuotationEditorTests
     }
 
     [AvaloniaFact]
+    public async Task Older_quotation_with_p_and_f_percent_opens_as_the_same_amount()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        Assert.Null(editor.PackingForwardingPercent); // no % box any more: new quotations start without one
+        await editor.SelectCustomerAsync((await ctx.Session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id);
+        editor.SelectProduct((await ctx.Session.Api.SearchProductsAsync("universal bevel")).First().Product);
+        editor.EntryQuantity = 2;
+        editor.CommitEntryCommand.Execute(null);
+        Assert.Equal("Add line", editor.EntryButtonText);
+        editor.PackingForwardingPercent = 2; // as saved by an older version
+        Assert.True(await editor.SaveAsync());
+        var total = editor.GrandTotalText;
+        var id = editor.Id!.Value;
+
+        ctx.Shell.OpenQuotation(id);
+        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is QuotationEditorViewModel r && r != editor && r.Lines.Count == 1);
+        var reopened = (QuotationEditorViewModel)ctx.Shell.CurrentPage!;
+        Assert.Equal(624m, reopened.PackingForwarding); // 2 % of 31,200
+        Assert.Null(reopened.PackingForwardingPercent);
+        Assert.Equal(total, reopened.GrandTotalText);
+        Assert.False(reopened.IsDirty);
+
+        Assert.True(reopened.FooterCollapsed);
+        Assert.Contains("Prepared by:", reopened.FooterSummary);
+        reopened.ToggleFooterCommand.Execute(null);
+        Assert.False(reopened.FooterCollapsed);
+    }
+
+    [AvaloniaFact]
     public async Task Drafts_list_opens_and_duplicates_quotations()
     {
         using var ctx = await SetupAsync();

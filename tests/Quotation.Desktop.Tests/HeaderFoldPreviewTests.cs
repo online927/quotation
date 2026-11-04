@@ -52,6 +52,10 @@ public class HeaderFoldPreviewTests
         await Shot("2-folded");
         editor.ToggleHeaderCommand.Execute(null);
         await Shot("3-shown-again");
+        editor.FoldHeader();
+        editor.Remarks = "Prices valid for 15 days";
+        editor.ToggleFooterCommand.Execute(null);
+        await Shot("4-footer-shown");
         editor.IsDirty = false;
         shell.Dispose();
         window.Close();

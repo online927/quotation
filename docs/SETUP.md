@@ -146,7 +146,7 @@ conditions (one per line), default payment terms and footer.
   printed under the items as on the Tally print; requires the company *state code*) or `RateOnly` (GST % per line
   only, totals without GST). Each quotation keeps the GST presentation it was saved with, so changing this setting
   never changes quotations already made.
-* Packing & forwarding default, round-off (on by default), refresh rates when duplicating, stale-data rules, HSN required.
+* Packing & forwarding default amount, round-off (on by default), refresh rates when duplicating, stale-data rules, HSN required.
 * **Users can edit for (days)**: default 7. Users who are not administrators can edit or cancel a quotation or
   proforma invoice for 7 days after it was first saved; after that it is locked for them (they can still open,
   print, Save as PDF and Duplicate it). Administrators can always edit.
@@ -251,7 +251,8 @@ enter the quantity → **Create Draft**). Nothing is ever sent to customers auto
    description (brand, model, MOQ …; **Shift+Enter** starts a new line inside it) → **Enter**:
    the line is added and the product box is cleared for the next item. Repeat for more lines.
    If you change the product text after selecting, the selection is dropped — select from the list again.
-4. Fill references (buyer's order no., payment terms, delivery …) and packing & forwarding if needed.
+4. Fill references (buyer's order no., payment terms, delivery …) and the packing & forwarding amount if needed.
+   Remarks, terms and prepared / verified by are shown as one line; click 👁 to open them.
 5. **Ctrl+S** saves the draft and assigns the quotation number. **F11** opens a preview (DRAFT watermark).
 6. **Ctrl+Enter — Approve & Generate PDF**: the app refreshes Tally data, validates everything, generates the PDF
    and opens it. PDFs are saved on the server in `C:\ProgramData\TSQuotation\pdf\<year>\<number>.pdf` and a copy is

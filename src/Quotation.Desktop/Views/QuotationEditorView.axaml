@@ -150,7 +150,7 @@
                   </Button>
                 </Grid>
               </Border>
-              <TextBlock Classes="fl" Text="Customer (Tally ledger)" />
+              <TextBlock Classes="fl" Text="Customer" />
               <ctl:SearchPicker Name="CustomerBox" Text="{Binding CustomerSearchText}" Search="{Binding CustomerPopulator}"
                                 MaxDropDownHeight="360" MinDropDownWidth="380" Watermark="Type customer name, GSTIN or phone…"
                                 NoMatchText="No matching customer in the Tally ledgers">
@@ -173,11 +173,11 @@
               <TextBox Text="{Binding BuyerAddress}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="62" />
               <Grid ColumnDefinitions="*,6,*">
                 <StackPanel>
-                  <TextBlock Classes="fl" Text="GSTIN/UIN (from Tally)" />
+                  <TextBlock Classes="fl" Text="GSTIN" />
                   <TextBox Text="{Binding BuyerGstin}" IsReadOnly="True" />
                 </StackPanel>
                 <StackPanel Grid.Column="2">
-                  <TextBlock Classes="fl" Text="State / Code (from Tally)" />
+                  <TextBlock Classes="fl" Text="State" />
                   <TextBox IsReadOnly="True" Text="{Binding BuyerStateDisplay, Mode=OneWay}" />
                 </StackPanel>
               </Grid>
@@ -320,8 +320,6 @@
                       <StackPanel Grid.Column="10" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="2">
                         <Button Content="Edit" Classes="small"
                                 Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EditLineCommand}" CommandParameter="{Binding}" />
-                        <Button Content="↑" Classes="small"
-                                Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).MoveLineUpCommand}" CommandParameter="{Binding}" />
                         <Button Content="✕" Classes="small"
                                 Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).RemoveLineCommand}" CommandParameter="{Binding}" />
                       </StackPanel>
@@ -336,7 +334,7 @@
               <StackPanel Spacing="4">
                 <Grid ColumnDefinitions="*,8,90,8,110,8,80,0,0,8,Auto">
                   <StackPanel>
-                    <TextBlock Classes="fl" Text="Product (name, part no., alias, brand) — ↑/↓ to choose, Enter to select" />
+                    <TextBlock Classes="fl" Text="Product" />
                     <ctl:SearchPicker Name="ProductBox" Text="{Binding ProductSearchText}" Search="{Binding ProductPopulator}"
                                       SearchDelay="0:0:0.1" MaxDropDownHeight="420" MinDropDownWidth="600"
                                       Watermark="e.g. universal bevel, 10mm, 187-901" NoMatchText="No matching product in Tally">
@@ -377,13 +375,13 @@
                     <NumericUpDown Name="DiscountBox" Value="{Binding EntryDiscount}" Minimum="0" Maximum="99.99" FormatString="0.##" />
                   </StackPanel>
                   <StackPanel Grid.Column="10" Orientation="Horizontal" VerticalAlignment="Bottom" Spacing="4">
-                    <Button Classes="primary" Content="{Binding EntryButtonText}" Command="{Binding CommitEntryCommand}" />
+                    <Button Classes="primary" Content="{Binding EntryButtonText}" Command="{Binding CommitEntryCommand}" ToolTip.Tip="Enter" />
                     <Button Content="Clear" Command="{Binding CancelEntryCommand}" />
                   </StackPanel>
                 </Grid>
                 <Grid ColumnDefinitions="*,12,Auto">
                   <StackPanel>
-                    <TextBlock Classes="fl" Text="Description lines (brand, model, MOQ …) printed under the item — Shift+Enter = new line · Enter = add the line" />
+                    <TextBlock Classes="fl" Text="Description (Shift + Enter for next line)" />
                     <TextBox Name="DescriptionBox" Text="{Binding EntryDescription}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
                   </StackPanel>
                   <StackPanel Grid.Column="2" VerticalAlignment="Bottom" IsVisible="{Binding EntryProduct, Converter={x:Static ObjectConverters.IsNotNull}}">
@@ -408,9 +406,26 @@
 
         <!-- Footer: terms and totals -->
         <Grid ColumnDefinitions="*,12,360">
-          <Border Classes="card" Padding="14">
+          <Border Classes="card" Padding="14,8" VerticalAlignment="Top" IsVisible="{Binding FooterCollapsed}">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding FooterSummary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource MutedBrush}" />
+              <Button Grid.Column="1" Name="ShowFooterButton" Classes="round" Command="{Binding ToggleFooterCommand}"
+                      ToolTip.Tip="Show remarks, terms and prepared / verified by">
+                <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z"
+                      Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="17" Height="17" Stretch="Uniform" />
+              </Button>
+            </Grid>
+          </Border>
+          <Border Classes="card" Padding="14" IsVisible="{Binding !FooterCollapsed}">
             <StackPanel>
-              <TextBlock Classes="fl" Text="Remarks (printed on quotation)" />
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="fl" Text="Remarks (printed on quotation)" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Name="HideFooterButton" Classes="round" Width="26" Height="26" Command="{Binding ToggleFooterCommand}"
+                        ToolTip.Tip="Hide: show one line">
+                  <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z M3,3 L21,21"
+                        Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.6" Width="15" Height="15" Stretch="Uniform" />
+                </Button>
+              </Grid>
               <TextBox Text="{Binding Remarks}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
               <TextBlock Classes="fl" Text="Terms &amp; conditions (one per line)" />
               <TextBox Text="{Binding TermsAndConditions}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="80" />
@@ -435,8 +450,6 @@
               <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="4" Margin="0,4">
                 <TextBlock Text="{Binding PackingLabel}" VerticalAlignment="Center" />
                 <NumericUpDown Value="{Binding PackingForwarding}" Minimum="0" FormatString="0.00" Width="90" />
-                <TextBlock Text="or %" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding PackingForwardingPercent}" Minimum="0" Maximum="100" FormatString="0.##" Width="60" />
               </StackPanel>
               <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PackingText}" HorizontalAlignment="Right" VerticalAlignment="Center" />
               <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding TaxText}" FontSize="12" IsVisible="{Binding ShowsTaxes}" TextWrapping="Wrap" />
@@ -447,7 +460,6 @@
               <Border Grid.Row="5" Grid.ColumnSpan="2" Height="1" Background="{DynamicResource PanelBorderBrush}" Margin="0,6" />
               <TextBlock Grid.Row="6" Text="Total" FontWeight="Bold" FontSize="16" />
               <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding GrandTotalText}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Right" />
-              <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Text="{Binding AmountInWords}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
             </Grid>
             </StackPanel>
           </Border>

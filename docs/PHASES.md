@@ -520,3 +520,13 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 
 1. All quotation-screen buttons on one line (shortcuts in the tooltips); Regenerate PDF only shown when making the PDF
    failed at approval.
+
+### Round 9
+
+1. Packing & forwarding is an amount only: the P&F % box (quotation screen) and the default P&F % (Settings) were
+   removed. An older quotation saved with a % opens showing the same amount, so its total does not change.
+2. Shorter labels: *Customer*, *GSTIN*, *State*, *Product*, *Description (Shift + Enter for next line)*; the button
+   is *Add line* (Enter in the tooltip).
+3. Remarks, terms and prepared / verified by are folded into one line; the 👁 button opens them.
+4. The move-up button on item lines and the amount in words on screen were removed (the PDF still prints the
+   amount in words).

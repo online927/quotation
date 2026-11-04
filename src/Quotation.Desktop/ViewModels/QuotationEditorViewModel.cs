@@ -70,6 +70,27 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     partial void OnBuyerNameChanged(string value) => OnPropertyChanged(nameof(CanCollapseHeader));
     partial void OnOtherReferencesChanged(string value) => OnPropertyChanged(nameof(HeaderSummaryOtherRef));
 
+    /// <summary>Remarks, terms and prepared/verified by folded into one line; the eye button shows them.</summary>
+    [ObservableProperty] private bool _footerCollapsed = true;
+
+    public string FooterSummary
+    {
+        get
+        {
+            var terms = (TermsAndConditions ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
+            var remarks = string.IsNullOrWhiteSpace(Remarks) ? "—" : Remarks.Replace('\n', ' ').Trim();
+            if (remarks.Length > 50) remarks = remarks[..50] + "…";
+            return $"Remarks: {remarks}   ·   Terms: {(terms == 0 ? "—" : terms == 1 ? "1 line" : $"{terms} lines")}   ·   Prepared by: {(string.IsNullOrWhiteSpace(PreparedBy) ? "—" : PreparedBy)}";
+        }
+    }
+
+    partial void OnRemarksChanged(string value) => OnPropertyChanged(nameof(FooterSummary));
+    partial void OnTermsAndConditionsChanged(string value) => OnPropertyChanged(nameof(FooterSummary));
+    partial void OnPreparedByChanged(string value) => OnPropertyChanged(nameof(FooterSummary));
+
+    [RelayCommand]
+    private void ToggleFooter() => FooterCollapsed = !FooterCollapsed;
+
     [RelayCommand]
     private void ToggleHeader() => HeaderCollapsed = !HeaderCollapsed && CanCollapseHeader;
 
@@ -202,7 +223,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         if (Id is { } id && !HasUnsavedChanges && !IsBusy) _ = RunAsync(async () => Load(await _session.Api.QuotationAsync(id)));
     }
 
-    public string EntryButtonText => EditingLine is null ? "Add line (Enter)" : "Update line";
+    public string EntryButtonText => EditingLine is null ? "Add line" : "Update line";
 
     // ================================================================= loading
 
@@ -233,7 +254,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                     : _settings.Company.DefaultPreparedBy;
                 VerifiedBy = _settings.Company.DefaultVerifiedBy;
                 PackingForwarding = _settings.Quotation.DefaultPackingForwardingAmount;
-                PackingForwardingPercent = _settings.Quotation.DefaultPackingForwardingPercent > 0 ? _settings.Quotation.DefaultPackingForwardingPercent : null;
+                PackingForwardingPercent = null; // P&F is an amount (the % box was removed)
                 _loading = false;
                 await RefreshNumberPreviewAsync();
                 RecalculateTotals();
@@ -317,6 +338,15 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         _loading = false;
         if (CustomerId is { } cid) _ = LoadShipToOptionsAsync(cid, keepCurrent: true);
         RecalculateTotals();
+        if (PackingForwardingPercent is > 0 && Totals is { } t)
+        {
+            // An older quotation with P&F as a %: shown (and saved, if edited) as the same amount.
+            _loading = true;
+            PackingForwarding = t.PackingForwarding;
+            PackingForwardingPercent = null;
+            _loading = false;
+            RecalculateTotals();
+        }
         IsDirty = false;
         NotifyState();
         if (!_headerFoldDecided)

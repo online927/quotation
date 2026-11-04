@@ -157,8 +157,6 @@
             <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RoundOffTotal}" />
             <TextBlock Grid.Row="7" Text="Default packing &amp; forwarding (₹)" />
             <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultPackingForwardingAmount}" Minimum="0" FormatString="0.00" Width="160" HorizontalAlignment="Left" />
-            <TextBlock Grid.Row="8" Text="…or default P&amp;F % of subtotal" />
-            <NumericUpDown Grid.Row="8" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultPackingForwardingPercent}" Minimum="0" Maximum="100" FormatString="0.00" Width="160" HorizontalAlignment="Left" />
             <TextBlock Grid.Row="9" Text="Refresh rates when duplicating" />
             <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RefreshRatesOnDuplicate}" />
             <TextBlock Grid.Row="10" Text="Allow generation with stale Tally data" />

@@ -515,3 +515,8 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    Duplicate stays in the lists).
 6. Approve & Generate PDF and Open PDF save "Number Customer.pdf" (the same file as Save as PDF).
 7. Buyer, consignee and references fold into one line (customer, other ref.) with an eye button.
+
+### Round 8
+
+1. All quotation-screen buttons on one line (shortcuts in the tooltips); Regenerate PDF only shown when making the PDF
+   failed at approval.

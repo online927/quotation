@@ -175,6 +175,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool CanSaveAsPdf => Status != QuotationStatus.Cancelled && (IsFinal || (Lines.Count > 0 && !IsLocked));
     public string PackingLabel => WithoutGst ? "Packing & Forwarding - Without GST ₹" : "Packing & Forwarding ₹";
     public bool IsFinal => Status is QuotationStatus.Approved or QuotationStatus.Generated;
+    /// <summary>Regenerate PDF is only needed when making the PDF failed at approval (Open/Save as PDF are always fresh).</summary>
+    public bool CanRegeneratePdf => IsFinal && !string.IsNullOrWhiteSpace(PdfError);
+    partial void OnPdfErrorChanged(string? value) => OnPropertyChanged(nameof(CanRegeneratePdf));
     public bool IsPendingReview => Status == QuotationStatus.PendingReview;
     public bool IsCancelled => Status == QuotationStatus.Cancelled;
     public string StatusText => Status switch
@@ -330,6 +333,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(CanChangeDate));
         OnPropertyChanged(nameof(CanApprove));
         OnPropertyChanged(nameof(IsFinal));
+        OnPropertyChanged(nameof(CanRegeneratePdf));
         OnPropertyChanged(nameof(IsPendingReview));
         OnPropertyChanged(nameof(IsCancelled));
         OnPropertyChanged(nameof(StatusText));

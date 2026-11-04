@@ -94,17 +94,22 @@
           <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
           <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
         </StackPanel>
-        <!-- Row 1: approve and save as PDF, with Cancel and Delete apart on the right. Row 2: PDF. Ctrl+S still saves a draft. -->
+        <!-- One line: approve and save as PDF | preview and PDF; Cancel and Delete apart on the right. Shortcuts in the tooltips;
+             Ctrl+S still saves a draft. -->
         <Grid ColumnDefinitions="*,Auto" Margin="0,2,0,0">
           <WrapPanel ItemSpacing="8" LineSpacing="8">
-            <Button Classes="primary" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}">
-              <StackPanel Orientation="Horizontal"><TextBlock Text="Approve &amp; Generate PDF" /><TextBlock Classes="key" Text="Ctrl+Enter" /></StackPanel>
-            </Button>
+            <Button Classes="primary" Content="Approve &amp; Generate PDF" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}"
+                    ToolTip.Tip="Approve and open the PDF (Ctrl+Enter)" />
             <Button Name="SaveAsPdfButton" Classes="save" Content="Save as PDF" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
                     ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)" />
             <CheckBox Name="SealBox" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
                       IsEnabled="{Binding SealAvailable}" ToolTip.Tip="{Binding SealHint}" ToolTip.ShowOnDisabled="True" />
-            <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{DynamicResource WarnBrush}" />
+            <Border Classes="groupline" />
+            <Button Content="Preview" Command="{Binding PreviewCommand}" HotKey="F11" ToolTip.Tip="Preview the PDF (F11)" />
+            <Button Content="Open PDF" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" ToolTip.Tip="Open the PDF (Ctrl+P)" />
+            <Button Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding CanRegeneratePdf}"
+                    ToolTip.Tip="Making the PDF failed at approval: try again" />
+            <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="● Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{DynamicResource WarnBrush}" />
           </WrapPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Margin="16,0,0,0">
             <Button Classes="danger" Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}">
@@ -114,17 +119,6 @@
                     ToolTip.Tip="Administrator: move to the Deleted list (can be restored for 30 days)" />
           </StackPanel>
         </Grid>
-        <WrapPanel ItemSpacing="8" LineSpacing="8">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Command="{Binding PreviewCommand}" HotKey="F11">
-              <StackPanel Orientation="Horizontal"><TextBlock Text="Preview" /><TextBlock Classes="key" Text="F11" /></StackPanel>
-            </Button>
-            <Button Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}">
-              <StackPanel Orientation="Horizontal"><TextBlock Text="Open PDF" /><TextBlock Classes="key" Text="Ctrl+P" /></StackPanel>
-            </Button>
-            <Button Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding IsFinal}" />
-          </StackPanel>
-        </WrapPanel>
       </StackPanel>
     </Border>
 

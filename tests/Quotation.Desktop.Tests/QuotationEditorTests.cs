@@ -102,6 +102,7 @@ public class QuotationEditorTests
         Assert.Equal(QuotationStatus.Generated, editor.Status);
         Assert.True(editor.HasPdf);
         var launcher = (RecordingLauncher)ctx.Session.Documents;
+        Assert.False(editor.CanRegeneratePdf); // only shown when making the PDF failed
         Assert.Contains(editor.PdfFileName(), launcher.Saved); // "Number Customer.pdf", the same file as Save as PDF
         Assert.EndsWith(" Sonepar India Private Limited.pdf", editor.PdfFileName());
     }

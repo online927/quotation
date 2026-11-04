@@ -349,7 +349,7 @@ asked **Save** (Enter) / **Don't Save** (N) / **Cancel** (Esc).
 | Quotation date rejected | Dates must be inside the active financial year. |
 | "Rates changed in Tally" on approval | The quotation was updated with the new Tally rates; review and approve again. |
 | "Live Tally data could not be retrieved" | Tally is offline or the last sync is old. Approve anyway (logged) if allowed, or fix Tally first. |
-| PDF failed | The quotation stays approved; use **Regenerate PDF**. Check Diagnostics → Server log (disk space, logo file path). |
+| PDF failed | The quotation stays approved; use **Regenerate PDF** (shown only then; Open PDF and Save as PDF always make a fresh PDF with the latest settings). Check Diagnostics → Server log (disk space, logo file path). |
 | AI: "not configured" / errors | Settings → Claude AI enabled + key saved? Rate limits or outages are shown on the AI Inbox item; e-mails retry automatically. |
 | Gmail: "invalid_grant" / stopped working | The token was revoked or the Google app was left in Testing (7-day expiry): publish the app, then Gmail Connection → Connect Gmail again. |
 | "Changed by someone else" | Two PCs edited the same quotation. Reload it and re-apply your change. |

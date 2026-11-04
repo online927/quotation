@@ -43,7 +43,8 @@ public class SlowRequestTests : QuotationTestBase
         Assert.Equal("Customer details", network.What);
         Assert.Equal(40, network.ServerMs);
         Assert.DoesNotContain(list, s => s.Id == "ghi789");
-        Assert.Equal("def456", list[0].Id); // newest first
+        // Newest first (real slow requests of a busy test machine may be listed too, so only ours are compared).
+        Assert.Equal(["def456", "abc123"], list.Where(s => s.Id is "abc123" or "def456").Select(s => s.Id));
 
         // Users may report but not read the list.
         await Api.CreateUserAsync(new CreateUserRequest("rasik", "Rasik", "first-pass", Quotation.Core.Domain.UserRole.User));

@@ -127,14 +127,14 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         if (user is not null) session.ApplyTheme(user.Theme);
         if (Avalonia.Application.Current is { } app) app.ActualThemeVariantChanged += OnThemeChanged;
 
-        NavItems.Add(new NavItem("dashboard", "Dashboard", "Ctrl+D", () => new DashboardViewModel(_session, Navigate)));
-        NavItems.Add(new NavItem("new", "New Quotation", "Ctrl+N", () => new QuotationEditorViewModel(_session, this), "Create"));
-        NavItems.Add(new NavItem("newproforma", "New Proforma Invoice", "Ctrl+Shift+N",
+        NavItems.Add(new NavItem("dashboard", "Dashboard", "", () => new DashboardViewModel(_session, Navigate)));
+        NavItems.Add(new NavItem("new", "New Quotation", "", () => new QuotationEditorViewModel(_session, this), "Create"));
+        NavItems.Add(new NavItem("newproforma", "New Proforma Invoice", "",
             () => new QuotationEditorViewModel(_session, this, docType: DocumentType.ProformaInvoice)));
-        NavItems.Add(new NavItem("inbox", "AI Inbox", "Ctrl+I", () => new AiInboxViewModel(_session, this)));
+        NavItems.Add(new NavItem("inbox", "AI Inbox", "", () => new AiInboxViewModel(_session, this)));
         NavItems.Add(new NavItem("drafts", "Draft Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Drafts), "Documents"));
         NavItems.Add(new NavItem("today", "Today's Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Today)));
-        NavItems.Add(new NavItem("history", "Quotation History", "Ctrl+H", () => new QuotationListViewModel(_session, this, QuotationListPreset.History)));
+        NavItems.Add(new NavItem("history", "Quotation History", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.History)));
         NavItems.Add(new NavItem("proforma", "Proforma Invoices", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Proforma)));
         if (session.IsAdmin) NavItems.Add(new NavItem("deleted", "Deleted", "", () => new DeletedQuotationsViewModel(_session, this)));
         NavItems.Add(new NavItem("customers", "Customers", "", () => new CustomersViewModel(_session), "Tally masters"));

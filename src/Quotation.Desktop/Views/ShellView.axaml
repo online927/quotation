@@ -4,13 +4,6 @@
              xmlns:svc="using:Quotation.Desktop.Services"
              x:Class="Quotation.Desktop.Views.ShellView"
              x:DataType="vm:ShellViewModel">
-  <UserControl.KeyBindings>
-    <KeyBinding Gesture="Ctrl+D" Command="{Binding NavigateCommand}" CommandParameter="dashboard" />
-    <KeyBinding Gesture="Ctrl+N" Command="{Binding NavigateCommand}" CommandParameter="new" />
-    <KeyBinding Gesture="Ctrl+Shift+N" Command="{Binding NavigateCommand}" CommandParameter="newproforma" />
-    <KeyBinding Gesture="Ctrl+I" Command="{Binding NavigateCommand}" CommandParameter="inbox" />
-    <KeyBinding Gesture="Ctrl+H" Command="{Binding NavigateCommand}" CommandParameter="history" />
-  </UserControl.KeyBindings>
   <Panel>
     <DockPanel>
       <!-- Top bar -->
@@ -27,7 +20,8 @@
           </StackPanel>
           <TextBox Grid.Column="1" Name="GlobalSearchBox" Text="{Binding GlobalSearch}" MaxWidth="520" HorizontalAlignment="Stretch" Margin="16,0"
                    CornerRadius="999" Padding="16,6" Background="{DynamicResource FillBrush}" BorderThickness="0"
-                   Watermark="Search quotations — number, customer, GSTIN, product, reference, date   (Ctrl+F)">
+                   Watermark="Search quotations"
+                   ToolTip.Tip="Search quotations by number, customer, GSTIN, product, reference or date (Ctrl+F)">
             <TextBox.KeyBindings>
               <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}" />
             </TextBox.KeyBindings>
@@ -103,11 +97,10 @@
                   <Button Classes="nav" Classes.selected="{Binding IsSelected}"
                           Command="{Binding $parent[ItemsControl].((vm:ShellViewModel)DataContext).NavigateCommand}"
                           CommandParameter="{Binding Key}">
-                    <Grid ColumnDefinitions="26,*,Auto" Width="216">
-                      <Path Classes="icon" Data="{Binding Icon}" StrokeThickness="1.6" Width="17" Height="17" Stretch="Uniform"
+                    <Grid ColumnDefinitions="32,*,Auto" Width="216">
+                      <Path Classes="icon" Data="{Binding Icon}" StrokeThickness="1.7" Width="20" Height="20" Stretch="Uniform"
                             StrokeLineCap="Round" StrokeJoin="Round" VerticalAlignment="Center" HorizontalAlignment="Left" />
                       <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13" TextTrimming="CharacterEllipsis" Margin="0,0,6,0" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="2" Classes="shortcut" Text="{Binding Shortcut}" FontSize="10" FontWeight="Normal" VerticalAlignment="Center" />
                     </Grid>
                   </Button>
                 </StackPanel>
@@ -123,16 +116,19 @@
           <Button Name="BackButton" Classes="round" Content="‹" Command="{Binding GoBackCommand}" IsEnabled="{Binding CanGoBack}" ToolTip.Tip="{Binding BackToolTip}" />
           <Button Name="ForwardButton" Classes="round" Content="›" Command="{Binding GoForwardCommand}" IsEnabled="{Binding CanGoForward}"
                   ToolTip.Tip="{Binding ForwardToolTip}" />
-          <ItemsControl ItemsSource="{Binding Breadcrumbs}" VerticalAlignment="Center" Margin="8,0,0,0">
+          <Button Name="HomeButton" Classes="link" Margin="8,0,0,0" VerticalAlignment="Center" ToolTip.Tip="Dashboard"
+                  Command="{Binding NavigateCommand}" CommandParameter="dashboard">
+            <Path Data="M3,11 L12,3 L21,11 M5,9.5 L5,20 L10,20 L10,14 L14,14 L14,20 L19,20 L19,9.5" Stroke="{DynamicResource AccentBrush}"
+                  StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" Width="18" Height="18" Stretch="Uniform" />
+          </Button>
+          <TextBlock Text="›" Classes="muted" VerticalAlignment="Center" />
+          <ItemsControl ItemsSource="{Binding Breadcrumbs}" VerticalAlignment="Center" Margin="2,0,0,0">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:Crumb">
                 <StackPanel Orientation="Horizontal">
-                  <Button Classes="link" Content="{Binding Title}" FontSize="13" IsVisible="{Binding !IsCurrent}"
-                          Command="{Binding $parent[ItemsControl].((vm:ShellViewModel)DataContext).GoToCrumbCommand}" CommandParameter="{Binding}" />
-                  <TextBlock Text="›" Classes="muted" Margin="4,0" VerticalAlignment="Center" IsVisible="{Binding !IsCurrent}" />
                   <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0" IsVisible="{Binding IsCurrent}" />
                 </StackPanel>
               </DataTemplate>

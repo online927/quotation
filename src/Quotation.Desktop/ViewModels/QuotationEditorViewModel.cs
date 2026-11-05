@@ -209,6 +209,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool IsProforma => DocType == DocumentType.ProformaInvoice;
     public string DocLabel => IsProforma ? "Proforma Invoice" : "Quotation";
     public string NumberLabel => IsProforma ? "Invoice No." : "Quotation No.";
+    /// <summary>The number beside the date only while it is provisional; once saved it is in the title.</summary>
+    public bool IsNumberProvisional => Number is null;
+    /// <summary>"Source: …" only for quotations made from the AI Inbox or Gmail.</summary>
+    public bool ShowSource => Source != QuotationSource.Manual;
     public string Title => Number is null ? "New " + DocLabel : $"{DocLabel} {Number}";
     /// <summary>A saved quotation can be turned into a proforma invoice (a new document with its own TSPI number).</summary>
     public bool CanConvertToProforma => !IsProforma && Id is not null && Status != QuotationStatus.Cancelled;
@@ -396,7 +400,13 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     partial void OnIdChanged(Guid? value) => OnPropertyChanged(nameof(CanConvertToProforma));
 
     partial void OnStatusChanged(QuotationStatus value) => NotifyState();
-    partial void OnNumberChanged(string? value) => OnPropertyChanged(nameof(Title));
+    partial void OnNumberChanged(string? value)
+    {
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(IsNumberProvisional));
+    }
+
+    partial void OnSourceChanged(QuotationSource value) => OnPropertyChanged(nameof(ShowSource));
     partial void OnEditingLineChanged(QuotationLineViewModel? value) => OnPropertyChanged(nameof(EntryButtonText));
     partial void OnDateChanged(DateTime? value)
     {

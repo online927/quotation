@@ -241,7 +241,7 @@ enter the quantity → **Create Draft**). Nothing is ever sent to customers auto
 ## 9. Your first quotation
 
 **Manually (keyboard)**
-1. **Ctrl+N** (New Quotation). The provisional number and today's date are shown.
+1. **New Quotation** in the sidebar. The provisional number and today's date are shown.
 2. Type part of the customer name (or GSTIN/phone). Matching Tally ledgers are listed with the first one
    highlighted (like Tally's *List of Ledger Accounts*): **↑/↓** move the highlight, **Enter** (or a click) accepts it,
    **Esc** closes the list. Bill-to and ship-to are filled from Tally; choose another *Ship to* address if needed.
@@ -262,10 +262,10 @@ enter the quantity → **Create Draft**). Nothing is ever sent to customers auto
 **With AI**: AI Inbox → type the request → **Analyse** → **Open Draft** (or resolve choices → **Create Draft**) →
 review → **Ctrl+S** → **Ctrl+Enter**.
 
-**Repeat business**: open an old quotation (History, **Ctrl+H**, or **Ctrl+F** search) → **Duplicate (Ctrl+D)**:
+**Repeat business**: open an old quotation (Quotation History, or **Ctrl+F** search) → **Duplicate (Ctrl+D)**:
 new number, today's date, same customer and products, current Tally rates.
 
-**Proforma invoices**: **New Proforma Invoice (Ctrl+Shift+N)** works like a quotation, with its own TSPI number
+**Proforma invoices**: **New Proforma Invoice** (sidebar) works like a quotation, with its own TSPI number
 and the extra fields *Delivery Note*, *Dispatch Doc No.* and *Delivery Note Date*. Or open a saved quotation and
 press **Convert to Proforma Invoice**: a new proforma with the same customer and lines is created (the quotation
 stays as it is; *Other references* says *Our quotation TSQ…*). The PDF follows the Tally proforma layout (HSN/SAC

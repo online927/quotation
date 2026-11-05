@@ -438,6 +438,8 @@ public class QuotationEditorTests
         using var ctx = await SetupAsync();
         var editor = await NewEditor(ctx);
         Assert.Null(editor.PackingForwardingPercent); // no % box any more: new quotations start without one
+        Assert.True(editor.IsNumberProvisional);      // number beside the date only while provisional
+        Assert.False(editor.ShowSource);              // "Source: Manual" is not shown
         await editor.SelectCustomerAsync((await ctx.Session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id);
         editor.SelectProduct((await ctx.Session.Api.SearchProductsAsync("universal bevel")).First().Product);
         editor.EntryQuantity = 2;
@@ -445,6 +447,7 @@ public class QuotationEditorTests
         Assert.Equal("Add line", editor.EntryButtonText);
         editor.PackingForwardingPercent = 2; // as saved by an older version
         Assert.True(await editor.SaveAsync());
+        Assert.False(editor.IsNumberProvisional);     // saved: the number is in the title only
         var total = editor.GrandTotalText;
         var id = editor.Id!.Value;
 
@@ -499,6 +502,20 @@ public class QuotationEditorTests
         Assert.False(first.IsDragging);
         Assert.True(editor.IsDirty);
         editor.IsDirty = false;
+    }
+
+    [AvaloniaFact]
+    public async Task Sidebar_shortcut_keys_are_switched_off()
+    {
+        using var ctx = await SetupAsync();
+        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is not null);
+        var page = ctx.Shell.CurrentPage;
+        ctx.Window.KeyPress(Key.N, RawInputModifiers.Control, PhysicalKey.N, "n");
+        ctx.Window.KeyPress(Key.H, RawInputModifiers.Control, PhysicalKey.H, "h");
+        ctx.Window.KeyPress(Key.I, RawInputModifiers.Control, PhysicalKey.I, "i");
+        Dispatcher.UIThread.RunJobs();
+        Assert.Same(page, ctx.Shell.CurrentPage);
+        Assert.All(ctx.Shell.NavItems, n => Assert.Equal("", n.Shortcut));
     }
 
     [AvaloniaFact]

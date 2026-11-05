@@ -536,3 +536,16 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 1. The packing & forwarding box starts empty (counts as 0.00; the amount on the right still shows 0.00).
 2. Items are moved by dragging the grip (⋮⋮) at the left of a line; Sl. No. are renumbered.
 3. The description box is a quarter of its former width; remarks, terms and prepared / verified by are half width.
+
+### Round 11 (new look, from the office's design picture; screen only)
+
+1. Section titles with icons (Items, Remarks), blue Totals bar, bigger bold titles; icons in the action buttons
+   (colours unchanged), slightly taller action buttons, round bin icon on item lines, bolder status badge.
+2. Totals: evenly spaced rows, the Total in a light-blue band that is the bottom edge of the box.
+3. Colours and corners from the picture (light mode): cool page background, deeper navy sidebar, softer borders,
+   28 px input boxes with 6 px corners, 10 px card corners.
+4. Home icon and a short breadcrumb (home › current page); top search box says "Search quotations".
+5. Sidebar keyboard shortcuts (Ctrl+N, Ctrl+Shift+N, Ctrl+I, Ctrl+H, Ctrl+D) switched off; larger sidebar icons.
+6. No grey example text in the Customer and Product boxes; "Source" shown only for AI Inbox / Gmail quotations;
+   the number beside the date only while provisional; Edit and remove appear on the line under the mouse;
+   the scroll bar runs beside the cards.

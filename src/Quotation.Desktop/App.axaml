@@ -16,7 +16,7 @@
     <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI, Inter, Helvetica Neue, Arial</FontFamily>
 
     <!-- Fluent theme overrides -->
-    <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+    <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
     <CornerRadius x:Key="OverlayCornerRadius">12</CornerRadius>
 
     <!--
@@ -25,16 +25,16 @@
     -->
     <ResourceDictionary.ThemeDictionaries>
       <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="PageBrush">#F5F5F7</SolidColorBrush>
+          <SolidColorBrush x:Key="PageBrush">#F6F8FD</SolidColorBrush>
           <SolidColorBrush x:Key="CardBrush">#FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="TextBrush">#1D1D1F</SolidColorBrush>
           <SolidColorBrush x:Key="MutedBrush">#6E6E73</SolidColorBrush>
-          <SolidColorBrush x:Key="HairlineBrush">#E5E5EA</SolidColorBrush>
+          <SolidColorBrush x:Key="HairlineBrush">#E6E9F0</SolidColorBrush>
           <SolidColorBrush x:Key="PanelBorderBrush">#D2D2D7</SolidColorBrush>
           <SolidColorBrush x:Key="FillBrush">#EDEDF0</SolidColorBrush>
-          <SolidColorBrush x:Key="SubtleFillBrush">#FAFAFC</SolidColorBrush>
+          <SolidColorBrush x:Key="SubtleFillBrush">#F5F6FA</SolidColorBrush>
           <SolidColorBrush x:Key="AccentBrush">#0071E3</SolidColorBrush>
-          <SolidColorBrush x:Key="AccentSoftBrush">#E8F1FD</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentSoftBrush">#EBF2FE</SolidColorBrush>
           <SolidColorBrush x:Key="OkBrush">#248A3D</SolidColorBrush>
           <SolidColorBrush x:Key="WarnBrush">#B25000</SolidColorBrush>
           <SolidColorBrush x:Key="WarnSoftBrush">#FFF6E5</SolidColorBrush>
@@ -45,16 +45,16 @@
           <SolidColorBrush x:Key="PurpleBrush">#8944AB</SolidColorBrush>
           <SolidColorBrush x:Key="TealBrush">#0A8A8A</SolidColorBrush>
           <SolidColorBrush x:Key="OrangeBrush">#C93400</SolidColorBrush>
-          <SolidColorBrush x:Key="SidebarBrush">#1E2A3A</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBrush">#141D30</SolidColorBrush>
           <SolidColorBrush x:Key="SidebarTextBrush">#E8EDF3</SolidColorBrush>
           <SolidColorBrush x:Key="SidebarMutedBrush">#8D9BAD</SolidColorBrush>
-          <SolidColorBrush x:Key="SidebarHoverBrush">#2C3B4F</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarHoverBrush">#22304A</SolidColorBrush>
           <SolidColorBrush x:Key="SidebarSelectedBrush">#0A84FF</SolidColorBrush>
           <SolidColorBrush x:Key="SidebarSelectedTextBrush">#FFFFFF</SolidColorBrush>
-          <SolidColorBrush x:Key="SidebarBorderBrush">#1E2A3A</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBorderBrush">#141D30</SolidColorBrush>
           <SolidColorBrush x:Key="HeaderBrush">#FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="NavBrush">#FBFBFD</SolidColorBrush>
-          <SolidColorBrush x:Key="RowLineBrush">#F0F0F3</SolidColorBrush>
+          <SolidColorBrush x:Key="RowLineBrush">#EEF0F5</SolidColorBrush>
           <SolidColorBrush x:Key="ListHoverBrush">#EEF3FA</SolidColorBrush>
           <SolidColorBrush x:Key="ListSelectedBrush">#C6DDF8</SolidColorBrush>
           <SolidColorBrush x:Key="ListSelectedHoverBrush">#B7D3F5</SolidColorBrush>
@@ -96,17 +96,17 @@
           <SolidColorBrush x:Key="TextControlBackgroundPointerOver">#FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="TextControlBackgroundFocused">#FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="TextControlBackgroundDisabled">#F5F5F7</SolidColorBrush>
-          <SolidColorBrush x:Key="TextControlBorderBrush">#D2D2D7</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrush">#DFE3ED</SolidColorBrush>
           <SolidColorBrush x:Key="TextControlBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
           <SolidColorBrush x:Key="TextControlBorderBrushFocused">#0071E3</SolidColorBrush>
           <SolidColorBrush x:Key="TextControlBorderBrushDisabled">#E5E5EA</SolidColorBrush>
           <SolidColorBrush x:Key="TextControlPlaceholderForeground">#8E8E93</SolidColorBrush>
           <SolidColorBrush x:Key="ComboBoxBackground">#FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#FFFFFF</SolidColorBrush>
-          <SolidColorBrush x:Key="ComboBoxBorderBrush">#D2D2D7</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrush">#DFE3ED</SolidColorBrush>
           <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">#AEAEB2</SolidColorBrush>
           <SolidColorBrush x:Key="CalendarDatePickerBackground">#FFFFFF</SolidColorBrush>
-          <SolidColorBrush x:Key="CalendarDatePickerBorderBrush">#D2D2D7</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBorderBrush">#DFE3ED</SolidColorBrush>
       </ResourceDictionary>
       <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="PageBrush">#1C1C1E</SolidColorBrush>
@@ -239,12 +239,24 @@
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <!-- Input boxes: 28 px tall, text centred -->
+    <Style Selector="TextBox">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox[AcceptsReturn=True]">
+      <Setter Property="VerticalContentAlignment" Value="Top" />
+    </Style>
+    <Style Selector="NumericUpDown, ComboBox, CalendarDatePicker">
+      <Setter Property="MinHeight" Value="28" />
+    </Style>
+
     <!-- Surfaces -->
     <Style Selector="Border.card">
       <Setter Property="Background" Value="{DynamicResource CardBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="CornerRadius" Value="10" />
       <Setter Property="Padding" Value="18" />
       <Setter Property="BoxShadow" Value="0 1 3 0 #0F000000" />
     </Style>
@@ -455,8 +467,8 @@
     <Style Selector="Button.nav">
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
-      <Setter Property="Padding" Value="12,7" />
-      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="CornerRadius" Value="10" />
       <Setter Property="Margin" Value="0,1" />
     </Style>
     <Style Selector="Button.nav /template/ ContentPresenter#PART_ContentPresenter">

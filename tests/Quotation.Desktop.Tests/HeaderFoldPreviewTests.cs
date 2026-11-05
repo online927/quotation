@@ -1,3 +1,6 @@
+using Avalonia;
+using Avalonia.Input;
+using Avalonia.VisualTree;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
@@ -52,14 +55,30 @@ public class HeaderFoldPreviewTests
         editor.SelectProduct((await session.Api.SearchProductsAsync("digital caliper")).First().Product);
         editor.CommitEntryCommand.Execute(null);
         editor.Lines[1].IsDragging = true; // as while dragging its grip
-        await Shot("2-folded");
         editor.Lines[1].IsDragging = false;
+        await Shot("2-folded");
+        // Mouse over the first item line: Edit and remove appear.
+        var lines = window.GetVisualDescendants().OfType<Avalonia.Controls.ItemsControl>().First(c => c.Name == "LinesList");
+        if (lines.ContainerFromIndex(0) is Avalonia.Controls.Control row && row.TranslatePoint(new Avalonia.Point(400, 10), window) is { } p)
+        {
+            window.MouseMove(new Avalonia.Point(p.X - 30, p.Y));
+            Dispatcher.UIThread.RunJobs();
+            window.MouseMove(p);
+            await Task.Delay(100);
+            Dispatcher.UIThread.RunJobs();
+            await Shot("2b-mouse-over-line");
+            window.MouseMove(new Avalonia.Point(5, 5));
+        }
         editor.ToggleHeaderCommand.Execute(null);
         await Shot("3-shown-again");
         editor.FoldHeader();
         editor.Remarks = "Prices valid for 15 days";
         editor.ToggleFooterCommand.Execute(null);
         await Shot("4-footer-shown");
+        foreach (var sv in window.GetVisualDescendants().OfType<Avalonia.Controls.ScrollViewer>()
+                     .Where(v => v.FindAncestorOfType<QuotationEditorView>() is not null))
+            sv.ScrollToEnd();
+        await Shot("5-scrolled-to-totals");
         editor.IsDirty = false;
         shell.Dispose();
         window.Close();

@@ -29,6 +29,13 @@
     <Style Selector="NumericUpDown">
       <Setter Property="ShowButtonSpinner" Value="False" />
     </Style>
+    <!-- Item lines: the whole line reacts to the mouse (faint highlight, Edit and remove appear) -->
+    <Style Selector="Border.row">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.row:pointerover">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+    </Style>
     <Style Selector="Border.row.dragging">
       <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
     </Style>
@@ -40,11 +47,50 @@
     <Style Selector="Border.grip:pointerover">
       <Setter Property="Opacity" Value="1" />
     </Style>
+    <!-- Edit and remove appear when the mouse is on the line (and on the line being edited) -->
+    <Style Selector="StackPanel.lineactions">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="Border.row:pointerover StackPanel.lineactions, Border.row.editing StackPanel.lineactions, StackPanel.lineactions:focus-within">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
     <Style Selector="Border.row.editing">
       <Setter Property="Background" Value="{DynamicResource EditingRowBrush}" />
     </Style>
     <Style Selector="Border.card TextBlock.h2">
       <Setter Property="Margin" Value="0,0,0,4" />
+      <Setter Property="FontSize" Value="17" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <!-- Icons inside buttons take the button's text colour -->
+    <Style Selector="Path.bi">
+      <Setter Property="Width" Value="15" />
+      <Setter Property="Height" Value="15" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="StrokeThickness" Value="1.9" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="StrokeJoin" Value="Round" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- Section icons (Items, Remarks) -->
+    <Style Selector="Path.si">
+      <Setter Property="Width" Value="20" />
+      <Setter Property="Height" Value="20" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="StrokeThickness" Value="1.8" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="StrokeJoin" Value="Round" />
+      <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- Action bar: taller buttons (colours unchanged) -->
+    <Style Selector="Button.bar">
+      <Setter Property="Padding" Value="16,8" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="FontSize" Value="13.5" />
+    </Style>
+    <Style Selector="Border.pill.status">
+      <Setter Property="Padding" Value="13,4" />
     </Style>
   </UserControl.Styles>
 
@@ -52,18 +98,18 @@
     <!-- Title bar -->
     <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,0,0,8">
       <TextBlock Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
-      <Border Grid.Column="1" Classes="pill" Classes.ok="{Binding IsFinal}" Classes.pending="{Binding IsPendingReview}" Classes.bad="{Binding IsCancelled}"
+      <Border Grid.Column="1" Classes="pill status" Classes.ok="{Binding IsFinal}" Classes.pending="{Binding IsPendingReview}" Classes.bad="{Binding IsCancelled}"
               Margin="12,0" VerticalAlignment="Center">
-        <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" FontSize="11" />
+        <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="12" />
       </Border>
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
         <Border Classes="pill" Background="{DynamicResource WarnSoftBrush}" IsVisible="{Binding WithoutGst}"
                 ToolTip.Tip="0 % GST on all items and on packing &amp; forwarding, no tax lines (My Settings → Without GST)">
           <TextBlock Text="WITHOUT GST" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource WarnBrush}" />
         </Border>
-        <TextBlock Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="11" />
+        <TextBlock Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="11" IsVisible="{Binding ShowSource}" />
       </StackPanel>
-      <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,14,0">
+      <StackPanel Grid.Column="3" IsVisible="{Binding IsNumberProvisional}" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,14,0">
         <TextBlock Classes="fl" Text="{Binding NumberLabel}" VerticalAlignment="Center" Margin="0" />
         <TextBlock Text="{Binding NumberText}" FontWeight="Bold" VerticalAlignment="Center" />
       </StackPanel>
@@ -109,32 +155,43 @@
              Ctrl+S still saves a draft. -->
         <Grid ColumnDefinitions="*,Auto" Margin="0,2,0,0">
           <WrapPanel ItemSpacing="8" LineSpacing="8">
-            <Button Classes="primary" Content="Approve &amp; Generate PDF" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}"
-                    ToolTip.Tip="Approve and open the PDF (Ctrl+Enter)" />
-            <Button Name="SaveAsPdfButton" Classes="save" Content="Save as PDF" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
-                    ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)" />
+            <Button Classes="primary bar" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}"
+                    ToolTip.Tip="Approve and open the PDF (Ctrl+Enter)">
+              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8 M8.5,15 L11,17.5 L15.5,12.5" Stroke="White" /><TextBlock Text="Approve &amp; Generate PDF" /></StackPanel>
+            </Button>
+            <Button Name="SaveAsPdfButton" Classes="save bar" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
+                    ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)">
+              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M12,3 L12,15 M7,10 L12,15 L17,10 M4,17 L4,20 L20,20 L20,17" Stroke="White" /><TextBlock Text="Save as PDF" /></StackPanel>
+            </Button>
             <CheckBox Name="SealBox" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
                       IsEnabled="{Binding SealAvailable}" ToolTip.Tip="{Binding SealHint}" ToolTip.ShowOnDisabled="True" />
             <Border Classes="groupline" />
-            <Button Content="Preview" Command="{Binding PreviewCommand}" HotKey="F11" ToolTip.Tip="Preview the PDF (F11)" />
-            <Button Content="Open PDF" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" ToolTip.Tip="Open the PDF (Ctrl+P)" />
-            <Button Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding CanRegeneratePdf}"
+            <Button Classes="bar" Command="{Binding PreviewCommand}" HotKey="F11" ToolTip.Tip="Preview the PDF (F11)">
+              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z" Stroke="{DynamicResource TextBrush}" /><TextBlock Text="Preview" /></StackPanel>
+            </Button>
+            <Button Classes="bar" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" ToolTip.Tip="Open the PDF (Ctrl+P)">
+              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M14,4 L20,4 L20,10 M20,4 L11,13 M18,14 L18,19 C18,19.6 17.6,20 17,20 L5,20 C4.4,20 4,19.6 4,19 L4,7 C4,6.4 4.4,6 5,6 L10,6" Stroke="{DynamicResource TextBrush}" /><TextBlock Text="Open PDF" /></StackPanel>
+            </Button>
+            <Button Classes="bar" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding CanRegeneratePdf}"
                     ToolTip.Tip="Making the PDF failed at approval: try again" />
             <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="● Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{DynamicResource WarnBrush}" />
           </WrapPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Margin="16,0,0,0">
-            <Button Classes="danger" Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}">
+            <Button Classes="danger bar" Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}">
               <TextBlock Text="{Binding DocLabel, StringFormat='Cancel {0}'}" />
             </Button>
-            <Button Classes="danger" Content="Delete" Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"
-                    ToolTip.Tip="Administrator: move to the Deleted list (can be restored for 30 days)" />
+            <Button Classes="danger bar" Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"
+                    ToolTip.Tip="Administrator: move to the Deleted list (can be restored for 30 days)">
+              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M4,7 L20,7 M9,7 L9,4 L15,4 L15,7 M6,7 L7,20 L17,20 L18,7 M10,11 L10,16 M14,11 L14,16" Stroke="{DynamicResource BadBrush}" /><TextBlock Text="Delete" /></StackPanel>
+            </Button>
           </StackPanel>
         </Grid>
       </StackPanel>
     </Border>
 
-    <ScrollViewer>
-      <StackPanel Spacing="10" IsEnabled="{Binding IsEditable}">
+    <!-- The scroll bar runs in the right-hand page margin, beside the cards, never on top of them -->
+    <ScrollViewer Margin="0,0,-16,0">
+      <StackPanel Spacing="10" IsEnabled="{Binding IsEditable}" Margin="0,0,16,0">
         <!-- Parties and references: folded to one line (customer, other references) with an eye button to show them in full -->
         <Border Classes="card" Padding="14,8" IsVisible="{Binding HeaderCollapsed}">
           <Grid ColumnDefinitions="Auto,*,Auto,2*,Auto">
@@ -163,7 +220,7 @@
               </Border>
               <TextBlock Classes="fl" Text="Customer" />
               <ctl:SearchPicker Name="CustomerBox" Text="{Binding CustomerSearchText}" Search="{Binding CustomerPopulator}"
-                                MaxDropDownHeight="360" MinDropDownWidth="380" Watermark="Type customer name, GSTIN or phone…"
+                                MaxDropDownHeight="360" MinDropDownWidth="380"
                                 NoMatchText="No matching customer in the Tally ledgers">
                 <ctl:SearchPicker.ItemTemplate>
                   <DataTemplate x:DataType="c:CustomerSearchHitDto">
@@ -293,7 +350,11 @@
         <!-- Items -->
         <Border Classes="card" Padding="0">
           <StackPanel>
-            <Border Background="{DynamicResource SubtleFillBrush}" CornerRadius="14,14,0,0" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="12,9">
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="14,12,14,8">
+              <Path Classes="si" Data="M12,2 L21,7 L21,17 L12,22 L3,17 L3,7 Z M3,7 L12,12 L21,7 M12,12 L12,22" />
+              <TextBlock Classes="h2" Text="Items" Margin="0" VerticalAlignment="Center" />
+            </StackPanel>
+            <Border Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,1" Padding="12,9">
               <Grid ColumnDefinitions="50,*,80,50,0,70,90,44,54,100,110">
                 <TextBlock Classes="th" Text="Sl" Margin="20,0,0,0" />
                 <TextBlock Classes="th" Grid.Column="1" Text="Description of Goods" />
@@ -335,11 +396,14 @@
                       <TextBlock Classes="td" Grid.Column="7" Text="{Binding Unit}" Margin="6,0,0,0" />
                       <TextBlock Classes="td" Grid.Column="8" Text="{Binding DiscountText}" HorizontalAlignment="Right" />
                       <TextBlock Classes="td" Grid.Column="9" Text="{Binding AmountText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
-                      <StackPanel Grid.Column="10" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="2">
+                      <StackPanel Grid.Column="10" Classes="lineactions" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="2">
                         <Button Content="Edit" Classes="small"
                                 Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EditLineCommand}" CommandParameter="{Binding}" />
-                        <Button Content="✕" Classes="small"
-                                Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).RemoveLineCommand}" CommandParameter="{Binding}" />
+                        <Button Classes="round" Width="26" Height="26" ToolTip.Tip="Remove this line"
+                                Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).RemoveLineCommand}" CommandParameter="{Binding}">
+                          <Path Data="M4,7 L20,7 M9,7 L9,4 L15,4 L15,7 M6,7 L7,20 L17,20 L18,7 M10,11 L10,16 M14,11 L14,16" Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                                Width="13" Height="13" Stretch="Uniform" />
+                        </Button>
                       </StackPanel>
                     </Grid>
                   </Border>
@@ -348,14 +412,14 @@
             </ItemsControl>
 
             <!-- Line entry -->
-            <Border Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,14,14" Padding="12,10">
+            <Border Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10" Padding="12,10">
               <StackPanel Spacing="4">
                 <Grid ColumnDefinitions="*,8,90,8,110,8,80,0,0,8,Auto">
                   <StackPanel>
                     <TextBlock Classes="fl" Text="Product" />
                     <ctl:SearchPicker Name="ProductBox" Text="{Binding ProductSearchText}" Search="{Binding ProductPopulator}"
                                       SearchDelay="0:0:0.1" MaxDropDownHeight="420" MinDropDownWidth="600"
-                                      Watermark="e.g. universal bevel, 10mm, 187-901" NoMatchText="No matching product in Tally">
+                                      NoMatchText="No matching product in Tally">
                       <ctl:SearchPicker.ItemTemplate>
                         <DataTemplate x:DataType="c:ProductSearchHitDto">
                           <Grid ColumnDefinitions="*,60,90" MinWidth="560">
@@ -425,9 +489,10 @@
         <!-- Footer: terms and totals -->
         <Grid ColumnDefinitions="*,12,360">
           <Border Classes="card" Padding="14,8" VerticalAlignment="Top" IsVisible="{Binding FooterCollapsed}">
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Text="{Binding FooterSummary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource MutedBrush}" />
-              <Button Grid.Column="1" Name="ShowFooterButton" Classes="round" Command="{Binding ToggleFooterCommand}"
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <Path Classes="si" Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8 M8,13 L16,13 M8,17 L13,17" Margin="0,0,10,0" />
+              <TextBlock Grid.Column="1" Text="{Binding FooterSummary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource MutedBrush}" />
+              <Button Grid.Column="2" Name="ShowFooterButton" Classes="round" Command="{Binding ToggleFooterCommand}"
                       ToolTip.Tip="Show remarks, terms and prepared / verified by">
                 <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z"
                       Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="17" Height="17" Stretch="Uniform" />
@@ -437,7 +502,10 @@
           <Border Classes="card" Padding="14" IsVisible="{Binding !FooterCollapsed}">
             <StackPanel>
               <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Classes="fl" Text="Remarks (printed on quotation)" VerticalAlignment="Center" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Path Classes="si" Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8 M8,13 L16,13 M8,17 L13,17" />
+                  <TextBlock Classes="h2" Text="Remarks" Margin="0" VerticalAlignment="Center" />
+                </StackPanel>
                 <Button Grid.Column="1" Name="HideFooterButton" Classes="round" Width="26" Height="26" Command="{Binding ToggleFooterCommand}"
                         ToolTip.Tip="Hide: show one line">
                   <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z M3,3 L21,21"
@@ -446,43 +514,54 @@
               </Grid>
               <Grid ColumnDefinitions="*,*">
               <StackPanel Name="FooterFields">
-              <TextBox Text="{Binding Remarks}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
+              <TextBox Text="{Binding Remarks}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" Margin="0,8,0,0"
+                       Watermark="Remarks (printed on quotation)" />
               <TextBlock Classes="fl" Text="Terms &amp; conditions (one per line)" />
-              <TextBox Text="{Binding TermsAndConditions}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="80" />
+              <TextBox Text="{Binding TermsAndConditions}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="80"
+                       Watermark="Terms &amp; Conditions" />
               <Grid ColumnDefinitions="*,6,*">
                 <StackPanel>
                   <TextBlock Classes="fl" Text="Prepared by" />
-                  <TextBox Text="{Binding PreparedBy}" ctl:TitleCase.Enabled="True" />
+                  <TextBox Text="{Binding PreparedBy}" ctl:TitleCase.Enabled="True" Watermark="Enter name" />
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                   <TextBlock Classes="fl" Text="Verified by" />
-                  <TextBox Text="{Binding VerifiedBy}" ctl:TitleCase.Enabled="True" />
+                  <TextBox Text="{Binding VerifiedBy}" ctl:TitleCase.Enabled="True" Watermark="Enter name" />
                 </StackPanel>
               </Grid>
               </StackPanel>
               </Grid>
             </StackPanel>
           </Border>
-          <Border Grid.Column="2" Classes="card" Padding="14" Grid.Row="0">
-            <StackPanel>
-            <Border Classes="headbar green"><TextBlock Classes="h2" Text="Totals" /></Border>
-            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-              <TextBlock Text="Subtotal" />
-              <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" HorizontalAlignment="Right" />
-              <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="4" Margin="0,4">
+          <!-- Only as tall as its rows, so the blue Total band is always the bottom edge -->
+          <Border Grid.Column="2" Classes="card" Padding="14,14,14,0" VerticalAlignment="Top">
+            <StackPanel Spacing="8">
+              <Border Classes="headbar blue" Margin="0"><TextBlock Classes="h2" Text="Totals" /></Border>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Subtotal" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" VerticalAlignment="Center" />
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*,Auto">
                 <TextBlock Text="{Binding PackingLabel}" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding PackingForwarding}" Minimum="0" FormatString="0.00" Width="90" />
-              </StackPanel>
-              <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PackingText}" HorizontalAlignment="Right" VerticalAlignment="Center" />
-              <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding TaxText}" FontSize="12" IsVisible="{Binding ShowsTaxes}" TextWrapping="Wrap" />
-              <TextBlock Grid.Row="3" Text="Round off" IsVisible="{Binding RoundOffText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-              <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding RoundOffText}" HorizontalAlignment="Right" />
-              <TextBlock Grid.Row="4" Text="Total quantity" />
-              <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TotalQuantityText}" HorizontalAlignment="Right" />
-              <Border Grid.Row="5" Grid.ColumnSpan="2" Height="1" Background="{DynamicResource PanelBorderBrush}" Margin="0,6" />
-              <TextBlock Grid.Row="6" Text="Total" FontWeight="Bold" FontSize="16" />
-              <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding GrandTotalText}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Right" />
-            </Grid>
+                <NumericUpDown Grid.Column="1" Value="{Binding PackingForwarding}" Minimum="0" FormatString="0.00" Width="90"
+                               HorizontalAlignment="Left" Margin="6,0,0,0" />
+                <TextBlock Grid.Column="2" Text="{Binding PackingText}" VerticalAlignment="Center" />
+              </Grid>
+              <TextBlock Text="{Binding TaxText}" FontSize="12" Foreground="{DynamicResource MutedBrush}" IsVisible="{Binding ShowsTaxes}" TextWrapping="Wrap" />
+              <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding RoundOffText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="Round off" />
+                <TextBlock Grid.Column="1" Text="{Binding RoundOffText}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Total quantity" />
+                <TextBlock Grid.Column="1" Text="{Binding TotalQuantityText}" />
+              </Grid>
+              <Border Background="{DynamicResource AccentSoftBrush}" Margin="-14,4,-14,0" Padding="14,12" CornerRadius="0,0,10,10">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Total" FontWeight="Bold" FontSize="17" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding GrandTotalText}" FontWeight="Bold" FontSize="19" VerticalAlignment="Center" />
+                </Grid>
+              </Border>
             </StackPanel>
           </Border>
         </Grid>

@@ -253,6 +253,7 @@ enter the quantity → **Create Draft**). Nothing is ever sent to customers auto
    If you change the product text after selecting, the selection is dropped — select from the list again.
 4. Fill references (buyer's order no., payment terms, delivery …) and the packing & forwarding amount if needed.
    Remarks, terms and prepared / verified by are shown as one line; click 👁 to open them.
+   To change the order of the items, hold the grip (⋮⋮) at the left of a line and drag it up or down.
 5. **Ctrl+S** saves the draft and assigns the quotation number. **F11** opens a preview (DRAFT watermark).
 6. **Ctrl+Enter — Approve & Generate PDF**: the app refreshes Tally data, validates everything, generates the PDF
    and opens it. PDFs are saved on the server in `C:\ProgramData\TSQuotation\pdf\<year>\<number>.pdf` and a copy is

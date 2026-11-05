@@ -49,7 +49,11 @@ public class HeaderFoldPreviewTests
         editor.SelectProduct(product);
         editor.EntryQuantity = 2;
         editor.CommitEntryCommand.Execute(null);
+        editor.SelectProduct((await session.Api.SearchProductsAsync("digital caliper")).First().Product);
+        editor.CommitEntryCommand.Execute(null);
+        editor.Lines[1].IsDragging = true; // as while dragging its grip
         await Shot("2-folded");
+        editor.Lines[1].IsDragging = false;
         editor.ToggleHeaderCommand.Execute(null);
         await Shot("3-shown-again");
         editor.FoldHeader();

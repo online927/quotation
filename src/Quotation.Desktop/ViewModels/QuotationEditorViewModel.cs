@@ -157,7 +157,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public Func<string?, CancellationToken, Task<IEnumerable<object>>> CustomerPopulator { get; }
 
     // ---------------------------------------------------------------- totals
-    [ObservableProperty] private decimal? _packingForwarding = 0;
+    [ObservableProperty] private decimal? _packingForwarding; // empty box = 0.00
     [ObservableProperty] private decimal? _packingForwardingPercent;
     [ObservableProperty] private CalcResult? _totals;
     public ObservableCollection<string> ValidationMessages { get; } = [];
@@ -253,7 +253,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                     ? _session.Api.CurrentUser?.DisplayName ?? ""
                     : _settings.Company.DefaultPreparedBy;
                 VerifiedBy = _settings.Company.DefaultVerifiedBy;
-                PackingForwarding = _settings.Quotation.DefaultPackingForwardingAmount;
+                PackingForwarding = _settings.Quotation.DefaultPackingForwardingAmount is > 0 and var pf ? pf : null;
                 PackingForwardingPercent = null; // P&F is an amount (the % box was removed)
                 _loading = false;
                 await RefreshNumberPreviewAsync();
@@ -322,7 +322,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         TermsAndConditions = q.TermsAndConditions;
         PreparedBy = q.PreparedBy;
         VerifiedBy = q.VerifiedBy;
-        PackingForwarding = q.PackingForwardingPercent is > 0 ? 0 : q.PackingForwarding;
+        PackingForwarding = q.PackingForwardingPercent is > 0 || q.PackingForwarding == 0 ? null : q.PackingForwarding;
         PackingForwardingPercent = q.PackingForwardingPercent;
         HasPdf = q.HasPdf;
         PdfError = q.PdfError;
@@ -606,16 +606,16 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(CanApprove));
     }
 
-    [RelayCommand]
-    private void MoveLineUp(QuotationLineViewModel? line)
+    /// <summary>Moves a line to another place (dragged by its grip); Sl. No. are renumbered.</summary>
+    public bool MoveLine(QuotationLineViewModel line, int to)
     {
-        line ??= SelectedLine;
-        if (line is null) return;
-        var i = Lines.IndexOf(line);
-        if (i <= 0) return;
-        Lines.Move(i, i - 1);
+        var from = Lines.IndexOf(line);
+        to = Math.Clamp(to, 0, Lines.Count - 1);
+        if (from < 0 || from == to) return false;
+        Lines.Move(from, to);
         Renumber();
         MarkDirty();
+        return true;
     }
 
     [RelayCommand]

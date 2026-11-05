@@ -29,6 +29,17 @@
     <Style Selector="NumericUpDown">
       <Setter Property="ShowButtonSpinner" Value="False" />
     </Style>
+    <Style Selector="Border.row.dragging">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    </Style>
+    <Style Selector="Border.grip">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Cursor" Value="SizeNorthSouth" />
+      <Setter Property="Opacity" Value="0.55" />
+    </Style>
+    <Style Selector="Border.grip:pointerover">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
     <Style Selector="Border.row.editing">
       <Setter Property="Background" Value="{DynamicResource EditingRowBrush}" />
     </Style>
@@ -283,8 +294,8 @@
         <Border Classes="card" Padding="0">
           <StackPanel>
             <Border Background="{DynamicResource SubtleFillBrush}" CornerRadius="14,14,0,0" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="12,9">
-              <Grid ColumnDefinitions="36,*,80,50,0,70,90,44,54,100,110">
-                <TextBlock Classes="th" Text="Sl" />
+              <Grid ColumnDefinitions="50,*,80,50,0,70,90,44,54,100,110">
+                <TextBlock Classes="th" Text="Sl" Margin="20,0,0,0" />
                 <TextBlock Classes="th" Grid.Column="1" Text="Description of Goods" />
                 <TextBlock Classes="th" Grid.Column="2" Text="HSN/SAC" />
                 <TextBlock Classes="th" Grid.Column="3" Text="GST" />
@@ -295,12 +306,19 @@
                 <TextBlock Classes="th" Grid.Column="9" Text="Amount" HorizontalAlignment="Right" />
               </Grid>
             </Border>
-            <ItemsControl ItemsSource="{Binding Lines}">
+            <ItemsControl Name="LinesList" ItemsSource="{Binding Lines}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:QuotationLineViewModel">
-                  <Border Classes="row" Classes.editing="{Binding IsEditing}" BorderBrush="{DynamicResource RowLineBrush}" BorderThickness="0,0,0,1" Padding="12,6">
-                    <Grid ColumnDefinitions="36,*,80,50,0,70,90,44,54,100,110">
-                      <TextBlock Classes="td" Text="{Binding LineNo}" />
+                  <Border Classes="row" Classes.editing="{Binding IsEditing}" Classes.dragging="{Binding IsDragging}" BorderBrush="{DynamicResource RowLineBrush}" BorderThickness="0,0,0,1" Padding="12,6">
+                    <Grid ColumnDefinitions="50,*,80,50,0,70,90,44,54,100,110">
+                      <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                        <Border Classes="grip" Width="16" Height="20" Margin="0,0,4,0" PointerPressed="OnGripPressed"
+                                ToolTip.Tip="Drag up or down to move this item">
+                          <Path Data="M5,4 A1.6,1.6 0 1 1 4.99,4 Z M11,4 A1.6,1.6 0 1 1 10.99,4 Z M5,10 A1.6,1.6 0 1 1 4.99,10 Z M11,10 A1.6,1.6 0 1 1 10.99,10 Z M5,16 A1.6,1.6 0 1 1 4.99,16 Z M11,16 A1.6,1.6 0 1 1 10.99,16 Z"
+                                Fill="{DynamicResource MutedBrush}" Width="10" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Classes="td" Text="{Binding LineNo}" />
+                      </StackPanel>
                       <StackPanel Grid.Column="1">
                         <TextBlock Classes="td" Text="{Binding ItemName}" FontWeight="SemiBold" TextWrapping="Wrap" />
                         <TextBlock Classes="td" Text="{Binding PartNumber, StringFormat='Part No. {0}'}" FontSize="11" Foreground="{DynamicResource MutedBrush}"
@@ -379,12 +397,12 @@
                     <Button Content="Clear" Command="{Binding CancelEntryCommand}" />
                   </StackPanel>
                 </Grid>
-                <Grid ColumnDefinitions="*,12,Auto">
+                <Grid ColumnDefinitions="*,12,3*">
                   <StackPanel>
                     <TextBlock Classes="fl" Text="Description (Shift + Enter for next line)" />
                     <TextBox Name="DescriptionBox" Text="{Binding EntryDescription}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
                   </StackPanel>
-                  <StackPanel Grid.Column="2" VerticalAlignment="Bottom" IsVisible="{Binding EntryProduct, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <StackPanel Grid.Column="2" VerticalAlignment="Bottom" HorizontalAlignment="Right" IsVisible="{Binding EntryProduct, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}">
                       <Run Text="From Tally — HSN " />
                       <Run Text="{Binding EntryProduct.Hsn, FallbackValue='', Mode=OneWay}" />
@@ -426,6 +444,8 @@
                         Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.6" Width="15" Height="15" Stretch="Uniform" />
                 </Button>
               </Grid>
+              <Grid ColumnDefinitions="*,*">
+              <StackPanel Name="FooterFields">
               <TextBox Text="{Binding Remarks}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
               <TextBlock Classes="fl" Text="Terms &amp; conditions (one per line)" />
               <TextBox Text="{Binding TermsAndConditions}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="80" />
@@ -438,6 +458,8 @@
                   <TextBlock Classes="fl" Text="Verified by" />
                   <TextBox Text="{Binding VerifiedBy}" ctl:TitleCase.Enabled="True" />
                 </StackPanel>
+              </Grid>
+              </StackPanel>
               </Grid>
             </StackPanel>
           </Border>

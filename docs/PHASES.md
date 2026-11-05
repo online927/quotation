@@ -530,3 +530,9 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 3. Remarks, terms and prepared / verified by are folded into one line; the 👁 button opens them.
 4. The move-up button on item lines and the amount in words on screen were removed (the PDF still prints the
    amount in words).
+
+### Round 10
+
+1. The packing & forwarding box starts empty (counts as 0.00; the amount on the right still shows 0.00).
+2. Items are moved by dragging the grip (⋮⋮) at the left of a line; Sl. No. are renumbered.
+3. The description box is a quarter of its former width; remarks, terms and prepared / verified by are half width.

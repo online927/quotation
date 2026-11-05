@@ -3,6 +3,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Avalonia;
 using Quotation.Contracts;
 using Quotation.Core.Domain;
@@ -459,6 +460,45 @@ public class QuotationEditorTests
         Assert.Contains("Prepared by:", reopened.FooterSummary);
         reopened.ToggleFooterCommand.Execute(null);
         Assert.False(reopened.FooterCollapsed);
+    }
+
+    [AvaloniaFact]
+    public async Task Item_lines_are_moved_by_dragging_their_grip_and_p_and_f_starts_empty()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        Assert.Null(editor.PackingForwarding); // the box is empty; it counts as 0.00
+        Assert.Equal("0.00", editor.PackingText);
+        await editor.SelectCustomerAsync((await ctx.Session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id);
+        foreach (var name in new[] { "universal bevel", "carbide end mill", "digital caliper" })
+        {
+            editor.SelectProduct((await ctx.Session.Api.SearchProductsAsync(name)).First().Product);
+            if (editor.EntryRate is null or 0) editor.EntryRate = 100;
+            editor.CommitEntryCommand.Execute(null);
+        }
+        Assert.Equal(3, editor.Lines.Count);
+        var first = editor.Lines[0];
+        editor.IsDirty = false;
+
+        var list = ctx.Window.FindControl<ItemsControl>("LinesList") ?? ctx.Window.GetVisualDescendants().OfType<ItemsControl>().First(c => c.Name == "LinesList");
+        Border? grip = null;
+        await UiHelpers.WaitUntil(() => (grip = list.ContainerFromIndex(0)?.GetVisualDescendants().OfType<Border>().FirstOrDefault(b => b.Classes.Contains("grip"))) is { IsArrangeValid: true });
+        var top = TopLevel.GetTopLevel(grip)!;
+        var start = grip!.TranslatePoint(new Point(8, 10), top)!.Value;
+        var last = (Control)list.ContainerFromIndex(2)!;
+        var end = last.TranslatePoint(new Point(8, last.Bounds.Height / 2), top)!.Value;
+
+        top.MouseDown(start, MouseButton.Left);
+        Assert.True(first.IsDragging);
+        top.MouseMove(new Point(start.X, (start.Y + end.Y) / 2), RawInputModifiers.LeftMouseButton);
+        top.MouseMove(end, RawInputModifiers.LeftMouseButton);
+        top.MouseUp(end, MouseButton.Left);
+
+        Assert.Same(first, editor.Lines[2]);
+        Assert.Equal([1, 2, 3], editor.Lines.Select(l => l.LineNo));
+        Assert.False(first.IsDragging);
+        Assert.True(editor.IsDirty);
+        editor.IsDirty = false;
     }
 
     [AvaloniaFact]

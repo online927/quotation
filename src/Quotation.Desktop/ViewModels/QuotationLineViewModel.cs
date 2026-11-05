@@ -8,6 +8,8 @@ namespace Quotation.Desktop.ViewModels;
 public sealed partial class QuotationLineViewModel : ObservableObject
 {
     [ObservableProperty] private int _lineNo;
+    /// <summary>Being dragged to another place in the list.</summary>
+    [ObservableProperty] private bool _isDragging;
     [ObservableProperty] private int? _productId;
     [ObservableProperty] private string _itemName = "";
     /// <summary>From Tally (its Part No., or the code at the start of the item name).</summary>

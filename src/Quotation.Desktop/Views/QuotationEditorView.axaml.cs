@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -26,6 +27,9 @@ public partial class QuotationEditorView : UserControl
             vm.SelectProduct(hit.Product);
             FocusLater(QtyBox);
         };
+        LinesList.PointerMoved += OnLinesPointerMoved;
+        LinesList.PointerReleased += (_, _) => EndDrag();
+        LinesList.PointerCaptureLost += (_, _) => EndDrag();
         CustomerBox.ItemPicked += async (_, e) =>
         {
             if (e.Item is not CustomerSearchHitDto hit || Vm is not { } vm) return;
@@ -111,6 +115,39 @@ public partial class QuotationEditorView : UserControl
             c.Focus();
             e.Handled = true;
         }
+    }
+
+    private QuotationLineViewModel? _dragLine;
+
+    /// <summary>The grip (⋮⋮) at the left of an item line: hold it and drag the line up or down.</summary>
+    private void OnGripPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not Control { DataContext: QuotationLineViewModel line } || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        _dragLine = line;
+        line.IsDragging = true;
+        // The list keeps the pointer while the rows are rebuilt in their new order.
+        e.Pointer.Capture(LinesList);
+        e.Handled = true;
+    }
+
+    private void OnLinesPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_dragLine is null || Vm is not { } vm) return;
+        var y = e.GetPosition(LinesList).Y;
+        for (var i = 0; i < vm.Lines.Count; i++)
+        {
+            if (LinesList.ContainerFromIndex(i) is not Control row || row.TranslatePoint(new Point(0, 0), LinesList) is not { } top) continue;
+            if (y < top.Y || y >= top.Y + row.Bounds.Height) continue;
+            if (vm.Lines[i] != _dragLine && vm.MoveLine(_dragLine, i)) LinesList.UpdateLayout();
+            break;
+        }
+    }
+
+    private void EndDrag()
+    {
+        if (_dragLine is null) return;
+        _dragLine.IsDragging = false;
+        _dragLine = null;
     }
 
     private static void FocusLater(Control target) =>

@@ -558,3 +558,16 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 4. Client PCs connect to the server by its IPv4 address first, give up on an address that does not answer after
    3 seconds (instead of Windows' 21 s) and keep the connection open between requests: the long "Network or PC name"
    waits in Diagnostics → Slow requests (e.g. 21 s, 42 s) are avoided.
+
+### Round 14
+
+1. "Ref. dated": small calendar (icon in the box) besides typing; white title bar on Windows 11 (dark in dark mode).
+2. The server address moved from the status bar to My Settings → Connection (with the PC name); ⊘ on Cancel.
+3. "Saved as TSQ2627-6. TSQ2627-5 was used by another user." when someone saved first.
+4. Open PDF on a changed approved quotation asks to save and approve again first.
+5. Unsaved work is kept on the PC every 30 s and offered back after a crash or power cut (no number used).
+6. Page titles with icons on every screen, icons on Refresh/New buttons and dashboard tiles.
+7. Messages appear for a few seconds in the bottom-right corner (errors stay on the page).
+8. Several users: "Rasik (PC) also has this quotation open" (server keeps who has what open, in memory only);
+   a save clash offers "Save mine as a new quotation" or "See their changes" with "Put my changes back";
+   "Created / Changed by … · Approved by …" under the title.

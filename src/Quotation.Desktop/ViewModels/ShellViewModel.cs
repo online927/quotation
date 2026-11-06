@@ -47,6 +47,12 @@ public static class NavIcons
 
     public static Avalonia.Media.Geometry? For(string key) =>
         Paths.TryGetValue(key, out var data) ? Avalonia.Media.StreamGeometry.Parse(data) : null;
+
+    // For pages that show the same icons (dashboard tiles).
+    public static Avalonia.Media.Geometry? Today => For("today");
+    public static Avalonia.Media.Geometry? Drafts => For("drafts");
+    public static Avalonia.Media.Geometry? History => For("history");
+    public static Avalonia.Media.Geometry? Inbox => For("inbox");
 }
 
 /// <summary>A step in the breadcrumb trail; <see cref="StepsBack"/> is 0 for the page shown now.</summary>
@@ -146,6 +152,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         if (session.IsAdmin) NavItems.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session)));
 
         Navigate("dashboard");
+        _ = OfferRecoveryAsync();
         _ = PollStatusAsync(_cts.Token);
     }
 
@@ -289,9 +296,56 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         return choice switch
         {
             LeaveChoice.Save => await page.SaveChangesAsync() ? Leave.Keep : Leave.Cancel,
-            LeaveChoice.DontSave => Leave.Discard,
+            LeaveChoice.DontSave => Discard(page),
             _ => Leave.Cancel,
         };
+    }
+
+    private static Leave Discard(IUnsavedChangesPage page)
+    {
+        page.DiscardChanges();
+        return Leave.Discard;
+    }
+
+    // ================================================================= messages in the corner
+
+    public ObservableCollection<ToastItem> Toasts { get; } = [];
+
+    /// <summary>Shows a short message in the bottom-right corner for a few seconds.</summary>
+    public void Toast(string message, int seconds = 5)
+    {
+        if (string.IsNullOrWhiteSpace(message)) return;
+        var item = new ToastItem(message);
+        Toasts.Add(item);
+        while (Toasts.Count > 3) Toasts.RemoveAt(0);
+        _ = RemoveLaterAsync(item, seconds);
+    }
+
+    private async Task RemoveLaterAsync(ToastItem item, int seconds)
+    {
+        try { await Task.Delay(TimeSpan.FromSeconds(seconds), _cts.Token); } catch (OperationCanceledException) { }
+        Toasts.Remove(item);
+    }
+
+    // ================================================================= unsaved work after a crash
+
+    /// <summary>After a power cut or crash: offers the quotation that was being worked on (kept on this PC).</summary>
+    private async Task OfferRecoveryAsync()
+    {
+        if (_session.Api.CurrentUser?.Username is not { } user || RecoveryStore.For(_session.Config).Load(user) is not { } snap) return;
+        var q = snap.Quotation;
+        var what = (q.Number ?? $"a new {(q.DocType == Quotation.Core.Domain.DocumentType.ProformaInvoice ? "proforma invoice" : "quotation")}")
+                   + (string.IsNullOrWhiteSpace(q.Buyer.Name) ? "" : $" for {q.Buyer.Name}")
+                   + $" ({q.Lines.Count} line{(q.Lines.Count == 1 ? "" : "s")})";
+        if (await ConfirmAsync("Restore unsaved work?",
+                $"The app closed before {what} was saved (last kept {snap.SavedAt:dd-MMM HH:mm}). Restore it?", "Restore", "Discard"))
+        {
+            _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this, snap));
+        }
+        else
+        {
+            RecoveryStore.For(_session.Config).Delete(user);
+        }
     }
 
     private void Show(PageEntry entry, bool returned)
@@ -312,6 +366,10 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     private void OnPagePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(ITitledPage.Title)) UpdateHistoryState();
+        // Page messages ("Saved …", "PDF saved to …") appear in the corner; errors stay on the page.
+        // (AI Inbox, Tally and Gmail show progress messages on their own page instead.)
+        if (e.PropertyName == nameof(ViewModelBase.InfoMessage) && sender is ViewModelBase { InfoMessage: { Length: > 0 } info }
+            && sender is not (AiInboxViewModel or TallyViewModel or GmailViewModel)) Toast(info);
     }
 
     private void UpdateHistoryState()
@@ -390,7 +448,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         {
             Status = await _session.Api.StatusAsync(_cts.Token);
             ServerReachable = true;
-            ServerState = $"Server: {_session.Config.ServerUrl}";
+            ServerState = ""; // the server address is in My Settings → Connection
             ServerMs = _session.Api.LastStatusTime is { } t ? (int)Math.Round(t.TotalMilliseconds) : null;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

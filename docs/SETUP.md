@@ -254,6 +254,9 @@ enter the quantity → **Create Draft**). Nothing is ever sent to customers auto
 4. Fill references (buyer's order no., payment terms, delivery …) and the packing & forwarding amount if needed.
    Remarks, terms and prepared / verified by are shown as one line; click 👁 to open them.
    To change the order of the items, hold the grip (⋮⋮) at the left of a line and drag it up or down.
+   Unsaved work is kept on the PC every 30 seconds; after a crash or power cut the app offers to restore it.
+   If someone else has the same quotation open, a yellow line says so; if they saved first, you choose to save yours
+   as a new quotation or to see their changes (and put yours back).
 5. **Ctrl+S** saves the draft and assigns the quotation number. **F11** opens a preview (DRAFT watermark).
 6. **Ctrl+Enter — Approve & Generate PDF**: the app refreshes Tally data, validates everything, generates the PDF
    and opens it. PDFs are saved on the server in `C:\ProgramData\TSQuotation\pdf\<year>\<number>.pdf` and a copy is

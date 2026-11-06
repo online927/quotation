@@ -69,6 +69,14 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         _ => "Quotation History",
     };
     public bool IsProformaList => Preset == QuotationListPreset.Proforma;
+    /// <summary>The sidebar icon shown beside the title.</summary>
+    public string IconKey => Preset switch
+    {
+        QuotationListPreset.Drafts => "drafts",
+        QuotationListPreset.Today => "today",
+        QuotationListPreset.Proforma => "proforma",
+        _ => "history",
+    };
     public string NewButtonText => IsProformaList ? "New Proforma Invoice" : "New Quotation";
 
     public QuotationListViewModel(AppSession session, INavigator navigator, QuotationListPreset preset, string? initialQuery = null)

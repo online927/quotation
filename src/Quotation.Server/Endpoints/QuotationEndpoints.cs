@@ -13,6 +13,15 @@ public static class QuotationEndpoints
     {
         var g = app.MapGroup("/api/quotations").RequireAuthorization();
 
+        // Who else has this quotation open (checked in every 15 s by each open quotation screen).
+        g.MapPost("/{id:guid}/presence", (Guid id, HttpContext ctx, PresenceTracker presence) =>
+            Results.Ok(presence.CheckIn(id, ctx.User.UserName(), ctx.User.DisplayName(), ctx.Machine())));
+        g.MapDelete("/{id:guid}/presence", (Guid id, HttpContext ctx, PresenceTracker presence) =>
+        {
+            presence.Leave(id, ctx.User.UserName(), ctx.Machine());
+            return Results.NoContent();
+        });
+
         g.MapGet("/", async (QuotationDbContext db, string? q, QuotationStatus? status, QuotationSource? source,
             DateOnly? from, DateOnly? to, int? customerId, int? take, int? skip, DocumentType? type, CancellationToken ct) =>
         {

@@ -38,6 +38,7 @@ builder.Services.AddSingleton<ISecretProtector>(new SecretProtector(dataDir));
 builder.Services.AddSingleton<SettingsService>();
 builder.Services.AddSingleton<SealService>();
 builder.Services.AddSingleton<RuntimeStatus>();
+builder.Services.AddSingleton<PresenceTracker>();
 builder.Services.AddSingleton(sp => new SlowRequestLog(dataDir, sp.GetRequiredService<ILogger<SlowRequestLog>>()));
 builder.Services.AddSingleton<FinancialYearService>();
 builder.Services.AddScoped<AuthService>();

@@ -294,6 +294,10 @@ public partial class QuotationApiClient
         return await response.Content.ReadAsByteArrayAsync(ct);
     }
     public Task DeleteQuotationAsync(Guid id, CancellationToken ct = default) => SendAsync(HttpMethod.Delete, $"api/quotations/{id}", null, ct);
+    /// <summary>"I have this quotation open": returns the others who have it open too.</summary>
+    public Task<List<PresenceDto>> QuotationPresenceAsync(Guid id, CancellationToken ct = default) =>
+        SendAsync<List<PresenceDto>>(HttpMethod.Post, $"api/quotations/{id}/presence", null, ct);
+    public Task LeaveQuotationAsync(Guid id, CancellationToken ct = default) => SendAsync(HttpMethod.Delete, $"api/quotations/{id}/presence", null, ct);
     public Task<List<DeletedQuotationDto>> DeletedQuotationsAsync(CancellationToken ct = default) =>
         GetAsync<List<DeletedQuotationDto>>("api/quotations/deleted", ct);
     public Task<RestoreResultDto> RestoreQuotationAsync(Guid id, CancellationToken ct = default) =>

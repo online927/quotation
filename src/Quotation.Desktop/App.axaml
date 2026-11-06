@@ -251,6 +251,73 @@
       <Setter Property="MinHeight" Value="28" />
     </Style>
 
+    <!-- Small calendar (date boxes) -->
+    <Style Selector="Border.calcard">
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="10" />
+      <Setter Property="BoxShadow" Value="0 6 20 0 #26000000" />
+    </Style>
+    <Style Selector="TextBlock.caltitle">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.calweek">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="Margin" Value="0,2" />
+    </Style>
+    <Style Selector="Button.calnav, Button.calday, Button.calicon">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.calnav">
+      <Setter Property="Width" Value="26" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="16" />
+    </Style>
+    <Style Selector="Button.calicon">
+      <Setter Property="Width" Value="24" />
+      <Setter Property="Height" Value="22" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Margin" Value="0,0,3,0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.calday">
+      <Setter Property="Width" Value="30" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Margin" Value="1" />
+    </Style>
+    <Style Selector="Button.calnav /template/ ContentPresenter#PART_ContentPresenter, Button.calday /template/ ContentPresenter#PART_ContentPresenter, Button.calicon /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.calnav:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.calday:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.calicon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    </Style>
+    <Style Selector="Button.calday.other">
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="Opacity" Value="0.5" />
+    </Style>
+    <Style Selector="Button.calday.today /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="BorderThickness" Value="1.5" />
+    </Style>
+    <Style Selector="Button.calday.selected /template/ ContentPresenter#PART_ContentPresenter, Button.calday.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.calday.selected">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
     <!-- Surfaces -->
     <Style Selector="Border.card">
       <Setter Property="Background" Value="{DynamicResource CardBrush}" />

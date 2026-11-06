@@ -172,3 +172,6 @@ public sealed record NumberSeriesDto(string FinancialYear, int FinancialYearStar
 public sealed record SetNextSequenceRequest(int FinancialYearStart, int NextSequence, DocumentType DocType = DocumentType.Quotation);
 
 public sealed record ValidationErrorDto(string Field, string Message, int? LineNo);
+
+/// <summary>Someone else who has the same quotation open: display name and PC.</summary>
+public sealed record PresenceDto(string User, string Machine);

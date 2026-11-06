@@ -48,6 +48,21 @@ public class HeaderFoldPreviewTests
         await editor.SelectCustomerAsync(customer.Id);
         editor.OtherReferences = "Your enquiry dated 02-Nov-2026";
         await Shot("1-before-enter");
+        // Ref. dated with its small calendar open (the popup is captured on its own and placed under the box).
+        editor.BuyersReferenceDate = new DateTime(2026, 11, 2);
+        var view = window.GetVisualDescendants().OfType<QuotationEditorView>().First();
+        var popup = Avalonia.Controls.ControlExtensions.FindControl<Avalonia.Controls.Primitives.Popup>(view, "RefDatePopup")!;
+        var box = Avalonia.Controls.ControlExtensions.FindControl<Avalonia.Controls.TextBox>(view, "RefDateBox")!;
+        popup.IsOpen = true;
+        await Shot("1b-main");
+        var cal = Avalonia.Controls.ControlExtensions.FindControl<Quotation.Desktop.Controls.MiniCalendar>(view, "RefDateCalendar")!;
+        if (Avalonia.Controls.TopLevel.GetTopLevel(cal) is { } root && root != window)
+        {
+            root.CaptureRenderedFrame()?.Save(Path.Combine(dir, "1b-popup.png"));
+            var at = box.TranslatePoint(new Avalonia.Point(box.Bounds.Width, box.Bounds.Height + 4), window)!.Value;
+            File.WriteAllText(Path.Combine(dir, "1b-popup.txt"), $"{at.X:0} {at.Y:0} {root.ClientSize.Width:0} {root.ClientSize.Height:0}");
+        }
+        popup.IsOpen = false;
         editor.FoldHeader();
         editor.SelectProduct(product);
         editor.EntryQuantity = 2;

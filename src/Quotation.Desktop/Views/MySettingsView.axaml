@@ -1,17 +1,16 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:Quotation.Desktop.Controls"
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.MySettingsView"
              x:DataType="vm:MySettingsViewModel">
   <ScrollViewer>
     <StackPanel Margin="24,12,24,24" Spacing="16" MaxWidth="820" HorizontalAlignment="Left">
       <StackPanel>
-        <TextBlock Classes="h1" Text="My Settings" />
+        <ctl:PageTitle Text="My Settings" Icon="mysettings" />
         <TextBlock Classes="muted" Text="{Binding UserName, StringFormat='Only for you ({0}) — every user can change these.'}" />
       </StackPanel>
       <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-      <TextBlock Foreground="{DynamicResource OkBrush}" Text="{Binding InfoMessage}" TextWrapping="Wrap"
-                 IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
       <Border Classes="card">
         <StackPanel Spacing="8">
@@ -56,6 +55,20 @@
             <Button Grid.Column="2" Name="BrowseProformaButton" Content="Browse…" Click="OnBrowseProforma" />
           </Grid>
           <Button Classes="primary" Content="Save" Command="{Binding SavePdfFolderCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Connection (this PC)" />
+          <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
+                     Text="The Quotation Server this PC uses. To change it, log out and type the address in the server box on the sign-in screen." />
+          <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto" RowSpacing="6">
+            <TextBlock Classes="label" Text="Server" />
+            <SelectableTextBlock Grid.Column="1" Name="ServerAddressText" Text="{Binding ServerAddress}" FontWeight="SemiBold" />
+            <TextBlock Grid.Row="1" Classes="label" Text="Computer" />
+            <SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ComputerName}" FontWeight="SemiBold" />
+          </Grid>
         </StackPanel>
       </Border>
     </StackPanel>

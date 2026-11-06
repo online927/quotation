@@ -1,14 +1,20 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:Quotation.Desktop.Controls"
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.TallyView"
              x:DataType="vm:TallyViewModel">
   <ScrollViewer>
     <StackPanel Margin="24,12,24,24" Spacing="14" MaxWidth="980" HorizontalAlignment="Left">
       <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Classes="h1" Text="Tally Connection" />
+        <ctl:PageTitle Text="Tally Connection" Icon="tally" />
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-          <Button Content="Refresh (F5)" Command="{Binding LoadCommand}" HotKey="F5" />
+          <Button Command="{Binding LoadCommand}" HotKey="F5" ToolTip.Tip="Refresh (F5)">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Data="M20,11 A8,8 0 1 0 17.7,16.6 M20,4 L20,11 L13,11" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+              <TextBlock Text="Refresh" />
+            </StackPanel>
+          </Button>
           <Button Classes="primary" Content="Test connection (Ctrl+T)" Command="{Binding TestConnectionCommand}" HotKey="Ctrl+T" />
         </StackPanel>
       </Grid>

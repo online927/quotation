@@ -17,7 +17,7 @@ public sealed record ShipToOption(string Label, AddressDto? Address, bool SameAs
 /// The quotation entry screen. Totals are calculated locally with the same engine the server uses,
 /// so they update while typing; the server recalculates authoritatively on every save.
 /// </summary>
-public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPage, IUnsavedChangesPage, IReturnablePage
+public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPage, IUnsavedChangesPage, IReturnablePage, IDisposable
 {
     private readonly AppSession _session;
     private readonly INavigator _navigator;
@@ -32,7 +32,200 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         Lines.CollectionChanged += (_, _) => RecalculateTotals();
         ProductPopulator = SearchProductsAsync;
         CustomerPopulator = SearchCustomersAsync;
+        _recoveryTimer = new Avalonia.Threading.DispatcherTimer { Interval = RecoveryInterval };
+        _recoveryTimer.Tick += (_, _) => KeepRecoveryCopy();
+        _recoveryTimer.Start();
+        _presenceTimer = new Avalonia.Threading.DispatcherTimer { Interval = PresenceInterval };
+        _presenceTimer.Tick += (_, _) => _ = CheckPresenceAsync();
+        _presenceTimer.Start();
         _ = InitializeAsync(id);
+    }
+
+    /// <summary>Restores unsaved work kept on this PC after a crash or power cut (no number is used until it is saved).</summary>
+    public QuotationEditorViewModel(AppSession session, INavigator navigator, RecoverySnapshot restore)
+        : this(session, navigator, restore.Quotation.Id == Guid.Empty ? null : restore.Quotation.Id, restore.Quotation.DocType)
+    {
+        _restore = restore.Quotation;
+        _ownsRecovery = true; // this screen now holds that work: saving or discarding it removes the copy
+    }
+
+    // ---------------------------------------------------------------- unsaved work kept on this PC
+
+    /// <summary>How often unsaved work is copied to the PC (tests make it shorter).</summary>
+    public static TimeSpan RecoveryInterval { get; set; } = TimeSpan.FromSeconds(30);
+    public static TimeSpan PresenceInterval { get; set; } = TimeSpan.FromSeconds(15);
+
+    private readonly Avalonia.Threading.DispatcherTimer _recoveryTimer;
+    private readonly Avalonia.Threading.DispatcherTimer _presenceTimer;
+    private QuotationDto? _restore;
+    private QuotationDto? _loaded;
+    private bool _ownsRecovery;
+    private string? RecoveryUser => _session.Api.CurrentUser?.Username;
+
+    /// <summary>Copies unsaved work to the PC (every 30 s); removes the copy once there is nothing unsaved.</summary>
+    public void KeepRecoveryCopy()
+    {
+        if (RecoveryUser is not { } user) return;
+        if (IsDirty && IsEditable && (Lines.Count > 0 || CustomerId is not null))
+        {
+            RecoveryStore.For(_session.Config).Save(new RecoverySnapshot(user, DateTime.Now, ToSnapshot()));
+            _ownsRecovery = true;
+        }
+        else if (!HasUnsavedChanges)
+        {
+            DropRecoveryCopy();
+        }
+    }
+
+    private void DropRecoveryCopy()
+    {
+        if (!_ownsRecovery || RecoveryUser is not { } user) return;
+        RecoveryStore.For(_session.Config).Delete(user);
+        _ownsRecovery = false;
+    }
+
+    /// <summary>The quotation as it is on screen (saved details plus the unsaved changes).</summary>
+    public QuotationDto ToSnapshot()
+    {
+        var r = BuildRequest();
+        return new QuotationDto
+        {
+            Id = Id ?? Guid.Empty, Number = Number, DocType = DocType, Status = Status, Source = Source, Revision = Revision,
+            Date = r.Date, CustomerId = r.CustomerId, Buyer = r.Buyer, Consignee = r.Consignee, ConsigneeSameAsBuyer = r.ConsigneeSameAsBuyer,
+            BuyersReference = r.BuyersReference, BuyersReferenceDate = r.BuyersReferenceDate, DispatchedThrough = r.DispatchedThrough,
+            PaymentTerms = r.PaymentTerms, OtherReferences = r.OtherReferences, Destination = r.Destination, TermsOfDelivery = r.TermsOfDelivery,
+            DeliveryNote = r.DeliveryNote, DispatchDocNo = r.DispatchDocNo, DeliveryNoteDate = r.DeliveryNoteDate, Remarks = r.Remarks,
+            TermsAndConditions = r.TermsAndConditions, PackingForwarding = r.PackingForwarding, PackingForwardingPercent = r.PackingForwardingPercent,
+            PreparedBy = r.PreparedBy, VerifiedBy = r.VerifiedBy, WithoutGst = r.WithoutGst, Lines = r.Lines,
+            HasPdf = HasPdf, PdfError = PdfError, DataFreshnessWarning = DataWarning, EditableUntil = EditableUntil ?? default,
+            CreatedBy = _loaded?.CreatedBy ?? "", CreatedUtc = _loaded?.CreatedUtc ?? default, UpdatedBy = _loaded?.UpdatedBy,
+            UpdatedUtc = _loaded?.UpdatedUtc, ApprovedBy = _loaded?.ApprovedBy, ApprovedUtc = _loaded?.ApprovedUtc,
+        };
+    }
+
+    /// <summary>Puts a kept version (recovered after a crash, or "my changes" after a save clash) on screen as unsaved changes.</summary>
+    private void ApplyUnsaved(QuotationDto version, int revision)
+    {
+        var copy = version;
+        copy.Revision = revision;
+        Load(copy);
+        if (copy.Id == Guid.Empty) Id = null;
+        IsDirty = true;
+        NotifyState();
+    }
+
+    public void DiscardChanges()
+    {
+        IsDirty = false;
+        DropRecoveryCopy();
+    }
+
+    // ---------------------------------------------------------------- someone else has it open
+
+    /// <summary>"Rasik (TSAIFUDDIN3) also has this quotation open" while another person has it open.</summary>
+    [ObservableProperty] private string? _alsoOpenText;
+
+    public async Task CheckPresenceAsync()
+    {
+        if (Id is not { } id)
+        {
+            AlsoOpenText = null;
+            return;
+        }
+        try
+        {
+            var others = await _session.Api.QuotationPresenceAsync(id);
+            AlsoOpenText = others.Count == 0 ? null
+                : string.Join(", ", others.Select(o => $"{o.User} ({o.Machine})"))
+                  + (others.Count == 1 ? " also has" : " also have") + $" this {DocLabel.ToLowerInvariant()} open. Changes by both of you can clash.";
+        }
+        catch (Exception ex) when (ex is ApiException or HttpRequestException or TaskCanceledException)
+        {
+            // An older server without this check, or no connection: just show nothing.
+        }
+    }
+
+
+    public void Dispose()
+    {
+        _recoveryTimer.Stop();
+        _presenceTimer.Stop();
+        if (Id is { } id) _ = LeaveQuietlyAsync(id);
+    }
+
+    private async Task LeaveQuietlyAsync(Guid id)
+    {
+        try { await _session.Api.LeaveQuotationAsync(id); }
+        catch (Exception ex) when (ex is ApiException or HttpRequestException or TaskCanceledException) { }
+    }
+
+    // ---------------------------------------------------------------- who changed it (M3)
+
+    /// <summary>"Changed by hatim at 14:05 · Approved by rasik at 14:10" under the title.</summary>
+    public string ChangedByText
+    {
+        get
+        {
+            if (_loaded is not { } q || Id is null) return "";
+            static string When(DateTime utc)
+            {
+                var local = DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime();
+                return local.Date == DateTime.Today ? $"at {local:HH:mm}" : $"on {local:dd-MMM} at {local:HH:mm}";
+            }
+            var parts = new List<string>();
+            if (q.UpdatedBy is { Length: > 0 } by && q.UpdatedUtc is { } at)
+                parts.Add(by == "tally-sync" ? $"Rates refreshed from Tally {When(at)}" : $"Changed by {by} {When(at)}");
+            else if (q.CreatedBy.Length > 0)
+                parts.Add($"Created by {q.CreatedBy} {When(q.CreatedUtc)}");
+            if (q.ApprovedBy is { Length: > 0 } ab && q.ApprovedUtc is { } aat) parts.Add($"Approved by {ab} {When(aat)}");
+            if (q.CancelledBy is { Length: > 0 } cb && q.CancelledUtc is { } cat) parts.Add($"Cancelled by {cb} {When(cat)}");
+            return string.Join(" · ", parts);
+        }
+    }
+
+    // ---------------------------------------------------------------- save clash (M2)
+
+    /// <summary>Kept after "See their changes" in a save clash; "Put my changes back" brings it back.</summary>
+    [ObservableProperty] private QuotationDto? _myClashVersion;
+    public bool HasMyClashVersion => MyClashVersion is not null;
+    partial void OnMyClashVersionChanged(QuotationDto? value) => OnPropertyChanged(nameof(HasMyClashVersion));
+
+    [RelayCommand]
+    private void PutMyChangesBack()
+    {
+        if (MyClashVersion is not { } mine) return;
+        MyClashVersion = null;
+        ApplyUnsaved(mine, Revision); // on top of their latest version: saving now keeps mine
+        InfoMessage = "Your changes are back. Save to keep them (they replace the other user's changes).";
+    }
+
+    [RelayCommand]
+    private void ForgetMyChanges() => MyClashVersion = null;
+
+    /// <summary>Someone saved the same quotation first: save mine as a new quotation, or look at theirs first.</summary>
+    private async Task<bool> ResolveClashAsync(ApiException clash)
+    {
+        var mine = ToSnapshot();
+        var label = DocLabel.ToLowerInvariant();
+        var saveAsNew = await _navigator.ConfirmAsync("Someone else saved this " + label,
+            $"{clash.Message.Split(" Reload", 2)[0]}\n\nSave your version as a new {label} (it gets the next number), or see their changes first? Your version is kept, so you can put it back.",
+            $"Save mine as a new {label}", "See their changes");
+        if (saveAsNew)
+        {
+            var request = BuildRequest();
+            var oldNumber = Number;
+            return await RunAsync(async () =>
+            {
+                var created = await _session.Api.CreateQuotationAsync(request);
+                Load(created);
+                DropRecoveryCopy();
+                InfoMessage = $"Your version is saved as {created.Number}. {oldNumber} keeps the other user's changes.";
+            });
+        }
+        if (Id is not { } id) return false;
+        await RunAsync(async () => Load(await _session.Api.QuotationAsync(id)));
+        MyClashVersion = mine;
+        return false;
     }
 
     // ---------------------------------------------------------------- header
@@ -273,7 +466,24 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             OnPropertyChanged(nameof(SealHint));
             if (id is { } existing)
             {
-                Load(await _session.Api.QuotationAsync(existing));
+                var saved = await _session.Api.QuotationAsync(existing);
+                if (_restore is { } kept)
+                {
+                    // Recovered work on an existing quotation: the unsaved changes on top of the saved version.
+                    _loaded = saved;
+                    ApplyUnsaved(kept, kept.Revision);
+                    _restore = null;
+                }
+                else
+                {
+                    Load(saved);
+                }
+            }
+            else if (_restore is { } kept)
+            {
+                ApplyUnsaved(kept, 0);
+                _restore = null;
+                await RefreshNumberPreviewAsync();
             }
             else
             {
@@ -296,6 +506,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         });
     }
 
+    private string? _provisionalNumber;
+
     private async Task RefreshNumberPreviewAsync()
     {
         if (Number is not null) return;
@@ -303,6 +515,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             var next = await _session.Api.NextNumberAsync(Date is null ? null : DateOnly.FromDateTime(Date.Value), DocType);
             NumberText = $"{next.Number} (provisional)";
+            _provisionalNumber = next.Number;
         }
         catch (ApiException ex)
         {
@@ -312,6 +525,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     public void Load(QuotationDto q)
     {
+        _loaded = q;
         _loading = true;
         Id = q.Id;
         DocType = q.DocType;
@@ -399,6 +613,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(CanRegeneratePdf));
         OnPropertyChanged(nameof(IsPendingReview));
         OnPropertyChanged(nameof(IsCancelled));
+        OnPropertyChanged(nameof(ChangedByText));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(CanConvertToProforma));
@@ -426,7 +641,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         NotifyState();
     }
 
-    partial void OnIdChanged(Guid? value) => OnPropertyChanged(nameof(CanConvertToProforma));
+    partial void OnIdChanged(Guid? value)
+    {
+        OnPropertyChanged(nameof(CanConvertToProforma));
+        OnPropertyChanged(nameof(ChangedByText));
+        _ = CheckPresenceAsync();
+    }
 
     partial void OnStatusChanged(QuotationStatus value) => NotifyState();
     partial void OnNumberChanged(string? value)
@@ -749,17 +969,32 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         if (EntryProduct is not null || EditingLine is not null) CommitEntry();
         InfoMessage = null;
         ValidationMessages.Clear();
+        ApiException? clash = null;
         var ok = await RunAsync(async () =>
         {
             var created = Id is null;
-            var dto = created
-                ? await _session.Api.CreateQuotationAsync(BuildRequest())
-                : await _session.Api.UpdateQuotationAsync(Id!.Value, BuildRequest());
+            QuotationDto dto;
+            try
+            {
+                dto = created
+                    ? await _session.Api.CreateQuotationAsync(BuildRequest())
+                    : await _session.Api.UpdateQuotationAsync(Id!.Value, BuildRequest());
+            }
+            catch (ApiException ex) when (!created && ex.Code == ApiErrorCodes.Concurrency)
+            {
+                clash = ex;
+                return;
+            }
             Load(dto);
+            DropRecoveryCopy();
+            MyClashVersion = null;
             // "Without GST" was for this one quotation: the server switched it off; keep the session in step.
             if (created && dto.WithoutGst && _session.Api.CurrentUser is { } me) _session.Api.UpdateCurrentUser(me with { WithoutGstNext = false });
-            InfoMessage = $"Saved {dto.Number ?? "draft"} at {DateTime.Now:HH:mm}.";
+            InfoMessage = created && _provisionalNumber is { } shown && dto.Number is { } got && shown != got
+                ? $"Saved as {got}. {shown} was used by another user."
+                : $"Saved {dto.Number ?? "draft"} at {DateTime.Now:HH:mm}.";
         });
+        if (clash is not null) return await ResolveClashAsync(clash);
         return ok;
     }
 
@@ -903,6 +1138,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             ClearEntry();
             IsDirty = false;
+            DropRecoveryCopy();
             _navigator.GoBack();
         }
     }
@@ -911,7 +1147,19 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     private void DismissStale() => NeedsStaleOverride = false;
 
     [RelayCommand]
-    private Task OpenPdfAsync() => RunAsync(OpenPdfCoreAsync);
+    private async Task OpenPdfAsync()
+    {
+        if (IsFinal && HasUnsavedChanges)
+        {
+            // The PDF is of the approved version: changes must be saved and approved again first, or the PDF would be old.
+            if (!await _navigator.ConfirmAsync("Unsaved changes",
+                    $"You changed this {DocLabel.ToLowerInvariant()}. Save and approve it again before opening the PDF?", "Save & approve", "Cancel"))
+                return;
+            await ApproveCoreAsync(overrideStale: false, openPdf: true);
+            return;
+        }
+        await RunAsync(OpenPdfCoreAsync);
+    }
 
     /// <summary>Saves pending changes and opens a DRAFT-watermarked preview of the current quotation.</summary>
     [RelayCommand]
@@ -974,6 +1222,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             return;
         }
         Load(await _session.Api.CancelQuotationAsync(Id.Value));
+        DropRecoveryCopy();
         InfoMessage = $"{Number} cancelled. The number is not reused.";
     });
 

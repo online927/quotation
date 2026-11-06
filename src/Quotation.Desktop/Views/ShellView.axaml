@@ -78,7 +78,7 @@
           <TextBlock Text="{Binding LastSyncText}" />
           <TextBlock Foreground="{DynamicResource WarnBrush}" Text="Tally data is stale" IsVisible="{Binding Status.DataIsStale, FallbackValue=False}" />
           <TextBlock Foreground="{DynamicResource WarnBrush}" Text="Tally is busy — background reading paused" IsVisible="{Binding Status.TallyBusy, FallbackValue=False}" />
-          <TextBlock Text="{Binding ServerState}" />
+          <TextBlock Text="{Binding ServerState}" Foreground="{DynamicResource BadBrush}" IsVisible="{Binding ServerState, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           <TextBlock Name="SpeedText" Text="{Binding SpeedText}" FontWeight="SemiBold" Classes="speed"
                      Classes.ok="{Binding SpeedOk}" Classes.slow="{Binding SpeedSlow}" Classes.bad="{Binding SpeedBad}"
                      ToolTip.Tip="How fast the Quotation Server answers (checked every 30 seconds). Slow requests: Diagnostics → Slow requests." />
@@ -139,6 +139,23 @@
 
       <ContentControl Content="{Binding CurrentPage}" />
     </DockPanel>
+
+    <!-- Short messages in the bottom-right corner ("Saved …", "PDF saved to …"); they fade after a few seconds -->
+    <ItemsControl Name="ToastList" ItemsSource="{Binding Toasts}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                  Margin="0,0,24,100" IsHitTestVisible="False">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="svc:ToastItem">
+          <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1" CornerRadius="10"
+                  Padding="14,10" Margin="0,8,0,0" BoxShadow="0 6 20 0 #26000000" MaxWidth="440">
+            <Grid ColumnDefinitions="Auto,*">
+              <Path Data="M5,12.5 L10,17.5 L19,7" Stroke="{DynamicResource OkBrush}" StrokeThickness="2.2" StrokeLineCap="Round" StrokeJoin="Round"
+                    Width="15" Height="15" Stretch="Uniform" VerticalAlignment="Top" Margin="0,2,10,0" />
+              <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" FontSize="13" />
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
 
     <!-- Unsaved changes: Save / Don't Save / Cancel -->
     <Border Name="PromptPanel" Background="#40000000" IsVisible="{Binding PendingPrompt, Converter={x:Static ObjectConverters.IsNotNull}}">

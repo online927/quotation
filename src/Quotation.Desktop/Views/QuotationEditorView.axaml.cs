@@ -117,6 +117,13 @@ public partial class QuotationEditorView : UserControl
         }
     }
 
+    /// <summary>The small calendar of "Ref. dated": opens below the box; picking a day fills it and closes.</summary>
+    private void OnRefDateCalendarClick(object? sender, RoutedEventArgs e)
+    {
+        RefDatePopup.IsOpen = !RefDatePopup.IsOpen;
+        if (RefDatePopup.IsOpen) RefDateCalendar.Focus();
+    }
+
     private QuotationLineViewModel? _dragLine;
 
     /// <summary>The grip (⋮⋮) at the left of an item line: hold it and drag the line up or down.</summary>

@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:Quotation.Desktop.Controls"
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
@@ -14,40 +15,79 @@
     <StackPanel Margin="24,16,24,24" Spacing="18" MaxWidth="1200" HorizontalAlignment="Stretch">
       <Grid ColumnDefinitions="*,Auto">
         <StackPanel>
-          <TextBlock Classes="h1" Text="Dashboard" />
+          <ctl:PageTitle Text="Dashboard" Icon="dashboard" />
           <TextBlock Classes="muted" Text="Today at a glance" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Button Content="Refresh (F5)" Command="{Binding LoadCommand}" HotKey="F5" />
-          <Button Classes="proforma" Content="New Proforma Invoice" Command="{Binding GoCommand}" CommandParameter="newproforma" />
-          <Button Classes="primary" Content="New Quotation (Ctrl+N)" Command="{Binding GoCommand}" CommandParameter="new" />
+          <Button Command="{Binding LoadCommand}" HotKey="F5" ToolTip.Tip="Refresh (F5)">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Data="M20,11 A8,8 0 1 0 17.7,16.6 M20,4 L20,11 L13,11" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+              <TextBlock Text="Refresh" />
+            </StackPanel>
+          </Button>
+          <Button Classes="proforma" Command="{Binding GoCommand}" CommandParameter="newproforma">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Data="M12,5 L12,19 M5,12 L19,12" Stroke="{DynamicResource PurpleBrush}" StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+              <TextBlock Text="New Proforma Invoice" />
+            </StackPanel>
+          </Button>
+          <Button Classes="primary" Command="{Binding GoCommand}" CommandParameter="new">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Data="M12,5 L12,19 M5,12 L19,12" Stroke="White" StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+              <TextBlock Text="New Quotation" />
+            </StackPanel>
+          </Button>
         </StackPanel>
       </Grid>
       <TextBlock Classes="error" Text="{Binding ErrorMessage}"
                  IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
       <UniformGrid Columns="4">
-        <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="today">
+        <Button Classes="tile" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="today">
           <StackPanel>
-            <TextBlock Classes="eyebrow" Text="TODAY'S QUOTATIONS" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="eyebrow" Text="TODAY'S QUOTATIONS" VerticalAlignment="Center" />
+              <Border Grid.Column="1" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
+                <Path Data="{x:Static vm:NavIcons.Today}" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                      Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+            </Grid>
             <TextBlock Classes="big" Foreground="{DynamicResource AccentBrush}" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
           </StackPanel>
         </Button>
-        <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
+        <Button Classes="tile" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
           <StackPanel>
-            <TextBlock Classes="eyebrow" Text="DRAFTS" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="eyebrow" Text="DRAFTS" VerticalAlignment="Center" />
+              <Border Grid.Column="1" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
+                <Path Data="{x:Static vm:NavIcons.Drafts}" Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                      Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+            </Grid>
             <TextBlock Classes="big" Text="{Binding Data.Drafts, FallbackValue='–'}" />
           </StackPanel>
         </Button>
-        <Button Classes="tile" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
+        <Button Classes="tile" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
           <StackPanel>
-            <TextBlock Classes="eyebrow" Text="PENDING REVIEW" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="eyebrow" Text="PENDING REVIEW" VerticalAlignment="Center" />
+              <Border Grid.Column="1" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
+                <Path Data="{x:Static vm:NavIcons.History}" Stroke="{DynamicResource OrangeBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                      Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+            </Grid>
             <TextBlock Classes="big" Foreground="{DynamicResource OrangeBrush}" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
           </StackPanel>
         </Button>
-        <Button Classes="tile" Command="{Binding GoCommand}" CommandParameter="inbox">
+        <Button Classes="tile" HorizontalContentAlignment="Stretch" Command="{Binding GoCommand}" CommandParameter="inbox">
           <StackPanel>
-            <TextBlock Classes="eyebrow" Text="AI INBOX — NEEDS ATTENTION" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="eyebrow" Text="AI INBOX — NEEDS ATTENTION" VerticalAlignment="Center" />
+              <Border Grid.Column="1" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
+                <Path Data="{x:Static vm:NavIcons.Inbox}" Stroke="{DynamicResource PurpleBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                      Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+            </Grid>
             <TextBlock Classes="big" Foreground="{DynamicResource PurpleBrush}" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–'}" />
           </StackPanel>
         </Button>

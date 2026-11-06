@@ -29,6 +29,9 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
 
     public string Title => "My Settings";
     public string UserName => _session.Api.CurrentUser?.DisplayName ?? "";
+    /// <summary>The Quotation Server this PC uses (changed in the server box on the sign-in screen).</summary>
+    public string ServerAddress => _session.Config.ServerUrl;
+    public string ComputerName => Environment.MachineName;
     public string DefaultPdfFolder => new DocumentLauncher(new ClientConfig()).Folder;
     /// <summary>Shown in the empty proforma box: "Proforma Invoices" inside the quotation folder.</summary>
     public string DefaultProformaPdfFolder => new DocumentLauncher(new ClientConfig { PdfFolder = PdfFolder.Trim() }).ProformaFolder;

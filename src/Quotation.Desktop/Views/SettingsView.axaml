@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:Quotation.Desktop.Controls"
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              xmlns:c="using:Quotation.Contracts"
              x:Class="Quotation.Desktop.Views.SettingsView"
@@ -16,7 +17,7 @@
   </UserControl.Styles>
   <DockPanel Margin="24,12,24,20">
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
-      <TextBlock Classes="h1" Text="Settings" />
+      <ctl:PageTitle Text="Settings" Icon="settings" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
         <Button Content="Reload" Command="{Binding LoadCommand}" />
         <Button Classes="primary" Content="Save (Ctrl+S)" Command="{Binding SaveCommand}" HotKey="Ctrl+S" IsEnabled="{Binding IsAdmin}" />
@@ -25,7 +26,6 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
       <TextBlock Classes="muted" Text="Only administrators can change settings." IsVisible="{Binding IsReadOnly}" />
       <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-      <TextBlock Foreground="{DynamicResource OkBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     </StackPanel>
 
     <TabControl IsEnabled="{Binding Settings, Converter={x:Static ObjectConverters.IsNotNull}}">

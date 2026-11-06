@@ -1,14 +1,20 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:Quotation.Desktop.Controls"
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.AiInboxView"
              x:DataType="vm:AiInboxViewModel">
   <DockPanel Margin="24,12,24,20">
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
-      <TextBlock Classes="h1" Text="AI Inbox" />
+      <ctl:PageTitle Text="AI Inbox" Icon="inbox" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
         <CheckBox Content="Show all (incl. completed)" IsChecked="{Binding ShowAll}" />
-        <Button Content="Refresh (F5)" HotKey="F5" Command="{Binding LoadCommand}" />
+        <Button HotKey="F5" Command="{Binding LoadCommand}" ToolTip.Tip="Refresh (F5)">
+          <StackPanel Orientation="Horizontal" Spacing="7">
+            <Path Data="M20,11 A8,8 0 1 0 17.7,16.6 M20,4 L20,11 L13,11" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+            <TextBlock Text="Refresh" />
+          </StackPanel>
+        </Button>
       </StackPanel>
     </Grid>
 

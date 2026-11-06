@@ -14,6 +14,8 @@ public interface INavigator
     Task<bool> ConfirmAsync(string title, string message, string yes = "Yes", string no = "No");
     /// <summary>Asks for a value (e.g. the 4-digit seal PIN); null when cancelled.</summary>
     Task<string?> AskAsync(string title, string message, string inputLabel, bool secret = false, string ok = "OK");
+    /// <summary>A short message in the bottom-right corner that fades after a few seconds.</summary>
+    void Toast(string message, int seconds = 5) { }
 }
 
 /// <summary>A question shown over the app window (Yes/No, or with an input box).</summary>
@@ -47,6 +49,14 @@ public interface IUnsavedChangesPage
     bool HasUnsavedChanges { get; }
     /// <summary>Saves; false when saving failed (the page then shows why and the user stays on it).</summary>
     Task<bool> SaveChangesAsync();
+    /// <summary>The user chose "Don't Save": the page drops its unsaved work (and any copy kept for recovery).</summary>
+    void DiscardChanges() { }
+}
+
+/// <summary>A message shown for a few seconds in the bottom-right corner.</summary>
+public sealed class ToastItem(string text)
+{
+    public string Text { get; } = text;
 }
 
 /// <summary>A page that refreshes its data when the user comes back to it (filters and search are kept).</summary>

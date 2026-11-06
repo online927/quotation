@@ -308,7 +308,8 @@
               </StackPanel>
               <StackPanel Grid.Row="1" Grid.Column="2">
                 <TextBlock Classes="fl" Text="Ref. dated" />
-                <CalendarDatePicker SelectedDate="{Binding BuyersReferenceDate}" CustomDateFormatString="dd-MMM-yyyy" SelectedDateFormat="Custom" HorizontalAlignment="Stretch" />
+                <TextBox Name="RefDateBox" Text="{Binding BuyersReferenceDateText, UpdateSourceTrigger=LostFocus}"
+                         ToolTip.Tip="Type the date, e.g. 05-11-2026 or 5/11/26" />
               </StackPanel>
               <StackPanel Grid.Row="2">
                 <TextBlock Classes="fl" Text="Dispatched through" />
@@ -391,7 +392,6 @@
                       <TextBlock Classes="td" Grid.Column="5" Text="{Binding QuantityText}" HorizontalAlignment="Right" />
                       <StackPanel Grid.Column="6">
                         <TextBlock Classes="td" Text="{Binding RateText}" HorizontalAlignment="Right" />
-                        <TextBlock FontSize="10" Foreground="{DynamicResource WarnBrush}" Text="{Binding TallyRateHint}" HorizontalAlignment="Right" IsVisible="{Binding RateOverridden}" />
                       </StackPanel>
                       <TextBlock Classes="td" Grid.Column="7" Text="{Binding Unit}" Margin="6,0,0,0" />
                       <TextBlock Classes="td" Grid.Column="8" Text="{Binding DiscountText}" HorizontalAlignment="Right" />

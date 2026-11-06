@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Quotation.ApiClient;
@@ -125,6 +126,34 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     // ---------------------------------------------------------------- references
     [ObservableProperty] private string _buyersReference = "";
     [ObservableProperty] private DateTime? _buyersReferenceDate;
+
+    /// <summary>
+    /// "Ref. dated" as typed (no calendar): 05-11-2026, 5/11/26, 05.11.2026, 05-Nov-2026 … (day first), shown as
+    /// 05-Nov-2026. Empty = no date; text that is not a date keeps the previous date.
+    /// </summary>
+    public string BuyersReferenceDateText
+    {
+        get => BuyersReferenceDate?.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture) ?? "";
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value)) BuyersReferenceDate = null;
+            else if (ParseTypedDate(value) is { } d) BuyersReferenceDate = d;
+            OnPropertyChanged(); // show it as dd-MMM-yyyy (or the previous date if the text was not a date)
+        }
+    }
+
+    private static readonly string[] TypedDateFormats =
+    [
+        "d-M-yyyy", "d-M-yy", "d/M/yyyy", "d/M/yy", "d.M.yyyy", "d.M.yy", "d M yyyy", "d M yy",
+        "d-MMM-yyyy", "d-MMM-yy", "d MMM yyyy", "d MMM yy", "d/MMM/yyyy", "d-MMMM-yyyy", "d MMMM yyyy", "ddMMyyyy", "ddMMyy",
+    ];
+
+    public static DateTime? ParseTypedDate(string text) =>
+        DateTime.TryParseExact(text.Trim(), TypedDateFormats, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var d)
+            ? d.Date
+            : null;
+
+    partial void OnBuyersReferenceDateChanged(DateTime? value) => OnPropertyChanged(nameof(BuyersReferenceDateText));
     [ObservableProperty] private string _dispatchedThrough = "";
     [ObservableProperty] private string _paymentTerms = "";
     [ObservableProperty] private string _otherReferences = "";

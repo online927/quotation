@@ -35,7 +35,7 @@ public partial class QuotationApiClient
     }
 
     public static QuotationApiClient Create(string baseUrl, TimeSpan? timeout = null) =>
-        new(new HttpClient { BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"), Timeout = timeout ?? TimeSpan.FromSeconds(60) });
+        new(new HttpClient(ServerConnection.CreateHandler()) { BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"), Timeout = timeout ?? TimeSpan.FromSeconds(60) });
 
     public Uri? BaseAddress => _http.BaseAddress;
     public string? Token { get; private set; }

@@ -18,7 +18,8 @@ public partial class App : Application
         {
             var session = new AppSession(ClientConfig.Load(), url => QuotationApiClient.Create(url));
             ThemeService.Apply(session.Config.Theme);
-            desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel(session) };
+            // Always opens maximised (fills the screen; taskbar and title bar stay visible).
+            desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel(session), WindowState = Avalonia.Controls.WindowState.Maximized };
         }
         base.OnFrameworkInitializationCompleted();
     }

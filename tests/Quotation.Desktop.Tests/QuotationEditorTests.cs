@@ -504,6 +504,33 @@ public class QuotationEditorTests
         editor.IsDirty = false;
     }
 
+    [Theory]
+    [InlineData("05-11-2026", "2026-11-05")]
+    [InlineData("5/11/26", "2026-11-05")]
+    [InlineData("05.11.2026", "2026-11-05")]
+    [InlineData("05-Nov-2026", "2026-11-05")]
+    [InlineData("5 nov 2026", "2026-11-05")]
+    [InlineData("05112026", "2026-11-05")]
+    [InlineData("31-02-2026", null)]
+    [InlineData("hello", null)]
+    public void Ref_dated_is_typed_day_first(string typed, string? expected) =>
+        Assert.Equal(expected, QuotationEditorViewModel.ParseTypedDate(typed)?.ToString("yyyy-MM-dd"));
+
+    [AvaloniaFact]
+    public async Task Ref_dated_box_shows_the_typed_date_as_dd_mmm_yyyy()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await NewEditor(ctx);
+        editor.BuyersReferenceDateText = "2/10/26";
+        Assert.Equal(new DateTime(2026, 10, 2), editor.BuyersReferenceDate);
+        Assert.Equal("02-Oct-2026", editor.BuyersReferenceDateText);
+        editor.BuyersReferenceDateText = "not a date"; // keeps the date
+        Assert.Equal("02-Oct-2026", editor.BuyersReferenceDateText);
+        editor.BuyersReferenceDateText = "";
+        Assert.Null(editor.BuyersReferenceDate);
+        editor.IsDirty = false;
+    }
+
     [AvaloniaFact]
     public async Task Sidebar_shortcut_keys_are_switched_off()
     {

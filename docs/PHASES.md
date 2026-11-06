@@ -549,3 +549,12 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 6. No grey example text in the Customer and Product boxes; "Source" shown only for AI Inbox / Gmail quotations;
    the number beside the date only while provisional; Edit and remove appear on the line under the mouse;
    the scroll bar runs beside the cards.
+
+### Round 12
+
+1. The app always opens maximised.
+2. "Ref. dated" is typed (no calendar, no grey hint): 05-11-2026, 5/11/26, 05-Nov-2026 … day first, shown as 05-Nov-2026.
+3. No "Tally rate …" hint under an item's rate on screen.
+4. Client PCs connect to the server by its IPv4 address first, give up on an address that does not answer after
+   3 seconds (instead of Windows' 21 s) and keep the connection open between requests: the long "Network or PC name"
+   waits in Diagnostics → Slow requests (e.g. 21 s, 42 s) are avoided.

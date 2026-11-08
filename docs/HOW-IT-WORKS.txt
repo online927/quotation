@@ -1,0 +1,381 @@
+TS QUOTATION SYSTEM - HOW IT WORKS
+T.SAIFUDDIN & CO.  -  written for version 0.9.44 (November 2026)
+=====================================================================
+
+CONTENTS
+  1.  The three parts
+  2.  The server PC
+  3.  How the server reads Tally (read-only)
+  4.  The client PCs and how they connect
+  5.  How the app works day to day
+  6.  Several users at the same time
+  7.  Users, passwords and security
+  8.  Backups - how they work and where they are
+  9.  Updating to a new version
+  10. Troubleshooting
+  11. If the server PC crashes (power cut, Windows crash, dead disk)
+  12. Moving the server to another PC (e.g. a client PC)
+  13. Forgotten administrator password
+  14. Quick reference - folders, ports, names
+  15. Coming in the next update (not installed yet)
+
+
+---------------------------------------------------------------------
+1. THE THREE PARTS
+---------------------------------------------------------------------
+
+  TallyPrime  --(read only)-->  Quotation Server  <--(office network)--  Client PCs
+  (accounts)                    (one PC, always on)                      (each user's app)
+
+  * TallyPrime keeps your accounts, items and ledgers as before.
+    The quotation system NEVER writes anything into Tally.
+  * The Quotation Server is a background program (a Windows service) on one PC.
+    It keeps a copy of Tally's items and customers, all quotations and
+    proforma invoices, numbers, users, settings and PDFs.
+  * The client app ("TS Quotation") runs on each user's PC. It only talks to
+    the Quotation Server, never to Tally directly.
+
+
+---------------------------------------------------------------------
+2. THE SERVER PC
+---------------------------------------------------------------------
+
+  What is installed
+    Program      C:\Program Files\TSQuotation\Server\TSQuotation.Server.exe
+    Service      "TS Quotation Server" (service name TSQuotationServer)
+                 - starts by itself with Windows (no one has to log in)
+                 - if it stops by error, Windows restarts it after 1 minute
+    Firewall     rule "TS Quotation Server": TCP port 5080 open for the
+                 office (private/domain) network
+    Address      http://<server PC name or IP>:5080
+                 e.g. http://TSAIFUDDIN3:5080 or http://192.168.1.10:5080
+
+  The data folder:  C:\ProgramData\TSQuotation
+    quotation.db        the database: quotations, proforma invoices, numbers,
+                        users, settings, the app's last rates, activity log,
+                        sync history, AI/Gmail requests, copy of Tally masters
+    pdf\<year>\         PDFs made at approval (can always be re-made)
+    backups\            automatic database backups (see section 8)
+    seal\seal.img       the company seal image (if added in Settings)
+    logo.png            the logo for PDFs (if used)
+    logs\server-*.log   server log, one file per day, kept 60 days
+    logs\slow-requests.json   the last 500 requests slower than 1 second
+
+  Good to know
+    * The server PC must be ON during office hours. Set Windows power options
+      to "never sleep" on that PC.
+    * It does not need to be a powerful PC. It can be any office PC, also a
+      user's PC, and Tally can run on the same PC.
+    * Give the server PC a fixed IP address in the office router, so its
+      address never changes.
+
+
+---------------------------------------------------------------------
+3. HOW THE SERVER READS TALLY (READ-ONLY)
+---------------------------------------------------------------------
+
+  * TallyPrime must be running with the company open and its XML port
+    switched on (TallyPrime: F1 Help > Settings > Connectivity:
+    "TallyPrime acts as" Server or Both, port 9000).
+  * The Tally address is set in Settings > Tally (default http://localhost:9000;
+    use http://<Tally PC>:9000 if Tally is on another PC).
+
+  What it reads
+    Items (stock items): name, part no., alias, HSN, GST %, unit, selling price,
+    stock group, "Do Not Use" marks.  Customers (ledgers): name, address, GSTIN,
+    state, contact, phone, e-mail, delivery addresses.  Company name and
+    financial year.  It never reads or changes vouchers, and never writes.
+
+  When it reads
+    * Connection check: every 60 seconds (a tiny request: "are you there?").
+    * Sync changes: every 3 hours (only what changed since last time).
+    * Full sync: every night at 02:00 (if the server PC is on). If the PC was off
+      at night, it runs when the server starts the next morning.
+    * By hand: Tally Connection page > "Sync changes" or "Full sync".
+    * Before approving a quotation: a quick "sync changes" (up to 30 seconds
+      if Tally is slow). See section 15: this is being removed.
+  If Tally answers slowly (someone is busy in Tally), the server pauses its
+  background reading and tries later, so Tally stays responsive.
+
+  If Tally is closed or the Tally PC is off
+    Everything keeps working with the last copy (items, customers, rates).
+    The status bar shows "Tally disconnected". In this version, approval then
+    asks "approve anyway?" (it could not check Tally live); the answer is logged.
+    From the next update it asks only when the last sync is older than 24 hours.
+
+
+---------------------------------------------------------------------
+4. THE CLIENT PCs AND HOW THEY CONNECT
+---------------------------------------------------------------------
+
+  What is installed
+    Program      C:\Program Files\TSQuotation\Client\  ("TS Quotation" icon)
+    Settings     %AppData%\TSQuotation\client.json   (server address, PDF folders,
+                 theme on this PC - no passwords)
+    Unsaved work %AppData%\TSQuotation\recovery\<user>.json  (see section 5)
+    PDFs         Documents\Quotations  and  Documents\Quotations\Proforma Invoices
+                 (can be changed in My Settings > Save as PDF folders)
+
+  How a client connects
+    * At sign-in you type the server address, e.g. http://192.168.1.10:5080.
+      It is remembered. My Settings > Connection shows it with the PC name.
+    * The client talks to the server over the office network (port 5080).
+      It tries the normal (IPv4) address first, gives up on an address that
+      does not answer after 3 seconds, and keeps the connection open.
+    * A login lasts 12 hours, then you sign in again.
+    * Status bar at the bottom: Tally connected/disconnected, financial year,
+      last sync, speed (the lightning number: how fast the server answers;
+      green fast, orange slow, red no answer), app version.
+      "Quotation Server unreachable" in red = the client cannot reach the server.
+    * Every request slower than 1 second is listed in Diagnostics > Slow
+      requests (administrators), with the time on the PC and on the server.
+
+
+---------------------------------------------------------------------
+5. HOW THE APP WORKS DAY TO DAY
+---------------------------------------------------------------------
+
+  New quotation
+    1. New Quotation (sidebar). The number shown, e.g. TSQ2627-5 (provisional),
+       is only a preview of the next free number.
+    2. Customer: type part of the name / GSTIN / phone, Enter picks it.
+       Other references, Enter: the top part folds to one line (eye button shows it).
+    3. Product: type name / part no., Enter > quantity > rate (Tally selling
+       price filled; if Tally has none, the app's last approved rate) >
+       discount > description (Shift+Enter = new line) > Enter adds the line.
+    4. Ctrl+S saves a draft and gives the real number. If someone else saved
+       first, you get the next number and a message says so.
+    5. Approve & Generate PDF (Ctrl+Enter) or Save as PDF: checks everything,
+       approves, makes the PDF ("Number Customer.pdf") in your PDF folder.
+
+  Numbers
+    Given by the server at the first save, one after the other, never twice,
+    per financial year (TSQyyyy-n for quotations, TSPIyyyy-n for proforma).
+    A cancelled number is not reused.
+
+  Other rules
+    * Users can edit their quotations for 7 days (Settings > Quotation);
+      administrators always. Only administrators change the date.
+    * Changing an approved quotation sends it back to draft; approve again.
+      Open PDF asks "Save & approve" first if you changed it.
+    * Cancel Quotation keeps it (marked CANCELLED). Delete (administrators)
+      moves it to Deleted for 30 days, then it is removed.
+    * Proforma invoices work the same way with their own numbers.
+    * Unsaved work is copied to the PC every 30 seconds. After a power cut or
+      crash, the app asks "Restore unsaved work?" the next time. No number
+      is used until you save.
+
+
+---------------------------------------------------------------------
+6. SEVERAL USERS AT THE SAME TIME
+---------------------------------------------------------------------
+
+  * Any number of PCs can work at the same time. Numbers never clash.
+  * If two people open the same quotation, both see a yellow line:
+    "Rasik (TSAIFUDDIN3) also has this quotation open".
+  * If someone saved it first, your save asks:
+      "Save mine as a new quotation" (gets the next number), or
+      "See their changes" (then "Put my changes back" to keep yours).
+  * Under the title: "Created by ... / Changed by ... / Approved by ...".
+  * Diagnostics > Audit log lists who did what, when, from which PC.
+
+
+---------------------------------------------------------------------
+7. USERS, PASSWORDS AND SECURITY
+---------------------------------------------------------------------
+
+  * Settings > Users (administrators): add users, administrator or user,
+    active or not, reset a password (the user must change it at next login).
+  * Everyone: click your name (top right) > Change my password.
+  * Passwords and the seal PIN are stored scrambled; nobody can read them.
+  * Keep at least TWO administrator accounts.
+  * Only AI Inbox (the AI service) and Gmail reach the internet, and only when
+    they are switched on. Everything else stays in the office.
+
+
+---------------------------------------------------------------------
+8. BACKUPS - HOW THEY WORK AND WHERE THEY ARE
+---------------------------------------------------------------------
+
+  How
+    * The server checks every hour; if the last backup is older than 24 hours
+      it makes a new one. In practice: once a day.
+    * Administrators can make one any time: Diagnostics > Backup database now.
+    * Backups are made while people work; the copy is always complete.
+
+  Where
+    C:\ProgramData\TSQuotation\backups\quotation-YYYYMMDD-HHMMSS.db
+    One file per backup, kept 30 days (older ones are deleted automatically).
+
+  What is in a backup:  the whole database (quotations, numbers, users,
+    settings, last rates, activity log, copy of Tally masters).
+  Not in a backup:      PDF files (can be re-made with Open PDF), seal image,
+    logo, Claude API key and Gmail connection (locked to the PC anyway).
+
+  IMPORTANT: the backups are on the SAME disk as the server. If that disk
+  fails or the PC is stolen, the backups are lost too. Until the next update
+  (section 15), COPY THE backups FOLDER TO A USB DRIVE OR ANOTHER PC REGULARLY
+  (e.g. every Friday), together with seal\ and logo.png.
+
+  Restoring a backup (by hand)
+    1. Services (Windows) > TS Quotation Server > Stop.
+    2. Copy the chosen backup file to C:\ProgramData\TSQuotation\quotation.db
+       (replace it). Delete quotation.db-wal and quotation.db-shm if present.
+    3. Start the service again.
+
+
+---------------------------------------------------------------------
+9. UPDATING TO A NEW VERSION
+---------------------------------------------------------------------
+
+  1. Download "windows-installers" from GitHub (see the link given with each
+     version). If Chrome says "dangerous": chrome://downloads > ... >
+     Download dangerous file (the installers are not digitally signed).
+  2. Server PC: run TSQuotationServer-Setup (only when the version notes say
+     the server changed). Data and settings are kept.
+  3. Every client PC: close TS Quotation, run TSQuotation-Setup.
+     Windows may say "Windows protected your PC": More info > Run anyway.
+  The version is shown at the bottom right (App v0.9.xx).
+
+
+---------------------------------------------------------------------
+10. TROUBLESHOOTING
+---------------------------------------------------------------------
+
+  "Quotation Server unreachable" on one PC only
+    - Check that PC's network / Wi-Fi.
+    - My Settings > Connection: is the server address right?
+    - Use the server's IP address instead of its name (sign out, type it at sign-in).
+
+  "Quotation Server unreachable" on all PCs
+    - Is the server PC on and not sleeping?
+    - Windows on the server PC must see the office network as "Private"
+      (Settings > Network > the network > Private). On a "Public" network the
+      firewall blocks port 5080.
+    - On the server PC: Services > TS Quotation Server > Running? If not, Start.
+    - Did the server PC's IP change? Give it a fixed IP in the router.
+
+  The app is slow on one PC (lightning number orange/red)
+    - Diagnostics > Slow requests: "Network or PC name" = the network/address
+      (use the IP address, a cable instead of Wi-Fi, no power saving);
+      "Server PC slow" = the server PC was busy.
+
+  "Tally disconnected"
+    - Is TallyPrime open with the company loaded?
+    - Is the XML port on (F1 > Settings > Connectivity, port 9000)?
+    - Settings > Tally: is the address right? Tally Connection > Test connection.
+    - Work continues with the last copy of items and customers.
+
+  A new item or customer from Tally is not in the app
+    - Tally Connection > Sync changes (or wait for the 3-hourly sync).
+
+  "Tally data may be old - approve anyway?"
+    - Tally could not be reached at approval (closed or busy), or the last sync
+      is older than 24 hours. Open Tally and Sync changes, or approve anyway
+      (it is logged).
+
+  PDF did not open / not in the folder
+    - My Settings > Save as PDF folders: check the folder exists.
+    - Open PDF / Save as PDF always make a fresh PDF.
+
+  Forgot your password
+    - An administrator resets it in Settings > Users. For the last administrator
+      see section 13.
+
+  Something else
+    - Diagnostics > Server log shows errors. Note the time and send a screenshot.
+
+
+---------------------------------------------------------------------
+11. IF THE SERVER PC CRASHES
+---------------------------------------------------------------------
+
+  Tally is never affected - it is separate and never written to.
+
+  A) Power cut, Windows hang or restart
+     - Clients show "Quotation Server unreachable" until it is back.
+     - Switch the server PC on. The server starts by itself.
+     - Saved quotations are safe (each save is complete or not at all).
+     - Unsaved work on the client PCs is offered back ("Restore unsaved work?").
+
+  B) Windows broken, hard disk OK
+     - Reinstall Windows (or use another PC), install the server setup,
+       copy C:\ProgramData\TSQuotation from the old disk to the same place,
+       restart the service (or the PC). Everything is back.
+     - Re-enter the Claude API key (Settings) and reconnect Gmail.
+
+  C) Hard disk dead or PC stolen
+     - Only what was copied elsewhere can be restored: install the server on
+       another PC (section 12), put the latest backup copy in place as
+       quotation.db (section 8), add the seal and logo again.
+     - Quotations after that backup are lost. Tally items and customers come
+       back with a Full sync.
+     - This is why the backups folder must be copied elsewhere regularly
+       (automatic from the next update, section 15).
+
+
+---------------------------------------------------------------------
+12. MOVING THE SERVER TO ANOTHER PC (E.G. A CLIENT PC)
+---------------------------------------------------------------------
+
+  Any PC that stays on during office hours can be the server.
+  1. New PC: install TSQuotationServer-Setup (the client app can stay too).
+  2. Old server PC: Diagnostics > Backup database now. Then stop the service
+     (Services > TS Quotation Server > Stop) or shut the PC down after copying.
+  3. Copy the whole folder C:\ProgramData\TSQuotation from the old PC to the
+     same place on the new PC (USB drive or network share).
+  4. New PC: restart the service (or the PC).
+  5. Settings > Tally: check the Tally address can be reached from the new PC
+     (Test connection). Re-enter the Claude API key, reconnect Gmail.
+  6. Each client PC: sign out and type the new server address at sign-in,
+     OR give the new PC the old PC's name / IP so nothing changes on clients.
+  Quotations, numbers, users, settings, seal, logo and PDFs all come across.
+
+
+---------------------------------------------------------------------
+13. FORGOTTEN ADMINISTRATOR PASSWORD
+---------------------------------------------------------------------
+
+  On the server PC, open Command Prompt as administrator and run:
+    "C:\Program Files\TSQuotation\Server\TSQuotation.Server.exe" --reset-admin-password NewPassword
+  (add --user name for another administrator). Then log in with NewPassword.
+
+
+---------------------------------------------------------------------
+14. QUICK REFERENCE
+---------------------------------------------------------------------
+
+  Server address         http://<server PC>:5080   (firewall rule opens port 5080)
+  Tally address          http://<Tally PC>:9000    (TallyPrime XML port)
+  Windows service        TS Quotation Server  (TSQuotationServer)
+  Server program         C:\Program Files\TSQuotation\Server\
+  Server data            C:\ProgramData\TSQuotation\  (quotation.db, pdf, backups,
+                         seal, logo.png, logs)
+  Backups                C:\ProgramData\TSQuotation\backups\  (daily, 30 days)
+  Client program         C:\Program Files\TSQuotation\Client\
+  Client settings        %AppData%\TSQuotation\client.json
+  Client unsaved work    %AppData%\TSQuotation\recovery\
+  PDFs on a client       Documents\Quotations  (+ \Proforma Invoices)
+  Sync                   connection check 60 s, changes every 3 h, full 02:00
+  Login lasts            12 hours
+  Users may edit         7 days (Settings > Quotation)
+  Deleted kept           30 days
+  Data "too old"         24 hours (Settings > Quotation)
+
+
+---------------------------------------------------------------------
+15. COMING IN THE NEXT UPDATE (NOT INSTALLED YET)
+---------------------------------------------------------------------
+
+  Agreed for the next version (this file will be updated when it is installed):
+  * Backups every 3 hours, plus an automatic second copy to a folder you choose
+    (USB drive, another PC, OneDrive / Google Drive folder).
+  * Dashboard warnings: old backup copy, second folder not reachable, disk
+    almost full, no Tally sync since yesterday.
+  * Diagnostics > Export everything (one file with database, PDFs, seal, logo)
+    and Restore from backup file - for moving or rebuilding the server.
+  * Clients update themselves from the server ("New version available").
+  * No Tally check at approval (approval uses the 3-hourly sync; quick even
+    when Tally is busy).
+  * Item descriptions remembered; text size and compact spacing; Won / Lost /
+    follow-up (admin switch); WhatsApp button (admin switch).

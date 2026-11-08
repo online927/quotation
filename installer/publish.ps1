@@ -19,8 +19,11 @@ dotnet publish "$root\tools\Tally.Simulator" @common -o "$out\simulator"
 
 $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
 if (Test-Path $iscc) {
-    & $iscc "/DAppVersion=$Version" "$PSScriptRoot\TSQuotationServer.iss"
+    # The client first: the server installer carries it, so client PCs can update themselves from the server.
     & $iscc "/DAppVersion=$Version" "$PSScriptRoot\TSQuotationClient.iss"
+    if ($LASTEXITCODE -ne 0) { throw "Client installer failed." }
+    & $iscc "/DAppVersion=$Version" "$PSScriptRoot\TSQuotationServer.iss"
+    if ($LASTEXITCODE -ne 0) { throw "Server installer failed." }
     Write-Host "Installers written to $out\installers"
 } else {
     Write-Warning "Inno Setup 6 not found - binaries are in $out. Install it from https://jrsoftware.org/isinfo.php to build installers."

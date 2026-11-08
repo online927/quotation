@@ -15,6 +15,9 @@ public sealed class TestServer : WebApplicationFactory<Program>
 
     public Action<IServiceCollection>? ConfigureServicesHook { get; set; }
 
+    /// <summary>Where this test server looks for the client installer (TSQuotation-Setup.exe + version.txt).</summary>
+    public string ClientUpdateFolder => Path.Combine(DataDirectory, "client-update");
+
     /// <summary>When set, replaces the Claude provider (scripted model for tests).</summary>
     public Quotation.AI.IAIProvider? AiProvider { get; set; }
 
@@ -45,6 +48,7 @@ public sealed class TestServer : WebApplicationFactory<Program>
         Directory.CreateDirectory(DataDirectory);
         builder.UseSetting("Server:DataDirectory", DataDirectory);
         builder.UseSetting("Server:EnableBackgroundWorkers", "false");
+        builder.UseSetting("Server:ClientUpdateFolder", ClientUpdateFolder);
         builder.UseSetting("Server:BootstrapAdminPassword", "admin123");
         builder.UseEnvironment("Testing");
         builder.ConfigureServices(services =>

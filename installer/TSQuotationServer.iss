@@ -28,6 +28,8 @@ Source: "..\publish\server\*"; DestDir: "{app}"; Flags: recursesubdirs ignorever
 Source: "..\publish\server\appsettings.json"; DestDir: "{app}"; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "..\publish\simulator\TallySimulator.exe"; DestDir: "{app}\tools"; Flags: ignoreversion
 Source: "..\docs\SETUP.md"; DestDir: "{app}"; Flags: ignoreversion isreadme
+; The client installer of the same version: client PCs download it from the server and update themselves.
+Source: "..\publish\installers\TSQuotation-Setup-{#AppVersion}.exe"; DestDir: "{app}\client"; DestName: "TSQuotation-Setup.exe"; Flags: ignoreversion
 
 [Dirs]
 ; Database, PDFs, logs and backups. Never removed on uninstall.
@@ -42,6 +44,9 @@ Filename: "{sys}\sc.exe"; Parameters: "failure {#ServiceName} reset= 86400 actio
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""TS Quotation Server"""; Flags: runhidden waituntilterminated
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""TS Quotation Server"" dir=in action=allow protocol=TCP localport=5080 profile=domain,private"; Flags: runhidden waituntilterminated
 Filename: "{sys}\sc.exe"; Parameters: "start {#ServiceName}"; Flags: runhidden waituntilterminated; StatusMsg: "Starting the Quotation Server…"
+
+[UninstallDelete]
+Type: files; Name: "{app}\client\version.txt"
 
 [UninstallRun]
 Filename: "{sys}\sc.exe"; Parameters: "stop {#ServiceName}"; Flags: runhidden waituntilterminated; RunOnceId: "StopService"
@@ -85,4 +90,11 @@ begin
   Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM TallySimulator.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Sleep(1500);
   Result := '';
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  // Client PCs compare this with their own version (automatic updates).
+  if CurStep = ssPostInstall then
+    SaveStringToFile(ExpandConstant('{app}\client\version.txt'), '{#AppVersion}', False);
 end;

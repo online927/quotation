@@ -14,6 +14,13 @@ public enum QuotationListPreset
     Today,
     History,
     Proforma,
+    /// <summary>Approved quotations whose follow-up date has come (Won / Lost tracking on).</summary>
+    FollowUp,
+}
+
+public sealed record OutcomeFilter(string Label, QuotationOutcome? Outcome)
+{
+    public override string ToString() => Label;
 }
 
 public sealed record DocTypeFilter(string Label, DocumentType? Type)
@@ -38,6 +45,16 @@ public sealed class QuotationRow(QuotationSummaryDto s)
     public bool IsCancelled => Summary.Status == QuotationStatus.Cancelled;
     public string Source => Summary.Source.ToString();
     public string CreatedBy => Summary.CreatedBy;
+    /// <summary>Won / Lost / Follow up dd-MMM (only approved quotations, when tracking is on).</summary>
+    public string Outcome => Summary.DocType != DocumentType.Quotation || !IsFinal ? ""
+        : Summary.Outcome switch
+        {
+            QuotationOutcome.Won => "Won",
+            QuotationOutcome.Lost => "Lost",
+            _ => Summary.FollowUpDate is { } d ? "Open · " + d.ToString("dd-MMM") : "Open",
+        };
+    public bool IsWon => Summary.Outcome == QuotationOutcome.Won;
+    public bool IsLost => Summary.Outcome == QuotationOutcome.Lost;
 }
 
 /// <summary>Drafts, today's quotations, proforma invoices and full history with search (number, customer, GSTIN, item, reference).</summary>
@@ -51,6 +68,19 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
     [ObservableProperty] private QuotationRow? _selected;
     [ObservableProperty] private string _summary = "";
     [ObservableProperty] private DocTypeFilter _typeFilter;
+    [ObservableProperty] private OutcomeFilter _outcomeFilter = OutcomeFilters[0];
+    /// <summary>Won / Lost tracking switched on by an administrator (Settings > Quotation).</summary>
+    [ObservableProperty] private bool _trackOutcomes;
+
+    public static IReadOnlyList<OutcomeFilter> OutcomeFilters { get; } =
+    [
+        new("Any outcome", null),
+        new("Open", QuotationOutcome.Open),
+        new("Won", QuotationOutcome.Won),
+        new("Lost", QuotationOutcome.Lost),
+    ];
+    public bool ShowOutcomeFilter => TrackOutcomes && Preset == QuotationListPreset.History;
+    partial void OnTrackOutcomesChanged(bool value) => OnPropertyChanged(nameof(ShowOutcomeFilter));
 
     public static IReadOnlyList<DocTypeFilter> TypeFilters { get; } =
     [
@@ -66,6 +96,7 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         QuotationListPreset.Drafts => "Draft Quotations",
         QuotationListPreset.Today => "Today's Quotations",
         QuotationListPreset.Proforma => "Proforma Invoices",
+        QuotationListPreset.FollowUp => "To Follow Up",
         _ => "Quotation History",
     };
     public bool IsProformaList => Preset == QuotationListPreset.Proforma;
@@ -75,6 +106,7 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         QuotationListPreset.Drafts => "drafts",
         QuotationListPreset.Today => "today",
         QuotationListPreset.Proforma => "proforma",
+        QuotationListPreset.FollowUp => "today",
         _ => "history",
     };
     public string NewButtonText => IsProformaList ? "New Proforma Invoice" : "New Quotation";
@@ -91,10 +123,12 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
 
     partial void OnQueryChanged(string value) => _debounce.Run(_ => LoadAsync());
     partial void OnTypeFilterChanged(DocTypeFilter value) => _ = LoadAsync();
+    partial void OnOutcomeFilterChanged(OutcomeFilter value) => _ = LoadAsync();
 
     [RelayCommand]
     public Task LoadAsync() => RunAsync(async () =>
     {
+        TrackOutcomes = (await _session.GetSettingsAsync()).Quotation.TrackOutcomes;
         var today = DateOnly.FromDateTime(DateTime.Today);
         var type = TypeFilter.Type;
         List<QuotationSummaryDto> list = Preset switch
@@ -103,7 +137,9 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
                 .. await _session.Api.QuotationsAsync(Query, QuotationStatus.PendingReview, take: 500, type: type),
                 .. await _session.Api.QuotationsAsync(Query, QuotationStatus.Draft, take: 500, type: type)],
             QuotationListPreset.Today => await _session.Api.QuotationsAsync(Query, from: today, to: today, take: 500, type: type),
-            _ => await _session.Api.QuotationsAsync(Query, take: 300, type: type),
+            QuotationListPreset.FollowUp => await _session.Api.QuotationsAsync(Query, take: 500, followUpDue: true),
+            _ => await _session.Api.QuotationsAsync(Query, take: 300, type: type,
+                outcome: ShowOutcomeFilter ? OutcomeFilter.Outcome : null),
         };
         var selectedId = Selected?.Id;
         Rows.Clear();

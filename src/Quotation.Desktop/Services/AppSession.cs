@@ -34,6 +34,21 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
         }
     }
 
+    /// <summary>Theme, text size, spacing and animations of the signed-in user.</summary>
+    public void ApplyAppearance(Contracts.UserDto user)
+    {
+        ApplyTheme(user.Theme);
+        ThemeService.ApplyDisplay(user.TextSize, user.Spacing, user.ReduceMotion);
+    }
+
+    /// <summary>Saves text size, spacing or animations on the server (they follow the user to every PC) and shows them.</summary>
+    public async Task SetDisplayAsync(string? textSize = null, string? spacing = null, bool? reduceMotion = null)
+    {
+        var me = await Api.SetMyPreferencesAsync(new Contracts.MyPreferencesDto(TextSize: textSize, Spacing: spacing, ReduceMotion: reduceMotion));
+        Api.UpdateCurrentUser(me);
+        ThemeService.ApplyDisplay(me.TextSize, me.Spacing, me.ReduceMotion);
+    }
+
     /// <summary>Saves the signed-in user's light/dark choice on the server (it follows them to every PC).</summary>
     public async Task SetThemeAsync(string theme)
     {

@@ -25,6 +25,21 @@ public static class DiagnosticsEndpoints
             return Results.NoContent();
         }).RequireAuthorization();
 
+        // Client updates (A2): every client asks which client version the server has, and downloads it from the server.
+        app.MapGet("/api/update/client", (IOptions<ServerOptions> options, SettingsService settings) =>
+        {
+            var folder = options.Value.ResolveClientUpdateFolder();
+            var setup = Path.Combine(folder, "TSQuotation-Setup.exe");
+            var versionFile = Path.Combine(folder, "version.txt");
+            if (!File.Exists(setup) || !File.Exists(versionFile)) return Results.Ok(new ClientUpdateDto(null, false, 0));
+            return Results.Ok(new ClientUpdateDto(File.ReadAllText(versionFile).Trim(), settings.Backup.ClientsMustUpdate, new FileInfo(setup).Length));
+        }).RequireAuthorization();
+        app.MapGet("/api/update/client/download", (IOptions<ServerOptions> options) =>
+        {
+            var setup = Path.Combine(options.Value.ResolveClientUpdateFolder(), "TSQuotation-Setup.exe");
+            return File.Exists(setup) ? Results.File(setup, "application/octet-stream", "TSQuotation-Setup.exe") : Results.NotFound();
+        }).RequireAuthorization();
+
         var g = app.MapGroup("/api/diagnostics").RequireAuthorization(SystemEndpoints.AdminPolicy);
         g.MapGet("/slow", (SlowRequestLog slow) => slow.Recent());
 
@@ -54,6 +69,39 @@ public static class DiagnosticsEndpoints
                 Directory.Exists(logDir)
                     ? Directory.EnumerateFiles(logDir, "*.log").Select(Path.GetFileName).OfType<string>().OrderDescending().ToList()
                     : []);
+        });
+
+        // Dashboard warnings for administrators: backups, second copy, disk space, Tally sync.
+        g.MapGet("/health", (BackupService backups, CancellationToken ct) => backups.HealthAsync(ct));
+
+        // Export everything: one file (database, PDFs, seal, logo) to move or rebuild the server.
+        g.MapGet("/export", async (BackupService backups, AuditService audit, HttpContext ctx, CancellationToken ct) =>
+        {
+            var file = await backups.ExportAsync(ct);
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "DatabaseExported", "Database", Path.GetFileName(file), ct: ct);
+            var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.DeleteOnClose);
+            return Results.File(stream, "application/octet-stream", Path.GetFileName(file));
+        });
+
+        // Restore from an export (.tsq) or a database backup (.db). The current database is backed up first.
+        g.MapPost("/restore", async (HttpContext ctx, BackupService backups, CancellationToken ct) =>
+        {
+            if (ctx.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit)
+                limit.MaxRequestBodySize = null; // exports with many PDFs can be large
+            var temp = Path.Combine(Path.GetTempPath(), "tsq-upload-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                await using (var file = File.Create(temp)) await ctx.Request.Body.CopyToAsync(file, ct);
+                return Results.Ok(await backups.RestoreAsync(temp, ctx.User.UserName(), ct));
+            }
+            catch (QuotationException ex)
+            {
+                return Results.Json(new ApiError(ex.Message, ex.Details, ex.Code), statusCode: ex.Status);
+            }
+            finally
+            {
+                try { File.Delete(temp); } catch (IOException) { }
+            }
         });
 
         g.MapPost("/backup", async (BackupService backups, AuditService audit, HttpContext ctx, CancellationToken ct) =>

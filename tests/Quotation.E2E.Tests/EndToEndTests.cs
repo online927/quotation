@@ -113,14 +113,13 @@ public class EndToEndTests(ITestOutputHelper output) : IDisposable
         Assert.EndsWith("-2", q2.Number);
         Assert.Equal(15600m, q2.Lines[0].Rate);
 
-        // --- Tally goes down: search keeps working, status and approval warn
+        // --- Tally goes down: search keeps working, the status says so, approval still works (it does not ask Tally;
+        // it warns only when the last sync is older than 24 hours)
         tally.Kill();
         var status = (await pc2.TestTallyAsync());
         Assert.False(status.Success);
         Assert.NotEmpty(await pc2.SearchProductsAsync("universal bevel"));
-        var ex = await Assert.ThrowsAsync<ApiException>(() => pc2.ApproveQuotationAsync(q2.Id));
-        Assert.Equal(ApiErrorCodes.StaleData, ex.Code);
-        Assert.Equal(QuotationStatus.Generated, (await pc2.ApproveQuotationAsync(q2.Id, overrideStaleData: true)).Status);
+        Assert.Equal(QuotationStatus.Generated, (await pc2.ApproveQuotationAsync(q2.Id)).Status);
 
         // --- files on disk: database, PDFs, logs; secrets never logged
         Assert.True(File.Exists(Path.Combine(_dataDir, "quotation.db")));

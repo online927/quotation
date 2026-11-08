@@ -54,4 +54,66 @@ public class DocumentLauncher(ClientConfig config)
             // No default PDF viewer: the file is still saved and its path shown to the user.
         }
     }
+
+    /// <summary>
+    /// WhatsApp (E2): the PDF is put on the clipboard (as if copied in File Explorer) and WhatsApp Desktop opens in the
+    /// customer's chat (or without a chat when there is no phone number) with the message typed. The user pastes (Ctrl+V)
+    /// and presses Enter. WhatsApp does not let other programs attach or send by themselves.
+    /// </summary>
+    public virtual bool ShareOnWhatsApp(string pdfPath, string? phone, string message)
+    {
+        try
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                using var clip = Process.Start(new ProcessStartInfo("powershell.exe",
+                    $"-NoProfile -NonInteractive -Command \"Set-Clipboard -LiteralPath '{pdfPath.Replace("'", "''")}'\"")
+                { CreateNoWindow = true, UseShellExecute = false });
+                clip?.WaitForExit(5000);
+            }
+            var url = "whatsapp://send?" + (phone is { Length: > 0 } p ? "phone=" + p + "&" : "") + "text=" + Uri.EscapeDataString(message);
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            return true;
+        }
+        catch (Exception)
+        {
+            return false; // WhatsApp Desktop not installed
+        }
+    }
+
+    /// <summary>Indian mobile/landline as WhatsApp expects it: 91 + 10 digits; null when it does not look like a number.</summary>
+    public static string? WhatsAppNumber(string? phone)
+    {
+        var first = (phone ?? "").Split(',', '/', ';')[0];
+        var digits = new string(first.Where(char.IsDigit).ToArray());
+        if (digits.Length == 11 && digits[0] == '0') digits = digits[1..];
+        if (digits.Length == 10) return "91" + digits;
+        if (digits.Length == 12 && digits.StartsWith("91", StringComparison.Ordinal)) return digits;
+        return null;
+    }
+
+    /// <summary>Runs a downloaded client installer quietly (the app restarts itself when it is done).</summary>
+    public virtual bool RunInstaller(string setupPath, string serverUrl)
+    {
+        try
+        {
+            // The setup refuses to run while this program is open, so a hidden PowerShell waits for it to close first.
+            var pid = Environment.ProcessId;
+            static string Quote(string s) => "'" + s.Replace("'", "''") + "'";
+            var args = $"/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /SERVER={serverUrl}";
+            var script = $"Wait-Process -Id {pid} -Timeout 60 -ErrorAction SilentlyContinue; " +
+                         $"Start-Process -FilePath {Quote(setupPath)} -ArgumentList {Quote(args)}";
+            Process.Start(new ProcessStartInfo("powershell.exe")
+            {
+                ArgumentList = { "-NoProfile", "-WindowStyle", "Hidden", "-Command", script },
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            });
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 }

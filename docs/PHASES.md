@@ -571,3 +571,25 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 8. Several users: "Rasik (PC) also has this quotation open" (server keeps who has what open, in memory only);
    a save clash offers "Save mine as a new quotation" or "See their changes" with "Put my changes back";
    "Created / Changed by … · Approved by …" under the title.
+
+### Round 15
+
+1. Item descriptions are remembered per item (last non-empty one, any customer; Tally's description otherwise).
+2. My Settings → Appearance: text size Normal / Large, spacing Comfortable / Compact, Reduce animations, and themes
+   (Default Light, Default Dark, Same as Windows, Sunset, Lagoon, Graphite, Frost, Glass (Colourful / Blue / Black / Green /
+   Maroon), Neon Night, Cyberpunk). Saved with the login.
+3. Won / Lost / Follow-up (administrator switch, off by default): outcome row on approved quotations, "To follow up"
+   dashboard tile and list, outcome column and filter in History; proforma conversion marks Won.
+4. WhatsApp button (administrator switch, off by default, editable message): copies the PDF and opens the customer's chat.
+5. Approval no longer asks Tally; "approve anyway?" only when the last sync is older than 24 hours.
+6. Automatic client updates from the server (Update now / Later; "Clients must update" removes Later).
+7. Backups every 3 hours with a second copy folder; dashboard health warnings for administrators;
+   Diagnostics → Export everything (.tsq) and Restore from backup file (.tsq / .db).
+8. Unsaved work opens again by itself with "Last quotation restored …".
+9. "Line 2 deleted while editing line 1" fixed: line buttons never keep the keyboard, Edit goes to Quantity,
+   a removed line has Undo.
+10. No status bar: Connected / Disconnected dot in the top bar with details, a closable warning strip; version and
+    financial year in My Settings.
+11. Light animations (page fade, corner messages, warnings, buttons, menus); "Bro, are you trying to close?" and
+    "Leaving already, bro?" questions.
+

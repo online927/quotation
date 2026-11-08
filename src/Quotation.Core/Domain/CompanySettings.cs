@@ -91,6 +91,16 @@ public sealed class QuotationSettings
 
     /// <summary>Allow generating a quotation when the last Tally sync is stale (with warning + audit).</summary>
     public bool AllowStaleDataOverride { get; set; } = true;
+
+    /// <summary>Won / Lost / Follow-up on quotations (administrator switch; off by default).</summary>
+    public bool TrackOutcomes { get; set; }
+    /// <summary>Follow-up date = approval date + this many days.</summary>
+    public int FollowUpDays { get; set; } = 3;
+
+    /// <summary>WhatsApp button on approved quotations and proforma invoices (administrator switch; off by default).</summary>
+    public bool WhatsAppButton { get; set; }
+    /// <summary>The message typed into WhatsApp. {number} = the quotation number, {customer} = the customer.</summary>
+    public string WhatsAppMessage { get; set; } = "Dear Sir, please find our quotation {number} attached.";
     /// <summary>Tally data older than this (hours) is considered stale.</summary>
     public int StaleDataHours { get; set; } = 24;
 

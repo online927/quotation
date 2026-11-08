@@ -229,7 +229,58 @@
                 </StackPanel>
               </StackPanel>
             </Border>
+            <!-- Administrator switches: Won / Lost / Follow-up and the WhatsApp button (both off by default) -->
+            <Border Grid.Row="16" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Won / Lost / Follow-up" />
+                <ToggleSwitch Name="TrackOutcomesSwitch" IsChecked="{Binding Settings.Quotation.TrackOutcomes}"
+                              OnContent="On: approved quotations get Open / Won / Lost and a follow-up date" OffContent="Off" />
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Settings.Quotation.TrackOutcomes}">
+                  <TextBlock VerticalAlignment="Center" Text="Follow up after (days from approval)" />
+                  <NumericUpDown Value="{Binding Settings.Quotation.FollowUpDays}" Minimum="0" Maximum="90" FormatString="0" Width="90" />
+                </StackPanel>
+                <TextBlock Classes="h2" Text="WhatsApp button" Margin="0,8,0,0" />
+                <ToggleSwitch Name="WhatsAppSwitch" IsChecked="{Binding Settings.Quotation.WhatsAppButton}"
+                              OnContent="On: approved quotations and proforma invoices get a WhatsApp button" OffContent="Off" />
+                <StackPanel Spacing="4" IsVisible="{Binding Settings.Quotation.WhatsAppButton}">
+                  <TextBlock FontSize="12" Classes="muted" TextWrapping="Wrap"
+                             Text="Message typed into WhatsApp ({number} = the number, {customer} = the customer). WhatsApp Desktop must be installed on the PC." />
+                  <TextBox Text="{Binding Settings.Quotation.WhatsAppMessage}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
           </Grid>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Backups and client updates (administrators) -->
+      <TabItem Header="Backup &amp; updates" IsVisible="{Binding IsAdmin}">
+        <ScrollViewer>
+          <StackPanel Margin="4,8" Spacing="14" MaxWidth="900" HorizontalAlignment="Left">
+            <Border Classes="card">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="h2" Text="Backups" />
+                <TextBlock FontSize="12" Classes="muted" TextWrapping="Wrap"
+                           Text="The database is backed up on the server PC (C:\ProgramData\TSQuotation\backups, kept 30 days). Set a second folder so a copy is also kept somewhere else: a USB drive (E:\TSQ-Backups), another PC's shared folder (\\PC2\Backups) or a OneDrive / Google Drive folder that syncs to the cloud. The folder is as seen from the server PC." />
+                <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+                  <TextBlock Text="Back up every (hours)" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="1" Value="{Binding Settings.Backup.EveryHours}" Minimum="1" Maximum="24" FormatString="0" Width="120" HorizontalAlignment="Left" />
+                  <TextBlock Grid.Row="1" Text="Second backup folder" VerticalAlignment="Center" />
+                  <TextBox Grid.Row="1" Grid.Column="1" Name="BackupCopyFolderBox" Text="{Binding Settings.Backup.CopyFolder}" />
+                </Grid>
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="h2" Text="Client updates" />
+                <TextBlock FontSize="12" Classes="muted" TextWrapping="Wrap"
+                           Text="The server setup brings the matching client. When a PC opens the app with an older version it offers 'Update now' (downloaded from this server, not the internet)." />
+                <ToggleSwitch Name="ClientsMustUpdateSwitch" IsChecked="{Binding Settings.Backup.ClientsMustUpdate}"
+                              OnContent="Clients must update (no 'Later')" OffContent="Clients may update later" />
+              </StackPanel>
+            </Border>
+            <TextBlock FontSize="12" Classes="muted" Text="Export everything / Restore from a backup file: Diagnostics." />
+          </StackPanel>
         </ScrollViewer>
       </TabItem>
 

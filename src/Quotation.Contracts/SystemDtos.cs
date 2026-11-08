@@ -7,7 +7,8 @@ public sealed record LoginRequest(string Username, string Password, string? Clie
 public sealed record LoginResponse(string Token, DateTime ExpiresUtc, UserDto User);
 
 public sealed record UserDto(int Id, string Username, string DisplayName, UserRole Role, bool IsActive, bool MustChangePassword,
-    bool WithoutGstNext = false, string Theme = AppTheme.Light, string? PdfLayout = null);
+    bool WithoutGstNext = false, string Theme = AppTheme.Light, string? PdfLayout = null,
+    string TextSize = AppDisplay.Normal, string Spacing = AppDisplay.Comfortable, bool ReduceMotion = false);
 
 /// <summary>Light or dark screens, chosen by each user (PDFs are always white).</summary>
 public static class AppTheme
@@ -16,15 +17,30 @@ public static class AppTheme
     public const string Dark = "Dark";
     /// <summary>Follows the Windows setting (light or dark apps).</summary>
     public const string System = "System";
+    // Colour themes (My Settings > Appearance).
+    public const string Sunset = "Sunset", Lagoon = "Lagoon", Graphite = "Graphite", Frost = "Frost", Glass = "Glass", GlassBlue = "GlassBlue", GlassBlack = "GlassBlack", GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon", NeonNight = "NeonNight", Cyberpunk = "Cyberpunk";
 
-    public static bool IsValid(string? theme) => theme is Light or Dark or System;
+    public static readonly string[] All = [Light, Dark, System, Sunset, Lagoon, Graphite, Frost, Glass, GlassBlue, GlassBlack, GlassGreen, GlassMaroon, NeonNight, Cyberpunk];
+    public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
+    /// <summary>Themes drawn on dark screens.</summary>
+    public static bool IsDarkTheme(string? theme) => theme is Dark or NeonNight or Cyberpunk or GlassBlack;
+}
+
+/// <summary>Text size and spacing, chosen by each user.</summary>
+public static class AppDisplay
+{
+    public const string Normal = "Normal", Large = "Large";
+    public const string Comfortable = "Comfortable", Compact = "Compact";
+    public static bool IsValidTextSize(string? v) => v is Normal or Large;
+    public static bool IsValidSpacing(string? v) => v is Comfortable or Compact;
 }
 
 /// <summary>Administrator's changes to a user (login name, display name, role, active).</summary>
 public sealed record UpdateUserRequest(string Username, string DisplayName, UserRole Role, bool IsActive);
 
 /// <summary>The current user's own switches ("My settings"); a null value is left unchanged.</summary>
-public sealed record MyPreferencesDto(bool? WithoutGstNext = null, string? Theme = null, string? PdfLayout = null);
+public sealed record MyPreferencesDto(bool? WithoutGstNext = null, string? Theme = null, string? PdfLayout = null,
+    string? TextSize = null, string? Spacing = null, bool? ReduceMotion = null);
 
 public sealed record CreateUserRequest(string Username, string DisplayName, string Password, UserRole Role);
 
@@ -59,7 +75,10 @@ public sealed record DashboardDto(
     int Drafts,
     int PendingReview,
     int InboxNeedsAttention,
-    SystemStatusDto Status);
+    SystemStatusDto Status,
+    /// <summary>Open quotations whose follow-up date has come (only with outcome tracking on).</summary>
+    int FollowUpDue = 0,
+    bool TrackOutcomes = false);
 
 public sealed record AuditEntryDto(long Id, DateTime AtUtc, string User, string Machine, string Action,
     string EntityType, string EntityId, string Details);
@@ -107,3 +126,15 @@ public sealed record SlowRequestDto(string Id, DateTime WhenUtc, string User, st
 
 /// <summary>Sent by a client PC after a slow request.</summary>
 public sealed record SlowRequestReport(string? RequestId, string What, double TotalMs, double? ServerMs, string? ServerBusy);
+
+/// <summary>Something an administrator should look at (dashboard): "warn" (orange) or "bad" (red).</summary>
+public sealed record HealthWarningDto(string Level, string Text)
+{
+    public bool IsBad => Level == "bad";
+}
+
+/// <summary>What a restore brought back.</summary>
+public sealed record RestoreSummaryDto(int Quotations, int Pdfs, bool Seal, bool Logo);
+
+/// <summary>The client version the server hands out (null when it has none), whether clients must update, and its size.</summary>
+public sealed record ClientUpdateDto(string? Version, bool Required, long Size);

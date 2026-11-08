@@ -311,9 +311,14 @@ public partial class QuotationApiClient
 
     public Task<List<QuotationSummaryDto>> QuotationsAsync(string? q = null, Quotation.Core.Domain.QuotationStatus? status = null,
         DateOnly? from = null, DateOnly? to = null, int? customerId = null, int take = 100, Quotation.Core.Domain.QuotationSource? source = null,
-        Quotation.Core.Domain.DocumentType? type = null, CancellationToken ct = default) =>
+        Quotation.Core.Domain.DocumentType? type = null, CancellationToken ct = default,
+        Quotation.Core.Domain.QuotationOutcome? outcome = null, bool followUpDue = false) =>
         GetAsync<List<QuotationSummaryDto>>($"api/quotations?take={take}{Q("q", q)}{Q("status", status?.ToString())}{Q("source", source?.ToString())}{Q("type", type?.ToString())}" +
-                                            $"{Q("from", from?.ToString("yyyy-MM-dd"))}{Q("to", to?.ToString("yyyy-MM-dd"))}{Q("customerId", customerId?.ToString())}", ct);
+                                            $"{Q("from", from?.ToString("yyyy-MM-dd"))}{Q("to", to?.ToString("yyyy-MM-dd"))}{Q("customerId", customerId?.ToString())}" +
+                                            $"{Q("outcome", outcome?.ToString())}{(followUpDue ? "&followUpDue=true" : "")}", ct);
+
+    public Task<QuotationDto> SetOutcomeAsync(Guid id, SetOutcomeRequest request, CancellationToken ct = default) =>
+        SendAsync<QuotationDto>(HttpMethod.Put, $"api/quotations/{id}/outcome", request, ct);
 
     public Task<NumberSeriesDto> NumberSeriesAsync(int? financialYearStart = null,
         Quotation.Core.Domain.DocumentType type = Quotation.Core.Domain.DocumentType.Quotation, CancellationToken ct = default) =>
@@ -375,5 +380,44 @@ public partial class QuotationApiClient
         using var r = await SendRawAsync(HttpMethod.Post, "api/diagnostics/backup", null, ct);
         using var doc = await System.Text.Json.JsonDocument.ParseAsync(await r.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
         return doc.RootElement.GetProperty("path").GetString() ?? "";
+    }
+}
+
+public partial class QuotationApiClient
+{
+    /// <summary>Administrators: dashboard warnings (old backups, second copy, disk space, Tally sync).</summary>
+    public Task<List<HealthWarningDto>> HealthWarningsAsync(CancellationToken ct = default) => GetAsync<List<HealthWarningDto>>("api/diagnostics/health", ct);
+
+    /// <summary>Administrators: "Export everything" into a file (database, PDFs, seal, logo). Returns the file name the server suggests.</summary>
+    public async Task<string> ExportEverythingAsync(Stream destination, CancellationToken ct = default)
+    {
+        using var r = await SendRawAsync(HttpMethod.Get, "api/diagnostics/export", null, ct);
+        await (await r.Content.ReadAsStreamAsync(ct)).CopyToAsync(destination, ct);
+        return r.Content.Headers.ContentDisposition?.FileNameStar ?? r.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "TSQuotation-backup.tsq";
+    }
+
+    /// <summary>Administrators: restore from an export (.tsq) or a database backup (.db).</summary>
+    public async Task<RestoreSummaryDto> RestoreFromBackupAsync(Stream file, CancellationToken ct = default)
+    {
+        using var content = new StreamContent(file);
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "api/diagnostics/restore") { Content = content };
+        using var r = await _http.SendAsync(request, ct);
+        if (!r.IsSuccessStatusCode)
+        {
+            var error = await r.Content.ReadFromJsonAsync<ApiError>(JsonOptions, ct);
+            throw new ApiException(r.StatusCode, error?.Error ?? $"Restore failed ({(int)r.StatusCode}).", error?.Details, error?.Code);
+        }
+        return (await r.Content.ReadFromJsonAsync<RestoreSummaryDto>(JsonOptions, ct))!;
+    }
+
+    /// <summary>The client version the server hands out (A2).</summary>
+    public Task<ClientUpdateDto> ClientUpdateAsync(CancellationToken ct = default) => GetAsync<ClientUpdateDto>("api/update/client", ct);
+
+    /// <summary>Downloads the client installer from the server.</summary>
+    public async Task DownloadClientAsync(Stream destination, CancellationToken ct = default)
+    {
+        using var r = await SendRawAsync(HttpMethod.Get, "api/update/client/download", null, ct);
+        await (await r.Content.ReadAsStreamAsync(ct)).CopyToAsync(destination, ct);
     }
 }

@@ -159,6 +159,91 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         catch (Exception ex) when (ex is ApiException or HttpRequestException or TaskCanceledException) { }
     }
 
+    // ---------------------------------------------------------------- Won / Lost / Follow-up (D2)
+
+    public bool TrackOutcomes => _settings.Quotation.TrackOutcomes;
+    /// <summary>The outcome row shows on approved quotations when an administrator switched tracking on.</summary>
+    public bool ShowOutcome => TrackOutcomes && IsFinal && !IsProforma && Id is not null;
+    public IReadOnlyList<string> OutcomeChoices { get; } = ["Open", "Won", "Lost"];
+    [ObservableProperty] private int _outcomeIndex;
+    [ObservableProperty] private string _lostReason = "";
+    [ObservableProperty] private DateTime? _followUpDate;
+    public bool IsLost => OutcomeIndex == (int)QuotationOutcome.Lost;
+    private bool _loadingOutcome;
+    private readonly SemaphoreSlim _outcomeGate = new(1, 1);
+
+    private void LoadOutcome(QuotationDto q)
+    {
+        _loadingOutcome = true;
+        OutcomeIndex = (int)q.Outcome;
+        LostReason = q.LostReason;
+        FollowUpDate = q.FollowUpDate?.ToDateTime(TimeOnly.MinValue);
+        _loadingOutcome = false;
+        OnPropertyChanged(nameof(ShowOutcome));
+    }
+
+    partial void OnOutcomeIndexChanged(int value)
+    {
+        OnPropertyChanged(nameof(IsLost));
+        SaveOutcome();
+    }
+
+    partial void OnFollowUpDateChanged(DateTime? value) => SaveOutcome();
+
+    /// <summary>Lost reason: saved when the box is left (not on every key).</summary>
+    [RelayCommand]
+    private void SaveLostReason() => SaveOutcome();
+
+    private void SaveOutcome()
+    {
+        if (_loadingOutcome || _loading || Id is not { } id || !ShowOutcome) return;
+        _ = RunAsync(async () =>
+        {
+            // One change at a time, each sending what is on the screen then: quick changes reach the server in order.
+            await _outcomeGate.WaitAsync();
+            QuotationDto dto;
+            try
+            {
+                var request = new SetOutcomeRequest((QuotationOutcome)OutcomeIndex, LostReason,
+                    FollowUpDate is { } f ? DateOnly.FromDateTime(f) : null);
+                dto = await _session.Api.SetOutcomeAsync(id, request);
+            }
+            finally { _outcomeGate.Release(); }
+            _loaded = dto;
+            OnPropertyChanged(nameof(ChangedByText));
+            InfoMessage = dto.Outcome switch
+            {
+                QuotationOutcome.Won => $"{Number} marked Won 🎉",
+                QuotationOutcome.Lost => $"{Number} marked Lost{(dto.LostReason.Length > 0 ? " (" + dto.LostReason + ")" : "")}.",
+                _ => dto.FollowUpDate is { } d ? $"Follow up on {d:dd-MMM-yyyy}." : $"{Number} is open.",
+            };
+        });
+    }
+
+    // ---------------------------------------------------------------- WhatsApp (E2)
+
+    public bool ShowWhatsApp => _settings.Quotation.WhatsAppButton && IsFinal;
+
+    /// <summary>Makes the PDF, copies it, and opens WhatsApp Desktop in the customer's chat with the message typed.</summary>
+    [RelayCommand]
+    private Task WhatsAppAsync() => RunAsync(async () =>
+    {
+        if (Id is not { } id) return;
+        var bytes = await _session.Api.QuotationPdfAsync(id);
+        var path = _session.Documents.Save(bytes, PdfFileName(), _session.Documents.FolderFor(IsProforma));
+        LastPdfPath = path;
+        var message = (_settings.Quotation.WhatsAppMessage ?? "")
+            .Replace("{number}", Number ?? "", StringComparison.OrdinalIgnoreCase)
+            .Replace("{customer}", BuyerName, StringComparison.OrdinalIgnoreCase);
+        var phone = DocumentLauncher.WhatsAppNumber(BuyerPhone);
+        if (_session.Documents.ShareOnWhatsApp(path, phone, message))
+            InfoMessage = phone is null
+                ? "PDF copied. WhatsApp opened: pick the chat, press Ctrl+V, then Enter."
+                : "PDF copied. In WhatsApp press Ctrl+V, then Enter.";
+        else
+            ErrorMessage = "WhatsApp Desktop could not be opened. Is it installed on this PC? The PDF is saved: " + path;
+    });
+
     // ---------------------------------------------------------------- who changed it (M3)
 
     /// <summary>"Changed by hatim at 14:05 · Approved by rasik at 14:10" under the title.</summary>
@@ -460,6 +545,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             // Always the current settings: an administrator may have changed them (e.g. added the seal) on another PC.
             _settings = await _session.GetSettingsAsync(refresh: true);
             Controls.TitleCase.IsOn = _settings.Quotation.TitleCase;
+            OnPropertyChanged(nameof(TrackOutcomes));
+            OnPropertyChanged(nameof(ShowOutcome));
+            OnPropertyChanged(nameof(ShowWhatsApp));
             OnPropertyChanged(nameof(ShowsTaxes));
             OnPropertyChanged(nameof(CanSeal));
             OnPropertyChanged(nameof(SealAvailable));
@@ -526,6 +614,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public void Load(QuotationDto q)
     {
         _loaded = q;
+        LoadOutcome(q);
         _loading = true;
         Id = q.Id;
         DocType = q.DocType;
@@ -614,6 +703,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(IsPendingReview));
         OnPropertyChanged(nameof(IsCancelled));
         OnPropertyChanged(nameof(ChangedByText));
+        OnPropertyChanged(nameof(ShowOutcome));
+        OnPropertyChanged(nameof(ShowWhatsApp));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(CanConvertToProforma));
@@ -858,11 +949,26 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         line ??= SelectedLine;
         if (line is null) return;
+        var index = Lines.IndexOf(line);
+        if (index < 0) return;
+        var shownNo = line.LineNo;
         Lines.Remove(line);
         Renumber();
         if (EditingLine == line) ClearEntry();
         MarkDirty();
         OnPropertyChanged(nameof(CanApprove));
+        // A removed line can be put back for a few seconds (in case it was removed by mistake).
+        _navigator.Toast($"Line {shownNo} removed ({line.ItemName}).", "Undo", () => UndoRemoveLine(line, index));
+    }
+
+    private void UndoRemoveLine(QuotationLineViewModel line, int index)
+    {
+        if (!IsEditable || Lines.Contains(line)) return;
+        Lines.Insert(Math.Clamp(index, 0, Lines.Count), line);
+        Renumber();
+        MarkDirty();
+        OnPropertyChanged(nameof(CanApprove));
+        OnPropertyChanged(nameof(CanSaveAsPdf));
     }
 
     /// <summary>Moves a line to another place (dragged by its grip); Sl. No. are renumbered.</summary>

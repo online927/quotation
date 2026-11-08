@@ -84,7 +84,8 @@ public class CatalogApiTests : IAsyncLifetime
         do
         {
             hits = await _api.SearchProductsAsync("zebra gauge");
-            if (hits.Count > 0) break;
+            // The index refreshes just after the sync; other gauges match "gauge" until then.
+            if (hits.Count > 0 && hits[0].Product.Name == "ZEBRA SPECIAL GAUGE 42MM") break;
             await Task.Delay(100);
         } while (DateTime.UtcNow < deadline);
         Assert.Equal("ZEBRA SPECIAL GAUGE 42MM", hits[0].Product.Name);

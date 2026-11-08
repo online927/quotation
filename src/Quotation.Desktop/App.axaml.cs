@@ -14,6 +14,7 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        Services.ThemeService.Initialise();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var session = new AppSession(ClientConfig.Load(), url => QuotationApiClient.Create(url));

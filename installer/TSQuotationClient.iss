@@ -36,6 +36,8 @@ Name: "{autodesktop}\TS Quotation"; Filename: "{app}\TSQuotation.exe"; Tasks: de
 
 [Run]
 Filename: "{app}\TSQuotation.exe"; Description: "Start TS Quotation"; Flags: nowait postinstall skipifsilent
+; Automatic update (silent, started by the program itself): open the program again for the signed-in Windows user.
+Filename: "{app}\TSQuotation.exe"; Flags: nowait runasoriginaluser; Check: WizardSilent
 
 [Code]
 var

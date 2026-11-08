@@ -90,6 +90,7 @@ public sealed class SearchPicker : UserControl
 
         _dropDown = new Border
         {
+            Classes = { "dropdown" },
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(3),
             BoxShadow = BoxShadows.Parse("0 4 14 0 #33000000"),

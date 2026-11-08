@@ -27,6 +27,15 @@ public partial class QuotationEditorView : UserControl
             vm.SelectProduct(hit.Product);
             FocusLater(QtyBox);
         };
+        // Edit on a line: the cursor goes to its Quantity box (never stays on the line's buttons).
+        DataContextChanged += (_, _) =>
+        {
+            if (Vm is { } vm)
+                vm.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(QuotationEditorViewModel.EditingLine) && vm.EditingLine is not null) FocusLater(QtyBox);
+                };
+        };
         LinesList.PointerMoved += OnLinesPointerMoved;
         LinesList.PointerReleased += (_, _) => EndDrag();
         LinesList.PointerCaptureLost += (_, _) => EndDrag();
@@ -116,6 +125,8 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
         }
     }
+
+    private void OnLostReasonLostFocus(object? sender, RoutedEventArgs e) => Vm?.SaveLostReasonCommand.Execute(null);
 
     /// <summary>The small calendar of "Ref. dated": opens below the box; picking a day fills it and closes.</summary>
     private void OnRefDateCalendarClick(object? sender, RoutedEventArgs e)

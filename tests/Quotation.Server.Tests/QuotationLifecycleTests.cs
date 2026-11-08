@@ -111,19 +111,42 @@ public class QuotationLifecycleTests : QuotationTestBase
         Assert.Contains(ex.Details, d => d.Contains("Rate must be greater than zero"));
     }
 
+    /// <summary>Makes the last successful sync look two days old.</summary>
+    private void SyncedTwoDaysAgo() => Server.Db(db =>
+    {
+        foreach (var run in db.SyncRuns)
+        {
+            run.StartedUtc = run.StartedUtc.AddDays(-2);
+            if (run.FinishedUtc is { } f) run.FinishedUtc = f.AddDays(-2);
+        }
+        return db.SaveChanges();
+    });
+
     [Fact]
-    public async Task Stale_data_requires_explicit_override_which_is_recorded()
+    public async Task Approval_does_not_ask_tally_and_works_while_tally_is_closed()
     {
         var q = await Api.CreateQuotationAsync(await BevelRequest());
         Server.Tally.Online = false;
         await Api.TestTallyAsync(); // server notices Tally is down
+        var before = Server.Tally.RequestCount;
+        var approved = await Api.ApproveQuotationAsync(q.Id); // recent sync: no question
+        Assert.Equal(QuotationStatus.Generated, approved.Status);
+        Assert.Null(approved.DataFreshnessWarning);
+        Assert.Equal(before, Server.Tally.RequestCount); // nothing was asked from Tally
+    }
+
+    [Fact]
+    public async Task Stale_data_requires_explicit_override_which_is_recorded()
+    {
+        var q = await Api.CreateQuotationAsync(await BevelRequest());
+        SyncedTwoDaysAgo();
 
         var ex = await Assert.ThrowsAsync<ApiException>(() => Api.ApproveQuotationAsync(q.Id));
         Assert.Equal(ApiErrorCodes.StaleData, ex.Code);
 
         var approved = await Api.ApproveQuotationAsync(q.Id, overrideStaleData: true);
         Assert.Equal(QuotationStatus.Generated, approved.Status);
-        Assert.Contains("Live Tally data could not be retrieved", approved.DataFreshnessWarning);
+        Assert.Contains("Tally data was last synchronized", approved.DataFreshnessWarning);
         var audit = await Api.AuditAsync("Quotation", q.Id.ToString());
         Assert.Contains(audit, a => a.Action == "QuotationApprovedWithStaleData");
     }
@@ -135,8 +158,7 @@ public class QuotationLifecycleTests : QuotationTestBase
         settings.Quotation.AllowStaleDataOverride = false;
         await Api.SaveSettingsAsync(settings);
         var q = await Api.CreateQuotationAsync(await BevelRequest());
-        Server.Tally.Online = false;
-        await Api.TestTallyAsync();
+        SyncedTwoDaysAgo();
         var ex = await Assert.ThrowsAsync<ApiException>(() => Api.ApproveQuotationAsync(q.Id, overrideStaleData: true));
         Assert.Equal(ApiErrorCodes.StaleData, ex.Code);
     }
@@ -146,6 +168,7 @@ public class QuotationLifecycleTests : QuotationTestBase
     {
         var q = await Api.CreateQuotationAsync(await BevelRequest());
         Server.Tally.ChangeRate("187-901-10-UNIVERSAL BEVEL PROTRACTOR", 16400m, Today.AddDays(-1));
+        await Api.StartSyncAsync(SyncKind.Incremental, wait: true); // the regular sync (or "Sync changes") brings the new rate
 
         var ex = await Assert.ThrowsAsync<ApiException>(() => Api.ApproveQuotationAsync(q.Id));
         Assert.Equal(ApiErrorCodes.RatesChanged, ex.Code);
@@ -165,6 +188,7 @@ public class QuotationLifecycleTests : QuotationTestBase
         request.Lines[0].Rate = 15000;
         var q = await Api.CreateQuotationAsync(request);
         Server.Tally.ChangeRate("187-901-10-UNIVERSAL BEVEL PROTRACTOR", 16400m, Today.AddDays(-1));
+        await Api.StartSyncAsync(SyncKind.Incremental, wait: true);
         var ex = await Assert.ThrowsAsync<ApiException>(() => Api.ApproveQuotationAsync(q.Id));
         Assert.Contains(ex.Details, d => d.Contains("your rate 15000.00 kept"));
         Assert.Equal(15000m, (await Api.QuotationAsync(q.Id)).Lines[0].Rate);

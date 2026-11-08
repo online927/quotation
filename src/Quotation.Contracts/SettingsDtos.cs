@@ -62,6 +62,20 @@ public sealed class AiSettings
     public int MaxCandidates { get; set; } = 8;
 }
 
+/// <summary>Backups and updates (Settings > Backup &amp; updates, administrators).</summary>
+public sealed class BackupSettings
+{
+    /// <summary>Hours between automatic database backups.</summary>
+    public int EveryHours { get; set; } = 3;
+    /// <summary>
+    /// A second folder each backup is copied to, as seen from the server PC: a USB drive (E:\TSQ-Backups), another PC's shared
+    /// folder (\\PC2\Backups) or a OneDrive / Google Drive folder that syncs to the cloud. Empty = no second copy.
+    /// </summary>
+    public string CopyFolder { get; set; } = "";
+    /// <summary>Client PCs must install a newer version from the server before they can be used.</summary>
+    public bool ClientsMustUpdate { get; set; }
+}
+
 public sealed class GmailSettings
 {
     public bool Enabled { get; set; }
@@ -81,6 +95,7 @@ public sealed class AllSettingsDto
     public TallySettings Tally { get; set; } = new();
     public AiSettings Ai { get; set; } = new();
     public GmailSettings Gmail { get; set; } = new();
+    public BackupSettings Backup { get; set; } = new();
     /// <summary>Write-only: a new 4-digit seal PIN (empty = keep the current one).</summary>
     public string? SealPin { get; set; }
     public bool SealPinConfigured { get; set; }

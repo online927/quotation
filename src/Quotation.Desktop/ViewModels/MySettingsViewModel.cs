@@ -17,21 +17,33 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
     [ObservableProperty] private bool _withoutGstNext;
     [ObservableProperty] private string _pdfFolder = "";
     [ObservableProperty] private string _proformaPdfFolder = "";
-    /// <summary>0 Light, 1 Dark, 2 Same as Windows.</summary>
+    /// <summary>Index in <see cref="ThemeChoices"/> (Default Light, Default Dark, Same as Windows, then the colour themes).</summary>
     [ObservableProperty] private int _themeIndex;
 
-    public IReadOnlyList<string> ThemeChoices { get; } = ["Light", "Dark", "Same as Windows"];
+    public IReadOnlyList<string> ThemeChoices { get; } =
+        ["Default Light", "Default Dark", "Same as Windows", "Sunset", "Lagoon", "Graphite", "Frost", "Glass (Colourful)", "Glass (Blue)", "Glass (Black)", "Glass (Green)", "Glass (Maroon)", "Neon Night", "Cyberpunk"];
+
+    /// <summary>0 Normal, 1 Large.</summary>
+    [ObservableProperty] private int _textSizeIndex;
+    public IReadOnlyList<string> TextSizeChoices { get; } = ["Normal", "Large"];
+    /// <summary>0 Comfortable, 1 Compact.</summary>
+    [ObservableProperty] private int _spacingIndex;
+    public IReadOnlyList<string> SpacingChoices { get; } = ["Comfortable", "Compact"];
+    [ObservableProperty] private bool _reduceMotion;
 
     /// <summary>The layout of the PDFs this user makes (saved with the login).</summary>
     [ObservableProperty] private string _pdfLayout = Core.Domain.PdfLayouts.Tally;
     public IReadOnlyList<string> PdfLayoutChoices { get; } = [Core.Domain.PdfLayouts.Tally, Core.Domain.PdfLayouts.Zoho];
-    private static readonly string[] Themes = [AppTheme.Light, AppTheme.Dark, AppTheme.System];
+    private static readonly string[] Themes =
+        [AppTheme.Light, AppTheme.Dark, AppTheme.System, AppTheme.Sunset, AppTheme.Lagoon, AppTheme.Graphite, AppTheme.Frost, AppTheme.Glass, AppTheme.GlassBlue, AppTheme.GlassBlack, AppTheme.GlassGreen, AppTheme.GlassMaroon, AppTheme.NeonNight, AppTheme.Cyberpunk];
 
     public string Title => "My Settings";
     public string UserName => _session.Api.CurrentUser?.DisplayName ?? "";
     /// <summary>The Quotation Server this PC uses (changed in the server box on the sign-in screen).</summary>
     public string ServerAddress => _session.Config.ServerUrl;
     public string ComputerName => Environment.MachineName;
+    /// <summary>The active financial year (from Tally), e.g. "2026-27".</summary>
+    [ObservableProperty] private string _financialYear = "…";
     public string DefaultPdfFolder => new DocumentLauncher(new ClientConfig()).Folder;
     /// <summary>Shown in the empty proforma box: "Proforma Invoices" inside the quotation folder.</summary>
     public string DefaultProformaPdfFolder => new DocumentLauncher(new ClientConfig { PdfFolder = PdfFolder.Trim() }).ProformaFolder;
@@ -53,11 +65,15 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         _loading = true;
         WithoutGstNext = me.WithoutGstNext;
         ThemeIndex = Math.Max(0, Array.IndexOf(Themes, me.Theme));
+        TextSizeIndex = me.TextSize == AppDisplay.Large ? 1 : 0;
+        SpacingIndex = me.Spacing == AppDisplay.Compact ? 1 : 0;
+        ReduceMotion = me.ReduceMotion;
         var settings = await _session.GetSettingsAsync(refresh: true);
         PdfLayout = Core.Domain.PdfLayouts.IsValid(me.PdfLayout) ? me.PdfLayout! : settings.Quotation.DefaultPdfLayout;
         PdfFolder = _session.Config.PdfFolder;
         ProformaPdfFolder = _session.Config.ProformaPdfFolder;
         _loading = false;
+        FinancialYear = (await _session.Api.StatusAsync()).ActiveFinancialYear ?? "not known yet";
     });
 
     partial void OnPdfLayoutChanged(string value)
@@ -78,6 +94,24 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
             await _session.SetThemeAsync(Themes[value]);
             InfoMessage = $"Screens: {ThemeChoices[value]}. This is saved with your login and used on every PC.";
         });
+    }
+
+    partial void OnTextSizeIndexChanged(int value)
+    {
+        if (_loading) return;
+        _ = RunAsync(() => _session.SetDisplayAsync(textSize: value == 1 ? AppDisplay.Large : AppDisplay.Normal));
+    }
+
+    partial void OnSpacingIndexChanged(int value)
+    {
+        if (_loading) return;
+        _ = RunAsync(() => _session.SetDisplayAsync(spacing: value == 1 ? AppDisplay.Compact : AppDisplay.Comfortable));
+    }
+
+    partial void OnReduceMotionChanged(bool value)
+    {
+        if (_loading) return;
+        _ = RunAsync(() => _session.SetDisplayAsync(reduceMotion: value));
     }
 
     partial void OnWithoutGstNextChanged(bool value)

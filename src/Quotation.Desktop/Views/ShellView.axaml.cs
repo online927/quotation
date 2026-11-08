@@ -96,6 +96,14 @@ public partial class ShellView : UserControl
             e.Handled = true;
             return;
         }
+        // Alt+← / Alt+→ are never typing keys: Back / Forward before any box sees them.
+        if (Vm is { PendingPrompt: null } shell && e.KeyModifiers == KeyModifiers.Alt && e.Key is Key.Left or Key.Right)
+        {
+            if (e.Key == Key.Left) shell.GoBack();
+            else shell.GoForward();
+            e.Handled = true;
+            return;
+        }
         if (Vm is not { PendingPrompt: { } prompt }) return;
         // While the question is shown, keys answer it and never reach the page behind.
         var onPromptButton = e.Source is Visual v && PromptPanel.IsVisualAncestorOf(v);
@@ -118,11 +126,7 @@ public partial class ShellView : UserControl
         {
             // Esc that no field, list or popup used: go back.
             case (Key.Escape, KeyModifiers.None):
-            case (Key.Left, KeyModifiers.Alt):
                 vm.GoBack();
-                break;
-            case (Key.Right, KeyModifiers.Alt):
-                vm.GoForward();
                 break;
             default:
                 return;

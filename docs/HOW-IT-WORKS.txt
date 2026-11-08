@@ -1,5 +1,5 @@
 TS QUOTATION SYSTEM - HOW IT WORKS
-T.SAIFUDDIN & CO.  -  written for version 0.9.44 (November 2026)
+T.SAIFUDDIN & CO.  -  written for Round 15 (November 2026)
 =====================================================================
 
 CONTENTS
@@ -17,7 +17,7 @@ CONTENTS
   12. Moving the server to another PC (e.g. a client PC)
   13. Forgotten administrator password
   14. Quick reference - folders, ports, names
-  15. Coming in the next update (not installed yet)
+  15. Extra features an administrator can switch on
 
 
 ---------------------------------------------------------------------
@@ -161,9 +161,34 @@ CONTENTS
     * Cancel Quotation keeps it (marked CANCELLED). Delete (administrators)
       moves it to Deleted for 30 days, then it is removed.
     * Proforma invoices work the same way with their own numbers.
-    * Unsaved work is copied to the PC every 30 seconds. After a power cut or
-      crash, the app asks "Restore unsaved work?" the next time. No number
-      is used until you save.
+    * Unsaved work is copied to the PC every 30 seconds. After a power cut,
+      a crash or closing without saving, it opens again by itself the next
+      time, with a message "Last quotation restored: <customer>, N lines".
+      No number is used until you save.
+    * Removing a line by mistake: the corner message "Line 2 removed - Undo"
+      puts it back (8 seconds).
+    * Closing the window asks "Bro, are you trying to close?" (Yes / No);
+      Log out asks "Leaving already, bro?". Unsaved work is kept either way.
+
+  Top bar
+    * "Connected" with a green dot = all fine. Orange = slow or Tally data
+      old; red "Disconnected" = server or Tally not reachable. Click it for
+      details (server speed, Tally company, last sync).
+    * When something is wrong, a strip under the top bar says what. Its x
+      hides it until a different problem appears.
+    * App version and financial year: My Settings > Connection and version.
+
+  My Settings > Appearance (saved with your login, on every PC)
+    * Theme: Default Light / Dark / Same as Windows, Sunset, Lagoon, Graphite,
+      Frost, Glass (Colourful / Blue / Black / Green / Maroon), Neon Night,
+      Cyberpunk. The moon button switches light / dark.
+    * Text size Normal / Large, spacing Comfortable / Compact,
+      Reduce animations (also turns off the glow of the colourful themes).
+
+  Descriptions are remembered
+    * The last description typed for an item (any customer) comes back the
+      next time that item is picked. Empty descriptions do not replace it;
+      with none remembered, the Tally description is used.
 
 
 ---------------------------------------------------------------------
@@ -198,26 +223,37 @@ CONTENTS
 ---------------------------------------------------------------------
 
   How
-    * The server checks every hour; if the last backup is older than 24 hours
-      it makes a new one. In practice: once a day.
+    * Every 3 hours (Settings > Backup & updates > every N hours).
+    * Each backup is also copied to a SECOND FOLDER if one is set there:
+      a USB drive (E:\TSQ-Backups), another PC's shared folder
+      (\\PC2\Backups) or a OneDrive / Google Drive folder. The folder is as
+      seen from the server PC. SET THIS UP - it protects against a dead disk.
     * Administrators can make one any time: Diagnostics > Backup database now.
     * Backups are made while people work; the copy is always complete.
+    * Dashboard (administrators) warns when: the last backup or copy is old,
+      no second folder is set or it cannot be reached, the server disk has
+      less than 2 GB free, or Tally has not synced for 24 hours.
 
   Where
     C:\ProgramData\TSQuotation\backups\quotation-YYYYMMDD-HHMMSS.db
-    One file per backup, kept 30 days (older ones are deleted automatically).
+    (and the same files in the second folder). Kept 30 days.
 
   What is in a backup:  the whole database (quotations, numbers, users,
     settings, last rates, activity log, copy of Tally masters).
   Not in a backup:      PDF files (can be re-made with Open PDF), seal image,
     logo, Claude API key and Gmail connection (locked to the PC anyway).
 
-  IMPORTANT: the backups are on the SAME disk as the server. If that disk
-  fails or the PC is stolen, the backups are lost too. Until the next update
-  (section 15), COPY THE backups FOLDER TO A USB DRIVE OR ANOTHER PC REGULARLY
-  (e.g. every Friday), together with seal\ and logo.png.
+  Export everything (Diagnostics, administrators)
+    One file TSQuotation-Export-<date>.tsq in Documents with the database,
+    the PDFs, the seal and the logo. Use it to move or rebuild the server.
 
-  Restoring a backup (by hand)
+  Restoring (Diagnostics > Restore from backup file...)
+    Pick a .tsq export or a .db backup. The server first saves the current
+    data (backups\quotation-before-restore-...db), then puts the backup in
+    place. Everyone signs in again. Tally items and customers come back with
+    the next sync.
+
+  Restoring by hand (if the app cannot be opened)
     1. Services (Windows) > TS Quotation Server > Stop.
     2. Copy the chosen backup file to C:\ProgramData\TSQuotation\quotation.db
        (replace it). Delete quotation.db-wal and quotation.db-shm if present.
@@ -231,11 +267,16 @@ CONTENTS
   1. Download "windows-installers" from GitHub (see the link given with each
      version). If Chrome says "dangerous": chrome://downloads > ... >
      Download dangerous file (the installers are not digitally signed).
-  2. Server PC: run TSQuotationServer-Setup (only when the version notes say
-     the server changed). Data and settings are kept.
-  3. Every client PC: close TS Quotation, run TSQuotation-Setup.
-     Windows may say "Windows protected your PC": More info > Run anyway.
-  The version is shown at the bottom right (App v0.9.xx).
+  2. Server PC: run TSQuotationServer-Setup. Data and settings are kept.
+     The server setup carries the client app of the same version.
+  3. Client PCs update themselves: after signing in they see "New version
+     ... is available" - Update now / Later. Update now downloads it from
+     the server, installs it (Windows may ask "allow changes?" - Yes) and
+     opens the app again; unsaved work is kept.
+     Settings > Backup & updates > "Clients must update" removes "Later".
+  4. Only once, for the first version with automatic updates, run
+     TSQuotation-Setup by hand on every client PC.
+  The version is shown in My Settings > Connection and version.
 
 
 ---------------------------------------------------------------------
@@ -270,9 +311,9 @@ CONTENTS
     - Tally Connection > Sync changes (or wait for the 3-hourly sync).
 
   "Tally data may be old - approve anyway?"
-    - Tally could not be reached at approval (closed or busy), or the last sync
-      is older than 24 hours. Open Tally and Sync changes, or approve anyway
-      (it is logged).
+    - Approval does not ask Tally (it is quick even while Tally is busy). It
+      only asks this when the last sync is older than 24 hours. Open Tally and
+      Sync changes, or approve anyway (it is logged).
 
   PDF did not open / not in the folder
     - My Settings > Save as PDF folders: check the folder exists.
@@ -296,7 +337,7 @@ CONTENTS
      - Clients show "Quotation Server unreachable" until it is back.
      - Switch the server PC on. The server starts by itself.
      - Saved quotations are safe (each save is complete or not at all).
-     - Unsaved work on the client PCs is offered back ("Restore unsaved work?").
+     - Unsaved work on the client PCs opens again by itself.
 
   B) Windows broken, hard disk OK
      - Reinstall Windows (or use another PC), install the server setup,
@@ -305,13 +346,13 @@ CONTENTS
      - Re-enter the Claude API key (Settings) and reconnect Gmail.
 
   C) Hard disk dead or PC stolen
-     - Only what was copied elsewhere can be restored: install the server on
-       another PC (section 12), put the latest backup copy in place as
-       quotation.db (section 8), add the seal and logo again.
+     - Install the server on another PC (section 12), sign in as admin
+       (admin / admin the first time), Diagnostics > Restore from backup
+       file: pick the latest file from the second backup folder (or a .tsq
+       export). Add the seal and logo again if you restored a .db file.
      - Quotations after that backup are lost. Tally items and customers come
        back with a Full sync.
-     - This is why the backups folder must be copied elsewhere regularly
-       (automatic from the next update, section 15).
+     - This is why the second backup folder must be set (section 8).
 
 
 ---------------------------------------------------------------------
@@ -319,12 +360,16 @@ CONTENTS
 ---------------------------------------------------------------------
 
   Any PC that stays on during office hours can be the server.
-  1. New PC: install TSQuotationServer-Setup (the client app can stay too).
-  2. Old server PC: Diagnostics > Backup database now. Then stop the service
-     (Services > TS Quotation Server > Stop) or shut the PC down after copying.
-  3. Copy the whole folder C:\ProgramData\TSQuotation from the old PC to the
-     same place on the new PC (USB drive or network share).
-  4. New PC: restart the service (or the PC).
+  Easiest:
+  1. Old server: Diagnostics > Export everything (a .tsq file in Documents).
+     Copy it to the new PC.
+  2. New PC: install TSQuotationServer-Setup (the client app can stay too).
+  3. Sign in on the new server as admin, Diagnostics > Restore from backup
+     file > the .tsq file. Then uninstall or stop the server on the old PC.
+  Or by hand: stop the old service, copy the whole folder
+  C:\ProgramData\TSQuotation to the same place on the new PC, restart the
+  new PC's service.
+  Then:
   5. Settings > Tally: check the Tally address can be reached from the new PC
      (Test connection). Re-enter the Claude API key, reconnect Gmail.
   6. Each client PC: sign out and type the new server address at sign-in,
@@ -351,7 +396,9 @@ CONTENTS
   Server program         C:\Program Files\TSQuotation\Server\
   Server data            C:\ProgramData\TSQuotation\  (quotation.db, pdf, backups,
                          seal, logo.png, logs)
-  Backups                C:\ProgramData\TSQuotation\backups\  (daily, 30 days)
+  Backups                C:\ProgramData\TSQuotation\backups\  (every 3 h, 30 days)
+                         + the second folder from Settings > Backup & updates
+  Client updates         C:\Program Files\TSQuotation\Server\client\
   Client program         C:\Program Files\TSQuotation\Client\
   Client settings        %AppData%\TSQuotation\client.json
   Client unsaved work    %AppData%\TSQuotation\recovery\
@@ -364,18 +411,20 @@ CONTENTS
 
 
 ---------------------------------------------------------------------
-15. COMING IN THE NEXT UPDATE (NOT INSTALLED YET)
+15. EXTRA FEATURES AN ADMINISTRATOR CAN SWITCH ON
 ---------------------------------------------------------------------
 
-  Agreed for the next version (this file will be updated when it is installed):
-  * Backups every 3 hours, plus an automatic second copy to a folder you choose
-    (USB drive, another PC, OneDrive / Google Drive folder).
-  * Dashboard warnings: old backup copy, second folder not reachable, disk
-    almost full, no Tally sync since yesterday.
-  * Diagnostics > Export everything (one file with database, PDFs, seal, logo)
-    and Restore from backup file - for moving or rebuilding the server.
-  * Clients update themselves from the server ("New version available").
-  * No Tally check at approval (approval uses the 3-hourly sync; quick even
-    when Tally is busy).
-  * Item descriptions remembered; text size and compact spacing; Won / Lost /
-    follow-up (admin switch); WhatsApp button (admin switch).
+  Won / Lost / Follow-up  (Settings > Quotation, off at first)
+    * Approved quotations get "Outcome: Open / Won / Lost" under the title
+      (anyone can set it; Lost asks for an optional reason) and a follow-up
+      date (approval + 3 days, changeable).
+    * Dashboard tile "To follow up" lists the ones whose date has come.
+    * Quotation History shows the outcome and can filter by it.
+    * Making a proforma invoice from a quotation marks it Won.
+
+  WhatsApp button  (Settings > Quotation, off at first, message editable)
+    * On an approved quotation: WhatsApp copies the PDF and opens WhatsApp
+      Desktop in the customer's chat (from their phone number) with the
+      message typed. Press Ctrl+V (the PDF), then Enter.
+      WhatsApp does not let other programs send by themselves.
+    * WhatsApp Desktop must be installed and signed in on that PC.

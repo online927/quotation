@@ -55,6 +55,11 @@ public sealed class StatusService(
         var pending = await db.Quotations.CountAsync(q => q.Status == QuotationStatus.PendingReview, ct);
         var inbox = await db.AiRequests.CountAsync(r =>
             r.Status == AiRequestStatus.NeedsClarification || r.Status == AiRequestStatus.Failed || r.Status == AiRequestStatus.ReadyForReview, ct);
-        return new DashboardDto(todays, drafts, pending, inbox, await GetAsync(ct));
+        var track = settings.Quotation.TrackOutcomes;
+        var followUp = track
+            ? await db.Quotations.CountAsync(q => q.Outcome == QuotationOutcome.Open && q.FollowUpDate != null && q.FollowUpDate <= today
+                && (q.Status == QuotationStatus.Approved || q.Status == QuotationStatus.Generated) && q.DocType == DocumentType.Quotation, ct)
+            : 0;
+        return new DashboardDto(todays, drafts, pending, inbox, await GetAsync(ct), followUp, track);
     }
 }

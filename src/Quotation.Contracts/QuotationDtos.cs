@@ -128,7 +128,13 @@ public sealed class QuotationDto
     public DateOnly EditableUntil { get; set; }
     /// <summary>Items of this quotation that are now marked "Do Not Use" (DNU) in Tally.</summary>
     public List<string> DoNotUseItems { get; set; } = [];
+    public QuotationOutcome Outcome { get; set; }
+    public string LostReason { get; set; } = "";
+    public DateOnly? FollowUpDate { get; set; }
 }
+
+/// <summary>Won / Lost / Open, the reason when lost, and the follow-up date.</summary>
+public sealed record SetOutcomeRequest(QuotationOutcome Outcome, string? LostReason = null, DateOnly? FollowUpDate = null);
 
 /// <summary>A quotation in the administrator's Deleted list (kept 30 days).</summary>
 public sealed record DeletedQuotationDto(
@@ -161,7 +167,9 @@ public sealed record QuotationSummaryDto(
     DateTime CreatedUtc,
     string? ApprovedBy,
     bool HasPdf,
-    DocumentType DocType = DocumentType.Quotation);
+    DocumentType DocType = DocumentType.Quotation,
+    QuotationOutcome Outcome = QuotationOutcome.Open,
+    DateOnly? FollowUpDate = null);
 
 public sealed record ApproveRequest(bool OverrideStaleData = false, int? Revision = null);
 

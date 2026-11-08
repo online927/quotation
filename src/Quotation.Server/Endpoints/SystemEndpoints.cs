@@ -134,12 +134,17 @@ public static class SystemEndpoints
         // The current user's own switches.
         app.MapPut("/api/me/preferences", async (MyPreferencesDto req, HttpContext ctx, QuotationDbContext db, CancellationToken ct) =>
         {
-            if (req.Theme is not null && !AppTheme.IsValid(req.Theme)) return Results.BadRequest(new ApiError("Theme must be Light, Dark or System."));
+            if (req.Theme is not null && !AppTheme.IsValid(req.Theme)) return Results.BadRequest(new ApiError("Unknown theme: " + req.Theme));
+            if (req.TextSize is not null && !AppDisplay.IsValidTextSize(req.TextSize)) return Results.BadRequest(new ApiError("Text size must be Normal or Large."));
+            if (req.Spacing is not null && !AppDisplay.IsValidSpacing(req.Spacing)) return Results.BadRequest(new ApiError("Spacing must be Comfortable or Compact."));
             if (req.PdfLayout is not null && !PdfLayouts.IsValid(req.PdfLayout)) return Results.BadRequest(new ApiError("PDF layout must be Tally or Zoho."));
             var user = await db.Users.FirstAsync(u => u.Username == ctx.User.UserName(), ct);
             if (req.WithoutGstNext is { } withoutGst) user.WithoutGstNext = withoutGst;
             if (req.Theme is { } theme) user.Theme = theme;
             if (req.PdfLayout is { } layout) user.PdfLayout = layout;
+            if (req.TextSize is { } size) user.TextSize = size;
+            if (req.Spacing is { } spacing) user.Spacing = spacing;
+            if (req.ReduceMotion is { } reduce) user.ReduceMotion = reduce;
             await db.SaveChangesAsync(ct);
             return Results.Ok(AuthService.ToDto(user));
         }).RequireAuthorization();

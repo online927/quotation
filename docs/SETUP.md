@@ -319,14 +319,22 @@ asked **Save** (Enter) / **Don't Save** (N) / **Cancel** (Esc).
 
 ## 10. Backups, upgrades and moving the server
 
-* **Which version is running?** The app version is shown at the bottom right of the window (e.g. `App v0.9.18`).
-  When updating, close TS Quotation first — the installer asks you to if it is still open.
+* **Which version is running?** **My Settings → Connection and version (this PC)**.
 
-* **Automatic backups**: every day to `C:\ProgramData\TSQuotation\backups` (kept 30 days). Include this folder in
-  your normal backup. Admins can take one at any time: **Diagnostics → Backup database now**.
-* **Restore**: stop the service, copy the chosen backup to `C:\ProgramData\TSQuotation\quotation.db`
-  (delete `quotation.db-wal`/`-shm` if present), start the service.
-* **Upgrade**: run the new server installer (settings and data are kept), then the new client installer on each PC.
+* **Automatic backups**: every 3 hours (**Settings → Backup & updates**) to `C:\ProgramData\TSQuotation\backups`
+  (kept 30 days), each also copied to the **second backup folder** set there (USB drive, `\\PC2\Backups`, a OneDrive
+  folder — as seen from the server PC). Admins can take one at any time: **Diagnostics → Backup database now**.
+  The dashboard warns administrators about old backups, an unreachable copy folder, a nearly full disk (< 2 GB) and no
+  Tally sync for 24 hours.
+* **Export everything**: **Diagnostics → Export everything** writes one `.tsq` file (database, PDFs, seal, logo) to
+  Documents.
+* **Restore**: **Diagnostics → Restore from backup file…** (a `.tsq` export or a `.db` backup). The current data is
+  backed up first (`quotation-before-restore-…db`); everyone signs in again. By hand: stop the service, copy the
+  backup to `C:\ProgramData\TSQuotation\quotation.db` (delete `quotation.db-wal`/`-shm`), start the service.
+* **Upgrade**: run the new server installer (settings and data are kept). It carries the client of the same version:
+  client PCs show *New version … is available — Update now / Later* after signing in, install it silently and reopen
+  (unsaved work is kept). **Settings → Backup & updates → Clients must update** removes *Later*. The first version with
+  automatic updates must be installed by hand on each client PC.
 * **Users** (administrator): **Settings → Users → Edit**: change the login name (printed as *By:* on PDFs), display
   name, administrator or user, active; **Reset password** gives a temporary password the user must change at the
   next login (and logs them out on every PC). Everyone can change their own password: click your name at the top
@@ -336,7 +344,8 @@ asked **Save** (Enter) / **Don't Save** (N) / **Cancel** (Esc).
   `"C:\Program Files\TSQuotation\Server\TSQuotation.Server.exe" --reset-admin-password NewPassword`
   (add `--user name` for another administrator). It prints *Password of administrator 'admin' changed*. Log in with
   the new password.
-* **Moving to another PC**: install the server there, stop both services, copy `C:\ProgramData\TSQuotation`, start.
+* **Moving to another PC**: **Export everything** on the old server, install the server on the new PC, sign in and
+  **Restore from backup file** with the `.tsq` file (or stop both services and copy `C:\ProgramData\TSQuotation`).
   Re-enter the Claude API key and reconnect Gmail (secrets are encrypted per machine).
 
 ---
@@ -350,10 +359,10 @@ asked **Save** (Enter) / **Don't Save** (N) / **Cancel** (Esc).
 | "Company 'X' is not open in Tally" | Open that company in TallyPrime, or clear Settings → Tally → Company name. |
 | Wrong financial year / numbers | Check TallyPrime's current period (Alt+F2). Or set Settings → Tally → Active FY override. |
 | HSN / GST / rate empty or wrong | Tally Connection → Diagnostics raw XML; Settings → Tally → Fetch mode = All; rate source/price level; then Full sync. Items without a selling price in Tally get the rate they were last quoted at in this app; items never quoted here have no rate — enter one. |
-| App sometimes slow | Status bar ⚡ shows how fast the server answers (green under 0.3 s, orange over 1 s, red no answer). **Diagnostics → Slow requests** lists every request over 1 second with the time on the PC and on the server and what the server was doing: total slow but server quick = network or PC name (the app already tries the IPv4 address first and gives up on a silent address after 3 s; if it persists use the server's IP address in the server box at sign-in, give the server PC a fixed IP in the router, cable instead of Wi-Fi, server PC never sleeps); server slow = server PC busy (e.g. Tally sync). |
+| App sometimes slow | The dot in the top bar (click it) shows how fast the server answers (green, orange when slow, red "Disconnected"). **Diagnostics → Slow requests** lists every request over 1 second with the time on the PC and on the server and what the server was doing: total slow but server quick = network or PC name (the app already tries the IPv4 address first and gives up on a silent address after 3 s; if it persists use the server's IP address in the server box at sign-in, give the server PC a fixed IP in the router, cable instead of Wi-Fi, server PC never sleeps); server slow = server PC busy (e.g. Tally sync). |
 | Quotation date rejected | Dates must be inside the active financial year. |
 | "Rates changed in Tally" on approval | The quotation was updated with the new Tally rates; review and approve again. |
-| "Live Tally data could not be retrieved" | Tally is offline or the last sync is old. Approve anyway (logged) if allowed, or fix Tally first. |
+| "Tally data was last synchronized … ago" on approval | Approval does not ask Tally; this appears only when the last sync is older than 24 hours. Sync changes, or approve anyway (logged). |
 | PDF failed | The quotation stays approved; use **Regenerate PDF** (shown only then; Open PDF and Save as PDF always make a fresh PDF with the latest settings). Check Diagnostics → Server log (disk space, logo file path). |
 | AI: "not configured" / errors | Settings → Claude AI enabled + key saved? Rate limits or outages are shown on the AI Inbox item; e-mails retry automatically. |
 | Gmail: "invalid_grant" / stopped working | The token was revoked or the Google app was left in Testing (7-day expiry): publish the app, then Gmail Connection → Connect Gmail again. |

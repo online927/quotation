@@ -26,6 +26,21 @@ internal sealed class RecordingLauncher(ClientConfig config) : DocumentLauncher(
         Folders.Add(folder ?? Folder);
         return fileName;
     }
+
+    /// <summary>(pdf, phone, message) of each WhatsApp share.</summary>
+    public List<(string Pdf, string? Phone, string Message)> WhatsApp { get; } = [];
+    public override bool ShareOnWhatsApp(string pdfPath, string? phone, string message)
+    {
+        WhatsApp.Add((pdfPath, phone, message));
+        return true;
+    }
+
+    public List<string> Installers { get; } = [];
+    public override bool RunInstaller(string setupPath, string serverUrl)
+    {
+        Installers.Add(setupPath);
+        return true;
+    }
 }
 
 public class QuotationEditorTests
@@ -421,8 +436,16 @@ public class QuotationEditorTests
         editor.CommitEntryCommand.Execute(null);
         await editor.SaveAsync();
 
-        ctx.Server.Tally.Online = false;
-        await ctx.Session.Api.TestTallyAsync();
+        // Approval does not ask Tally; it asks "approve anyway?" only when the last sync is older than 24 hours.
+        ctx.Server.Db(db =>
+        {
+            foreach (var run in db.SyncRuns)
+            {
+                run.StartedUtc = run.StartedUtc.AddDays(-2);
+                if (run.FinishedUtc is { } f) run.FinishedUtc = f.AddDays(-2);
+            }
+            return db.SaveChanges();
+        });
         await editor.ApproveCommand.ExecuteAsync(null);
         Assert.True(editor.NeedsStaleOverride);
         Assert.Equal(QuotationStatus.Draft, editor.Status);

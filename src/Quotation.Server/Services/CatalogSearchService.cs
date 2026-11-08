@@ -136,6 +136,43 @@ public sealed class CatalogSearchService
     public static ProductSummaryDto ToSummary(ProductDoc p) =>
         new(p.Id, p.Name, p.PartNumber, p.Brand, p.StockGroup, p.Unit, p.Hsn, p.GstRate, p.Rate, p.Description, p.RateNote, p.Hidden);
 
+    // ---- descriptions remembered from saved quotations (H1)
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<int, string> _remembered = new();
+    private bool _rememberedLoaded;
+
+    /// <summary>The item with the description last used on a saved quotation (the Tally description when there is none).</summary>
+    public async Task<ProductSummaryDto> WithRememberedAsync(ProductSummaryDto p, CancellationToken ct)
+    {
+        await LoadRememberedAsync(ct);
+        return _remembered.TryGetValue(p.Id, out var d) && d.Length > 0 ? p with { Description = d } : p;
+    }
+
+    /// <summary>Called when a quotation is saved: these descriptions are offered next time (search results update at once).</summary>
+    public void Remember(IReadOnlyDictionary<int, string> descriptions)
+    {
+        foreach (var (id, description) in descriptions) _remembered[id] = description;
+    }
+
+    /// <summary>After a restore: the indexes and remembered descriptions are built again from the database.</summary>
+    public void Reset()
+    {
+        _remembered.Clear();
+        _rememberedLoaded = false;
+        _stale = true;
+        _ = Task.Run(() => RebuildAsync(CancellationToken.None));
+    }
+
+    private async Task LoadRememberedAsync(CancellationToken ct)
+    {
+        if (_rememberedLoaded) return;
+        using var scope = _scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
+        foreach (var x in await db.Products.AsNoTracking().Where(p => p.LastDescription != "").Select(p => new { p.Id, p.LastDescription }).ToListAsync(ct))
+            _remembered.TryAdd(x.Id, x.LastDescription);
+        _rememberedLoaded = true;
+    }
+
     public static CustomerSummaryDto ToSummary(CustomerDoc c) =>
         new(c.Id, c.Name, c.MailingName, c.Address, c.StateName, c.StateCode, c.Gstin, c.ContactPerson,
             c.Mobile.Length > 0 ? c.Mobile : c.Phone, c.Email);

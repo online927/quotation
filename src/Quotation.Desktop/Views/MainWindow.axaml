@@ -7,5 +7,8 @@
         Width="1280" Height="800" MinWidth="1024" MinHeight="640"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource PageBrush}">
-  <ContentControl Content="{Binding Content}" />
+  <!-- Text size Large zooms everything (My Settings > Appearance) -->
+  <LayoutTransformControl Name="Zoom">
+    <ContentControl Content="{Binding Content}" />
+  </LayoutTransformControl>
 </Window>

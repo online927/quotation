@@ -2,9 +2,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ctl="using:Quotation.Desktop.Controls"
              xmlns:vm="using:Quotation.Desktop.ViewModels"
+             xmlns:c="using:Quotation.Contracts"
              x:Class="Quotation.Desktop.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
   <UserControl.Styles>
+    <Style Selector="Border.healthwarn">
+      <Setter Property="Background" Value="{DynamicResource WarnSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource WarnBorderBrush}" />
+    </Style>
     <Style Selector="TextBlock.big">
       <Setter Property="FontSize" Value="40" />
       <Setter Property="FontWeight" Value="SemiBold" />
@@ -41,6 +46,22 @@
       </Grid>
       <TextBlock Classes="error" Text="{Binding ErrorMessage}"
                  IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <!-- Administrators: things to fix before they become a problem -->
+      <ItemsControl Name="HealthWarnings" ItemsSource="{Binding Warnings}" IsVisible="{Binding HasWarnings}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="c:HealthWarningDto">
+            <Border Classes="healthwarn" Classes.bad="{Binding IsBad}" Padding="14,9" CornerRadius="{DynamicResource ButtonRadius}" BorderThickness="1">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Path Data="M12,3 L22,20 L2,20 Z M12,9 L12,14 M12,17 L12,17.2" Stroke="{DynamicResource WarnBrush}" StrokeThickness="1.9"
+                      StrokeLineCap="Round" StrokeJoin="Round" Width="15" Height="15" Stretch="Uniform" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" VerticalAlignment="Center" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
 
       <UniformGrid Columns="4">
         <Button Classes="tile" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="today">
@@ -92,6 +113,18 @@
           </StackPanel>
         </Button>
       </UniformGrid>
+
+      <Button Classes="tile" Name="FollowUpTile" HorizontalContentAlignment="Stretch" Command="{Binding GoCommand}" CommandParameter="followup"
+              IsVisible="{Binding ShowFollowUp}">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <TextBlock Classes="eyebrow" Text="TO FOLLOW UP" />
+            <TextBlock Classes="muted" FontSize="12" Text="Approved quotations whose follow-up date has come — call the customer, then mark Won or Lost." />
+          </StackPanel>
+          <TextBlock Grid.Column="1" Classes="big" Margin="0" VerticalAlignment="Center" Foreground="{DynamicResource TealBrush}"
+                     Text="{Binding Data.FollowUpDue, FallbackValue='–'}" />
+        </Grid>
+      </Button>
 
       <Border Classes="card">
         <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">

@@ -17,6 +17,14 @@ public enum QuotationStatus
     Cancelled = 4,
 }
 
+/// <summary>What became of a sent quotation (Settings > Quotation > Track won / lost).</summary>
+public enum QuotationOutcome
+{
+    Open = 0,
+    Won = 1,
+    Lost = 2,
+}
+
 /// <summary>Where a quotation came from.</summary>
 public enum QuotationSource
 {

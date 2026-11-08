@@ -16,6 +16,8 @@ public interface INavigator
     Task<string?> AskAsync(string title, string message, string inputLabel, bool secret = false, string ok = "OK");
     /// <summary>A short message in the bottom-right corner that fades after a few seconds.</summary>
     void Toast(string message, int seconds = 5) { }
+    /// <summary>A corner message with a button (e.g. "Line 2 removed — Undo").</summary>
+    void Toast(string message, string actionText, Action action, int seconds = 8) { }
 }
 
 /// <summary>A question shown over the app window (Yes/No, or with an input box).</summary>
@@ -53,10 +55,15 @@ public interface IUnsavedChangesPage
     void DiscardChanges() { }
 }
 
-/// <summary>A message shown for a few seconds in the bottom-right corner.</summary>
-public sealed class ToastItem(string text)
+/// <summary>A message shown for a few seconds in the bottom-right corner, optionally with a button (Undo).</summary>
+public sealed partial class ToastItem(string text, string? actionText = null, Action? action = null) : ObservableObject
 {
     public string Text { get; } = text;
+    public string? ActionText { get; } = actionText;
+    public bool HasAction => ActionText is not null;
+    public Action? Action { get; } = action;
+    /// <summary>Fading out (the corner list removes it a moment later).</summary>
+    [ObservableProperty] private bool _isLeaving;
 }
 
 /// <summary>A page that refreshes its data when the user comes back to it (filters and search are kept).</summary>
@@ -77,6 +84,7 @@ public sealed class LeavePrompt(string title)
 {
     private readonly TaskCompletionSource<LeaveChoice> _answer = new();
 
+    public string Heading { get; } = "Unsaved changes";
     public string Message { get; } = $"Save the changes to {title}?";
     public Task<LeaveChoice> Answer => _answer.Task;
     public void Choose(LeaveChoice choice) => _answer.TrySetResult(choice);

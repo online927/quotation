@@ -34,8 +34,20 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Appearance" />
           <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
-                     Text="Light or dark screens, just for you (also the moon/sun button at the top). Saved with your login, so it follows you to every PC. PDFs are always printed white." />
-          <ComboBox Name="ThemeBox" ItemsSource="{Binding ThemeChoices}" SelectedIndex="{Binding ThemeIndex}" Width="200" />
+                     Text="Just for you, and saved with your login, so it follows you to every PC. The moon/sun button at the top switches between Default Light and Dark. PDFs are always printed white." />
+          <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+            <TextBlock Classes="label" Text="Theme" />
+            <ComboBox Grid.Column="1" Name="ThemeBox" ItemsSource="{Binding ThemeChoices}" SelectedIndex="{Binding ThemeIndex}" Width="200" />
+            <TextBlock Grid.Row="1" Classes="label" Text="Text size" />
+            <ComboBox Grid.Row="1" Grid.Column="1" Name="TextSizeBox" ItemsSource="{Binding TextSizeChoices}" SelectedIndex="{Binding TextSizeIndex}" Width="200" />
+            <TextBlock Grid.Row="2" Classes="label" Text="Spacing" />
+            <ComboBox Grid.Row="2" Grid.Column="1" Name="SpacingBox" ItemsSource="{Binding SpacingChoices}" SelectedIndex="{Binding SpacingIndex}" Width="200"
+                      ToolTip.Tip="Compact fits more on a small laptop screen" />
+            <TextBlock Grid.Row="3" Classes="label" Text="Animations" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" Name="ReduceMotionSwitch" IsChecked="{Binding ReduceMotion}"
+                          OnContent="Reduce animations (no animations, no glow)" OffContent="On"
+                          ToolTip.Tip="For a slow PC, or if you prefer a calm screen: no animations and no glow shadows" />
+          </Grid>
         </StackPanel>
       </Border>
 
@@ -60,14 +72,18 @@
 
       <Border Classes="card">
         <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Connection (this PC)" />
+          <TextBlock Classes="h2" Text="Connection and version (this PC)" />
           <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
                      Text="The Quotation Server this PC uses. To change it, log out and type the address in the server box on the sign-in screen." />
-          <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto" RowSpacing="6">
+          <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6">
             <TextBlock Classes="label" Text="Server" />
             <SelectableTextBlock Grid.Column="1" Name="ServerAddressText" Text="{Binding ServerAddress}" FontWeight="SemiBold" />
             <TextBlock Grid.Row="1" Classes="label" Text="Computer" />
             <SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ComputerName}" FontWeight="SemiBold" />
+            <TextBlock Grid.Row="3" Classes="label" Text="Financial year" />
+            <SelectableTextBlock Grid.Row="3" Grid.Column="1" Text="{Binding FinancialYear}" FontWeight="SemiBold" />
+            <TextBlock Grid.Row="2" Classes="label" Text="App version" />
+            <SelectableTextBlock Grid.Row="2" Grid.Column="1" Text="{x:Static vm:ShellViewModel.AppVersionText}" FontWeight="SemiBold" />
           </Grid>
         </StackPanel>
       </Border>

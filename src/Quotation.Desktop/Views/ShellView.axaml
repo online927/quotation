@@ -7,7 +7,7 @@
   <Panel>
     <DockPanel>
       <!-- Top bar -->
-      <Border DockPanel.Dock="Top" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="16,9">
+      <Border DockPanel.Dock="Top" Background="{DynamicResource TopBarBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="16,9">
         <Grid ColumnDefinitions="246,*,Auto">
           <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
             <Border Width="30" Height="30" CornerRadius="8" Background="{DynamicResource AccentBrush}">
@@ -27,6 +27,22 @@
             </TextBox.KeyBindings>
           </TextBox>
           <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <!-- Status: green / orange / red dot; details when pointing at it or clicking -->
+            <Button Name="StatusChip" Classes="link" Padding="8,4" Margin="0,0,4,0" ToolTip.Tip="{Binding HealthDetails}">
+              <Border Background="{DynamicResource FillBrush}" CornerRadius="999" Padding="10,4">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Ellipse Width="9" Height="9" Fill="{DynamicResource OkBrush}" IsVisible="{Binding HealthOk}" VerticalAlignment="Center" />
+                  <Ellipse Width="9" Height="9" Fill="{DynamicResource WarnBrush}" IsVisible="{Binding HealthWarn}" VerticalAlignment="Center" />
+                  <Ellipse Classes="pulse" Width="9" Height="9" Fill="{DynamicResource BadBrush}" IsVisible="{Binding HealthBad}" VerticalAlignment="Center" />
+                  <TextBlock Name="StatusLabel" Text="{Binding HealthLabel}" FontSize="12" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Border>
+              <Button.Flyout>
+                <Flyout Placement="BottomEdgeAlignedRight">
+                  <TextBlock Name="StatusDetails" Text="{Binding HealthDetails}" FontSize="12" LineHeight="20" />
+                </Flyout>
+              </Button.Flyout>
+            </Button>
             <!-- Light / dark mode for this user -->
             <Button Name="ThemeButton" Classes="round" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{Binding ThemeTip}">
               <Path Data="{Binding ThemeIcon}" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="16" Height="16" Stretch="Uniform"
@@ -58,32 +74,20 @@
         </Grid>
       </Border>
 
-      <!-- Status bar -->
-      <Border DockPanel.Dock="Bottom" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,0" Padding="16,5">
-        <StackPanel Orientation="Horizontal" Spacing="20">
-          <StackPanel.Styles>
-            <Style Selector="TextBlock">
-              <Setter Property="FontSize" Value="12" />
-              <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
-              <Setter Property="VerticalAlignment" Value="Center" />
-            </Style>
-          </StackPanel.Styles>
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <Ellipse Width="8" Height="8" Fill="{DynamicResource OkBrush}" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
-            <Ellipse Width="8" Height="8" Fill="{DynamicResource BadBrush}" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
-            <TextBlock Text="Tally connected" IsVisible="{Binding Status.TallyConnected, FallbackValue=False}" />
-            <TextBlock Text="Tally disconnected" IsVisible="{Binding !Status.TallyConnected, FallbackValue=True}" />
-          </StackPanel>
-          <TextBlock Text="{Binding Status.ActiveFinancialYear, StringFormat='FY {0}', FallbackValue=''}" />
-          <TextBlock Text="{Binding LastSyncText}" />
-          <TextBlock Foreground="{DynamicResource WarnBrush}" Text="Tally data is stale" IsVisible="{Binding Status.DataIsStale, FallbackValue=False}" />
-          <TextBlock Foreground="{DynamicResource WarnBrush}" Text="Tally is busy — background reading paused" IsVisible="{Binding Status.TallyBusy, FallbackValue=False}" />
-          <TextBlock Text="{Binding ServerState}" Foreground="{DynamicResource BadBrush}" IsVisible="{Binding ServerState, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-          <TextBlock Name="SpeedText" Text="{Binding SpeedText}" FontWeight="SemiBold" Classes="speed"
-                     Classes.ok="{Binding SpeedOk}" Classes.slow="{Binding SpeedSlow}" Classes.bad="{Binding SpeedBad}"
-                     ToolTip.Tip="How fast the Quotation Server answers (checked every 30 seconds). Slow requests: Diagnostics → Slow requests." />
-          <TextBlock Text="{x:Static vm:ShellViewModel.AppVersionText}" />
-        </StackPanel>
+      <!-- Warning strip: only while something is wrong (server unreachable, Tally disconnected, old data, Tally busy) -->
+      <Border DockPanel.Dock="Top" Name="WarningStrip" Classes="warnstrip" Padding="20,6" BorderThickness="0,0,0,1"
+              Background="{DynamicResource WarnSoftBrush}" BorderBrush="{DynamicResource WarnBorderBrush}"
+              IsVisible="{Binding VisibleWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <Path Data="M12,3 L22,20 L2,20 Z M12,9 L12,14 M12,17 L12,17.5" Stroke="{DynamicResource WarnBrush}" StrokeThickness="1.8"
+                StrokeLineCap="Round" StrokeJoin="Round" Width="15" Height="15" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,8,0" />
+          <TextBlock Grid.Column="1" Text="{Binding VisibleWarning}" FontSize="12.5" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+          <Button Grid.Column="2" Name="CloseWarningButton" Classes="link" Padding="6,2" Margin="12,0,0,0" Command="{Binding CloseWarningCommand}"
+                  ToolTip.Tip="Close (the dot at the top stays red or orange until it is fixed)">
+            <Path Data="M6,6 L18,18 M18,6 L6,18" Stroke="{DynamicResource MutedBrush}" StrokeThickness="2" StrokeLineCap="Round"
+                  Width="11" Height="11" Stretch="Uniform" />
+          </Button>
+        </Grid>
       </Border>
 
       <!-- Sidebar -->
@@ -137,20 +141,22 @@
         </StackPanel>
       </Border>
 
-      <ContentControl Content="{Binding CurrentPage}" />
+      <TransitioningContentControl Classes="pages" Content="{Binding CurrentPage}" />
     </DockPanel>
 
     <!-- Short messages in the bottom-right corner ("Saved …", "PDF saved to …"); they fade after a few seconds -->
     <ItemsControl Name="ToastList" ItemsSource="{Binding Toasts}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                  Margin="0,0,24,100" IsHitTestVisible="False">
+                  Margin="0,0,24,76">
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="svc:ToastItem">
-          <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1" CornerRadius="10"
-                  Padding="14,10" Margin="0,8,0,0" BoxShadow="0 6 20 0 #26000000" MaxWidth="440">
-            <Grid ColumnDefinitions="Auto,*">
+          <Border Classes="toast" Classes.leaving="{Binding IsLeaving}" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource HairlineBrush}"
+                  BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,8,0,0" BoxShadow="0 6 20 0 #26000000" MaxWidth="460">
+            <Grid ColumnDefinitions="Auto,*,Auto">
               <Path Data="M5,12.5 L10,17.5 L19,7" Stroke="{DynamicResource OkBrush}" StrokeThickness="2.2" StrokeLineCap="Round" StrokeJoin="Round"
                     Width="15" Height="15" Stretch="Uniform" VerticalAlignment="Top" Margin="0,2,10,0" />
-              <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" FontSize="13" />
+              <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" FontSize="13" VerticalAlignment="Center" />
+              <Button Grid.Column="2" Classes="link" Margin="10,0,0,0" FontWeight="SemiBold" Content="{Binding ActionText}" IsVisible="{Binding HasAction}"
+                      Command="{Binding $parent[ItemsControl].((vm:ShellViewModel)DataContext).ToastActionCommand}" CommandParameter="{Binding}" />
             </Grid>
           </Border>
         </DataTemplate>
@@ -161,7 +167,7 @@
     <Border Name="PromptPanel" Background="#40000000" IsVisible="{Binding PendingPrompt, Converter={x:Static ObjectConverters.IsNotNull}}">
       <Border Classes="card" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000">
         <StackPanel Spacing="14">
-          <TextBlock Text="Unsaved changes" FontSize="17" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding PendingPrompt.Heading, FallbackValue='Unsaved changes'}" FontSize="17" FontWeight="SemiBold" />
           <TextBlock Text="{Binding PendingPrompt.Message, FallbackValue=''}" TextWrapping="Wrap" />
           <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
                      Text="Enter = Save · N = Don't Save · Esc = Cancel (stay on this page)" />
@@ -179,7 +185,8 @@
       <Border Classes="card" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000">
         <StackPanel Spacing="14">
           <TextBlock Text="{Binding PendingDialog.Title, FallbackValue=''}" FontSize="17" FontWeight="SemiBold" />
-          <TextBlock Text="{Binding PendingDialog.Message, FallbackValue=''}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PendingDialog.Message, FallbackValue=''}" TextWrapping="Wrap"
+                     IsVisible="{Binding PendingDialog.Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}, FallbackValue=False}" />
           <StackPanel Spacing="4" IsVisible="{Binding PendingDialog.HasInput, FallbackValue=False}">
             <TextBlock Classes="label" Text="{Binding PendingDialog.InputLabel, FallbackValue=''}" />
             <TextBox Name="DialogInput" Text="{Binding PendingDialog.Input, FallbackValue=''}" PasswordChar="{Binding PendingDialog.SecretChar}" MaxLength="40" />

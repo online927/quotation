@@ -173,20 +173,8 @@ public sealed class QuotationService(
             throw new QuotationException(409, ApiErrorCodes.Concurrency, "This quotation was changed after you opened it. Reload it first.");
         }
 
-        // 1. Make data as current as possible: a quick incremental sync when Tally is reachable.
-        var liveRefreshed = false;
-        if (runtime.TallyConnected && !sync.IsRunning)
-        {
-            try
-            {
-                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                timeout.CancelAfter(TimeSpan.FromSeconds(30));
-                var run = await sync.RunAsync(SyncKind.Incremental, user.UserName, timeout.Token);
-                liveRefreshed = run.Status is SyncStatus.Succeeded or SyncStatus.Skipped;
-            }
-            catch (SyncAlreadyRunningException) { }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested) { }
-        }
+        // 1. No live Tally request at approval: the regular sync (every 3 hours, or "Sync changes") keeps the copy current,
+        //    so approving is quick even when Tally is busy or closed, and Tally gets fewer requests.
 
         // 2. Re-apply authoritative Tally values; if the Tally rate moved, the user must review.
         var rateChanges = await RefreshFromTallyAsync(q, ct);
@@ -212,16 +200,16 @@ public sealed class QuotationService(
 
         // 4. Data freshness.
         string? warning = null;
-        if (!liveRefreshed)
         {
+            // Only when the last successful sync is too old (Settings > Quotation, 24 hours by default).
             var lastSync = await status.LastSuccessfulSyncUtcAsync(ct);
             var staleAfter = TimeSpan.FromHours(settings.Quotation.StaleDataHours);
             var age = lastSync is null ? (TimeSpan?)null : clock.GetUtcNow().UtcDateTime - lastSync.Value;
-            if (age is null || age > staleAfter || !runtime.TallyConnected)
+            if (age is null || age > staleAfter)
             {
                 warning = age is null
                     ? "Tally data has never been synchronized."
-                    : $"Live Tally data could not be retrieved; using data synchronized {FormatAge(age.Value)} ago.";
+                    : $"Tally data was last synchronized {FormatAge(age.Value)} ago.";
                 if (!request.OverrideStaleData)
                 {
                     throw new QuotationException(409, ApiErrorCodes.StaleData,
@@ -239,6 +227,8 @@ public sealed class QuotationService(
         q.Status = QuotationStatus.Approved;
         q.ApprovedBy = user.UserName;
         q.ApprovedUtc = now;
+        if (settings.Quotation.TrackOutcomes && q.DocType == DocumentType.Quotation && q.FollowUpDate is null)
+            q.FollowUpDate = fy.Today().AddDays(Math.Max(0, settings.Quotation.FollowUpDays));
         q.DataFreshnessWarning = warning;
         q.Revision++;
         audit.Add(user.UserName, user.Machine, warning is null ? "QuotationApproved" : "QuotationApprovedWithStaleData", "Quotation",
@@ -495,6 +485,28 @@ public sealed class QuotationService(
     /// New proforma invoice (own number series, today's date) from a quotation: same customer, references,
     /// lines and rates. The quotation itself is unchanged. Nothing is created in Tally.
     /// </summary>
+    /// <summary>Won / Lost / Open and the follow-up date. Any user may set it; it does not change the quotation's content.</summary>
+    public async Task<QuotationDto> SetOutcomeAsync(Guid id, SetOutcomeRequest request, UserContext user, CancellationToken ct)
+    {
+        if (!settings.Quotation.TrackOutcomes)
+            throw new QuotationException(409, ApiErrorCodes.InvalidState, "Won / Lost tracking is switched off (Settings > Quotation).");
+        var q = await LoadAsync(id, ct);
+        if (q.DocType != DocumentType.Quotation)
+            throw new QuotationException(409, ApiErrorCodes.InvalidState, "Only quotations have an outcome.");
+        if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated))
+            throw new QuotationException(409, ApiErrorCodes.InvalidState, "Approve the quotation first.");
+        q.Outcome = request.Outcome;
+        q.LostReason = request.Outcome == QuotationOutcome.Lost ? (request.LostReason ?? "").Trim() : "";
+        if (q.LostReason.Length > 200) q.LostReason = q.LostReason[..200];
+        q.FollowUpDate = request.FollowUpDate;
+        q.OutcomeBy = user.UserName;
+        q.OutcomeUtc = clock.GetUtcNow().UtcDateTime;
+        audit.Add(user.UserName, user.Machine, "QuotationOutcome", "Quotation", q.Id.ToString(),
+            $"{q.Number}: {q.Outcome}{(q.LostReason.Length > 0 ? " (" + q.LostReason + ")" : "")}{(q.FollowUpDate is { } f ? ", follow up " + f.ToString("dd-MMM-yyyy") : "")}");
+        await SaveAsync(ct);
+        return await WithNoticesAsync(q, ct);
+    }
+
     public async Task<QuotationDto> ConvertToProformaAsync(Guid id, UserContext user, CancellationToken ct)
     {
         var source = await LoadAsync(id, ct);
@@ -507,6 +519,13 @@ public sealed class QuotationService(
             request.OtherReferences = "Our quotation " + source.Number;
         var dto = await CreateAsync(request, QuotationSource.Manual, user, ct, duplicatedFrom: source.Id);
         audit.Add(user.UserName, user.Machine, "ConvertedToProforma", "Quotation", dto.Id.ToString(), $"From {source.Number} to {dto.Number}");
+        if (settings.Quotation.TrackOutcomes && source.Outcome == QuotationOutcome.Open)
+        {
+            // A proforma invoice means the order came: the quotation is won.
+            source.Outcome = QuotationOutcome.Won;
+            source.OutcomeBy = user.UserName;
+            source.OutcomeUtc = clock.GetUtcNow().UtcDateTime;
+        }
         await SaveAsync(ct);
         return dto;
     }
@@ -620,6 +639,22 @@ public sealed class QuotationService(
         }
         q.Lines = lines;
         Recalculate(q);
+        await RememberDescriptionsAsync(lines, ct);
+    }
+
+    /// <summary>
+    /// The description typed for an item is offered the next time the item is picked (H1). Only non-empty descriptions are
+    /// remembered; nothing is written to Tally.
+    /// </summary>
+    private async Task RememberDescriptionsAsync(List<QuotationLine> lines, CancellationToken ct)
+    {
+        var latest = lines.Where(l => l.ProductId is not null && l.Description.Trim().Length > 0)
+            .GroupBy(l => l.ProductId!.Value).ToDictionary(g => g.Key, g => g.OrderBy(l => l.LineNo).Last().Description.Trim());
+        if (latest.Count == 0) return;
+        var ids = latest.Keys.ToList();
+        foreach (var p in await db.Products.Where(p => ids.Contains(p.Id)).ToListAsync(ct))
+            if (p.LastDescription != latest[p.Id]) p.LastDescription = latest[p.Id];
+        catalog.Remember(latest);
     }
 
     /// <summary>The calculation input of a saved quotation: its own GST presentation, round off and "Without GST".</summary>
@@ -856,6 +891,9 @@ public sealed class QuotationService(
             CancelledBy = q.CancelledBy,
             CancelledUtc = q.CancelledUtc,
             EditableUntil = EditableUntil(q),
+            Outcome = q.Outcome,
+            LostReason = q.LostReason,
+            FollowUpDate = q.FollowUpDate,
         };
     }
 }

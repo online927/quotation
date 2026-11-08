@@ -30,8 +30,11 @@ public static class CatalogEndpoints
             }
             var hits = (await search.ProductsAsync(ct)).Search(q, take).ToList();
             if (withHidden) hits = hits.Concat((await search.HiddenProductsAsync(ct)).Search(q, take)).OrderByDescending(h => h.Score).Take(take).ToList();
-            return hits.Select(h =>
-                new ProductSearchHitDto(CatalogSearchService.ToSummary(h.Item), Math.Round(h.Score, 2), CatalogSearchService.ToMatch(h.Evidence))).ToList();
+            var result = new List<ProductSearchHitDto>();
+            foreach (var h in hits)
+                result.Add(new ProductSearchHitDto(await search.WithRememberedAsync(CatalogSearchService.ToSummary(h.Item), ct), Math.Round(h.Score, 2),
+                    CatalogSearchService.ToMatch(h.Evidence)));
+            return result;
         });
 
         p.MapGet("/{id:int}", async (int id, QuotationDbContext db, CatalogSearchService search, CancellationToken ct) =>
@@ -63,7 +66,8 @@ public static class CatalogEndpoints
     }
 
     public static ProductSummaryDto ToSummary(Product x, bool hidden = false) =>
-        new(x.Id, x.Name, x.PartNumber, x.Brand, x.StockGroup, x.Unit, x.Hsn, x.GstRate, x.Rate ?? x.LastRate, x.Description,
+        new(x.Id, x.Name, x.PartNumber, x.Brand, x.StockGroup, x.Unit, x.Hsn, x.GstRate, x.Rate ?? x.LastRate,
+            x.LastDescription.Length > 0 ? x.LastDescription : x.Description,
             x.Rate is null && x.LastRate is not null ? x.LastRateNote : "", hidden);
 
     public static ProductDetailDto ToDetail(Product x, bool hidden = false)

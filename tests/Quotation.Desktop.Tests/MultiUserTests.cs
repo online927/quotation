@@ -169,7 +169,7 @@ public class MultiUserTests
     }
 
     [AvaloniaFact]
-    public async Task Unsaved_work_is_offered_back_after_a_crash()
+    public async Task Unsaved_work_opens_by_itself_after_a_crash()
     {
         using var server = new TestServer(products: 100, customers: 60, today: DateOnly.FromDateTime(DateTime.Today));
         string dir;
@@ -184,12 +184,12 @@ public class MultiUserTests
         }
 
         using var again = await PcAsync(server, "PC-A", configDir: dir);
-        await UiHelpers.WaitUntil(() => again.Shell.PendingDialog is not null);
-        Assert.Equal("Restore unsaved work?", again.Shell.PendingDialog!.Title);
-        await again.ShotAsync("r7-restore-question");
-        again.Shell.AnswerDialogCommand.Execute(true);
+        // Restored by itself (no question), with a message in the corner.
         await UiHelpers.WaitUntil(() => again.Shell.CurrentPage is QuotationEditorViewModel { Lines.Count: 1 });
         var restored = (QuotationEditorViewModel)again.Shell.CurrentPage!;
+        Assert.Null(again.Shell.PendingDialog);
+        Assert.Contains(again.Shell.Toasts, t => t.Text.StartsWith("Last quotation restored: Sonepar India Private Limited, 1 line"));
+        await again.ShotAsync("r7-restored");
         Assert.Equal("Typed before the power cut", restored.Remarks);
         Assert.Null(restored.Id);
         Assert.True(restored.IsDirty);

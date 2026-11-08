@@ -32,6 +32,11 @@ public class Product
     public DateOnly? LastRateDate { get; set; }
     /// <summary>Where the last rate came from, e.g. "TS Quotation TSQ2526-3403 · I3 PRECISION · 23-Oct-26".</summary>
     public string LastRateNote { get; set; } = "";
+    /// <summary>
+    /// The description last used for this item on a saved quotation (the app's own memory; never written to Tally).
+    /// Offered instead of the Tally description the next time the item is picked.
+    /// </summary>
+    public string LastDescription { get; set; } = "";
     public string Moq { get; set; } = "";
     /// <summary>True when HSN/GST come from the stock group ("As per Company/Stock Group").</summary>
     public bool GstInherited { get; set; }
@@ -177,6 +182,14 @@ public class QuotationHeader
     public string? CancelledBy { get; set; }
     public DateTime? CancelledUtc { get; set; }
 
+    /// <summary>Won / Lost / still open (only used when outcome tracking is on).</summary>
+    public QuotationOutcome Outcome { get; set; }
+    public string LostReason { get; set; } = "";
+    /// <summary>When to follow up with the customer (set at approval, may be changed).</summary>
+    public DateOnly? FollowUpDate { get; set; }
+    public string? OutcomeBy { get; set; }
+    public DateTime? OutcomeUtc { get; set; }
+
     /// <summary>Deleted by an administrator: kept in the Deleted list for 30 days, then removed.</summary>
     public DateTime? DeletedUtc { get; set; }
     public string? DeletedBy { get; set; }
@@ -270,10 +283,16 @@ public class AppUser
     public bool MustChangePassword { get; set; }
     /// <summary>"Without GST" for the next quotation this user saves (switches itself off afterwards).</summary>
     public bool WithoutGstNext { get; set; }
-    /// <summary>Light, Dark or System (follows Windows): the user's screens, on every PC.</summary>
+    /// <summary>Light, Dark, System (follows Windows) or a colour theme (Sunset, Lagoon …): the user's screens, on every PC.</summary>
     public string Theme { get; set; } = "Light";
     /// <summary>Tally or Zoho: the layout of the PDFs this user makes; null = the default in Settings.</summary>
     public string? PdfLayout { get; set; }
+    /// <summary>Normal or Large text (My Settings > Appearance).</summary>
+    public string TextSize { get; set; } = "Normal";
+    /// <summary>Comfortable or Compact spacing.</summary>
+    public string Spacing { get; set; } = "Comfortable";
+    /// <summary>No animations and no glow shadows.</summary>
+    public bool ReduceMotion { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime? LastLoginUtc { get; set; }
 }

@@ -17,6 +17,7 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
     public const string CompanyKey = "company";
     public const string QuotationKey = "quotation";
     public const string TallyKey = "tally";
+    public const string BackupKey = "backup";
     public const string AiKey = "ai";
     public const string GmailKey = "gmail";
     public const string SecretAiApiKey = "secret:ai.apikey";
@@ -34,6 +35,14 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
     public TallySettings Tally => Get<TallySettings>(TallyKey);
     public AiSettings Ai => Get<AiSettings>(AiKey);
     public GmailSettings Gmail => Get<GmailSettings>(GmailKey);
+    public BackupSettings Backup => Get<BackupSettings>(BackupKey);
+
+    /// <summary>After a restore: every setting is read again from the database.</summary>
+    public void ClearCache()
+    {
+        lock (_gate) _cache.Clear();
+        foreach (var key in new[] { CompanyKey, QuotationKey, TallyKey, AiKey, GmailKey, BackupKey }) Changed?.Invoke(key);
+    }
 
     public T Get<T>(string key) where T : class, new()
     {
@@ -85,7 +94,7 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
         var gmail = Gmail;
         gmail.ClientSecretJson = null;
         gmail.ClientSecretConfigured = HasSecret(SecretGmailClient);
-        return new AllSettingsDto { Company = Company, Quotation = Quotation, Tally = Tally, Ai = ai, Gmail = gmail };
+        return new AllSettingsDto { Company = Company, Quotation = Quotation, Tally = Tally, Ai = ai, Gmail = gmail, Backup = Backup };
     }
 
     public async Task SaveAllFromClientAsync(AllSettingsDto dto, string user, CancellationToken ct)
@@ -93,6 +102,7 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
         await SaveAsync(CompanyKey, dto.Company, user, ct);
         await SaveAsync(QuotationKey, dto.Quotation, user, ct);
         await SaveAsync(TallyKey, dto.Tally, user, ct);
+        await SaveAsync(BackupKey, dto.Backup, user, ct);
 
         // Write-only secrets: only replaced when a new value is supplied.
         if (!string.IsNullOrWhiteSpace(dto.Ai.ApiKey)) await SetSecretAsync(SecretAiApiKey, dto.Ai.ApiKey.Trim(), user, ct);

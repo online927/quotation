@@ -23,9 +23,18 @@ public static class QuotationEndpoints
         });
 
         g.MapGet("/", async (QuotationDbContext db, string? q, QuotationStatus? status, QuotationSource? source,
-            DateOnly? from, DateOnly? to, int? customerId, int? take, int? skip, DocumentType? type, CancellationToken ct) =>
+            DateOnly? from, DateOnly? to, int? customerId, int? take, int? skip, DocumentType? type, QuotationOutcome? outcome, bool? followUpDue,
+            FinancialYearService fy, CancellationToken ct) =>
         {
             var query = db.Quotations.AsNoTracking().AsQueryable();
+            if (outcome is not null) query = query.Where(x => x.Outcome == outcome
+                && (x.Status == QuotationStatus.Approved || x.Status == QuotationStatus.Generated) && x.DocType == DocumentType.Quotation);
+            if (followUpDue == true)
+            {
+                var today = fy.Today();
+                query = query.Where(x => x.Outcome == QuotationOutcome.Open && x.FollowUpDate != null && x.FollowUpDate <= today
+                    && (x.Status == QuotationStatus.Approved || x.Status == QuotationStatus.Generated) && x.DocType == DocumentType.Quotation);
+            }
             if (type is not null) query = query.Where(x => x.DocType == type);
             if (status is not null) query = query.Where(x => x.Status == status);
             if (source is not null) query = query.Where(x => x.Source == source);
@@ -59,7 +68,7 @@ public static class QuotationEndpoints
                 .Skip(Math.Max(0, skip ?? 0)).Take(Math.Clamp(take ?? 100, 1, 1000))
                 .Select(x => new QuotationSummaryDto(x.Id, x.Number, x.Date, x.Status, x.Source, x.Buyer.Name, x.Buyer.Gstin,
                     x.Lines.OrderBy(l => l.LineNo).Select(l => l.ItemName).FirstOrDefault() ?? "", x.Lines.Count, x.GrandTotal,
-                    x.CreatedBy, x.CreatedUtc, x.ApprovedBy, x.PdfPath != null, x.DocType))
+                    x.CreatedBy, x.CreatedUtc, x.ApprovedBy, x.PdfPath != null, x.DocType, x.Outcome, x.FollowUpDate))
                 .ToListAsync(ct);
             return rows;
         });
@@ -74,6 +83,9 @@ public static class QuotationEndpoints
 
         g.MapPost("/{id:guid}/approve", (Guid id, ApproveRequest r, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
             Handle(() => svc.ApproveAsync(id, r, User(ctx), ct)));
+
+        g.MapPut("/{id:guid}/outcome", (Guid id, SetOutcomeRequest r, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
+            Handle(() => svc.SetOutcomeAsync(id, r, User(ctx), ct)));
 
         g.MapPost("/{id:guid}/cancel", (Guid id, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
             Handle(() => svc.CancelAsync(id, User(ctx), ct)));

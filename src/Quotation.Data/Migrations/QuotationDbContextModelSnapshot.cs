@@ -161,8 +161,19 @@ namespace Quotation.Data.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("ReduceMotion")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Role")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Spacing")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TextSize")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Theme")
                         .IsRequired()
@@ -464,6 +475,10 @@ namespace Quotation.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("LastDescription")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal?>("LastRate")
                         .HasColumnType("TEXT");
 
@@ -622,7 +637,14 @@ namespace Quotation.Data.Migrations
                     b.Property<int?>("FinancialYearStart")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateOnly?>("FollowUpDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("GrandTotal")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LostReason")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Number")
@@ -630,6 +652,15 @@ namespace Quotation.Data.Migrations
 
                     b.Property<string>("OtherReferences")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OutcomeBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("OutcomeUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("PackingForwarding")

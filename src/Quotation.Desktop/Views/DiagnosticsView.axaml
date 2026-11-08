@@ -10,6 +10,10 @@
       <ctl:PageTitle Text="Diagnostics" Icon="diagnostics" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
         <Button Content="Backup database now" Command="{Binding BackupCommand}" />
+        <Button Name="ExportButton" Content="Export everything" Command="{Binding ExportCommand}"
+                ToolTip.Tip="One file (.tsq) with the database, PDFs, seal and logo, saved in Documents. Use it to move the server to another PC." />
+        <Button Name="RestoreButton" Content="Restore from backup file…" Click="OnRestoreClick"
+                ToolTip.Tip="Replace the server's data with a .tsq export or a .db backup (the current data is backed up first)." />
         <Button HotKey="F5" Command="{Binding LoadCommand}" ToolTip.Tip="Refresh (F5)">
           <StackPanel Orientation="Horizontal" Spacing="7">
             <Path Data="M20,11 A8,8 0 1 0 17.7,16.6 M20,4 L20,11 L13,11" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />

@@ -59,7 +59,9 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
     }
 
     public static UserDto ToDto(AppUser u) => new(u.Id, u.Username, u.DisplayName, u.Role, u.IsActive, u.MustChangePassword, u.WithoutGstNext,
-        AppTheme.IsValid(u.Theme) ? u.Theme : AppTheme.Light, PdfLayouts.IsValid(u.PdfLayout) ? u.PdfLayout : null);
+        AppTheme.IsValid(u.Theme) ? u.Theme : AppTheme.Light, PdfLayouts.IsValid(u.PdfLayout) ? u.PdfLayout : null,
+        AppDisplay.IsValidTextSize(u.TextSize) ? u.TextSize : AppDisplay.Normal,
+        AppDisplay.IsValidSpacing(u.Spacing) ? u.Spacing : AppDisplay.Comfortable, u.ReduceMotion);
 
     /// <summary>
     /// Administrator edits a user. The login name must stay unique; an administrator cannot deactivate themselves or

@@ -87,7 +87,65 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         }
     }
 
-    partial void OnStatusChanged(SystemStatusDto? value) => OnPropertyChanged(nameof(LastSyncText));
+    partial void OnStatusChanged(SystemStatusDto? value)
+    {
+        OnPropertyChanged(nameof(LastSyncText));
+        NotifyHealth();
+    }
+
+    // ================================================================= status dot (top bar) and warning strip
+
+    /// <summary>Green: all well. Orange: Tally busy, data getting old or slow answers. Red: Tally or the server cannot be reached.</summary>
+    public bool HealthBad => !ServerReachable || Status is { TallyConnected: false };
+    public bool HealthWarn => !HealthBad && (Status is { DataIsStale: true } or { TallyBusy: true } || SpeedSlow);
+    public bool HealthOk => !HealthBad && !HealthWarn;
+
+    /// <summary>Shown when pointing at the status dot.</summary>
+    public string HealthDetails => string.Join(Environment.NewLine, new[]
+    {
+        !ServerReachable ? "Quotation Server: no answer" : $"Quotation Server: answers in {(ServerMs is { } ms ? ms + " ms" : "…")}",
+        Status is null ? "Tally: …" : Status.TallyConnected ? $"Tally: connected ({Status.TallyCompany})" : "Tally: disconnected",
+        LastSyncText,
+    }.Where(s => s.Length > 0));
+
+    /// <summary>The word beside the status dot.</summary>
+    public string HealthLabel => HealthBad ? "Disconnected" : "Connected";
+
+    /// <summary>One line under the top bar, only while something is wrong; null when all is well.</summary>
+    public string? WarningText =>
+        !ServerReachable ? "Quotation Server unreachable — check the server PC and the network. Unsaved work is kept on this PC."
+        : Status is { TallyConnected: false } ? $"Tally disconnected — using the items and customers synced {Formatting.LocalDateTime(Status.LastSuccessfulSyncUtc) ?? "earlier"}."
+        : Status is { DataIsStale: true } ? $"Tally data is old — {LastSyncText.ToLowerInvariant()}. Open Tally and use Sync changes."
+        : Status is { TallyBusy: true } ? "Tally is busy — background reading paused until it answers quickly again."
+        : null;
+
+    /// <summary>Which problem the strip is about (closing it hides it until a different problem, or the same one again later).</summary>
+    private string? WarningKey =>
+        !ServerReachable ? "server" : Status is { TallyConnected: false } ? "tally" : Status is { DataIsStale: true } ? "stale" : Status is { TallyBusy: true } ? "busy" : null;
+
+    private string? _closedWarning;
+
+    /// <summary>The strip as shown: the warning, unless the user closed it for this problem.</summary>
+    public string? VisibleWarning => WarningKey is { } key && key != _closedWarning ? WarningText : null;
+
+    [RelayCommand]
+    private void CloseWarning()
+    {
+        _closedWarning = WarningKey;
+        OnPropertyChanged(nameof(VisibleWarning));
+    }
+
+    private void NotifyHealth()
+    {
+        if (WarningKey is null) _closedWarning = null; // fixed: the next problem shows again
+        OnPropertyChanged(nameof(VisibleWarning));
+        OnPropertyChanged(nameof(HealthBad));
+        OnPropertyChanged(nameof(HealthWarn));
+        OnPropertyChanged(nameof(HealthOk));
+        OnPropertyChanged(nameof(HealthDetails));
+        OnPropertyChanged(nameof(HealthLabel));
+        OnPropertyChanged(nameof(WarningText));
+    }
     public string UserDisplay { get; }
     public string UserRole { get; }
     public string UserInitials { get; }
@@ -130,7 +188,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         UserDisplay = user is null ? "" : user.DisplayName;
         UserRole = user?.Role.ToString() ?? "";
         UserInitials = user is null ? "" : string.Concat(user.DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
-        if (user is not null) session.ApplyTheme(user.Theme);
+        if (user is not null) session.ApplyAppearance(user);
         if (Avalonia.Application.Current is { } app) app.ActualThemeVariantChanged += OnThemeChanged;
 
         NavItems.Add(new NavItem("dashboard", "Dashboard", "", () => new DashboardViewModel(_session, Navigate)));
@@ -149,12 +207,71 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         NavItems.Add(new NavItem("gmail", "Gmail Connection", "", () => new GmailViewModel(_session, this)));
         NavItems.Add(new NavItem("mysettings", "My Settings", "", () => new MySettingsViewModel(_session)));
         NavItems.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session)));
-        if (session.IsAdmin) NavItems.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session)));
+        if (session.IsAdmin) NavItems.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session, this, () => _onLogout())));
 
         Navigate("dashboard");
         _ = OfferRecoveryAsync();
         _ = PollStatusAsync(_cts.Token);
+        _ = CheckForUpdateAsync();
     }
+
+    // ================================================================= automatic client updates (A2)
+
+    /// <summary>Closes the program (replaced in tests).</summary>
+    public static Action ExitApp { get; set; } = () =>
+        (Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.Shutdown();
+
+    /// <summary>This program's version (e.g. 0.9.52).</summary>
+    public static Version CurrentVersion { get; set; } = typeof(App).Assembly.GetName().Version ?? new Version(0, 0);
+
+    /// <summary>
+    /// The Quotation Server carries the newest client installer. When it is newer than this program:
+    /// "Update now" / "Later" ("Later" is not offered when an administrator set "Clients must update").
+    /// Update now downloads it, keeps unsaved work for next time, installs silently and opens the program again.
+    /// </summary>
+    public async Task CheckForUpdateAsync()
+    {
+        ClientUpdateDto update;
+        try { update = await _session.Api.ClientUpdateAsync(_cts.Token); }
+        catch { return; } // older server or no connection: try again next sign-in
+        if (!Version.TryParse(update.Version, out var offered) || Normal(offered) <= Normal(CurrentVersion)) return;
+        try
+        {
+            while (PendingPrompt is not null || PendingDialog is not null) await Task.Delay(500, _cts.Token);
+        }
+        catch (OperationCanceledException) { return; }
+        var size = update.Size >= 1024 * 1024 ? $" ({update.Size / 1024.0 / 1024.0:0} MB)" : "";
+        var now = await ConfirmAsync($"New version {Normal(offered)} is available",
+            update.Required
+                ? $"An administrator asks everyone to update now{size}. Unsaved work is kept and opens again after the update."
+                : $"You have {Normal(CurrentVersion)}. Update now{size}? Unsaved work is kept and opens again after the update.",
+            "Update now", update.Required ? "Close app" : "Later");
+        if (!now)
+        {
+            if (update.Required) { KeepWorkForNextTime(); ExitApp(); }
+            return;
+        }
+        Toast("Downloading the update…", 30);
+        var path = Path.Combine(Path.GetTempPath(), $"TSQuotation-Setup-{Normal(offered)}.exe");
+        try
+        {
+            await using (var file = File.Create(path)) await _session.Api.DownloadClientAsync(file, _cts.Token);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Toast("The update could not be downloaded: " + ex.Message, 10);
+            return;
+        }
+        KeepWorkForNextTime();
+        if (!_session.Documents.RunInstaller(path, _session.Config.ServerUrl))
+        {
+            Toast("The update could not be started. Ask the administrator to install it by hand.", 10);
+            return;
+        }
+        ExitApp();
+    }
+
+    private static Version Normal(Version v) => new(v.Major, v.Minor, Math.Max(0, v.Build));
 
     // ================================================================= navigation history
     // Works like a web browser: every page opened is remembered, Back (Alt+←, Esc, mouse back button) returns to the
@@ -179,6 +296,11 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     [RelayCommand]
     public void Navigate(string key)
     {
+        if (key == "followup")
+        {
+            _ = OpenAsync(null, () => new QuotationListViewModel(_session, this, QuotationListPreset.FollowUp));
+            return;
+        }
         var item = NavItems.FirstOrDefault(n => n.Key == key);
         if (item is null) return;
         _ = OpenAsync(item.Key, item.Factory);
@@ -315,37 +437,50 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public void Toast(string message, int seconds = 5)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
-        var item = new ToastItem(message);
+        Show(new ToastItem(message), seconds);
+    }
+
+    public void Toast(string message, string actionText, Action action, int seconds = 8) =>
+        Show(new ToastItem(message, actionText, action), seconds);
+
+    private void Show(ToastItem item, int seconds)
+    {
         Toasts.Add(item);
         while (Toasts.Count > 3) Toasts.RemoveAt(0);
         _ = RemoveLaterAsync(item, seconds);
     }
 
+    /// <summary>The button on a corner message (Undo …): runs it and closes the message.</summary>
+    [RelayCommand]
+    private void ToastAction(ToastItem? item)
+    {
+        if (item is null) return;
+        Toasts.Remove(item);
+        item.Action?.Invoke();
+    }
+
     private async Task RemoveLaterAsync(ToastItem item, int seconds)
     {
         try { await Task.Delay(TimeSpan.FromSeconds(seconds), _cts.Token); } catch (OperationCanceledException) { }
+        item.IsLeaving = true; // fades out
+        try { await Task.Delay(TimeSpan.FromMilliseconds(220), _cts.Token); } catch (OperationCanceledException) { }
         Toasts.Remove(item);
     }
 
     // ================================================================= unsaved work after a crash
 
-    /// <summary>After a power cut or crash: offers the quotation that was being worked on (kept on this PC).</summary>
-    private async Task OfferRecoveryAsync()
+    /// <summary>
+    /// After a power cut, a crash or closing without saving: the quotation that was being worked on (kept on this PC) opens by
+    /// itself, still unsaved, with a message in the corner. No question is asked and no number is used until it is saved.
+    /// </summary>
+    private Task OfferRecoveryAsync()
     {
-        if (_session.Api.CurrentUser?.Username is not { } user || RecoveryStore.For(_session.Config).Load(user) is not { } snap) return;
+        if (_session.Api.CurrentUser?.Username is not { } user || RecoveryStore.For(_session.Config).Load(user) is not { } snap) return Task.CompletedTask;
         var q = snap.Quotation;
-        var what = (q.Number ?? $"a new {(q.DocType == Quotation.Core.Domain.DocumentType.ProformaInvoice ? "proforma invoice" : "quotation")}")
-                   + (string.IsNullOrWhiteSpace(q.Buyer.Name) ? "" : $" for {q.Buyer.Name}")
-                   + $" ({q.Lines.Count} line{(q.Lines.Count == 1 ? "" : "s")})";
-        if (await ConfirmAsync("Restore unsaved work?",
-                $"The app closed before {what} was saved (last kept {snap.SavedAt:dd-MMM HH:mm}). Restore it?", "Restore", "Discard"))
-        {
-            _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this, snap));
-        }
-        else
-        {
-            RecoveryStore.For(_session.Config).Delete(user);
-        }
+        var what = string.IsNullOrWhiteSpace(q.Buyer.Name) ? (q.Number ?? "your quotation") : q.Buyer.Name;
+        _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this, snap));
+        Toast($"Last quotation restored: {what}, {q.Lines.Count} line{(q.Lines.Count == 1 ? "" : "s")}.", 8);
+        return Task.CompletedTask;
     }
 
     private void Show(PageEntry entry, bool returned)
@@ -405,6 +540,12 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     [RelayCommand]
     private async Task LogoutAsync()
     {
+        if (!_cts.IsCancellationRequested)
+        {
+            if (PendingPrompt is not null || PendingDialog is not null) return;
+            if (!await ConfirmAsync("Leaving already, bro?", "", "Yes", "No")) return;
+            KeepWorkForNextTime(); // unsaved work opens again at the next sign-in
+        }
         Dispose();
         await _session.Api.LogoutAsync();
         _onLogout();
@@ -440,6 +581,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         OnPropertyChanged(nameof(SpeedOk));
         OnPropertyChanged(nameof(SpeedSlow));
         OnPropertyChanged(nameof(SpeedBad));
+        NotifyHealth();
     }
 
     private async Task LoadStatusAsync()
@@ -457,6 +599,25 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
             ServerState = "Quotation Server unreachable";
             ServerMs = null;
         }
+    }
+
+    /// <summary>
+    /// Closing the window: "Bro, are you trying to close?" (No / Yes). Unsaved work is not asked about: it is kept
+    /// on this PC and opens by itself next time. True when the app may close.
+    /// </summary>
+    public async Task<bool> ConfirmCloseAsync()
+    {
+        if (_cts.IsCancellationRequested) return true;
+        if (PendingPrompt is not null || PendingDialog is not null) return false; // already asking something
+        if (!await ConfirmAsync("Bro, are you trying to close?", "", "Yes", "No")) return false;
+        KeepWorkForNextTime();
+        return true;
+    }
+
+    /// <summary>Windows is shutting down: no questions; unsaved work is kept on the PC for next time.</summary>
+    public void KeepWorkForNextTime()
+    {
+        if (_current?.Page is QuotationEditorViewModel editor) editor.KeepRecoveryCopy();
     }
 
     public void Dispose()

@@ -98,9 +98,10 @@ public sealed class AllSettingsDto
     public BackupSettings Backup { get; set; } = new();
     /// <summary>At least one seal picture exists (for "Preview on a page" of the seal size and position).</summary>
     public bool SealImageConfigured { get; set; }
-    /// <summary>The company seal picture from before personal seals is still on the server (can be given to a user).</summary>
-    public bool FormerCompanySeal { get; set; }
 }
+
+/// <summary>Size (points) and place of the seal on PDFs; a minus number moves it left / up.</summary>
+public sealed record SealPositionDto(double Width, double OffsetX, double OffsetY);
 
 /// <summary>Request for a PDF with the user's own seal.</summary>
 public sealed record SealedPdfRequest(string Pin);

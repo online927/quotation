@@ -168,7 +168,9 @@ public sealed class ModernPdfRenderer
     /// <summary>Remarks, terms &amp; conditions and sign-off, stacked upward from just above the footer rule (SPEC §6).</summary>
     private (List<TextLine> Lines, double Top) BottomBlock(XGraphics g, QuotationDocument doc)
     {
-        const double width = 500;
+        // With the "Pay by UPI" QR at the bottom right, the terms keep clear of it.
+        var hasQr = UpiQr.LinkFor(doc) is not null;
+        var width = hasQr ? 500 - QrSize - 20 : 500;
         var signOff = doc.SignOff.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
         var terms = new List<string>();
         for (var i = 0; i < doc.TermsAndConditions.Count; i++)
@@ -203,7 +205,26 @@ public sealed class ModernPdfRenderer
             for (var i = 0; i < remarks.Count; i++) placed.Add((top + 10.5 * i, new TextLine(remarks[i], 8, true)));
         }
         _bottomPositions = placed;
-        return (placed.Select(p => p.Line).ToList(), placed.Count == 0 ? 772.5 : placed.Min(p => p.T));
+        var blockTop = placed.Count == 0 ? 772.5 : placed.Min(p => p.T);
+        if (hasQr) blockTop = Math.Min(blockTop, QrTop);
+        return (placed.Select(p => p.Line).ToList(), blockTop);
+    }
+
+    /// <summary>"Pay by UPI" QR code at the bottom right of the last page, across from Terms &amp; Conditions.</summary>
+    private const double QrSize = 64;
+    private const double QrBottom = 772.5;
+    private const double QrTop = QrBottom - 11 - 3 - QrSize - 3 - 8;
+
+    private void DrawUpiQr(XGraphics g, QuotationDocument doc)
+    {
+        if (UpiQr.LinkFor(doc) is not { } link) return;
+        var right = AmountRight;
+        var t = QrTop;
+        Text(g, right, t, "Pay by UPI", 9, color: Black, align: Right);
+        t += 11 + 3;
+        UpiQr.Draw(g, link, right - QrSize, t, QrSize);
+        t += QrSize + 3;
+        TextFit(g, right, t, "UPI ID: " + doc.Company.UpiId.Trim(), 7, 160);
     }
 
     private List<(double T, TextLine Line)> _bottomPositions = [];
@@ -355,6 +376,7 @@ public sealed class ModernPdfRenderer
         {
             DrawTotals(g, layout.Totals, rowTop);
             foreach (var (t, line) in _bottomPositions) Text(g, LeftX, t, line.Text, line.Size, line.Bold);
+            DrawUpiQr(g, doc);
             if (doc.Seal is not null) DrawSeal(g, doc);
         }
         else

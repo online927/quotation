@@ -93,8 +93,8 @@ public partial class QuotationApiClient
     // Personal seals (administrators set them for users; administrators do not seal).
     public Task<UserDto> UploadUserSealAsync(int userId, byte[] image, CancellationToken ct = default) =>
         SendAsync<UserDto>(HttpMethod.Put, $"api/users/{userId}/seal", image, ct);
-    public Task<UserDto> UseFormerCompanySealAsync(int userId, CancellationToken ct = default) =>
-        PostAsync<UserDto>($"api/users/{userId}/seal/former", null, ct);
+    public Task SaveSealPositionAsync(SealPositionDto position, CancellationToken ct = default) =>
+        SendAsync(HttpMethod.Put, "api/settings/seal/position", position, ct);
     public Task<byte[]> UserSealImageAsync(int userId, CancellationToken ct = default) => GetBytesAsync($"api/users/{userId}/seal", ct);
     public Task<UserDto> SetUserSealPinAsync(int userId, string pin, CancellationToken ct = default) =>
         SendAsync<UserDto>(HttpMethod.Put, $"api/users/{userId}/seal/pin", new SealPinRequest(pin), ct);

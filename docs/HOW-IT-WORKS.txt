@@ -215,8 +215,9 @@ CONTENTS
   * Everyone: click your name (top right) > Change my password.
   * Passwords and seal PINs are stored scrambled; nobody can read them.
   * Seals: each user (not administrators) can have their own seal picture
-    and 4-digit PIN, set in Settings > Users > Edit > Seal. Administrators
-    do not seal. Five wrong PINs block that user's seal for 15 minutes.
+    and 4-digit PIN: Settings > Users > Edit > Seal, choose the picture,
+    type the PIN, press Save user ("Seal ready"). Administrators do not
+    seal. Five wrong PINs block that user's seal for 15 minutes.
   * Keep at least TWO administrator accounts.
   * Only AI Inbox (the AI service) and Gmail reach the internet, and only when
     they are switched on. Everything else stays in the office.
@@ -425,6 +426,12 @@ CONTENTS
     * Dashboard tile "To follow up" lists the ones whose date has come.
     * Quotation History shows the outcome and can filter by it.
     * Making a proforma invoice from a quotation marks it Won.
+
+  Pay by UPI QR code on quotations  (Settings > Company, off at first)
+    * Enter the company's UPI ID and switch it on. Quotations (not proforma
+      invoices) get a QR code: Tally layout in the right half of Terms of
+      Delivery, Zoho layout at the bottom right. Scanning it opens the
+      customer's UPI app with your UPI ID, the quotation total and number.
 
   WhatsApp follow-up  (when Won / Lost and WhatsApp are both on)
     * The "To follow up" list has a WhatsApp button on each quotation: it

@@ -289,12 +289,17 @@ checks), then the PDF is saved straight into your folder as *Number Customer.pdf
 always white. Remarks print in bold. The item entry has no *Due on* box (and the PDF no Due on column).
 
 **Seals (users only)**: each user can have their own seal picture and 4-digit seal PIN. An administrator sets them in
-**Settings → Users → Edit → Seal** (**Choose picture…**, a PNG with a transparent background looks best, or **Use the
-former company seal picture**; then **Set PIN**). A user with both sees **Seal** next to *Save as PDF*: tick it and
-enter their own PIN; their seal is printed over *for T.SAIFUDDIN & CO. / Authorised Signatory* on the last page.
-Administrators do not seal (no Seal box). The size and place of every seal are set in **Settings → Company → Seal on
-PDFs** (**Width**, **Move right**, **Move up**; a minus number moves left/down) with **Preview on a page**. Five wrong
-PINs block the seal for that user for 15 minutes (a new PIN unblocks it). Every sealed PDF is recorded in the history.
+**Settings → Users → Edit → Seal**: **Choose picture…** (a PNG with a transparent background looks best), type the PIN
+and press **Save user**; the line says *Seal ready* and the users list *Seal: ready*. A user with both sees **Seal**
+next to *Save as PDF*: tick it and enter their own PIN; their seal is printed over *for T.SAIFUDDIN & CO. / Authorised
+Signatory* on the last page. Administrators do not seal (no Seal box). The size and place of every seal (**Width**,
+**Move right**, **Move up**; a minus number moves left/down) are in the same Seal section, with **Preview on a page**.
+Five wrong PINs block the seal for that user for 15 minutes (a new PIN unblocks it). Every sealed PDF is recorded.
+
+**Pay by UPI QR code** (quotations only): **Settings → Company → Pay by UPI QR code**: the company's **UPI ID** and
+**QR on quotations** (off by default), then **Save**. Tally layout: in the right half of *Terms of Delivery*; Zoho
+layout: at the bottom right. Only *Pay by UPI* and the UPI ID are printed; scanning opens the customer's UPI app with
+the UPI ID, the quotation total and the quotation number filled in. Check it once with your own phone.
 
 **PDF file names**: **My Settings → PDF layout and file name**: *TSQ2627-5 Customer.pdf* (number first, the standard)
 or *Customer TSQ2627-5.pdf*. Saved with the login. On an approved quotation, **Drag PDF** (above the buttons) can be

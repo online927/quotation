@@ -244,14 +244,29 @@ public class Round16UiTests
     {
         using var ctx = await SetupAsync();
         var ravi = await ctx.Session.Api.CreateUserAsync(new CreateUserRequest("ravi", "Ravi", "ravi-pass", UserRole.User));
-        await ctx.Session.Api.UploadUserSealAsync(ravi.Id, Convert.FromBase64String(Png));
-        await ctx.Session.Api.SetUserSealPinAsync(ravi.Id, "2020");
         ctx.Shell.Navigate("settings");
         await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is SettingsViewModel { Users.Count: 2 });
         var settings = (SettingsViewModel)ctx.Shell.CurrentPage!;
         var view = ctx.Window.FindDescendantOfType<SettingsView>()!;
         var tabs = view.GetVisualDescendants().OfType<TabControl>().First();
         tabs.SelectedItem = tabs.Items.OfType<TabItem>().First(t => t.Header as string == "Users");
+        settings.EditUserCommand.Execute(settings.Users.Single(u => u.Username == "ravi"));
+        Assert.Equal("Seal: none", SettingsViewModel.SealStateText.Convert(settings.Users.Single(u => u.Username == "ravi"),
+            typeof(string), null, System.Globalization.CultureInfo.InvariantCulture));
+
+        // Picture chosen, then the PIN typed and Save user: the seal is ready (no separate "Set PIN").
+        await settings.UploadUserSealAsync(Convert.FromBase64String(Png));
+        Assert.StartsWith("Picture saved", settings.UserSealState);
+        settings.NewUserSealPin = "2020";
+        settings.SealWidth = 170;
+        await settings.SaveUserCommand.ExecuteAsync(null);
+        Assert.Contains("Seal ready", settings.InfoMessage);
+        var saved = await ctx.Session.Api.UsersAsync();
+        Assert.True(saved.Single(u => u.Username == "ravi").CanSeal);
+        Assert.Equal(170, (await ctx.Session.Api.SettingsAsync()).Company.SealWidth);
+        Assert.Equal("Seal: ready", SettingsViewModel.SealStateText.Convert(settings.Users.Single(u => u.Username == "ravi"),
+            typeof(string), null, System.Globalization.CultureInfo.InvariantCulture));
+
         settings.EditUserCommand.Execute(settings.Users.Single(u => u.Username == "ravi"));
         await UiHelpers.WaitUntil(() => settings.HasUserSealImage);
         Assert.Equal("Seal ready: this user can seal PDFs.", settings.UserSealState);

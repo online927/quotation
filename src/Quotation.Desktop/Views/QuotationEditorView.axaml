@@ -631,7 +631,7 @@
                 <TextBlock Text="Total quantity" />
                 <TextBlock Grid.Column="1" Text="{Binding TotalQuantityText}" />
               </Grid>
-              <Border Background="{DynamicResource AccentSoftBrush}" Margin="-14,4,-14,0" Padding="14,12" CornerRadius="0,0,10,10">
+              <Border Name="TotalBand" Background="{DynamicResource AccentSoftBrush}" Margin="-14,4,-14,0" Padding="14,12" CornerRadius="{DynamicResource CardBottomRadius}">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Text="Total" FontWeight="Bold" FontSize="17" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Text="{Binding GrandTotalText}" FontWeight="Bold" FontSize="19" VerticalAlignment="Center" />

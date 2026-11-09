@@ -609,8 +609,13 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 8. Themes: Glass (Colourful), Cyberpunk and Lagoon removed (users on them get Default Light); Graphite has a graphite-grey
    background.
 
-### Saved for later
+### Round 17
 
-* W9: UPI QR code on proforma invoices ("Pay by UPI" row above Customer's Seal and Signature; company UPI ID, amount and
-  invoice number filled in; on/off in Settings → Company).
-
+1. Pay by UPI QR code on quotations (not proforma invoices): Tally layout in the right half of Terms of Delivery, Zoho
+   layout at the bottom right; only "Pay by UPI" and the UPI ID printed; the customer's UPI app gets the UPI ID, the
+   quotation total and number. Settings → Company (administrators): UPI ID and an on/off switch (off by default).
+2. Seals: "Save user" also saves the seal PIN (no separate Set PIN); the users list shows each user's seal state; the seal
+   size and place moved to Settings → Users → Edit → Seal; "Use the former company seal picture" removed.
+3. Settings → Users, Claude AI and Gmail scroll.
+4. The Total band keeps inside the Totals box in every theme (rounder glass/frost corners).
+5. Cancel on a quotation that was never saved also forgets its recovery copy (it is not restored again).

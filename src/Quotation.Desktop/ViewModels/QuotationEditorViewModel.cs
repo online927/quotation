@@ -1380,9 +1380,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         if (Id is null)
         {
-            // Nothing saved yet: throw the entry away and go back without asking.
+            // Nothing saved yet: throw the entry away (and the copy kept for a crash) and go back without asking.
             ClearEntry();
             IsDirty = false;
+            DropRecoveryCopy();
             _navigator.GoBack();
             return;
         }

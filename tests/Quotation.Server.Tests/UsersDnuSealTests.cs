@@ -168,17 +168,20 @@ public class UsersDnuSealTests : QuotationTestBase
     }
 
     [Fact]
-    public async Task The_former_company_seal_picture_can_be_given_to_a_user()
+    public async Task Seal_size_and_place_are_saved_on_their_own()
     {
-        Assert.False((await Api.SettingsAsync()).FormerCompanySeal);
-        var folder = Path.Combine(Server.DataDirectory, "seal");
-        Directory.CreateDirectory(folder);
-        File.WriteAllBytes(Path.Combine(folder, "seal.img"), Convert.FromBase64String(Png)); // left by an older version
-        Assert.True((await Api.SettingsAsync()).FormerCompanySeal);
-        var asha = await Api.CreateUserAsync(new CreateUserRequest("asha", "Asha", "asha-pass", UserRole.User));
-        var given = await Api.UseFormerCompanySealAsync(asha.Id);
-        Assert.True(given.HasSealImage);
-        Assert.Equal(Convert.FromBase64String(Png), await Api.UserSealImageAsync(asha.Id));
+        await Api.SaveSealPositionAsync(new SealPositionDto(180, 10, -40));
+        var company = (await Api.SettingsAsync()).Company;
+        Assert.Equal((180d, 10d, -40d), (company.SealWidth, company.SealOffsetX, company.SealOffsetY));
+        Assert.Equal(HttpStatusCode.BadRequest, (await Assert.ThrowsAsync<ApiException>(() =>
+            Api.SaveSealPositionAsync(new SealPositionDto(5, 0, 0)))).Status);
+        Assert.Contains(await Api.AuditAsync(), a => a.Action == "SealPositionChanged");
+
+        await Api.CreateUserAsync(new CreateUserRequest("ravi", "Ravi", "ravi-pass", UserRole.User));
+        var user = Server.CreateApi("USER-PC");
+        await user.LoginAsync("ravi", "ravi-pass");
+        Assert.Equal(HttpStatusCode.Forbidden, (await Assert.ThrowsAsync<ApiException>(() =>
+            user.SaveSealPositionAsync(new SealPositionDto(150, 0, 0)))).Status);
     }
 
     private static async Task WaitUntilAsync(Func<Task<bool>> condition)

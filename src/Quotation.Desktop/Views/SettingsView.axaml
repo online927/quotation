@@ -6,6 +6,9 @@
              x:Class="Quotation.Desktop.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
   <UserControl.Styles>
+    <Style Selector="TextBlock.notready">
+      <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
+    </Style>
     <Style Selector="Grid.form > TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -93,26 +96,21 @@
             <TextBox Grid.Row="25" Grid.Column="1" Text="{Binding Settings.Company.ProformaDeclaration}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
             <TextBlock Grid.Row="26" Text="Proforma footer text" />
             <TextBox Grid.Row="26" Grid.Column="1" Text="{Binding Settings.Company.ProformaFooterText}" />
+            <!-- Pay by UPI QR code on quotations (administrators) -->
             <Border Grid.Row="27" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
               <StackPanel Spacing="8">
-                <TextBlock Classes="h2" Text="Seal on PDFs" />
+                <TextBlock Classes="h2" Text="Pay by UPI QR code (quotations)" />
                 <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                           Text="Each user has their own seal picture and PIN (Settings → Users → Edit). Administrators do not seal. A seal is printed over 'for T.SAIFUDDIN &amp; CO. / Authorised Signatory' when the user ticks 'Seal' and enters their PIN. Its size and place on the page are the same for everyone:" />
-                <Grid ColumnDefinitions="*">
-                  <StackPanel Spacing="6">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Classes="label" Text="Width (pt)" />
-                      <NumericUpDown Value="{Binding SealWidth}" Minimum="30" Maximum="280" Increment="10" FormatString="0" Width="110" />
-                      <TextBlock Classes="label" Text="Move right" Margin="8,0,0,0" />
-                      <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="110" />
-                      <TextBlock Classes="label" Text="Move up" Margin="8,0,0,0" />
-                      <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-200" Maximum="300" Increment="5" FormatString="0" Width="110" />
-                      <Button Content="Preview on a page" Command="{Binding PreviewSealCommand}" IsVisible="{Binding Settings.SealImageConfigured, FallbackValue=False}" Margin="8,0,0,0" />
-                    </StackPanel>
-                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                               Text="Points (72 = 1 inch). A minus number moves the other way (left / down). 'Preview on a page' shows the numbers above straight away; press Save (top right) to keep them for all PDFs." />
-                  </StackPanel>
+                           Text="A QR code on quotations (not proforma invoices): in the Tally layout in the right half of 'Terms of Delivery', in the Zoho layout at the bottom right. Only 'Pay by UPI' and the UPI ID are printed. Scanning it opens the customer's UPI app with the UPI ID, the quotation total and the quotation number filled in." />
+                <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+                  <TextBlock Text="UPI ID" VerticalAlignment="Center" />
+                  <TextBox Name="UpiIdBox" Grid.Column="1" Text="{Binding Settings.Company.UpiId}" Watermark="e.g. tsaifuddin@okhdfcbank" Width="300" HorizontalAlignment="Left" />
+                  <TextBlock Grid.Row="1" Text="QR on quotations" VerticalAlignment="Center" />
+                  <ToggleSwitch Name="UpiQrSwitch" Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.Company.UpiQrOnQuotations}"
+                                OnContent="On (when a UPI ID is set)" OffContent="Off" />
                 </Grid>
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="Press Save (top right), then Preview or Open PDF on a quotation to see it. Check the QR with your own phone before sending quotations." />
               </StackPanel>
             </Border>
           </Grid>
@@ -357,6 +355,7 @@
       </TabItem>
 
       <TabItem Header="Claude AI">
+        <ScrollViewer>
         <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
           <TextBlock Grid.Row="0" Text="Enable AI assistant" />
           <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Ai.Enabled}" />
@@ -370,9 +369,11 @@
           <TextBlock Grid.Row="3" Text="Max product candidates sent to AI" />
           <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.Ai.MaxCandidates}" Minimum="3" Maximum="25" FormatString="0" Width="160" HorizontalAlignment="Left" />
         </Grid>
+        </ScrollViewer>
       </TabItem>
 
       <TabItem Header="Gmail">
+        <ScrollViewer>
         <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
           <TextBlock Grid.Row="0" Text="Enable Gmail ingestion" />
           <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Gmail.Enabled}" />
@@ -388,19 +389,22 @@
           <TextBlock Grid.Row="4" Text="Connected account" />
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Gmail.ConnectedAccount, FallbackValue='Not connected', TargetNullValue='Not connected'}" />
         </Grid>
+        </ScrollViewer>
       </TabItem>
 
       <TabItem Header="Users" IsVisible="{Binding IsAdmin}">
+        <ScrollViewer>
         <StackPanel Margin="4,8" Spacing="10" MaxWidth="900" HorizontalAlignment="Left">
           <ItemsControl ItemsSource="{Binding Users}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="c:UserDto">
-                <Grid ColumnDefinitions="160,220,80,90,*" Margin="0,2">
+                <Grid ColumnDefinitions="160,220,80,90,130,*" Margin="0,2">
                   <TextBlock Text="{Binding Username}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Text="{Binding DisplayName}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="2" Text="{Binding Role}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="3" Text="{Binding IsActive, StringFormat='Active: {0}'}" VerticalAlignment="Center" />
-                  <Button Grid.Column="4" HorizontalAlignment="Left" Content="Edit"
+                  <TextBlock Grid.Column="4" Text="{Binding Converter={x:Static vm:SettingsViewModel.SealStateText}}" VerticalAlignment="Center" FontSize="12" />
+                  <Button Grid.Column="5" HorizontalAlignment="Left" Content="Edit"
                           Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).EditUserCommand}" CommandParameter="{Binding}" />
                 </Grid>
               </DataTemplate>
@@ -436,16 +440,26 @@
                   <StackPanel Grid.Column="2" Spacing="8">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <Button Name="UploadUserSealButton" Content="Choose picture…" Click="OnChooseUserSeal" />
-                      <Button Name="FormerSealButton" Content="Use the former company seal picture" Command="{Binding UseFormerCompanySealCommand}"
-                              IsVisible="{Binding Settings.FormerCompanySeal, FallbackValue=False}" />
                       <Button Content="Preview on a page" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Classes="label" Text="New seal PIN (4 digits)" VerticalAlignment="Center" />
                       <TextBox Name="UserSealPinBox" Text="{Binding NewUserSealPin}" PasswordChar="●" MaxLength="4" Width="90" Watermark="••••" />
-                      <Button Content="Set PIN" Command="{Binding SetUserSealPinCommand}" />
-                      <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding UserSealState}" />
+                      <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="saved with Save user" />
                     </StackPanel>
+                    <TextBlock Name="UserSealStateLine" FontWeight="SemiBold" FontSize="12" Text="{Binding UserSealState}"
+                               Foreground="{DynamicResource GreenBrush}" Classes.notready="{Binding !UserSealReady}" />
+                    <TextBlock Classes="label" Text="Size and place on the PDF (the same for every user's seal)" Margin="0,4,0,0" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Classes="label" Text="Width (pt)" VerticalAlignment="Center" />
+                      <NumericUpDown Name="SealWidthBox" Value="{Binding SealWidth}" Minimum="30" Maximum="280" Increment="10" FormatString="0" Width="110" />
+                      <TextBlock Classes="label" Text="Move right" Margin="8,0,0,0" VerticalAlignment="Center" />
+                      <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="110" />
+                      <TextBlock Classes="label" Text="Move up" Margin="8,0,0,0" VerticalAlignment="Center" />
+                      <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-200" Maximum="300" Increment="5" FormatString="0" Width="110" />
+                    </StackPanel>
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                               Text="Points (72 = 1 inch); a minus number moves it left / down. 'Preview on a page' shows these numbers straight away; Save user keeps them." />
                     <Button Content="Remove seal" Classes="danger" Command="{Binding RemoveUserSealCommand}" IsVisible="{Binding UserHasAnySeal}" HorizontalAlignment="Left" />
                   </StackPanel>
                 </Grid>
@@ -472,6 +486,7 @@
             <Button Grid.Column="8" Content="Add user" Command="{Binding AddUserCommand}" />
           </Grid>
         </StackPanel>
+        </ScrollViewer>
       </TabItem>
     </TabControl>
   </DockPanel>

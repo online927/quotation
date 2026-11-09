@@ -66,7 +66,7 @@ public static class SystemEndpoints
         users.MapGet("/", async (QuotationDbContext db, CancellationToken ct) =>
             (await db.Users.OrderBy(u => u.Username).ToListAsync(ct)).Select(AuthService.ToDto));
 
-        // Personal seals (users only; administrators do not seal): picture, PIN, the former company seal, remove.
+        // Personal seals (users only; administrators do not seal): picture, PIN, remove.
         async Task<(AppUser? User, IResult? Error)> SealUserAsync(int id, QuotationDbContext db, CancellationToken ct)
         {
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
@@ -84,17 +84,6 @@ public static class SystemEndpoints
             if (await seal.SaveImageAsync(user!.Id, ms.ToArray(), ct) is { } invalid) return Results.BadRequest(new ApiError(invalid));
             user.HasSealImage = true;
             audit.Add(ctx.User.UserName(), ctx.Machine(), "SealImageChanged", "User", user.Username);
-            await db.SaveChangesAsync(ct);
-            return Results.Ok(AuthService.ToDto(user));
-        });
-        users.MapPost("/{id:int}/seal/former", async (int id, QuotationDbContext db, SealService seal, AuditService audit,
-            HttpContext ctx, CancellationToken ct) =>
-        {
-            var (user, error) = await SealUserAsync(id, db, ct);
-            if (error is not null) return error;
-            if (!seal.CopyFormerCompanySeal(user!.Id)) return Results.NotFound(new ApiError("There is no former company seal picture."));
-            user.HasSealImage = true;
-            audit.Add(ctx.User.UserName(), ctx.Machine(), "SealImageChanged", "User", user.Username, "former company seal");
             await db.SaveChangesAsync(ct);
             return Results.Ok(AuthService.ToDto(user));
         });
@@ -214,7 +203,6 @@ public static class SystemEndpoints
         {
             var dto = s.GetAllForClient();
             dto.SealImageConfigured = seal.AnyImage() is not null;
-            dto.FormerCompanySeal = seal.HasFormerCompanySeal;
             return dto;
         }
 
@@ -229,6 +217,22 @@ public static class SystemEndpoints
             return Results.Ok(ForClient(s, seal));
         }).RequireAuthorization(AdminPolicy);
 
+        // Size and place of the seal on PDFs (the same for every user), saved from Settings → Users → Edit → Seal.
+        app.MapPut("/api/settings/seal/position", async (SealPositionDto req, SettingsService s, AuditService audit, HttpContext ctx,
+            CancellationToken ct) =>
+        {
+            if (req.Width is < 30 or > 280) return Results.BadRequest(new ApiError("The seal width must be between 30 and 280 points."));
+            if (Math.Abs(req.OffsetX) > 300 || Math.Abs(req.OffsetY) > 400) return Results.BadRequest(new ApiError("The seal is moved too far."));
+            var company = s.Company;
+            if (company.SealWidth == req.Width && company.SealOffsetX == req.OffsetX && company.SealOffsetY == req.OffsetY) return Results.NoContent();
+            company.SealWidth = req.Width;
+            company.SealOffsetX = req.OffsetX;
+            company.SealOffsetY = req.OffsetY;
+            await s.SaveAsync(SettingsService.CompanyKey, company, ctx.User.UserName(), ct);
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "SealPositionChanged", "Settings", "seal",
+                $"width {req.Width}, right {req.OffsetX}, down {req.OffsetY}", ct);
+            return Results.NoContent();
+        }).RequireAuthorization(AdminPolicy);
         // A sample page with a seal (the given user's, or any user's). Size and position can be given (the values on the Settings screen, not saved yet),
         // otherwise the saved ones are used.
         app.MapGet("/api/settings/seal/preview", (double? width, double? offsetX, double? offsetY, int? userId, SealService seal, SettingsService s,
@@ -313,6 +317,10 @@ public static class SystemEndpoints
         if (dto.Quotation.DefaultPackingForwardingAmount < 0 || dto.Quotation.DefaultPackingForwardingPercent < 0)
             errors.Add("Packing & forwarding cannot be negative.");
         if (dto.Company.QuotationValidityDays < 0) errors.Add("Validity days cannot be negative.");
+        var upi = (dto.Company.UpiId ?? "").Trim();
+        if (upi.Length > 0 && !System.Text.RegularExpressions.Regex.IsMatch(upi, @"^[A-Za-z0-9._-]{2,256}@[A-Za-z0-9.-]{2,64}$"))
+            errors.Add("The UPI ID must look like name@bank (e.g. tsaifuddin@okhdfcbank).");
+        if (dto.Company.UpiQrOnQuotations && upi.Length == 0) errors.Add("Enter the UPI ID to print the Pay by UPI QR code.");
         if (!string.IsNullOrWhiteSpace(dto.Gmail.ClientSecretJson) && Quotation.Gmail.GmailOAuth.ValidateClientSecret(dto.Gmail.ClientSecretJson) is { } gmailError)
             errors.Add(gmailError);
         if (string.IsNullOrWhiteSpace(dto.Gmail.Query)) errors.Add("Gmail search query cannot be empty.");

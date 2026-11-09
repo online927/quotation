@@ -90,6 +90,7 @@ public static class ColourThemes
         {
             foreach (var (key, colour) in GlassBrushes(glass)) app.Resources[key] = BrushOf(colour);
             SetShape(app, "CardRadius", new CornerRadius(22));
+            SetShape(app, "CardBottomRadius", new CornerRadius(0, 0, 22, 22));
             SetShape(app, "ButtonRadius", new CornerRadius(18));
             SetShape(app, "ControlCornerRadius", new CornerRadius(12));
             GlowShadow = GlassShadow;
@@ -99,6 +100,7 @@ public static class ColourThemes
         {
             foreach (var (key, colour) in FrostBrushes) app.Resources[key] = BrushOf(colour);
             SetShape(app, "CardRadius", new CornerRadius(16));
+            SetShape(app, "CardBottomRadius", new CornerRadius(0, 0, 16, 16));
             SetShape(app, "ButtonRadius", new CornerRadius(12));
             SetShape(app, "ControlCornerRadius", new CornerRadius(10));
             GlowShadow = FrostShadow;
@@ -148,7 +150,7 @@ public static class ColourThemes
     ]).Distinct().ToArray();
 
     // Shapes (corners) live at the top of the app resources: remember the standard values to put them back.
-    private static readonly string[] ShapeKeys = ["CardRadius", "ButtonRadius", "ControlCornerRadius"];
+    private static readonly string[] ShapeKeys = ["CardRadius", "CardBottomRadius", "ButtonRadius", "ControlCornerRadius"];
     private static readonly Dictionary<string, object?> Standard = [];
 
     private static void SetShape(Application app, string key, object value)

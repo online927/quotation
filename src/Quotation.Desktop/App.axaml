@@ -19,6 +19,8 @@
     <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
     <!-- Shapes a colour theme may change -->
     <CornerRadius x:Key="CardRadius">10</CornerRadius>
+    <!-- The bottom corners of a card, for a band along its bottom edge (the Total band) -->
+    <CornerRadius x:Key="CardBottomRadius">0,0,10,10</CornerRadius>
     <CornerRadius x:Key="ButtonRadius">999</CornerRadius>
     <BoxShadows x:Key="CardShadow">0 1 3 0 #0F000000</BoxShadows>
     <!-- Spacing a user may make compact (My Settings > Appearance) -->

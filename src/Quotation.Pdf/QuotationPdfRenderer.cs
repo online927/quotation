@@ -410,7 +410,11 @@ public sealed class QuotationPdfRenderer
     }
 
     /// <summary>A cell of the reference grid; <paramref name="JoinAbove"/> merges it with the cell above (no line between).</summary>
-    private sealed record Cell(string Label, string Value, bool Full = false, bool JoinAbove = false);
+    private sealed record Cell(string Label, string Value, bool Full = false, bool JoinAbove = false, bool UpiQr = false);
+
+    /// <summary>The "Pay by UPI" QR code: its size and the height of its block (title, code, UPI ID).</summary>
+    private const double QrSize = 78;
+    private double QrBlockHeight => LineHeight(_bold) + 3 + QrSize + 4 + LineHeight(_label) + LineHeight(_bold);
 
     private static List<Cell> RightCells(QuotationDocument doc)
     {
@@ -434,7 +438,10 @@ public sealed class QuotationPdfRenderer
             new("", "", JoinAbove: true), new("Mode/Terms of Payment", doc.PaymentTerms),
             new("Buyer's Ref./Order No.", buyersRef), new("Other References", doc.OtherReferences),
             new("Dispatched through", doc.DispatchedThrough), new("Destination", doc.Destination),
-            new("Terms of Delivery", doc.TermsOfDelivery, Full: true),
+            // With the UPI QR (Settings → Company), Terms of Delivery keeps the left half and the QR takes the right half.
+            .. (UpiQr.LinkFor(doc) is null
+                ? new[] { new Cell("Terms of Delivery", doc.TermsOfDelivery, Full: true) }
+                : [new Cell("Terms of Delivery", doc.TermsOfDelivery), new Cell("", "", UpiQr: true)]),
         ];
     }
 
@@ -448,7 +455,9 @@ public sealed class QuotationPdfRenderer
             var row = cells[i].Full ? new[] { cells[i] } : new[] { cells[i], cells[i + 1] };
             i += row.Length;
             var cellWidth = RightWidth / row.Length - 2 * Pad;
-            var h = row.Max(c => LineHeight(_label) + Math.Max(1, Wrap(g, c.Value, _bold, cellWidth).Count) * LineHeight(_bold)) + 2 * Pad;
+            var h = row.Max(c => c.UpiQr
+                ? QrBlockHeight
+                : LineHeight(_label) + Math.Max(1, Wrap(g, c.Value, _bold, cellWidth).Count) * LineHeight(_bold)) + 2 * Pad;
             rows.Add((Math.Max(h, 22), row));
         }
         return rows;
@@ -517,6 +526,11 @@ public sealed class QuotationPdfRenderer
             {
                 var x = mid + c * cellWidth;
                 if (c > 0) g.DrawLine(pen, x, y, x, y + h);
+                if (cells[c].UpiQr)
+                {
+                    DrawUpiQr(g, doc, x, y, cellWidth, h);
+                    continue;
+                }
                 DrawText(g, cells[c].Label, _label, x + Pad, y + Pad);
                 var vy = y + Pad + LineHeight(_label);
                 foreach (var l in Wrap(g, cells[c].Value, _bold, cellWidth - 2 * Pad))
@@ -1001,6 +1015,27 @@ public sealed class QuotationPdfRenderer
     // =====================================================================================
     // Text helpers
     // =====================================================================================
+
+    /// <summary>"Pay by UPI", the QR code and the UPI ID, centred in the cell.</summary>
+    private void DrawUpiQr(XGraphics g, QuotationDocument doc, double x, double y, double width, double height)
+    {
+        if (UpiQr.LinkFor(doc) is not { } link) return;
+        var cx = x + width / 2;
+        var top = y + Math.Max(Pad, (height - QrBlockHeight) / 2);
+        void Centre(string text, XFont font, double ty)
+        {
+            // A long UPI ID gets smaller rather than running out of the cell.
+            var f = font;
+            while (Measure(g, text, f) > width - 2 * Pad && f.Size > 5) f = new XFont(f.FontFamily.Name, f.Size - 0.5, f.Style);
+            DrawText(g, text, f, cx - Measure(g, text, f) / 2, ty);
+        }
+        Centre("Pay by UPI", _bold, top);
+        top += LineHeight(_bold) + 3;
+        UpiQr.Draw(g, link, cx - QrSize / 2, top, QrSize);
+        top += QrSize + 4;
+        Centre("UPI ID", _label, top);
+        Centre(doc.Company.UpiId.Trim(), _bold, top + LineHeight(_label));
+    }
 
     private static XPen Pen(double width = 0.6) => new(XColors.Black, width);
 

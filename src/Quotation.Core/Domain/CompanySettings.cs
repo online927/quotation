@@ -51,6 +51,11 @@ public sealed class CompanySettings
     /// <summary>Moves the seal from its standard place over "Authorised Signatory" (points; right and down are positive).</summary>
     public double SealOffsetX { get; set; }
     public double SealOffsetY { get; set; }
+
+    /// <summary>The company's UPI ID (e.g. tsaifuddin@okhdfcbank) for the "Pay by UPI" QR code.</summary>
+    public string UpiId { get; set; } = "";
+    /// <summary>Print a "Pay by UPI" QR code on quotations (not proforma invoices). Off at first.</summary>
+    public bool UpiQrOnQuotations { get; set; }
 }
 
 /// <summary>Quotation behaviour settings.</summary>

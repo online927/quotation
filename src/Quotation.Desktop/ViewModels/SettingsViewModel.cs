@@ -41,6 +41,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(EditingUserCanHaveSeal));
         OnPropertyChanged(nameof(UserSealState));
         OnPropertyChanged(nameof(UserHasAnySeal));
+        OnPropertyChanged(nameof(UserSealReady));
     }
 
     // Personal seal of the user being edited (users only; administrators do not seal)
@@ -50,14 +51,25 @@ public sealed partial class SettingsViewModel : ViewModelBase
     partial void OnUserSealImageChanged(Avalonia.Media.Imaging.Bitmap? value) => OnPropertyChanged(nameof(HasUserSealImage));
     public bool EditingUserCanHaveSeal => EditingUser is { Role: not UserRole.Admin };
     public bool UserHasAnySeal => EditingUser is { } u && (u.HasSealImage || u.HasSealPin);
+    public bool UserSealReady => EditingUser is { HasSealImage: true, HasSealPin: true };
     public string UserSealState => EditingUser switch
     {
         null => "",
         { HasSealImage: true, HasSealPin: true } => "Seal ready: this user can seal PDFs.",
-        { HasSealImage: true } => "Picture set; set a PIN to finish.",
-        { HasSealPin: true } => "PIN set; choose a picture to finish.",
-        _ => "No seal yet.",
+        { HasSealImage: true } => "Picture saved. Type a 4-digit PIN and press Save user to finish.",
+        { HasSealPin: true } => "PIN saved. Choose a picture to finish.",
+        _ => "No seal yet: choose a picture and type a PIN, then Save user.",
     };
+
+    /// <summary>"Seal: ready" / "Seal: no PIN" … in the list of users.</summary>
+    public static Avalonia.Data.Converters.FuncValueConverter<UserDto?, string> SealStateText { get; } = new(u => u switch
+    {
+        null or { Role: UserRole.Admin } => "",
+        { HasSealImage: true, HasSealPin: true } => "Seal: ready",
+        { HasSealImage: true } => "Seal: no PIN",
+        { HasSealPin: true } => "Seal: no picture",
+        _ => "Seal: none",
+    });
 
     // Seal size and position on PDFs (administrator)
     [ObservableProperty] private decimal? _sealWidth;
@@ -288,17 +300,47 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         if (EditingUser is not { } user) return;
         InfoMessage = null;
+        var pin = NewUserSealPin.Trim();
+        if (pin.Length > 0 && (pin.Length != 4 || !pin.All(char.IsAsciiDigit)))
+        {
+            ErrorMessage = "The seal PIN must be exactly 4 digits.";
+            return;
+        }
+        string? sealNote = null;
         if (await RunAsync(async () =>
             {
                 var saved = await _session.Api.UpdateUserAsync(user.Id,
                     new UpdateUserRequest(EditUsername, EditDisplayName, EditIsAdmin ? UserRole.Admin : UserRole.User, EditIsActive));
+                // The seal PIN typed in the Seal section, and the seal size and place.
+                if (pin.Length > 0 && saved.Role != UserRole.Admin) saved = await _session.Api.SetUserSealPinAsync(user.Id, pin);
+                await SaveSealPositionAsync();
                 _session.Api.UpdateCurrentUser(saved);
+                NewUserSealPin = "";
                 await LoadUsersAsync();
+                if (saved.Role != UserRole.Admin)
+                    sealNote = saved switch
+                    {
+                        { HasSealImage: true, HasSealPin: true } => " Seal ready: they can seal PDFs.",
+                        { HasSealImage: true } => " Seal picture saved, but no PIN yet.",
+                        { HasSealPin: true } => " Seal PIN saved, but no picture yet.",
+                        _ => "",
+                    };
             }))
         {
-            InfoMessage = $"User '{EditUsername.Trim()}' saved.";
+            InfoMessage = $"User '{EditUsername.Trim()}' saved." + sealNote;
             EditingUser = null;
         }
+    }
+
+    /// <summary>Saves the seal size and place when they were changed on screen (the same for every seal).</summary>
+    private async Task SaveSealPositionAsync()
+    {
+        if (Settings is null) return;
+        var position = new SealPositionDto((double)(SealWidth ?? 150), (double)(SealOffsetX ?? 0), -(double)(SealMoveUp ?? 0));
+        var c = Settings.Company;
+        if (c.SealWidth == position.Width && c.SealOffsetX == position.OffsetX && c.SealOffsetY == position.OffsetY) return;
+        await _session.Api.SaveSealPositionAsync(position);
+        (c.SealWidth, c.SealOffsetX, c.SealOffsetY) = (position.Width, position.OffsetX, position.OffsetY);
     }
 
     /// <summary>Temporary password: the user must choose a new one at the next login; logged out on every PC now.</summary>
@@ -354,34 +396,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         var saved = await _session.Api.UploadUserSealAsync(user.Id, image);
         await SealChangedAsync(saved, saved.HasSealPin
             ? $"Seal picture of '{user.Username}' saved."
-            : $"Seal picture of '{user.Username}' saved. Now set their 4-digit seal PIN.");
+            : $"Seal picture of '{user.Username}' saved. Now type their 4-digit seal PIN and press Save user.");
     });
-
-    [RelayCommand]
-    private Task UseFormerCompanySealAsync() => RunAsync(async () =>
-    {
-        if (EditingUser is not { } user) return;
-        var saved = await _session.Api.UseFormerCompanySealAsync(user.Id);
-        await SealChangedAsync(saved, $"'{user.Username}' now has the former company seal picture.");
-    });
-
-    [RelayCommand]
-    private async Task SetUserSealPinAsync()
-    {
-        if (EditingUser is not { } user) return;
-        var pin = NewUserSealPin.Trim();
-        if (pin.Length != 4 || !pin.All(char.IsAsciiDigit))
-        {
-            ErrorMessage = "The seal PIN must be exactly 4 digits.";
-            return;
-        }
-        await RunAsync(async () =>
-        {
-            var saved = await _session.Api.SetUserSealPinAsync(user.Id, pin);
-            NewUserSealPin = "";
-            await SealChangedAsync(saved, $"Seal PIN of '{user.Username}' set. Tell them the PIN; nobody else can see it.");
-        });
-    }
 
     [RelayCommand]
     private Task RemoveUserSealAsync() => RunAsync(async () =>

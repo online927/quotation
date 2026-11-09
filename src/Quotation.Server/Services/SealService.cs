@@ -11,8 +11,7 @@ namespace Quotation.Server.Services;
 /// Personal seals: each user (not administrators) can have their own seal picture and 4-digit seal PIN, set by an
 /// administrator in Settings → Users. A PDF is sealed only on request, with that user's PIN, and gets that user's picture.
 /// Administrators do not seal. After five wrong PINs the seal is blocked for that user for 15 minutes (a 4-digit code
-/// could otherwise be found by trying). The former company seal picture (seal\seal.img) is kept only so it can be given
-/// to a user without uploading it again.
+/// could otherwise be found by trying).
 /// </summary>
 public sealed class SealService(IOptions<ServerOptions> options, TimeProvider clock)
 {
@@ -23,19 +22,15 @@ public sealed class SealService(IOptions<ServerOptions> options, TimeProvider cl
     private readonly string _folder = Path.Combine(options.Value.ResolveDataDirectory(), "seal");
     private readonly ConcurrentDictionary<string, (int Failures, DateTime? BlockedUntilUtc)> _attempts = new(StringComparer.OrdinalIgnoreCase);
 
-    private string FormerCompanyPath => Path.Combine(_folder, "seal.img");
     private string UserPath(int userId) => Path.Combine(_folder, $"user-{userId}.img");
-
-    /// <summary>The company seal picture from before personal seals (can be given to a user).</summary>
-    public bool HasFormerCompanySeal => File.Exists(FormerCompanyPath);
 
     public byte[]? ReadImage(int userId) => File.Exists(UserPath(userId)) ? File.ReadAllBytes(UserPath(userId)) : null;
 
-    /// <summary>A seal picture to show where seals are printed (Settings → Company): any user's, or the former company seal.</summary>
+    /// <summary>A seal picture to show where seals are printed: any user's.</summary>
     public byte[]? AnyImage()
     {
         if (!Directory.Exists(_folder)) return null;
-        var file = Directory.EnumerateFiles(_folder, "user-*.img").FirstOrDefault() ?? (HasFormerCompanySeal ? FormerCompanyPath : null);
+        var file = Directory.EnumerateFiles(_folder, "user-*.img").FirstOrDefault();
         return file is null ? null : File.ReadAllBytes(file);
     }
 
@@ -66,15 +61,6 @@ public sealed class SealService(IOptions<ServerOptions> options, TimeProvider cl
         await File.WriteAllBytesAsync(temp, bytes, ct);
         File.Move(temp, UserPath(userId), overwrite: true);
         return null;
-    }
-
-    /// <summary>Gives a user the former company seal picture.</summary>
-    public bool CopyFormerCompanySeal(int userId)
-    {
-        if (!HasFormerCompanySeal) return false;
-        Directory.CreateDirectory(_folder);
-        File.Copy(FormerCompanyPath, UserPath(userId), overwrite: true);
-        return true;
     }
 
     public void DeleteImage(int userId)

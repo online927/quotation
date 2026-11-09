@@ -153,7 +153,6 @@ conditions (one per line), default payment terms and footer.
 * **Title Case while typing** (on): the first letter of each word typed in the quotation's text boxes becomes a
   capital, as in Tally. Capitals you type stay, words starting with a number (`150mm`) stay as typed, and you can
   correct a letter afterwards. Not used for e-mail, GSTIN, phone or the search boxes.
-* **Company seal → All users can use the seal**: off = administrators only.
 * **Heading on quotation PDF** / **Heading on proforma invoice PDF**: the title at the top of the PDF (default
   QUOTATION / PROFORMA INVOICE), printed exactly as typed; empty = the standard heading. **Preview PDF** next to it.
 * **Part No. column** (on quotations / on proforma invoices, both on): the Part No. from Tally (its Part No. field,
@@ -258,7 +257,7 @@ enter the quantity → **Create Draft**). Nothing is ever sent to customers auto
    If someone else has the same quotation open, a yellow line says so; if they saved first, you choose to save yours
    as a new quotation or to see their changes (and put yours back).
 5. **Ctrl+S** saves the draft and assigns the quotation number. **F11** opens a preview (DRAFT watermark).
-6. **Ctrl+Enter — Approve & Generate PDF**: the app refreshes Tally data, validates everything, generates the PDF
+6. **Ctrl+Enter — Approve**: the app refreshes Tally data, validates everything, generates the PDF
    and opens it. PDFs are saved on the server in `C:\ProgramData\TSQuotation\pdf\<year>\<number>.pdf` and a copy is
    opened from `Documents\Quotations` on your PC for e-mailing.
 
@@ -289,12 +288,17 @@ checks), then the PDF is saved straight into your folder as *Number Customer.pdf
 (Light / Dark / Same as Windows). The choice is saved with the login, so it follows the user to every PC; PDFs are
 always white. Remarks print in bold. The item entry has no *Due on* box (and the PDF no Due on column).
 
-**Company seal**: tick **Seal** next to *Save as PDF* and enter the 4-digit seal PIN; the seal is printed over
-*for T.SAIFUDDIN & CO. / Authorised Signatory* on the last page. Set up once by an administrator in
-**Settings → Company → Company seal**: choose the image (PNG with transparent background looks best), adjust width
-and position (**Width**, **Move right**, **Move up**; a minus number moves left/down) with **Preview on a page**, which shows
-the numbers on screen before saving,, set the **seal PIN** (any 4 digits) and press **Save**. Five wrong PINs
-block the seal for that user for 15 minutes. Every sealed PDF is recorded in the history.
+**Seals (users only)**: each user can have their own seal picture and 4-digit seal PIN. An administrator sets them in
+**Settings → Users → Edit → Seal** (**Choose picture…**, a PNG with a transparent background looks best, or **Use the
+former company seal picture**; then **Set PIN**). A user with both sees **Seal** next to *Save as PDF*: tick it and
+enter their own PIN; their seal is printed over *for T.SAIFUDDIN & CO. / Authorised Signatory* on the last page.
+Administrators do not seal (no Seal box). The size and place of every seal are set in **Settings → Company → Seal on
+PDFs** (**Width**, **Move right**, **Move up**; a minus number moves left/down) with **Preview on a page**. Five wrong
+PINs block the seal for that user for 15 minutes (a new PIN unblocks it). Every sealed PDF is recorded in the history.
+
+**PDF file names**: **My Settings → PDF layout and file name**: *TSQ2627-5 Customer.pdf* (number first, the standard)
+or *Customer TSQ2627-5.pdf*. Saved with the login. On an approved quotation, **Drag PDF** (above the buttons) can be
+dragged straight into a WhatsApp chat, an e-mail or a folder.
 
 **Without GST** (e.g. for SEZ customers): **My Settings → Without GST (next quotation only)**. Your next quotation
 or proforma invoice shows 0 % on every item, *Packing & Forwarding - Without GST* and no SGST/CGST/IGST lines, like

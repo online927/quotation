@@ -2,18 +2,20 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Options;
 using PdfSharp.Drawing;
 using Quotation.Contracts;
+using Quotation.Data.Entities;
 using Quotation.Server.Auth;
 
 namespace Quotation.Server.Services;
 
 /// <summary>
-/// The company seal: one image on the server (uploaded by an administrator) and a 4-digit seal PIN. A PDF is sealed only
-/// on request, by an administrator or, when allowed in Settings, by any user, and only with the right PIN. After five wrong
-/// PINs the seal is blocked for that user for 15 minutes (a 4-digit code could otherwise be found by trying).
+/// Personal seals: each user (not administrators) can have their own seal picture and 4-digit seal PIN, set by an
+/// administrator in Settings → Users. A PDF is sealed only on request, with that user's PIN, and gets that user's picture.
+/// Administrators do not seal. After five wrong PINs the seal is blocked for that user for 15 minutes (a 4-digit code
+/// could otherwise be found by trying). The former company seal picture (seal\seal.img) is kept only so it can be given
+/// to a user without uploading it again.
 /// </summary>
-public sealed class SealService(IOptions<ServerOptions> options, SettingsService settings, TimeProvider clock)
+public sealed class SealService(IOptions<ServerOptions> options, TimeProvider clock)
 {
-    public const string SecretPin = "secret:seal.pin";
     public const int MaxAttempts = 5;
     public static readonly TimeSpan BlockTime = TimeSpan.FromMinutes(15);
     private const int MaxImageBytes = 5 * 1024 * 1024;
@@ -21,15 +23,24 @@ public sealed class SealService(IOptions<ServerOptions> options, SettingsService
     private readonly string _folder = Path.Combine(options.Value.ResolveDataDirectory(), "seal");
     private readonly ConcurrentDictionary<string, (int Failures, DateTime? BlockedUntilUtc)> _attempts = new(StringComparer.OrdinalIgnoreCase);
 
-    private string ImagePath => Path.Combine(_folder, "seal.img");
+    private string FormerCompanyPath => Path.Combine(_folder, "seal.img");
+    private string UserPath(int userId) => Path.Combine(_folder, $"user-{userId}.img");
 
-    public bool HasImage => File.Exists(ImagePath);
-    public bool HasPin => settings.HasSecret(SecretPin);
+    /// <summary>The company seal picture from before personal seals (can be given to a user).</summary>
+    public bool HasFormerCompanySeal => File.Exists(FormerCompanyPath);
 
-    public byte[]? ReadImage() => HasImage ? File.ReadAllBytes(ImagePath) : null;
+    public byte[]? ReadImage(int userId) => File.Exists(UserPath(userId)) ? File.ReadAllBytes(UserPath(userId)) : null;
 
-    /// <summary>Stores a new seal image (PNG with a transparent background looks best; JPG works).</summary>
-    public async Task<string?> SaveImageAsync(byte[] bytes, CancellationToken ct)
+    /// <summary>A seal picture to show where seals are printed (Settings → Company): any user's, or the former company seal.</summary>
+    public byte[]? AnyImage()
+    {
+        if (!Directory.Exists(_folder)) return null;
+        var file = Directory.EnumerateFiles(_folder, "user-*.img").FirstOrDefault() ?? (HasFormerCompanySeal ? FormerCompanyPath : null);
+        return file is null ? null : File.ReadAllBytes(file);
+    }
+
+    /// <summary>Checks a picture (PNG with a transparent background looks best; JPG works); null when it can be used.</summary>
+    public static string? Validate(byte[] bytes)
     {
         if (bytes.Length == 0) return "The file is empty.";
         if (bytes.Length > MaxImageBytes) return "The image is larger than 5 MB.";
@@ -43,39 +54,55 @@ public sealed class SealService(IOptions<ServerOptions> options, SettingsService
         {
             return "This is not a PNG or JPG image.";
         }
-        Directory.CreateDirectory(_folder);
-        var temp = ImagePath + ".tmp";
-        await File.WriteAllBytesAsync(temp, bytes, ct);
-        File.Move(temp, ImagePath, overwrite: true);
         return null;
     }
 
-    public void DeleteImage()
+    /// <summary>Stores a user's seal picture; returns an error message, or null when saved.</summary>
+    public async Task<string?> SaveImageAsync(int userId, byte[] bytes, CancellationToken ct)
     {
-        if (File.Exists(ImagePath)) File.Delete(ImagePath);
+        if (Validate(bytes) is { } error) return error;
+        Directory.CreateDirectory(_folder);
+        var temp = UserPath(userId) + ".tmp";
+        await File.WriteAllBytesAsync(temp, bytes, ct);
+        File.Move(temp, UserPath(userId), overwrite: true);
+        return null;
+    }
+
+    /// <summary>Gives a user the former company seal picture.</summary>
+    public bool CopyFormerCompanySeal(int userId)
+    {
+        if (!HasFormerCompanySeal) return false;
+        Directory.CreateDirectory(_folder);
+        File.Copy(FormerCompanyPath, UserPath(userId), overwrite: true);
+        return true;
+    }
+
+    public void DeleteImage(int userId)
+    {
+        if (File.Exists(UserPath(userId))) File.Delete(UserPath(userId));
     }
 
     public static string? ValidatePin(string pin) =>
         pin.Length == 4 && pin.All(char.IsAsciiDigit) ? null : "The seal PIN must be exactly 4 digits.";
 
-    public Task SetPinAsync(string pin, string user, CancellationToken ct) => settings.SetSecretAsync(SecretPin, PasswordHasher.Hash(pin), user, ct);
+    public static string HashPin(string pin) => PasswordHasher.Hash(pin);
 
-    /// <summary>Checks permission and PIN; returns the seal image, or throws with the reason.</summary>
-    public byte[] Authorize(UserContext user, string? pin)
+    /// <summary>Checks that this user has a seal and typed its PIN; returns their seal picture, or throws with the reason.</summary>
+    public byte[] Authorize(UserContext user, AppUser? account, string? pin)
     {
-        if (!user.IsAdmin && !settings.Quotation.AllUsersCanSeal)
-            throw new QuotationException(403, ApiErrorCodes.Forbidden, "Only an administrator can put the company seal on PDFs (see Settings → Quotation).");
-        var image = ReadImage() ?? throw new QuotationException(409, ApiErrorCodes.InvalidState,
-            "No seal image yet: an administrator adds it in Settings → Company → Seal.");
-        var hash = settings.GetSecret(SecretPin) ?? throw new QuotationException(409, ApiErrorCodes.InvalidState,
-            "No seal PIN yet: an administrator sets it in Settings → Company → Seal.");
+        if (user.IsAdmin)
+            throw new QuotationException(403, ApiErrorCodes.Forbidden, "Administrators do not seal PDFs.");
+        var image = account is { HasSealImage: true } ? ReadImage(account.Id) : null;
+        if (account is null || image is null || account.SealPinHash is null)
+            throw new QuotationException(409, ApiErrorCodes.InvalidState,
+                "You have no seal yet: an administrator adds your seal picture and PIN in Settings → Users.");
 
         var now = clock.GetUtcNow().UtcDateTime;
         var state = _attempts.GetValueOrDefault(user.UserName);
         if (state.BlockedUntilUtc is { } until && until > now)
             throw new QuotationException(429, ApiErrorCodes.SealBlocked,
                 $"Too many wrong seal PINs. Try again after {TimeZoneInfo.ConvertTimeFromUtc(until, clock.LocalTimeZone):HH:mm}.");
-        if (pin is null || !PasswordHasher.Verify(pin, hash))
+        if (pin is null || !PasswordHasher.Verify(pin, account.SealPinHash))
         {
             var failures = (state.BlockedUntilUtc is null ? state.Failures : 0) + 1;
             var blocked = failures >= MaxAttempts ? now + BlockTime : (DateTime?)null;
@@ -87,4 +114,7 @@ public sealed class SealService(IOptions<ServerOptions> options, SettingsService
         _attempts.TryRemove(user.UserName, out _);
         return image;
     }
+
+    /// <summary>A new PIN set by an administrator clears that user's wrong tries.</summary>
+    public void ResetAttempts(string userName) => _attempts.TryRemove(userName, out _);
 }

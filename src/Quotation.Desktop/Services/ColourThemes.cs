@@ -5,8 +5,8 @@ using Quotation.Contracts;
 namespace Quotation.Desktop.Services;
 
 /// <summary>
-/// Colour themes (My Settings > Appearance). Sunset, Lagoon, Graphite, Neon Night and Cyberpunk change the sidebar,
-/// highlights, links, icons and page tint (action buttons keep their colours); Frost and the five Glass themes change
+/// Colour themes (My Settings > Appearance). Sunset, Graphite and Neon Night change the sidebar,
+/// highlights, links, icons and page tint (action buttons keep their colours); Frost and the four Glass themes change
 /// everything (buttons, see-through cards, corners, shadows). Default Light / Dark use the standard colours.
 /// </summary>
 public static class ColourThemes
@@ -17,17 +17,16 @@ public static class ColourThemes
 
     private static readonly Dictionary<string, Palette> Palettes = new()
     {
-        [AppTheme.Graphite] = new("#3A3F4B", "#ECEDF0", "#1F2125", "#2E3137", "#4A505C", "#F6F6F7", "#D9DBE0", "#EFF0F2"),
+        // Graphite: a graphite-grey page with white boxes and a dark graphite sidebar.
+        [AppTheme.Graphite] = new("#3A3F4B", "#E4E6EA", "#1F2125", "#2E3137", "#4A505C", "#D4D7DC→#C6CAD0", "#C3C7CE", "#E9EBEE"),
         [AppTheme.Sunset] = new("#E5345E", "#FDE8EE", "#B8243F→#E2483A→#F07B2A", "#22000000", "#40FFFFFF", "#FFF6F1→#FDEEF3", "#F9CBD7", "#FDF0F3"),
-        [AppTheme.Lagoon] = new("#0B86A8", "#E2F4F9", "#0A3D62→#0B6E8E→#12A3B8", "#22000000", "#40FFFFFF", "#F1FAFC→#EEF7FB", "#BFE6F1", "#E8F5FA"),
         [AppTheme.NeonNight] = new("#00D8F5", "#06303A", "#07051A→#140B3A", "#1F1650", "#00B8D9", "#0B0A1C→#121035", "#0D4A57", "#13213A"),
-        [AppTheme.Cyberpunk] = new("#FF3DA5", "#3A0E2C", "#12002E→#3A0CA3", "#2B0E6E", "#F72585", "#0E0620→#1B0B3D", "#5A1446", "#241040"),
     };
 
     /// <summary>Frost: icy glass look that also changes the buttons, corners and shadows.</summary>
     private static readonly Dictionary<string, string> FrostBrushes = new()
     {
-        ["PageBrush"] = "#DDEFFF→#F4FAFF→#E3E9FF", ["CardBrush"] = "#B8FFFFFF", ["TopBarBrush"] = "#99FFFFFF",
+        ["PageBrush"] = "#DDEFFF→#F4FAFF→#E3E9FF", ["CardBrush"] = "#B8FFFFFF", ["PopupBrush"] = "#FAFCFF", ["TopBarBrush"] = "#99FFFFFF",
         ["SidebarBrush"] = "#C2DAF0→#A9C4E8", ["SidebarBorderBrush"] = "#A9C4E8", ["SidebarSelectedBrush"] = "#FFFFFF", ["SidebarHoverBrush"] = "#66FFFFFF",
         ["SidebarTextBrush"] = "#173A5E", ["SidebarMutedBrush"] = "#4E6E90", ["SidebarSelectedTextBrush"] = "#0B5CAD",
         ["AccentBrush"] = "#1E7FD6", ["AccentSoftBrush"] = "#E1F0FF", ["ActionBrush"] = "#4FACFE→#00C6FB", ["PrimaryHoverBrush"] = "#62B6FE→#22CFFB",
@@ -46,7 +45,6 @@ public static class ColourThemes
 
     private static readonly Dictionary<string, Glass> GlassThemes = new()
     {
-        [AppTheme.Glass] = new("#6A8DFF→#A98BF5→#F3A6C8", "#007AFF", "#D9E9FF", "#CCE3FF", false),
         [AppTheme.GlassBlue] = new("#6F9FE6→#A4C4F0→#D6E5F9", "#0A5FD0", "#DCE9FB", "#C7DCF8", false),
         [AppTheme.GlassGreen] = new("#6DBF97→#A5D9BD→#D8EFE2", "#0E7A4F", "#DBF1E6", "#C4E6D3", false),
         [AppTheme.GlassMaroon] = new("#B97683→#D6A6AF→#EFD8DC", "#8E1B2E", "#F6E1E5", "#EDC9D0", false),
@@ -56,7 +54,7 @@ public static class ColourThemes
     private static Dictionary<string, string> GlassBrushes(Glass g) => g.Dark
         ? new()
         {
-            ["PageBrush"] = g.Wallpaper, ["CardBrush"] = "#24FFFFFF", ["TopBarBrush"] = "#1AFFFFFF",
+            ["PageBrush"] = g.Wallpaper, ["CardBrush"] = "#24FFFFFF", ["PopupBrush"] = "#2A2A30", ["TopBarBrush"] = "#1AFFFFFF",
             ["SidebarBrush"] = "#14FFFFFF", ["SidebarBorderBrush"] = "#26FFFFFF", ["SidebarSelectedBrush"] = "#38FFFFFF", ["SidebarHoverBrush"] = "#1AFFFFFF",
             ["SidebarTextBrush"] = "#F2F2F7", ["SidebarMutedBrush"] = "#A1A1AA", ["SidebarSelectedTextBrush"] = "#FFFFFF",
             ["AccentBrush"] = g.Accent, ["AccentSoftBrush"] = g.AccentSoft, ["ActionBrush"] = "#0A84FF", ["PrimaryHoverBrush"] = "#3D9BFF",
@@ -67,7 +65,7 @@ public static class ColourThemes
         }
         : new()
         {
-            ["PageBrush"] = g.Wallpaper, ["CardBrush"] = "#A6FFFFFF", ["TopBarBrush"] = "#73FFFFFF",
+            ["PageBrush"] = g.Wallpaper, ["CardBrush"] = "#A6FFFFFF", ["PopupBrush"] = "#FAFBFC", ["TopBarBrush"] = "#73FFFFFF",
             ["SidebarBrush"] = "#4DFFFFFF", ["SidebarBorderBrush"] = "#80FFFFFF", ["SidebarSelectedBrush"] = "#E6FFFFFF", ["SidebarHoverBrush"] = "#40FFFFFF",
             ["SidebarTextBrush"] = "#1C1C1E", ["SidebarMutedBrush"] = "#3C3C48", ["SidebarSelectedTextBrush"] = g.Accent,
             ["AccentBrush"] = g.Accent, ["AccentSoftBrush"] = g.AccentSoft, ["ActionBrush"] = "#007AFF", ["PrimaryHoverBrush"] = "#1A88FF",
@@ -122,7 +120,7 @@ public static class ColourThemes
         Set("TextControlBorderBrushFocused", p.Accent);
         Set("LinkHoverBrush", p.Accent);
         Set("TileHoverBorderBrush", p.ListSelected);
-        if (theme is AppTheme.NeonNight or AppTheme.Cyberpunk) GlowShadow = $"0 0 18 0 #33{p.Accent[1..]}";
+        if (theme is AppTheme.NeonNight) GlowShadow = $"0 0 18 0 #33{p.Accent[1..]}";
     }
 
     /// <summary>The glow around cards of the current theme (null = the standard small shadow). Off with "Reduce animations".</summary>
@@ -142,7 +140,7 @@ public static class ColourThemes
         return brush;
     }
 
-    private static readonly string[] AllKeys = FrostBrushes.Keys.Concat(GlassBrushes(GlassThemes[AppTheme.Glass]).Keys).Concat(
+    private static readonly string[] AllKeys = FrostBrushes.Keys.Concat(GlassBrushes(GlassThemes[AppTheme.GlassBlue]).Keys).Concat(
     [
         "AccentBrush", "AccentSoftBrush", "SidebarBrush", "SidebarBorderBrush", "SidebarHoverBrush", "SidebarSelectedBrush", "PageBrush",
         "ListSelectedBrush", "ListSelectedHoverBrush", "ListSelectedBarBrush", "ListHoverBrush", "TextControlBorderBrushFocused",

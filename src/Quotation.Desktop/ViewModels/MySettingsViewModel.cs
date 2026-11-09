@@ -21,7 +21,7 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
     [ObservableProperty] private int _themeIndex;
 
     public IReadOnlyList<string> ThemeChoices { get; } =
-        ["Default Light", "Default Dark", "Same as Windows", "Sunset", "Lagoon", "Graphite", "Frost", "Glass (Colourful)", "Glass (Blue)", "Glass (Black)", "Glass (Green)", "Glass (Maroon)", "Neon Night", "Cyberpunk"];
+        ["Default Light", "Default Dark", "Same as Windows", "Sunset", "Graphite", "Frost", "Glass (Blue)", "Glass (Black)", "Glass (Green)", "Glass (Maroon)", "Neon Night"];
 
     /// <summary>0 Normal, 1 Large.</summary>
     [ObservableProperty] private int _textSizeIndex;
@@ -31,11 +31,16 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
     public IReadOnlyList<string> SpacingChoices { get; } = ["Comfortable", "Compact"];
     [ObservableProperty] private bool _reduceMotion;
 
+    /// <summary>0 = "TSQ2627-5 Customer.pdf", 1 = "Customer TSQ2627-5.pdf" (saved with the login).</summary>
+    [ObservableProperty] private int _pdfFileOrderIndex;
+    public IReadOnlyList<string> PdfFileOrderChoices { get; } =
+        ["Number then customer:  TSQ2627-5 Sonepar India.pdf", "Customer then number:  Sonepar India TSQ2627-5.pdf"];
+
     /// <summary>The layout of the PDFs this user makes (saved with the login).</summary>
     [ObservableProperty] private string _pdfLayout = Core.Domain.PdfLayouts.Tally;
     public IReadOnlyList<string> PdfLayoutChoices { get; } = [Core.Domain.PdfLayouts.Tally, Core.Domain.PdfLayouts.Zoho];
     private static readonly string[] Themes =
-        [AppTheme.Light, AppTheme.Dark, AppTheme.System, AppTheme.Sunset, AppTheme.Lagoon, AppTheme.Graphite, AppTheme.Frost, AppTheme.Glass, AppTheme.GlassBlue, AppTheme.GlassBlack, AppTheme.GlassGreen, AppTheme.GlassMaroon, AppTheme.NeonNight, AppTheme.Cyberpunk];
+        [AppTheme.Light, AppTheme.Dark, AppTheme.System, AppTheme.Sunset, AppTheme.Graphite, AppTheme.Frost, AppTheme.GlassBlue, AppTheme.GlassBlack, AppTheme.GlassGreen, AppTheme.GlassMaroon, AppTheme.NeonNight];
 
     public string Title => "My Settings";
     public string UserName => _session.Api.CurrentUser?.DisplayName ?? "";
@@ -68,6 +73,7 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         TextSizeIndex = me.TextSize == AppDisplay.Large ? 1 : 0;
         SpacingIndex = me.Spacing == AppDisplay.Compact ? 1 : 0;
         ReduceMotion = me.ReduceMotion;
+        PdfFileOrderIndex = me.PdfFileOrder == PdfFileOrders.CustomerFirst ? 1 : 0;
         var settings = await _session.GetSettingsAsync(refresh: true);
         PdfLayout = Core.Domain.PdfLayouts.IsValid(me.PdfLayout) ? me.PdfLayout! : settings.Quotation.DefaultPdfLayout;
         PdfFolder = _session.Config.PdfFolder;
@@ -83,6 +89,19 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         {
             _session.Api.UpdateCurrentUser(await _session.Api.SetMyPreferencesAsync(new MyPreferencesDto(PdfLayout: value)));
             InfoMessage = $"Your PDFs will be made in the {value} layout (Save as PDF, Approve, Open PDF, Preview). Saved with your login.";
+        });
+    }
+
+    partial void OnPdfFileOrderIndexChanged(int value)
+    {
+        if (_loading || value < 0) return;
+        _ = RunAsync(async () =>
+        {
+            var order = value == 1 ? PdfFileOrders.CustomerFirst : PdfFileOrders.NumberFirst;
+            _session.Api.UpdateCurrentUser(await _session.Api.SetMyPreferencesAsync(new MyPreferencesDto(PdfFileOrder: order)));
+            InfoMessage = value == 1
+                ? "Your PDF files will be named customer first, e.g. 'Sonepar India TSQ2627-5.pdf'."
+                : "Your PDF files will be named number first, e.g. 'TSQ2627-5 Sonepar India.pdf'.";
         });
     }
 

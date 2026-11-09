@@ -127,14 +127,15 @@ public static class QuotationEndpoints
             return Results.File(bytes, "application/pdf", Path.GetFileName(path));
         });
 
-        // The PDF with the company seal: by an administrator, or any user when allowed in Settings, with the 4-digit seal PIN.
-        g.MapPost("/{id:guid}/pdf/sealed", async (Guid id, string? layout, SealedPdfRequest r, QuotationService svc, SealService seal, HttpContext ctx,
-            CancellationToken ct) =>
+        // The PDF with the user's own seal and their 4-digit seal PIN (administrators do not seal).
+        g.MapPost("/{id:guid}/pdf/sealed", async (Guid id, string? layout, SealedPdfRequest r, QuotationService svc, SealService seal,
+            QuotationDbContext db, HttpContext ctx, CancellationToken ct) =>
         {
             try
             {
                 var user = User(ctx);
-                var image = seal.Authorize(user, r.Pin);
+                var account = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == user.UserName, ct);
+                var image = seal.Authorize(user, account, r.Pin);
                 var bytes = await svc.PrintPdfAsync(id, user, ct, image, Layout(layout));
                 return bytes is null
                     ? Results.Json(new ApiError("Only an approved quotation can be sealed: approve it first.", null, ApiErrorCodes.InvalidState), statusCode: 409)

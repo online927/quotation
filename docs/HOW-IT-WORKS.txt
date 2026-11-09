@@ -56,7 +56,8 @@ CONTENTS
                         sync history, AI/Gmail requests, copy of Tally masters
     pdf\<year>\         PDFs made at approval (can always be re-made)
     backups\            automatic database backups (see section 8)
-    seal\seal.img       the company seal image (if added in Settings)
+    seal\user-N.img     each user's own seal picture (seal.img = the former
+                        company seal, kept to give to a user)
     logo.png            the logo for PDFs (if used)
     logs\server-*.log   server log, one file per day, kept 60 days
     logs\slow-requests.json   the last 500 requests slower than 1 second
@@ -145,7 +146,7 @@ CONTENTS
        discount > description (Shift+Enter = new line) > Enter adds the line.
     4. Ctrl+S saves a draft and gives the real number. If someone else saved
        first, you get the next number and a message says so.
-    5. Approve & Generate PDF (Ctrl+Enter) or Save as PDF: checks everything,
+    5. Approve (Ctrl+Enter) or Save as PDF: checks everything,
        approves, makes the PDF ("Number Customer.pdf") in your PDF folder.
 
   Numbers
@@ -179,9 +180,9 @@ CONTENTS
     * App version and financial year: My Settings > Connection and version.
 
   My Settings > Appearance (saved with your login, on every PC)
-    * Theme: Default Light / Dark / Same as Windows, Sunset, Lagoon, Graphite,
-      Frost, Glass (Colourful / Blue / Black / Green / Maroon), Neon Night,
-      Cyberpunk. The moon button switches light / dark.
+    * Theme: Default Light / Dark / Same as Windows, Sunset, Graphite, Frost,
+      Glass (Blue / Black / Green / Maroon), Neon Night. The moon button
+      switches light / dark.
     * Text size Normal / Large, spacing Comfortable / Compact,
       Reduce animations (also turns off the glow of the colourful themes).
 
@@ -212,7 +213,10 @@ CONTENTS
   * Settings > Users (administrators): add users, administrator or user,
     active or not, reset a password (the user must change it at next login).
   * Everyone: click your name (top right) > Change my password.
-  * Passwords and the seal PIN are stored scrambled; nobody can read them.
+  * Passwords and seal PINs are stored scrambled; nobody can read them.
+  * Seals: each user (not administrators) can have their own seal picture
+    and 4-digit PIN, set in Settings > Users > Edit > Seal. Administrators
+    do not seal. Five wrong PINs block that user's seal for 15 minutes.
   * Keep at least TWO administrator accounts.
   * Only AI Inbox (the AI service) and Gmail reach the internet, and only when
     they are switched on. Everything else stays in the office.
@@ -421,6 +425,11 @@ CONTENTS
     * Dashboard tile "To follow up" lists the ones whose date has come.
     * Quotation History shows the outcome and can filter by it.
     * Making a proforma invoice from a quotation marks it Won.
+
+  WhatsApp follow-up  (when Won / Lost and WhatsApp are both on)
+    * The "To follow up" list has a WhatsApp button on each quotation: it
+      copies the PDF and opens the customer's chat with the follow-up message
+      (editable in Settings > Quotation). Ctrl+V, then Enter.
 
   WhatsApp button  (Settings > Quotation, off at first, message editable)
     * On an approved quotation: WhatsApp copies the PDF and opens WhatsApp

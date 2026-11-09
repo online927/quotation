@@ -144,6 +144,9 @@ namespace Quotation.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("HasSealImage")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
@@ -157,6 +160,11 @@ namespace Quotation.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PdfFileOrder")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("PdfLayout")
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
@@ -166,6 +174,10 @@ namespace Quotation.Data.Migrations
 
                     b.Property<int>("Role")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("SealPinHash")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Spacing")
                         .IsRequired()

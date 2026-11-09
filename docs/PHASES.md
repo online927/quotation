@@ -593,3 +593,24 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 11. Light animations (page fade, corner messages, warnings, buttons, menus); "Bro, are you trying to close?" and
     "Leaving already, bro?" questions.
 
+### Round 16
+
+1. Personal seals: each user (not administrators) has their own seal picture and 4-digit PIN, set by an administrator
+   in Settings → Users → Edit (or given the former company seal picture). The Seal box shows only for users with a seal;
+   administrators do not seal. The company seal and the "All users can seal" switch are removed; the seal size and place
+   stay in Settings → Company → Seal on PDFs.
+2. Drag PDF: an approved quotation's PDF can be dragged into WhatsApp, an e-mail or a folder.
+3. WhatsApp follow-up button in the To Follow Up list, with its own editable message.
+4. "Approve & Generate PDF" is now "Approve"; "Cancel Quotation" is "Cancel". The buttons stay on one line: on a narrow
+   window Delete, Cancel, Open PDF, Preview and WhatsApp show only their icon.
+5. No flash on hover: the sidebar and item highlights appear without a fade, sidebar options no longer shrink on click.
+6. Glass and Frost themes: suggestion lists, the calendar, corner messages and questions are solid.
+7. My Settings → PDF file name: number first (as before) or customer first.
+8. Themes: Glass (Colourful), Cyberpunk and Lagoon removed (users on them get Default Light); Graphite has a graphite-grey
+   background.
+
+### Saved for later
+
+* W9: UPI QR code on proforma invoices ("Pay by UPI" row above Customer's Seal and Signature; company UPI ID, amount and
+  invoice number filled in; on/off in Settings → Company).
+

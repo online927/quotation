@@ -23,10 +23,14 @@
 
       <Border Classes="card">
         <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="PDF layout" />
+          <TextBlock Classes="h2" Text="PDF layout and file name" />
           <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
                      Text="The look of the PDFs you make: Tally (like the TallyPrime print) or Zoho (T.SAIFUDDIN &amp; CO logo, modern design). Used for Approve, Save as PDF, Open PDF and Preview. Saved with your login, so it follows you to every PC." />
           <ComboBox Name="PdfLayoutBox" ItemsSource="{Binding PdfLayoutChoices}" SelectedItem="{Binding PdfLayout}" Width="200" />
+          <TextBlock Classes="label" Text="PDF file name" Margin="0,8,0,0" />
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     Text="The order in the names of your PDF files (Approve, Save as PDF, Open PDF, WhatsApp). Saved with your login; files already saved keep their names." />
+          <ComboBox Name="PdfFileOrderBox" ItemsSource="{Binding PdfFileOrderChoices}" SelectedIndex="{Binding PdfFileOrderIndex}" Width="420" />
         </StackPanel>
       </Border>
 
@@ -55,7 +59,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Save as PDF folders (this PC)" />
           <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
-                     Text="'Save as PDF' saves the document here as 'Number Customer.pdf' without asking. Leave a box empty for the standard folder." />
+                     Text="'Save as PDF' saves the document here without asking (named as chosen above). Leave a box empty for the standard folder." />
           <TextBlock Classes="fl" Text="Quotations" />
           <Grid ColumnDefinitions="*,8,Auto">
             <TextBox Text="{Binding PdfFolder}" Watermark="{Binding DefaultPdfFolder}" />

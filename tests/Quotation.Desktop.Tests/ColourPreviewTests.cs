@@ -30,8 +30,6 @@ public class ColourPreviewTests
         var session = new AppSession(config, _ => server.CreateApi()) { Documents = new RecordingLauncher(config) };
         await session.Api.LoginAsync("admin", "admin123");
         await session.Api.StartSyncAsync(SyncKind.Full, wait: true);
-        await session.Api.UploadSealAsync(Convert.FromBase64String(
-            "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAJUlEQVR4nGM4ICDwn5aYYdSCUQtGLRi1YNSCUQtGLRi1YGhYAAC4lDX9H0TkSwAAAABJRU5ErkJggg=="));
         var settings = await session.Api.SettingsAsync();
         settings.Company.CompanyName = "T.SAIFUDDIN & CO.";
         settings.Company.StateCode = "29";

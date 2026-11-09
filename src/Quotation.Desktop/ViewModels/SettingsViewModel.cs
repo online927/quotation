@@ -35,11 +35,31 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _editIsActive;
     [ObservableProperty] private string _resetPassword = "";
     public bool IsEditingUser => EditingUser is not null;
-    partial void OnEditingUserChanged(UserDto? value) => OnPropertyChanged(nameof(IsEditingUser));
+    partial void OnEditingUserChanged(UserDto? value)
+    {
+        OnPropertyChanged(nameof(IsEditingUser));
+        OnPropertyChanged(nameof(EditingUserCanHaveSeal));
+        OnPropertyChanged(nameof(UserSealState));
+        OnPropertyChanged(nameof(UserHasAnySeal));
+    }
 
-    // Seal (administrator)
-    [ObservableProperty] private string _newSealPin = "";
-    [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _sealImage;
+    // Personal seal of the user being edited (users only; administrators do not seal)
+    [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _userSealImage;
+    [ObservableProperty] private string _newUserSealPin = "";
+    public bool HasUserSealImage => UserSealImage is not null;
+    partial void OnUserSealImageChanged(Avalonia.Media.Imaging.Bitmap? value) => OnPropertyChanged(nameof(HasUserSealImage));
+    public bool EditingUserCanHaveSeal => EditingUser is { Role: not UserRole.Admin };
+    public bool UserHasAnySeal => EditingUser is { } u && (u.HasSealImage || u.HasSealPin);
+    public string UserSealState => EditingUser switch
+    {
+        null => "",
+        { HasSealImage: true, HasSealPin: true } => "Seal ready: this user can seal PDFs.",
+        { HasSealImage: true } => "Picture set; set a PIN to finish.",
+        { HasSealPin: true } => "PIN set; choose a picture to finish.",
+        _ => "No seal yet.",
+    };
+
+    // Seal size and position on PDFs (administrator)
     [ObservableProperty] private decimal? _sealWidth;
     [ObservableProperty] private decimal? _sealOffsetX;
     /// <summary>Points the seal is moved up (negative = down); stored as the downward offset.</summary>
@@ -47,9 +67,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _hiddenMarkers = "";
     /// <summary>Sign-off lines of the Zoho layout, one per row.</summary>
     [ObservableProperty] private string _modernSignOff = "";
-    public bool HasSealImage => SealImage is not null;
-    public string SealPinState => Settings?.SealPinConfigured == true ? "A seal PIN is set." : "No seal PIN yet.";
-    partial void OnSealImageChanged(Avalonia.Media.Imaging.Bitmap? value) => OnPropertyChanged(nameof(HasSealImage));
 
     // Numbering
     [ObservableProperty] private NumberSeriesDto? _series;
@@ -138,7 +155,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         FyOverride = s.Tally.ActiveFinancialYearOverride?.ToString() ?? "";
         Settings = s;
         OnPropertyChanged(nameof(ExampleNumber));
-        OnPropertyChanged(nameof(SealPinState));
         if (IsAdmin)
         {
             await LoadUsersAsync();
@@ -146,7 +162,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
             NewNextSequence = Series.NextSequence;
             ProformaSeries = await _session.Api.NumberSeriesAsync(type: DocumentType.ProformaInvoice);
             NewNextProformaSequence = ProformaSeries.NextSequence;
-            await LoadSealImageAsync();
         }
         _session.Settings = s;
     });
@@ -191,13 +206,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Settings.Company.SealWidth = (double)(SealWidth ?? 150);
         Settings.Company.SealOffsetX = (double)(SealOffsetX ?? 0);
         Settings.Company.SealOffsetY = -(double)(SealMoveUp ?? 0);
-        var pin = NewSealPin.Trim();
-        if (pin.Length > 0 && (pin.Length != 4 || !pin.All(char.IsAsciiDigit)))
-        {
-            ErrorMessage = "The seal PIN must be exactly 4 digits.";
-            return;
-        }
-        Settings.SealPin = pin.Length > 0 ? pin : null;
         if (string.IsNullOrWhiteSpace(FyOverride))
         {
             Settings.Tally.ActiveFinancialYearOverride = null;
@@ -218,11 +226,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
         {
             NewApiKey = "";
             NewGmailClientJson = "";
-            NewSealPin = "";
             _session.Settings = Settings;
             InfoMessage = "Settings saved.";
             OnPropertyChanged(nameof(ExampleNumber));
-            OnPropertyChanged(nameof(SealPinState));
         }
     }
 
@@ -267,8 +273,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
         EditIsAdmin = user.Role == UserRole.Admin;
         EditIsActive = user.IsActive;
         ResetPassword = "";
+        NewUserSealPin = "";
         InfoMessage = null;
         ErrorMessage = null;
+        _ = LoadUserSealImageAsync(user);
     }
 
     [RelayCommand]
@@ -311,16 +319,16 @@ public sealed partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    // ---------------------------------------------------------------- seal
+    // ---------------------------------------------------------------- personal seals
 
-    private async Task LoadSealImageAsync()
+    private async Task LoadUserSealImageAsync(UserDto user)
     {
-        SealImage = null;
-        if (Settings?.SealImageConfigured != true) return;
+        UserSealImage = null;
+        if (!user.HasSealImage) return;
         try
         {
-            using var ms = new MemoryStream(await _session.Api.SealImageAsync());
-            SealImage = new Avalonia.Media.Imaging.Bitmap(ms);
+            using var ms = new MemoryStream(await _session.Api.UserSealImageAsync(user.Id));
+            if (EditingUser?.Id == user.Id) UserSealImage = new Avalonia.Media.Imaging.Bitmap(ms);
         }
         catch (Exception)
         {
@@ -328,24 +336,67 @@ public sealed partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Called by the view with the chosen PNG/JPG file.</summary>
-    public Task UploadSealAsync(byte[] image) => RunAsync(async () =>
+    /// <summary>After a seal change: the user's row, the edit box and "Preview on a page" follow.</summary>
+    private async Task SealChangedAsync(UserDto saved, string message)
     {
-        await _session.Api.UploadSealAsync(image);
+        EditingUser = saved;
+        await LoadUsersAsync();
         Settings = await _session.Api.SettingsAsync();
         _session.Settings = Settings;
-        await LoadSealImageAsync();
-        InfoMessage = "Seal image saved. Set the seal PIN below (if not set yet) and press Save; 'Preview on a page' shows where it is printed.";
+        await LoadUserSealImageAsync(saved);
+        InfoMessage = message;
+    }
+
+    /// <summary>Called by the view with the chosen PNG/JPG file.</summary>
+    public Task UploadUserSealAsync(byte[] image) => RunAsync(async () =>
+    {
+        if (EditingUser is not { } user) return;
+        var saved = await _session.Api.UploadUserSealAsync(user.Id, image);
+        await SealChangedAsync(saved, saved.HasSealPin
+            ? $"Seal picture of '{user.Username}' saved."
+            : $"Seal picture of '{user.Username}' saved. Now set their 4-digit seal PIN.");
     });
 
     [RelayCommand]
-    private Task RemoveSealAsync() => RunAsync(async () =>
+    private Task UseFormerCompanySealAsync() => RunAsync(async () =>
     {
-        await _session.Api.RemoveSealAsync();
-        Settings = await _session.Api.SettingsAsync();
-        _session.Settings = Settings;
-        SealImage = null;
-        InfoMessage = "Seal image removed.";
+        if (EditingUser is not { } user) return;
+        var saved = await _session.Api.UseFormerCompanySealAsync(user.Id);
+        await SealChangedAsync(saved, $"'{user.Username}' now has the former company seal picture.");
+    });
+
+    [RelayCommand]
+    private async Task SetUserSealPinAsync()
+    {
+        if (EditingUser is not { } user) return;
+        var pin = NewUserSealPin.Trim();
+        if (pin.Length != 4 || !pin.All(char.IsAsciiDigit))
+        {
+            ErrorMessage = "The seal PIN must be exactly 4 digits.";
+            return;
+        }
+        await RunAsync(async () =>
+        {
+            var saved = await _session.Api.SetUserSealPinAsync(user.Id, pin);
+            NewUserSealPin = "";
+            await SealChangedAsync(saved, $"Seal PIN of '{user.Username}' set. Tell them the PIN; nobody else can see it.");
+        });
+    }
+
+    [RelayCommand]
+    private Task RemoveUserSealAsync() => RunAsync(async () =>
+    {
+        if (EditingUser is not { } user) return;
+        var saved = await _session.Api.RemoveUserSealAsync(user.Id);
+        await SealChangedAsync(saved, $"Seal of '{user.Username}' removed: they can no longer seal PDFs.");
+    });
+
+    [RelayCommand]
+    private Task PreviewUserSealAsync() => RunAsync(async () =>
+    {
+        if (EditingUser is not { } user) return;
+        var bytes = await _session.Api.SealPreviewAsync((double)(SealWidth ?? 150), (double)(SealOffsetX ?? 0), -(double)(SealMoveUp ?? 0), userId: user.Id);
+        _session.Documents.SaveAndOpen(bytes, $"Seal-preview-{user.Username}.pdf");
     });
 
     /// <summary>Opens a sample page with the seal at the size and position shown on screen (also before saving).</summary>

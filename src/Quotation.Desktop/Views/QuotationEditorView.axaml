@@ -63,6 +63,18 @@
       <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <!-- Icons inside buttons take the button's text colour -->
+    <Style Selector="Border.dragpdf">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Border.dragpdf:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <!-- Not enough room on the button line: only the icon (the name is in the tooltip) -->
+    <Style Selector="Button.iconly TextBlock.lbl">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
     <Style Selector="Path.bi">
       <Setter Property="Width" Value="15" />
       <Setter Property="Height" Value="15" />
@@ -176,52 +188,64 @@
         </ItemsControl>
         <TextBlock Foreground="{DynamicResource WarnBrush}" Text="{Binding DataWarning}" IsVisible="{Binding DataWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <TextBlock Foreground="{DynamicResource BadBrush}" Text="{Binding PdfError}" IsVisible="{Binding PdfError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
-        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding LastPdfPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-          <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
-          <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
-        </StackPanel>
-        <!-- One line: approve and save as PDF | preview and PDF; Cancel and Delete apart on the right. Shortcuts in the tooltips;
-             Ctrl+S still saves a draft. -->
-        <Grid ColumnDefinitions="*,Auto" Margin="0,2,0,0">
-          <WrapPanel ItemSpacing="8" LineSpacing="8">
-            <Button Classes="primary bar" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}"
-                    ToolTip.Tip="Approve and open the PDF (Ctrl+Enter)">
-              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8 M8.5,15 L11,17.5 L15.5,12.5" Stroke="White" /><TextBlock Text="Approve &amp; Generate PDF" /></StackPanel>
-            </Button>
-            <Button Name="SaveAsPdfButton" Classes="save bar" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
-                    ToolTip.Tip="Approves a draft first, then saves 'Number Customer.pdf' in your PDF folder (My Settings)">
-              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M12,3 L12,15 M7,10 L12,15 L17,10 M4,17 L4,20 L20,20 L20,17" Stroke="White" /><TextBlock Text="Save as PDF" /></StackPanel>
-            </Button>
-            <CheckBox Name="SealBox" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
-                      IsEnabled="{Binding SealAvailable}" ToolTip.Tip="{Binding SealHint}" ToolTip.ShowOnDisabled="True" />
-            <Border Classes="groupline" />
-            <Button Classes="bar" Command="{Binding PreviewCommand}" HotKey="F11" ToolTip.Tip="Preview the PDF (F11)">
-              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z" Stroke="{DynamicResource TextBrush}" /><TextBlock Text="Preview" /></StackPanel>
-            </Button>
-            <Button Classes="bar" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" ToolTip.Tip="Open the PDF (Ctrl+P)">
-              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M14,4 L20,4 L20,10 M20,4 L11,13 M18,14 L18,19 C18,19.6 17.6,20 17,20 L5,20 C4.4,20 4,19.6 4,19 L4,7 C4,6.4 4.4,6 5,6 L10,6" Stroke="{DynamicResource TextBrush}" /><TextBlock Text="Open PDF" /></StackPanel>
-            </Button>
-            <Button Classes="bar whatsapp" Name="WhatsAppButton" Command="{Binding WhatsAppCommand}" IsVisible="{Binding ShowWhatsApp}"
-                    ToolTip.Tip="Copy the PDF and open WhatsApp in the customer's chat (then Ctrl+V, Enter)">
-              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M3,21 L4.6,16.4 A9,9 0 1 1 7.7,19.4 Z M9,8.5 C9,8 9.4,7.6 9.9,7.6 L10.6,7.6 L11.6,10 L10.8,11 C11.4,12.3 12.4,13.3 13.7,13.9 L14.7,13.1 L17,14.1 L17,14.8 C17,15.3 16.6,15.7 16.1,15.7 C12.2,15.7 9,12.5 9,8.5 Z" Stroke="#1FA855" /><TextBlock Text="WhatsApp" /></StackPanel>
-            </Button>
-            <Button Classes="bar" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding CanRegeneratePdf}"
-                    ToolTip.Tip="Making the PDF failed at approval: try again" />
-            <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="● Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{DynamicResource WarnBrush}" />
-          </WrapPanel>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Margin="16,0,0,0">
-            <Button Classes="danger bar" Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}">
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <Path Classes="bi" Data="M12,22 A10,10 0 1 0 12,2 A10,10 0 1 0 12,22 Z M4.9,4.9 L19.1,19.1" Stroke="{DynamicResource BadBrush}" />
-                <TextBlock Text="{Binding DocLabel, StringFormat='Cancel {0}'}" />
-              </StackPanel>
-            </Button>
-            <Button Classes="danger bar" Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"
-                    ToolTip.Tip="Administrator: move to the Deleted list (can be restored for 30 days)">
-              <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M4,7 L20,7 M9,7 L9,4 L15,4 L15,7 M6,7 L7,20 L17,20 L18,7 M10,11 L10,16 M14,11 L14,16" Stroke="{DynamicResource BadBrush}" /><TextBlock Text="Delete" /></StackPanel>
-            </Button>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <!-- W2: drag the PDF straight into WhatsApp, an e-mail or a folder -->
+          <Border Name="DragPdfHandle" Classes="dragpdf" IsVisible="{Binding CanDragPdf}" Cursor="Hand" Padding="8,3" CornerRadius="6"
+                  PointerEntered="OnDragPdfEntered" PointerPressed="OnDragPdfPressed" PointerMoved="OnDragPdfMoved" PointerReleased="OnDragPdfReleased"
+                  ToolTip.Tip="Drag this PDF into a WhatsApp chat, an e-mail or a folder">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Path Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8" Stroke="{DynamicResource BadBrush}"
+                    StrokeThickness="1.7" StrokeJoin="Round" Width="13" Height="15" Stretch="Uniform" VerticalAlignment="Center" />
+              <TextBlock Text="Drag PDF" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <TextBlock Text="⠿" FontSize="11" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Border>
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding LastPdfPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
+            <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
           </StackPanel>
-        </Grid>
+        </StackPanel>
+        <!-- Always one line: approve and save as PDF | preview and PDF; Cancel and Delete apart on the right. When the window is
+             too narrow, Delete, Cancel, Open PDF, Preview and WhatsApp (in that order) show only their icon. Ctrl+S saves a draft. -->
+        <ctl:ActionBar Name="ActionButtons" Margin="0,2,0,0" Spacing="8" Gap="16">
+          <Button Name="ApproveButton" Classes="primary bar" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}"
+                  ToolTip.Tip="Approve and make the PDF (Ctrl+Enter)">
+            <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8 M8.5,15 L11,17.5 L15.5,12.5" Stroke="White" /><TextBlock Classes="lbl" Text="Approve" /></StackPanel>
+          </Button>
+          <Button Name="SaveAsPdfButton" Classes="save bar" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}"
+                  ToolTip.Tip="Approves a draft first, then saves the PDF in your PDF folder (My Settings)">
+            <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M12,3 L12,15 M7,10 L12,15 L17,10 M4,17 L4,20 L20,20 L20,17" Stroke="White" /><TextBlock Classes="lbl" Text="Save as PDF" /></StackPanel>
+          </Button>
+          <CheckBox Name="SealBox" Content="Seal" IsChecked="{Binding SealPdf}" IsVisible="{Binding CanSeal}"
+                    IsEnabled="{Binding SealAvailable}" ToolTip.Tip="{Binding SealHint}" ToolTip.ShowOnDisabled="True" />
+          <Border Classes="groupline" />
+          <Button Name="PreviewButton" Classes="bar" ctl:ActionBar.CollapseOrder="4" Command="{Binding PreviewCommand}" HotKey="F11" ToolTip.Tip="Preview the PDF (F11)">
+            <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Preview" /></StackPanel>
+          </Button>
+          <Button Name="OpenPdfButton" Classes="bar" ctl:ActionBar.CollapseOrder="3" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" ToolTip.Tip="Open the PDF (Ctrl+P)">
+            <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M14,4 L20,4 L20,10 M20,4 L11,13 M18,14 L18,19 C18,19.6 17.6,20 17,20 L5,20 C4.4,20 4,19.6 4,19 L4,7 C4,6.4 4.4,6 5,6 L10,6" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Open PDF" /></StackPanel>
+          </Button>
+          <Button Classes="bar whatsapp" Name="WhatsAppButton" ctl:ActionBar.CollapseOrder="5" Command="{Binding WhatsAppCommand}" IsVisible="{Binding ShowWhatsApp}"
+                  ToolTip.Tip="WhatsApp: copy the PDF and open the customer's chat (then Ctrl+V, Enter)">
+            <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M3,21 L4.6,16.4 A9,9 0 1 1 7.7,19.4 Z M9,8.5 C9,8 9.4,7.6 9.9,7.6 L10.6,7.6 L11.6,10 L10.8,11 C11.4,12.3 12.4,13.3 13.7,13.9 L14.7,13.1 L17,14.1 L17,14.8 C17,15.3 16.6,15.7 16.1,15.7 C12.2,15.7 9,12.5 9,8.5 Z" Stroke="#1FA855" /><TextBlock Classes="lbl" Text="WhatsApp" /></StackPanel>
+          </Button>
+          <Button Classes="bar" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding CanRegeneratePdf}"
+                  ToolTip.Tip="Making the PDF failed at approval: try again" />
+          <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="● Unsaved changes" IsVisible="{Binding IsDirty}" Foreground="{DynamicResource WarnBrush}" />
+          <Button Name="CancelDocButton" Classes="danger bar" ctl:ActionBar.Right="True" ctl:ActionBar.CollapseOrder="2"
+                  Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding IsEditable}"
+                  ToolTip.Tip="{Binding CancelTip}" ToolTip.ShowOnDisabled="True">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Path Classes="bi" Data="M12,22 A10,10 0 1 0 12,2 A10,10 0 1 0 12,22 Z M4.9,4.9 L19.1,19.1" Stroke="{DynamicResource BadBrush}" />
+              <TextBlock Classes="lbl" Text="Cancel" />
+            </StackPanel>
+          </Button>
+          <Button Name="DeleteButton" Classes="danger bar" ctl:ActionBar.Right="True" ctl:ActionBar.CollapseOrder="1"
+                  Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"
+                  ToolTip.Tip="Delete (administrator): move to the Deleted list (can be restored for 30 days)">
+            <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M4,7 L20,7 M9,7 L9,4 L15,4 L15,7 M6,7 L7,20 L17,20 L18,7 M10,11 L10,16 M14,11 L14,16" Stroke="{DynamicResource BadBrush}" /><TextBlock Classes="lbl" Text="Delete" /></StackPanel>
+          </Button>
+        </ctl:ActionBar>
       </StackPanel>
     </Border>
 

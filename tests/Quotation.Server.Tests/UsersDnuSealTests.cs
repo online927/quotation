@@ -106,27 +106,38 @@ public class UsersDnuSealTests : QuotationTestBase
     }
 
     [Fact]
-    public async Task Seal_needs_the_pin_and_permission_and_blocks_after_five_wrong_tries()
+    public async Task Each_user_seals_with_their_own_seal_and_pin_and_administrators_do_not_seal()
     {
         var q = await Api.CreateQuotationAsync(await BevelRequest());
         await Api.ApproveQuotationAsync(q.Id);
         var plain = await Api.QuotationPdfAsync(q.Id);
 
-        Assert.Equal(ApiErrorCodes.InvalidState, (await Assert.ThrowsAsync<ApiException>(() => Api.SealedPdfAsync(q.Id, "1111"))).Code);
-        await Api.UploadSealAsync(Convert.FromBase64String(Png));
-        var settings = await Api.SettingsAsync();
-        Assert.True(settings.SealImageConfigured);
-        settings.SealPin = "12a4";
-        Assert.Equal(HttpStatusCode.BadRequest, (await Assert.ThrowsAsync<ApiException>(() => Api.SaveSettingsAsync(settings))).Status);
-        settings.SealPin = "1111"; // repeated digits are fine
-        Assert.True((await Api.SaveSettingsAsync(settings)).SealPinConfigured);
+        // Administrators do not seal and get no seal.
+        Assert.Equal(ApiErrorCodes.Forbidden, (await Assert.ThrowsAsync<ApiException>(() => Api.SealedPdfAsync(q.Id, "1111"))).Code);
+        var me = await Api.MeAsync();
+        Assert.Equal(HttpStatusCode.BadRequest, (await Assert.ThrowsAsync<ApiException>(() => Api.SetUserSealPinAsync(me.Id, "1111"))).Status);
 
-        var sealedPdf = await Api.SealedPdfAsync(q.Id, "1111");
+        // A user without a seal cannot seal.
+        var ravi = await Api.CreateUserAsync(new CreateUserRequest("ravi", "Ravi", "ravi-pass", UserRole.User));
+        var user = Server.CreateApi("USER-PC");
+        await user.LoginAsync("ravi", "ravi-pass");
+        Assert.False(user.CurrentUser!.CanSeal);
+        Assert.Equal(ApiErrorCodes.InvalidState, (await Assert.ThrowsAsync<ApiException>(() => user.SealedPdfAsync(q.Id, "1111"))).Code);
+
+        // The administrator gives Ravi a picture and a PIN (4 digits).
+        Assert.True((await Api.UploadUserSealAsync(ravi.Id, Convert.FromBase64String(Png))).HasSealImage);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Assert.ThrowsAsync<ApiException>(() => Api.SetUserSealPinAsync(ravi.Id, "12a4"))).Status);
+        var withSeal = await Api.SetUserSealPinAsync(ravi.Id, "1111"); // repeated digits are fine
+        Assert.True(withSeal.CanSeal);
+        Assert.True((await user.MeAsync()).CanSeal);
+        Assert.True((await Api.SettingsAsync()).SealImageConfigured);
+
+        var sealedPdf = await user.SealedPdfAsync(q.Id, "1111");
         Assert.True(sealedPdf.Length > plain.Length);
         using (var doc = UglyToad.PdfPig.PdfDocument.Open(sealedPdf))
             Assert.NotEmpty(doc.GetPage(doc.NumberOfPages).GetImages());
-        Assert.Contains(await Api.AuditAsync("Quotation", q.Id.ToString()), a => a.Action == "PdfSealed");
-        Assert.NotEmpty(await Api.SealPreviewAsync());
+        Assert.Contains(await Api.AuditAsync("Quotation", q.Id.ToString()), a => a.Action == "PdfSealed" && a.User == "ravi");
+        Assert.NotEmpty(await Api.SealPreviewAsync(userId: ravi.Id));
 
         // Moving the seal up (a negative downward offset) lifts it on the page, before and after saving.
         static double SealBottom(byte[] pdf)
@@ -137,25 +148,37 @@ public class UsersDnuSealTests : QuotationTestBase
         var standard = SealBottom(await Api.SealPreviewAsync());
         var raised = SealBottom(await Api.SealPreviewAsync(offsetY: -60));
         Assert.InRange(raised - standard, 55, 65);
-        settings = await Api.SettingsAsync();
+        var settings = await Api.SettingsAsync();
         settings.Company.SealOffsetY = -60;
         await Api.SaveSettingsAsync(settings);
-        Assert.InRange(SealBottom(await Api.SealedPdfAsync(q.Id, "1111")) - SealBottom(sealedPdf), 55, 65);
+        Assert.InRange(SealBottom(await user.SealedPdfAsync(q.Id, "1111")) - SealBottom(sealedPdf), 55, 65);
 
-        // Users only when allowed, and five wrong PINs block the seal for that user.
-        var user = Server.CreateApi("USER-PC");
-        await Api.CreateUserAsync(new CreateUserRequest("ravi", "Ravi", "ravi-pass", UserRole.User));
-        await user.LoginAsync("ravi", "ravi-pass");
-        Assert.Equal(ApiErrorCodes.Forbidden, (await Assert.ThrowsAsync<ApiException>(() => user.SealedPdfAsync(q.Id, "1111"))).Code);
-        settings = await Api.SettingsAsync();
-        settings.Quotation.AllUsersCanSeal = true;
-        await Api.SaveSettingsAsync(settings);
-        Assert.NotEmpty(await user.SealedPdfAsync(q.Id, "1111"));
+        // Five wrong PINs block the seal for that user; a new PIN from the administrator unblocks it.
         for (var i = 0; i < 4; i++)
             Assert.Equal(ApiErrorCodes.WrongPin, (await Assert.ThrowsAsync<ApiException>(() => user.SealedPdfAsync(q.Id, "9999"))).Code);
         Assert.Contains("blocked", (await Assert.ThrowsAsync<ApiException>(() => user.SealedPdfAsync(q.Id, "9999"))).Message);
         Assert.Equal(ApiErrorCodes.SealBlocked, (await Assert.ThrowsAsync<ApiException>(() => user.SealedPdfAsync(q.Id, "1111"))).Code);
-        Assert.NotEmpty(await Api.SealedPdfAsync(q.Id, "1111")); // the administrator is not blocked
+        await Api.SetUserSealPinAsync(ravi.Id, "2468");
+        Assert.NotEmpty(await user.SealedPdfAsync(q.Id, "2468"));
+
+        // Removing the seal: no picture, no PIN, no sealing.
+        var removed = await Api.RemoveUserSealAsync(ravi.Id);
+        Assert.False(removed.HasSealImage || removed.HasSealPin);
+        Assert.Equal(ApiErrorCodes.InvalidState, (await Assert.ThrowsAsync<ApiException>(() => user.SealedPdfAsync(q.Id, "2468"))).Code);
+    }
+
+    [Fact]
+    public async Task The_former_company_seal_picture_can_be_given_to_a_user()
+    {
+        Assert.False((await Api.SettingsAsync()).FormerCompanySeal);
+        var folder = Path.Combine(Server.DataDirectory, "seal");
+        Directory.CreateDirectory(folder);
+        File.WriteAllBytes(Path.Combine(folder, "seal.img"), Convert.FromBase64String(Png)); // left by an older version
+        Assert.True((await Api.SettingsAsync()).FormerCompanySeal);
+        var asha = await Api.CreateUserAsync(new CreateUserRequest("asha", "Asha", "asha-pass", UserRole.User));
+        var given = await Api.UseFormerCompanySealAsync(asha.Id);
+        Assert.True(given.HasSealImage);
+        Assert.Equal(Convert.FromBase64String(Png), await Api.UserSealImageAsync(asha.Id));
     }
 
     private static async Task WaitUntilAsync(Func<Task<bool>> condition)

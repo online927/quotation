@@ -149,7 +149,7 @@
                   Margin="0,0,24,76">
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="svc:ToastItem">
-          <Border Classes="toast" Classes.leaving="{Binding IsLeaving}" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource HairlineBrush}"
+          <Border Classes="toast" Classes.leaving="{Binding IsLeaving}" Background="{DynamicResource PopupBrush}" BorderBrush="{DynamicResource HairlineBrush}"
                   BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,8,0,0" BoxShadow="0 6 20 0 #26000000" MaxWidth="460">
             <Grid ColumnDefinitions="Auto,*,Auto">
               <Path Data="M5,12.5 L10,17.5 L19,7" Stroke="{DynamicResource OkBrush}" StrokeThickness="2.2" StrokeLineCap="Round" StrokeJoin="Round"
@@ -165,7 +165,8 @@
 
     <!-- Unsaved changes: Save / Don't Save / Cancel -->
     <Border Name="PromptPanel" Background="#40000000" IsVisible="{Binding PendingPrompt, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <Border Classes="card" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000">
+      <Border Classes="card" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000"
+              Background="{DynamicResource PopupBrush}">
         <StackPanel Spacing="14">
           <TextBlock Text="{Binding PendingPrompt.Heading, FallbackValue='Unsaved changes'}" FontSize="17" FontWeight="SemiBold" />
           <TextBlock Text="{Binding PendingPrompt.Message, FallbackValue=''}" TextWrapping="Wrap" />
@@ -182,7 +183,8 @@
 
     <!-- Yes/No questions and inputs (delete, restore, seal PIN …) -->
     <Border Name="DialogPanel" Background="#40000000" IsVisible="{Binding PendingDialog, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <Border Classes="card" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000">
+      <Border Classes="card" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000"
+              Background="{DynamicResource PopupBrush}">
         <StackPanel Spacing="14">
           <TextBlock Text="{Binding PendingDialog.Title, FallbackValue=''}" FontSize="17" FontWeight="SemiBold" />
           <TextBlock Text="{Binding PendingDialog.Message, FallbackValue=''}" TextWrapping="Wrap"

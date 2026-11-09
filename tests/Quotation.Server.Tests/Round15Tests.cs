@@ -67,10 +67,10 @@ public class Round15Tests : QuotationTestBase
     [Fact]
     public async Task Appearance_is_saved_with_the_login()
     {
-        var me = await Api.SetMyPreferencesAsync(new MyPreferencesDto(Theme: AppTheme.Cyberpunk, TextSize: AppDisplay.Large, Spacing: AppDisplay.Compact, ReduceMotion: true));
-        Assert.Equal((AppTheme.Cyberpunk, AppDisplay.Large, AppDisplay.Compact, true), (me.Theme, me.TextSize, me.Spacing, me.ReduceMotion));
+        var me = await Api.SetMyPreferencesAsync(new MyPreferencesDto(Theme: AppTheme.GlassMaroon, TextSize: AppDisplay.Large, Spacing: AppDisplay.Compact, ReduceMotion: true));
+        Assert.Equal((AppTheme.GlassMaroon, AppDisplay.Large, AppDisplay.Compact, true), (me.Theme, me.TextSize, me.Spacing, me.ReduceMotion));
         var again = await Server.LoginAsAdminAsync("OTHER-PC");
-        Assert.Equal(AppTheme.Cyberpunk, again.CurrentUser!.Theme);
+        Assert.Equal(AppTheme.GlassMaroon, again.CurrentUser!.Theme);
         await Assert.ThrowsAsync<ApiException>(() => Api.SetMyPreferencesAsync(new MyPreferencesDto(Theme: "Rainbow")));
     }
 

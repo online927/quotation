@@ -128,6 +128,46 @@ public partial class QuotationEditorView : UserControl
 
     private void OnLostReasonLostFocus(object? sender, RoutedEventArgs e) => Vm?.SaveLostReasonCommand.Execute(null);
 
+    // ---------------------------------------------------------------- drag the PDF (W2)
+
+    private Point? _dragStart;
+    private Task<string?>? _dragFile;
+
+    /// <summary>The PDF is prepared as soon as the mouse comes onto the icon, so it is ready when dragging starts.</summary>
+    private void OnDragPdfEntered(object? sender, PointerEventArgs e)
+    {
+        if (Vm is { } vm && (_dragFile is null || _dragFile.IsCompleted)) _dragFile = vm.PrepareDragFileAsync();
+    }
+
+    private void OnDragPdfPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        _dragStart = e.GetPosition(this);
+        if (Vm is { } vm && _dragFile is null) _dragFile = vm.PrepareDragFileAsync();
+    }
+
+    private void OnDragPdfReleased(object? sender, PointerReleasedEventArgs e) => _dragStart = null;
+
+    private async void OnDragPdfMoved(object? sender, PointerEventArgs e)
+    {
+        if (_dragStart is not { } start || _dragFile is not { } prepare) return;
+        var moved = e.GetPosition(this) - start;
+        if (Math.Abs(moved.X) < 4 && Math.Abs(moved.Y) < 4) return;
+        _dragStart = null;
+        if (!prepare.IsCompleted)
+        {
+            Vm?.ShowDragNotReady();
+            return;
+        }
+        var path = await prepare;
+        _dragFile = null; // next time: checked again (the quotation may change)
+        if (path is null || !File.Exists(path) || TopLevel.GetTopLevel(this)?.StorageProvider is not { } storage) return;
+        if (await storage.TryGetFileFromPathAsync(new Uri(path)) is not { } file) return;
+        var data = new DataTransfer();
+        data.Add(DataTransferItem.CreateFile(file));
+        await DragDrop.DoDragDropAsync(e, data, DragDropEffects.Copy);
+    }
+
     /// <summary>The small calendar of "Ref. dated": opens below the box; picking a day fills it and closes.</summary>
     private void OnRefDateCalendarClick(object? sender, RoutedEventArgs e)
     {

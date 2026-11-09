@@ -95,6 +95,8 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
             e.HasIndex(x => x.Username).IsUnique();
             e.Property(x => x.Theme).HasMaxLength(10).HasDefaultValue("Light");
             e.Property(x => x.PdfLayout).HasMaxLength(10);
+            e.Property(x => x.PdfFileOrder).HasMaxLength(20);
+            e.Property(x => x.SealPinHash).HasMaxLength(200);
         });
 
         b.Entity<ApiSession>(e =>

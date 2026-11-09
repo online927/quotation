@@ -79,9 +79,6 @@ public sealed class QuotationSettings
     /// <summary>Capitalise the first letter of each word while typing in the quotation's text boxes (like Tally).</summary>
     public bool TitleCase { get; set; } = true;
 
-    /// <summary>Users who are not administrators may put the company seal on PDFs (with the seal PIN).</summary>
-    public bool AllUsersCanSeal { get; set; }
-
     /// <summary>Default packing &amp; forwarding: either a fixed amount or a percentage of the subtotal.</summary>
     public decimal DefaultPackingForwardingAmount { get; set; }
     public decimal DefaultPackingForwardingPercent { get; set; }
@@ -101,6 +98,9 @@ public sealed class QuotationSettings
     public bool WhatsAppButton { get; set; }
     /// <summary>The message typed into WhatsApp. {number} = the quotation number, {customer} = the customer.</summary>
     public string WhatsAppMessage { get; set; } = "Dear Sir, please find our quotation {number} attached.";
+    /// <summary>The message of the WhatsApp button in the To Follow Up list ({number}, {date}, {customer}).</summary>
+    public string WhatsAppFollowUpMessage { get; set; } =
+        "Dear Sir, following up on our quotation {number} dated {date}. Kindly let us know your feedback.";
     /// <summary>Tally data older than this (hours) is considered stale.</summary>
     public int StaleDataHours { get; set; } = 24;
 

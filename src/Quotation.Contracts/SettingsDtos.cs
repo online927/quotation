@@ -96,11 +96,11 @@ public sealed class AllSettingsDto
     public AiSettings Ai { get; set; } = new();
     public GmailSettings Gmail { get; set; } = new();
     public BackupSettings Backup { get; set; } = new();
-    /// <summary>Write-only: a new 4-digit seal PIN (empty = keep the current one).</summary>
-    public string? SealPin { get; set; }
-    public bool SealPinConfigured { get; set; }
+    /// <summary>At least one seal picture exists (for "Preview on a page" of the seal size and position).</summary>
     public bool SealImageConfigured { get; set; }
+    /// <summary>The company seal picture from before personal seals is still on the server (can be given to a user).</summary>
+    public bool FormerCompanySeal { get; set; }
 }
 
-/// <summary>Request for a PDF with the company seal.</summary>
+/// <summary>Request for a PDF with the user's own seal.</summary>
 public sealed record SealedPdfRequest(string Pin);

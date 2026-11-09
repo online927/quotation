@@ -90,11 +90,20 @@ public partial class QuotationApiClient
     public Task<UserDto> SetMyPreferencesAsync(MyPreferencesDto prefs, CancellationToken ct = default) =>
         SendAsync<UserDto>(HttpMethod.Put, "api/me/preferences", prefs, ct);
 
-    public Task UploadSealAsync(byte[] image, CancellationToken ct = default) => SendAsync(HttpMethod.Put, "api/settings/seal", image, ct);
-    public Task<byte[]> SealImageAsync(CancellationToken ct = default) => GetBytesAsync("api/settings/seal", ct);
-    /// <summary>A sample page with the seal; size/position as given (unsaved values) or else as saved.</summary>
-    public Task<byte[]> SealPreviewAsync(double? width = null, double? offsetX = null, double? offsetY = null, CancellationToken ct = default) =>
-        GetBytesAsync("api/settings/seal/preview?x=1" +
+    // Personal seals (administrators set them for users; administrators do not seal).
+    public Task<UserDto> UploadUserSealAsync(int userId, byte[] image, CancellationToken ct = default) =>
+        SendAsync<UserDto>(HttpMethod.Put, $"api/users/{userId}/seal", image, ct);
+    public Task<UserDto> UseFormerCompanySealAsync(int userId, CancellationToken ct = default) =>
+        PostAsync<UserDto>($"api/users/{userId}/seal/former", null, ct);
+    public Task<byte[]> UserSealImageAsync(int userId, CancellationToken ct = default) => GetBytesAsync($"api/users/{userId}/seal", ct);
+    public Task<UserDto> SetUserSealPinAsync(int userId, string pin, CancellationToken ct = default) =>
+        SendAsync<UserDto>(HttpMethod.Put, $"api/users/{userId}/seal/pin", new SealPinRequest(pin), ct);
+    public Task<UserDto> RemoveUserSealAsync(int userId, CancellationToken ct = default) =>
+        SendAsync<UserDto>(HttpMethod.Delete, $"api/users/{userId}/seal", null, ct);
+    /// <summary>A sample page with a seal (the user's, or any user's); size/position as given (unsaved values) or else as saved.</summary>
+    public Task<byte[]> SealPreviewAsync(double? width = null, double? offsetX = null, double? offsetY = null, CancellationToken ct = default,
+        int? userId = null) =>
+        GetBytesAsync("api/settings/seal/preview?x=1" + Q("userId", userId?.ToString()) +
                       Q("width", width?.ToString(System.Globalization.CultureInfo.InvariantCulture)) +
                       Q("offsetX", offsetX?.ToString(System.Globalization.CultureInfo.InvariantCulture)) +
                       Q("offsetY", offsetY?.ToString(System.Globalization.CultureInfo.InvariantCulture)), ct);
@@ -104,7 +113,6 @@ public partial class QuotationApiClient
         using var response = await SendRawAsync(HttpMethod.Post, "api/settings/print/preview", settings, ct);
         return await response.Content.ReadAsByteArrayAsync(ct);
     }
-    public Task RemoveSealAsync(CancellationToken ct = default) => SendAsync(HttpMethod.Delete, "api/settings/seal", null, ct);
 
     public Task<DashboardDto> DashboardAsync(CancellationToken ct = default) => GetAsync<DashboardDto>("api/dashboard", ct);
     public Task<SystemStatusDto> StatusAsync(CancellationToken ct = default) => GetAsync<SystemStatusDto>("api/status", ct);

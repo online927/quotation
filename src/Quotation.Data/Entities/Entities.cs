@@ -283,7 +283,7 @@ public class AppUser
     public bool MustChangePassword { get; set; }
     /// <summary>"Without GST" for the next quotation this user saves (switches itself off afterwards).</summary>
     public bool WithoutGstNext { get; set; }
-    /// <summary>Light, Dark, System (follows Windows) or a colour theme (Sunset, Lagoon …): the user's screens, on every PC.</summary>
+    /// <summary>Light, Dark, System (follows Windows) or a colour theme (Sunset, Graphite …): the user's screens, on every PC.</summary>
     public string Theme { get; set; } = "Light";
     /// <summary>Tally or Zoho: the layout of the PDFs this user makes; null = the default in Settings.</summary>
     public string? PdfLayout { get; set; }
@@ -293,6 +293,12 @@ public class AppUser
     public string Spacing { get; set; } = "Comfortable";
     /// <summary>No animations and no glow shadows.</summary>
     public bool ReduceMotion { get; set; }
+    /// <summary>"NumberFirst" (TSQ2627-5 Customer.pdf) or "CustomerFirst" (Customer TSQ2627-5.pdf).</summary>
+    public string PdfFileOrder { get; set; } = "NumberFirst";
+    /// <summary>This user's own seal picture is on the server (seal\user-{Id}.img). Administrators do not seal.</summary>
+    public bool HasSealImage { get; set; }
+    /// <summary>Hash of this user's own 4-digit seal PIN; null = not set.</summary>
+    public string? SealPinHash { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime? LastLoginUtc { get; set; }
 }

@@ -95,22 +95,11 @@
             <TextBox Grid.Row="26" Grid.Column="1" Text="{Binding Settings.Company.ProformaFooterText}" />
             <Border Grid.Row="27" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
               <StackPanel Spacing="8">
-                <TextBlock Classes="h2" Text="Company seal" />
+                <TextBlock Classes="h2" Text="Seal on PDFs" />
                 <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                           Text="The seal image is printed over 'for T.SAIFUDDIN &amp; CO. / Authorised Signatory' when someone ticks 'Seal' next to Save as PDF and enters the seal PIN. A PNG with a transparent background looks best." />
-                <Grid ColumnDefinitions="Auto,16,*">
-                  <Border Width="180" Height="110" CornerRadius="10" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1" Background="White">
-                    <Panel>
-                      <Image Source="{Binding SealImage}" Stretch="Uniform" Margin="6" />
-                      <TextBlock Text="No seal image" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasSealImage}" />
-                    </Panel>
-                  </Border>
-                  <StackPanel Grid.Column="2" Spacing="6">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <Button Name="UploadSealButton" Content="Choose image…" Click="OnChooseSeal" />
-                      <Button Content="Remove" Command="{Binding RemoveSealCommand}" IsVisible="{Binding HasSealImage}" />
-                      <Button Content="Preview on a page" Command="{Binding PreviewSealCommand}" IsVisible="{Binding HasSealImage}" />
-                    </StackPanel>
+                           Text="Each user has their own seal picture and PIN (Settings → Users → Edit). Administrators do not seal. A seal is printed over 'for T.SAIFUDDIN &amp; CO. / Authorised Signatory' when the user ticks 'Seal' and enters their PIN. Its size and place on the page are the same for everyone:" />
+                <Grid ColumnDefinitions="*">
+                  <StackPanel Spacing="6">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Classes="label" Text="Width (pt)" />
                       <NumericUpDown Value="{Binding SealWidth}" Minimum="30" Maximum="280" Increment="10" FormatString="0" Width="110" />
@@ -118,11 +107,7 @@
                       <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="110" />
                       <TextBlock Classes="label" Text="Move up" Margin="8,0,0,0" />
                       <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-200" Maximum="300" Increment="5" FormatString="0" Width="110" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Classes="label" Text="New seal PIN (4 digits)" />
-                      <TextBox Text="{Binding NewSealPin}" PasswordChar="●" MaxLength="4" Width="90" Watermark="••••" />
-                      <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding SealPinState}" />
+                      <Button Content="Preview on a page" Command="{Binding PreviewSealCommand}" IsVisible="{Binding Settings.SealImageConfigured, FallbackValue=False}" Margin="8,0,0,0" />
                     </StackPanel>
                     <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
                                Text="Points (72 = 1 inch). A minus number moves the other way (left / down). 'Preview on a page' shows the numbers above straight away; press Save (top right) to keep them for all PDFs." />
@@ -173,9 +158,6 @@
             <TextBlock Grid.Row="17" Text="Title Case while typing" />
             <CheckBox Grid.Row="17" Grid.Column="1" IsChecked="{Binding Settings.Quotation.TitleCase}"
                       Content="Capital first letter of each word in the quotation's text boxes (like Tally)" />
-            <TextBlock Grid.Row="18" Text="Company seal" />
-            <CheckBox Grid.Row="18" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllUsersCanSeal}"
-                      Content="All users can use the seal (with the seal PIN); otherwise administrators only" />
             <TextBlock Grid.Row="23" Text="PDF layout" VerticalAlignment="Top" Margin="0,8,12,4" />
             <StackPanel Grid.Row="23" Grid.Column="1" Spacing="4" Margin="0,3">
               <TextBlock Classes="muted" FontSize="11" Text="Default for users who have not chosen one in My Settings" />
@@ -246,6 +228,9 @@
                   <TextBlock FontSize="12" Classes="muted" TextWrapping="Wrap"
                              Text="Message typed into WhatsApp ({number} = the number, {customer} = the customer). WhatsApp Desktop must be installed on the PC." />
                   <TextBox Text="{Binding Settings.Quotation.WhatsAppMessage}" />
+                  <TextBlock FontSize="12" Classes="muted" TextWrapping="Wrap" Margin="0,4,0,0"
+                             Text="Follow-up message (WhatsApp button in the To Follow Up list, when Won / Lost is on; {date} = the quotation date):" />
+                  <TextBox Name="WhatsAppFollowUpBox" Text="{Binding Settings.Quotation.WhatsAppFollowUpMessage}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -436,6 +421,35 @@
               </Grid>
               <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
                          Text="Old quotations and the history keep the name used at the time. You cannot remove your own administrator role or deactivate yourself, and one active administrator must remain." />
+              <!-- Personal seal (users only) -->
+              <StackPanel Name="UserSealSection" Spacing="8" IsVisible="{Binding EditingUserCanHaveSeal}">
+                <TextBlock Classes="h2" Text="Seal" Margin="0,8,0,0" />
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="This user's own seal: a picture (PNG with a transparent background looks best) and a 4-digit PIN. With both set, they see 'Seal' next to Save as PDF and seal with their PIN. Five wrong PINs block the seal for 15 minutes." />
+                <Grid ColumnDefinitions="Auto,16,*">
+                  <Border Width="180" Height="110" CornerRadius="10" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1" Background="White">
+                    <Panel>
+                      <Image Source="{Binding UserSealImage}" Stretch="Uniform" Margin="6" />
+                      <TextBlock Text="No seal picture" Foreground="#6E6E73" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasUserSealImage}" />
+                    </Panel>
+                  </Border>
+                  <StackPanel Grid.Column="2" Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Button Name="UploadUserSealButton" Content="Choose picture…" Click="OnChooseUserSeal" />
+                      <Button Name="FormerSealButton" Content="Use the former company seal picture" Command="{Binding UseFormerCompanySealCommand}"
+                              IsVisible="{Binding Settings.FormerCompanySeal, FallbackValue=False}" />
+                      <Button Content="Preview on a page" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Classes="label" Text="New seal PIN (4 digits)" VerticalAlignment="Center" />
+                      <TextBox Name="UserSealPinBox" Text="{Binding NewUserSealPin}" PasswordChar="●" MaxLength="4" Width="90" Watermark="••••" />
+                      <Button Content="Set PIN" Command="{Binding SetUserSealPinCommand}" />
+                      <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding UserSealState}" />
+                    </StackPanel>
+                    <Button Content="Remove seal" Classes="danger" Command="{Binding RemoveUserSealCommand}" IsVisible="{Binding UserHasAnySeal}" HorizontalAlignment="Left" />
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Classes="primary" Content="Save user" Command="{Binding SaveUserCommand}" />
                 <Button Content="Close" Command="{Binding CancelEditUserCommand}" />

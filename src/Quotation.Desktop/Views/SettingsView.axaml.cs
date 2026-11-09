@@ -9,12 +9,12 @@ public partial class SettingsView : UserControl
 {
     public SettingsView() => InitializeComponent();
 
-    private async void OnChooseSeal(object? sender, RoutedEventArgs e)
+    private async void OnChooseUserSeal(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not SettingsViewModel vm || TopLevel.GetTopLevel(this)?.StorageProvider is not { CanOpen: true } storage) return;
         var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Seal image (PNG or JPG)",
+            Title = "Seal picture (PNG or JPG)",
             AllowMultiple = false,
             FileTypeFilter = [new FilePickerFileType("Images") { Patterns = ["*.png", "*.jpg", "*.jpeg"] }],
         });
@@ -22,6 +22,6 @@ public partial class SettingsView : UserControl
         await using var stream = await files[0].OpenReadAsync();
         using var ms = new MemoryStream();
         await stream.CopyToAsync(ms);
-        await vm.UploadSealAsync(ms.ToArray());
+        await vm.UploadUserSealAsync(ms.ToArray());
     }
 }

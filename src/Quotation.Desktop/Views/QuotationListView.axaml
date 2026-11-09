@@ -37,7 +37,7 @@
       <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     </StackPanel>
     <Border DockPanel.Dock="Top" Classes="tablehead">
-      <Grid ColumnDefinitions="120,80,100,*,*,110,100,90,70,90,150">
+      <Grid ColumnDefinitions="120,80,100,*,*,110,100,90,70,90,Auto">
         <TextBlock FontWeight="SemiBold" Text="Number" />
         <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="Type" />
         <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="Date" />
@@ -48,12 +48,13 @@
         <TextBlock Grid.Column="7" FontWeight="SemiBold" Text="Outcome" IsVisible="{Binding TrackOutcomes}" />
         <TextBlock Grid.Column="8" FontWeight="SemiBold" Text="Source" />
         <TextBlock Grid.Column="9" FontWeight="SemiBold" Text="By" />
+        <Panel Grid.Column="10" Width="{Binding ActionsWidth}" />
       </Grid>
     </Border>
     <ListBox Classes="table" Name="List" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="vm:QuotationRow">
-          <Grid ColumnDefinitions="120,80,100,*,*,110,100,90,70,90,150" Background="Transparent">
+          <Grid ColumnDefinitions="120,80,100,*,*,110,100,90,70,90,Auto" Background="Transparent">
             <TextBlock Text="{Binding Number}" FontWeight="SemiBold" />
             <TextBlock Grid.Column="1" Text="{Binding Type}" Classes="doctype" Classes.proforma="{Binding IsProforma}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
             <TextBlock Grid.Column="2" Text="{Binding Date}" />
@@ -69,7 +70,16 @@
                        IsVisible="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).TrackOutcomes}" />
             <TextBlock Grid.Column="8" Text="{Binding Source}" />
             <TextBlock Grid.Column="9" Text="{Binding CreatedBy}" />
-            <StackPanel Grid.Column="10" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+            <StackPanel Grid.Column="10" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right"
+                        Width="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).ActionsWidth}">
+              <Button Classes="small" Name="FollowUpWhatsAppButton" ToolTip.Tip="Follow up on WhatsApp: copies the PDF and opens the customer's chat with the follow-up message (then Ctrl+V, Enter)"
+                      IsVisible="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).ShowFollowUpWhatsApp}"
+                      Command="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).FollowUpWhatsAppCommand}" CommandParameter="{Binding}">
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <Path Data="M3,21 L4.6,16.4 A9,9 0 1 1 7.7,19.4 Z M9,8.5 C9,8 9.4,7.6 9.9,7.6 L10.6,7.6 L11.6,10 L10.8,11 C11.4,12.3 12.4,13.3 13.7,13.9 L14.7,13.1 L17,14.1 L17,14.8 C17,15.3 16.6,15.7 16.1,15.7 C12.2,15.7 9,12.5 9,8.5 Z"
+                        Stroke="#1FA855" StrokeThickness="1.6" StrokeJoin="Round" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
               <Button Content="Open" Classes="small"
                       Command="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).OpenCommand}" CommandParameter="{Binding}" />
               <Button Content="Duplicate" Classes="small"

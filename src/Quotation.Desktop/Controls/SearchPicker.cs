@@ -98,7 +98,7 @@ public sealed class SearchPicker : UserControl
         };
 
         // Light or dark, following the user's choice.
-        _dropDown.Bind(Border.BackgroundProperty, _dropDown.GetResourceObservable("CardBrush"));
+        _dropDown.Bind(Border.BackgroundProperty, _dropDown.GetResourceObservable("PopupBrush"));
         _dropDown.Bind(Border.BorderBrushProperty, _dropDown.GetResourceObservable("PopupBorderBrush"));
 
         _popup = new Popup

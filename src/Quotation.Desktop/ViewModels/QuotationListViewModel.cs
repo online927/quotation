@@ -80,6 +80,11 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         new("Lost", QuotationOutcome.Lost),
     ];
     public bool ShowOutcomeFilter => TrackOutcomes && Preset == QuotationListPreset.History;
+    /// <summary>W5: a WhatsApp button on each row of the To Follow Up list (Won / Lost and WhatsApp switched on).</summary>
+    [ObservableProperty] private bool _showFollowUpWhatsApp;
+    /// <summary>Room for the row buttons (Open, Duplicate, and WhatsApp in the To Follow Up list).</summary>
+    public double ActionsWidth => ShowFollowUpWhatsApp ? 190 : 150;
+    partial void OnShowFollowUpWhatsAppChanged(bool value) => OnPropertyChanged(nameof(ActionsWidth));
     partial void OnTrackOutcomesChanged(bool value) => OnPropertyChanged(nameof(ShowOutcomeFilter));
 
     public static IReadOnlyList<DocTypeFilter> TypeFilters { get; } =
@@ -128,7 +133,9 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
     [RelayCommand]
     public Task LoadAsync() => RunAsync(async () =>
     {
-        TrackOutcomes = (await _session.GetSettingsAsync()).Quotation.TrackOutcomes;
+        var settings = await _session.GetSettingsAsync();
+        TrackOutcomes = settings.Quotation.TrackOutcomes;
+        ShowFollowUpWhatsApp = Preset == QuotationListPreset.FollowUp && settings.Quotation.TrackOutcomes && settings.Quotation.WhatsAppButton;
         var today = DateOnly.FromDateTime(DateTime.Today);
         var type = TypeFilter.Type;
         List<QuotationSummaryDto> list = Preset switch
@@ -166,6 +173,34 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         if (row is null) return;
         var copy = await _session.Api.DuplicateQuotationAsync(row.Id);
         _navigator.OpenQuotation(copy.Id);
+    });
+
+    /// <summary>
+    /// Follow-up on WhatsApp: the quotation's PDF is saved and copied, and WhatsApp opens in the customer's chat with the
+    /// follow-up message typed (Settings → Quotation). The user presses Ctrl+V, then Enter.
+    /// </summary>
+    [RelayCommand]
+    private Task FollowUpWhatsAppAsync(QuotationRow? row) => RunAsync(async () =>
+    {
+        row ??= Selected;
+        if (row is null) return;
+        var settings = await _session.GetSettingsAsync();
+        var q = await _session.Api.QuotationAsync(row.Id);
+        var bytes = await _session.Api.QuotationPdfAsync(row.Id);
+        var number = q.Number ?? row.Number;
+        var file = QuotationEditorViewModel.PdfFileName(number, q.Buyer.Name, QuotationEditorViewModel.CustomerFirstInFileNames(_session));
+        var path = _session.Documents.Save(bytes, file, _session.Documents.FolderFor(q.DocType == DocumentType.ProformaInvoice));
+        var message = (settings.Quotation.WhatsAppFollowUpMessage ?? "")
+            .Replace("{number}", number, StringComparison.OrdinalIgnoreCase)
+            .Replace("{date}", q.Date.ToString("dd-MMM-yyyy"), StringComparison.OrdinalIgnoreCase)
+            .Replace("{customer}", q.Buyer.Name, StringComparison.OrdinalIgnoreCase);
+        var phone = DocumentLauncher.WhatsAppNumber(q.Buyer.Phone);
+        if (_session.Documents.ShareOnWhatsApp(path, phone, message))
+            InfoMessage = phone is null
+                ? "PDF copied. WhatsApp opened: pick the chat, press Ctrl+V, then Enter."
+                : "PDF copied. In WhatsApp press Ctrl+V, then Enter.";
+        else
+            ErrorMessage = "WhatsApp Desktop could not be opened. Is it installed on this PC? The PDF is saved: " + path;
     });
 
     [RelayCommand]

@@ -50,16 +50,9 @@
     </Style.Animations>
   </Style>
 
-  <!-- N4: buttons change colour smoothly and press in a little; item lines highlight smoothly -->
-  <Style Selector="Button /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Transitions">
-      <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.15" />
-        <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
-      </Transitions>
-    </Setter>
-  </Style>
-  <Style Selector="Button">
+  <!-- N4: buttons press in a little (not the sidebar options). Highlights (hover, selected) are not faded: a fade starts
+       from see-through white and flashed before the real colour, so they simply appear. -->
+  <Style Selector="Button:not(.nav)">
     <Setter Property="RenderTransform" Value="scale(1)" />
     <Setter Property="Transitions">
       <Transitions>
@@ -67,15 +60,8 @@
       </Transitions>
     </Setter>
   </Style>
-  <Style Selector="Button:pressed">
+  <Style Selector="Button:not(.nav):pressed">
     <Setter Property="RenderTransform" Value="scale(0.96)" />
-  </Style>
-  <Style Selector="Border.row">
-    <Setter Property="Transitions">
-      <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.15" />
-      </Transitions>
-    </Setter>
   </Style>
 
   <!-- N5: folded sections open and close with a short slide -->

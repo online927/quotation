@@ -80,10 +80,11 @@ public class OfficeFeaturesUiTests
     public async Task Save_as_pdf_approves_a_draft_and_saves_number_and_customer_with_the_seal()
     {
         using var ctx = await SetupAsync();
-        await ctx.Session.Api.UploadSealAsync(Convert.FromBase64String(Png));
-        var settings = await ctx.Session.Api.SettingsAsync();
-        settings.SealPin = "2020";
-        await ctx.Session.Api.SaveSettingsAsync(settings);
+        // Ravi has his own seal (set by the administrator); administrators do not seal.
+        var ravi = await ctx.Session.Api.CreateUserAsync(new CreateUserRequest("ravi", "Ravi", "ravi-pass", UserRole.User));
+        await ctx.Session.Api.UploadUserSealAsync(ravi.Id, Convert.FromBase64String(Png));
+        await ctx.Session.Api.SetUserSealPinAsync(ravi.Id, "2020");
+        await ctx.Session.Api.LoginAsync("ravi", "ravi-pass");
         ctx.Session.Settings = null;
 
         var editor = await DraftAsync(ctx);

@@ -232,6 +232,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         var bytes = await _session.Api.QuotationPdfAsync(id);
         var path = _session.Documents.Save(bytes, PdfFileName(), _session.Documents.FolderFor(IsProforma));
         LastPdfPath = path;
+        _lastPdfKey = PdfKey();
         var message = (_settings.Quotation.WhatsAppMessage ?? "")
             .Replace("{number}", Number ?? "", StringComparison.OrdinalIgnoreCase)
             .Replace("{customer}", BuyerName, StringComparison.OrdinalIgnoreCase);
@@ -323,6 +324,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [ObservableProperty] private int _revision;
     [ObservableProperty] private DateTime? _date = DateTime.Today;
     [ObservableProperty] private bool _isDirty;
+    partial void OnIsDirtyChanged(bool value) => OnPropertyChanged(nameof(CanDragPdf));
     [ObservableProperty] private bool _hasPdf;
     [ObservableProperty] private string? _pdfError;
     [ObservableProperty] private string? _dataWarning;
@@ -493,13 +495,13 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool CanChangeDate => IsAdmin && IsEditable;
     public bool CanApprove => Status is QuotationStatus.Draft or QuotationStatus.PendingReview && Lines.Count > 0 && !IsLocked;
     public bool CanDelete => IsAdmin && Id is not null;
-    /// <summary>This user may seal PDFs (administrator, or allowed for all users): the Seal tick-box is shown.</summary>
-    public bool CanSeal => IsAdmin || _settings.Quotation.AllUsersCanSeal;
-    /// <summary>A seal image is set up; without it the tick-box is shown greyed out with the reason.</summary>
-    public bool SealAvailable => _settings.SealImageConfigured;
-    public string SealHint => SealAvailable
-        ? "Put the company seal on the PDF (asks for the 4-digit seal PIN)"
-        : "No seal image yet — an administrator adds it in Settings → Company → Company seal";
+    /// <summary>
+    /// The Seal tick-box shows only for a user (not an administrator) who has their own seal picture and PIN
+    /// (set by an administrator in Settings → Users).
+    /// </summary>
+    public bool CanSeal => _session.Api.CurrentUser?.CanSeal == true;
+    public bool SealAvailable => CanSeal;
+    public string SealHint => "Put your seal on the PDF (asks for your 4-digit seal PIN)";
     public bool CanSaveAsPdf => Status != QuotationStatus.Cancelled && (IsFinal || (Lines.Count > 0 && !IsLocked));
     public string PackingLabel => WithoutGst ? "Packing & Forwarding - Without GST ₹" : "Packing & Forwarding ₹";
     public bool IsFinal => Status is QuotationStatus.Approved or QuotationStatus.Generated;
@@ -515,6 +517,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     };
     public bool IsProforma => DocType == DocumentType.ProformaInvoice;
     public string DocLabel => IsProforma ? "Proforma Invoice" : "Quotation";
+    public string CancelTip => $"Cancel this {DocLabel.ToLowerInvariant()} (it is kept, marked CANCELLED)";
     public string NumberLabel => IsProforma ? "Invoice No." : "Quotation No.";
     /// <summary>The number beside the date only while it is provisional; once saved it is in the title.</summary>
     public bool IsNumberProvisional => Number is null;
@@ -544,6 +547,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             // Always the current settings: an administrator may have changed them (e.g. added the seal) on another PC.
             _settings = await _session.GetSettingsAsync(refresh: true);
+            try
+            {
+                // An administrator may have given this user a seal since they signed in.
+                _session.Api.UpdateCurrentUser(await _session.Api.MeAsync());
+            }
+            catch (ApiException) { }
             Controls.TitleCase.IsOn = _settings.Quotation.TitleCase;
             OnPropertyChanged(nameof(TrackOutcomes));
             OnPropertyChanged(nameof(ShowOutcome));
@@ -705,6 +714,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(ChangedByText));
         OnPropertyChanged(nameof(ShowOutcome));
         OnPropertyChanged(nameof(ShowWhatsApp));
+        OnPropertyChanged(nameof(CanDragPdf));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(CanConvertToProforma));
@@ -726,8 +736,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     partial void OnDocTypeChanged(DocumentType value)
     {
-        OnPropertyChanged(nameof(IsProforma));
         OnPropertyChanged(nameof(DocLabel));
+        OnPropertyChanged(nameof(CancelTip));
         OnPropertyChanged(nameof(NumberLabel));
         NotifyState();
     }
@@ -1201,7 +1211,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         string? pin = null;
         if (SealPdf && CanSeal && SealAvailable)
         {
-            pin = await _navigator.AskAsync("Company seal", $"Enter the 4-digit seal PIN to seal {Number}.", "Seal PIN", secret: true, ok: "Seal & Save");
+            pin = await _navigator.AskAsync("Your seal", $"Enter your 4-digit seal PIN to seal {Number}.", "Seal PIN", secret: true, ok: "Seal & Save");
             if (pin is null) return;
         }
         await RunAsync(async () =>
@@ -1209,23 +1219,70 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             // In the user's own layout (My Settings → PDF layout: Tally or Zoho).
             var bytes = pin is null ? await _session.Api.QuotationPdfAsync(Id.Value) : await _session.Api.SealedPdfAsync(Id.Value, pin.Trim());
             LastPdfPath = _session.Documents.Save(bytes, PdfFileName(), _session.Documents.FolderFor(IsProforma));
+            _lastPdfKey = PdfKey();
             InfoMessage = (pin is null ? "Saved to " : "Sealed and saved to ") + LastPdfPath;
         });
     }
 
-    /// <summary>"TSQ2526-3403 TATA Electronics System Solutions.pdf": characters Windows does not allow become "-".</summary>
-    public string PdfFileName() => PdfFileName(Number ?? "draft", BuyerName);
+    /// <summary>
+    /// "TSQ2526-3403 TATA Electronics System Solutions.pdf", or "TATA Electronics System Solutions TSQ2526-3403.pdf" when the
+    /// user chose customer first (My Settings); characters Windows does not allow become "-".
+    /// </summary>
+    public string PdfFileName() => PdfFileName(Number ?? "draft", BuyerName, CustomerFirstInFileNames(_session));
+
+    public static bool CustomerFirstInFileNames(AppSession session) =>
+        session.Api.CurrentUser?.PdfFileOrder == PdfFileOrders.CustomerFirst;
 
     private const string NotInFileNames = "\\/:*?\"<>|";
 
-    public static string PdfFileName(string number, string customer)
+    public static string PdfFileName(string number, string customer, bool customerFirst = false)
     {
         var name = new string(customer.Select(c => char.IsControl(c) ? ' ' : NotInFileNames.Contains(c) ? '-' : c).ToArray()).Trim();
         while (name.Contains("  ", StringComparison.Ordinal)) name = name.Replace("  ", " ");
         if (name.Length > 60) name = name[..60].TrimEnd();
         var file = QuotationNumberFormatter.ToFileName(number);
-        return (name.Length > 0 ? $"{file} {name}" : file).TrimEnd('.', ' ') + ".pdf";
+        if (name.Length == 0) return file.TrimEnd('.', ' ') + ".pdf";
+        return (customerFirst ? $"{name.TrimEnd('.', ' ')} {file}" : $"{file} {name}").TrimEnd('.', ' ') + ".pdf";
     }
+
+    // ---------------------------------------------------------------- drag the PDF (W2)
+
+    /// <summary>The PDF can be dragged from the quotation into WhatsApp, Outlook or a folder (approved and saved only).</summary>
+    public bool CanDragPdf => IsFinal && Id is not null && !IsDirty;
+    private string? _dragFile;
+    private string? _dragKey;
+
+    private string PdfKey() => $"{Id}:{Revision}:{PdfFileName()}";
+
+    /// <summary>
+    /// The file to drag: the one just saved with Save as PDF (sealed if it was) when the quotation has not changed since,
+    /// otherwise a fresh PDF (in the user's layout) made in a temporary folder. Prepared when the mouse comes onto the icon.
+    /// </summary>
+    public async Task<string?> PrepareDragFileAsync()
+    {
+        if (!CanDragPdf || Id is not { } id) return null;
+        var key = PdfKey();
+        if (LastPdfPath is { } saved && _lastPdfKey == key) return saved;
+        if (_dragFile is not null && _dragKey == key) return _dragFile;
+        try
+        {
+            var bytes = await _session.Api.QuotationPdfAsync(id);
+            if (PdfKey() != key) return null; // changed meanwhile
+            _dragFile = _session.Documents.Save(bytes, PdfFileName(), Path.Combine(Path.GetTempPath(), "TSQuotation", "drag"));
+            _dragKey = key;
+            return _dragFile;
+        }
+        catch (Exception ex) when (ex is ApiException or IOException or HttpRequestException)
+        {
+            ErrorMessage = "The PDF could not be prepared for dragging: " + ex.Message;
+            return null;
+        }
+    }
+
+    public void ShowDragNotReady() => _navigator.Toast("Preparing the PDF… drag again in a moment.", 3);
+
+    /// <summary>The quotation the file in <see cref="LastPdfPath"/> was made from (number, revision, name).</summary>
+    private string? _lastPdfKey;
 
     [RelayCommand]
     private void OpenPdfFolder()
@@ -1276,6 +1333,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             var bytes = await _session.Api.PreviewPdfAsync(Id!.Value);
             LastPdfPath = _session.Documents.SaveAndOpen(bytes, "Preview-" + QuotationNumberFormatter.ToFileName(Number ?? "draft") + ".pdf");
+            _lastPdfKey = null; // a preview is not the final PDF
         });
     }
 
@@ -1286,6 +1344,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         // The same file as Save as PDF: "Number Customer.pdf".
         LastPdfPath = _session.Documents.SaveAndOpen(bytes, PdfFileName(),
             folder: _session.Documents.FolderFor(IsProforma));
+        _lastPdfKey = PdfKey();
     }
 
     [RelayCommand]

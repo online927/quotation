@@ -8,7 +8,22 @@ public sealed record LoginResponse(string Token, DateTime ExpiresUtc, UserDto Us
 
 public sealed record UserDto(int Id, string Username, string DisplayName, UserRole Role, bool IsActive, bool MustChangePassword,
     bool WithoutGstNext = false, string Theme = AppTheme.Light, string? PdfLayout = null,
-    string TextSize = AppDisplay.Normal, string Spacing = AppDisplay.Comfortable, bool ReduceMotion = false);
+    string TextSize = AppDisplay.Normal, string Spacing = AppDisplay.Comfortable, bool ReduceMotion = false,
+    string PdfFileOrder = PdfFileOrders.NumberFirst, bool HasSealImage = false, bool HasSealPin = false)
+{
+    /// <summary>A user (not an administrator) with both a seal picture and a seal PIN may seal PDFs.</summary>
+    public bool CanSeal => Role != UserRole.Admin && HasSealImage && HasSealPin;
+}
+
+/// <summary>The order in PDF file names, chosen by each user (My Settings).</summary>
+public static class PdfFileOrders
+{
+    public const string NumberFirst = "NumberFirst", CustomerFirst = "CustomerFirst";
+    public static bool IsValid(string? order) => order is NumberFirst or CustomerFirst;
+}
+
+/// <summary>An administrator sets a user's seal PIN (4 digits).</summary>
+public sealed record SealPinRequest(string Pin);
 
 /// <summary>Light or dark screens, chosen by each user (PDFs are always white).</summary>
 public static class AppTheme
@@ -18,12 +33,14 @@ public static class AppTheme
     /// <summary>Follows the Windows setting (light or dark apps).</summary>
     public const string System = "System";
     // Colour themes (My Settings > Appearance).
-    public const string Sunset = "Sunset", Lagoon = "Lagoon", Graphite = "Graphite", Frost = "Frost", Glass = "Glass", GlassBlue = "GlassBlue", GlassBlack = "GlassBlack", GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon", NeonNight = "NeonNight", Cyberpunk = "Cyberpunk";
+    // (Lagoon, Cyberpunk and the colourful Glass were removed: users who had them get Default Light.)
+    public const string Sunset = "Sunset", Graphite = "Graphite", Frost = "Frost", GlassBlue = "GlassBlue", GlassBlack = "GlassBlack",
+        GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon", NeonNight = "NeonNight";
 
-    public static readonly string[] All = [Light, Dark, System, Sunset, Lagoon, Graphite, Frost, Glass, GlassBlue, GlassBlack, GlassGreen, GlassMaroon, NeonNight, Cyberpunk];
+    public static readonly string[] All = [Light, Dark, System, Sunset, Graphite, Frost, GlassBlue, GlassBlack, GlassGreen, GlassMaroon, NeonNight];
     public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
     /// <summary>Themes drawn on dark screens.</summary>
-    public static bool IsDarkTheme(string? theme) => theme is Dark or NeonNight or Cyberpunk or GlassBlack;
+    public static bool IsDarkTheme(string? theme) => theme is Dark or NeonNight or GlassBlack;
 }
 
 /// <summary>Text size and spacing, chosen by each user.</summary>
@@ -40,7 +57,7 @@ public sealed record UpdateUserRequest(string Username, string DisplayName, User
 
 /// <summary>The current user's own switches ("My settings"); a null value is left unchanged.</summary>
 public sealed record MyPreferencesDto(bool? WithoutGstNext = null, string? Theme = null, string? PdfLayout = null,
-    string? TextSize = null, string? Spacing = null, bool? ReduceMotion = null);
+    string? TextSize = null, string? Spacing = null, bool? ReduceMotion = null, string? PdfFileOrder = null);
 
 public sealed record CreateUserRequest(string Username, string DisplayName, string Password, UserRole Role);
 

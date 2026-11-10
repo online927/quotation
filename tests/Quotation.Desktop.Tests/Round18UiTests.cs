@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -132,6 +133,13 @@ public class Round18UiTests
         editor.SelectProduct(product with { Rate = null }); // an item with no rate in Tally
         Dispatcher.UIThread.RunJobs();
         Assert.Null(editor.EntryRate);
+        // Round 20: on an unsaved quotation the button row sits in the middle of its box (as much room above as below).
+        var editorView = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        var dock = editorView.FindControl<Border>("ActionDock")!;
+        var row = editorView.FindControl<Quotation.Desktop.Controls.ActionBar>("ActionButtons")!;
+        var rowTop = row.TranslatePoint(new Point(0, 0), dock)!.Value.Y;
+        var below = dock.Bounds.Height - rowTop - row.Bounds.Height;
+        Assert.True(Math.Abs(rowTop - below) <= 1.5, $"room above {rowTop:0.0}, below {below:0.0}");
         var rateBox = ctx.Window.FindDescendantOfType<QuotationEditorView>()!.FindControl<NumericUpDown>("RateBox")!;
         Assert.Null(rateBox.Value);
         Assert.True(string.IsNullOrEmpty(rateBox.Text));

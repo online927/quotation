@@ -654,3 +654,8 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 6. Passwords: at least 4 characters (was 6).
 7. App icon: a black-and-gold product box (window, taskbar, shortcuts, installers).
 8. The Windows 11 title bar takes each theme's top-bar colours.
+
+### Round 20
+
+1. Quotation button bar: the buttons sit in the middle of their box (empty message lines no longer push them down) with
+   10 px of room above and below.

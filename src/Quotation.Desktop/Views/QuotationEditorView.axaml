@@ -97,8 +97,8 @@
       <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="16" />
-      <Setter Property="Padding" Value="12,5" />
-      <Setter Property="Margin" Value="0,6,0,4" />
+      <Setter Property="Padding" Value="14,10" />
+      <Setter Property="Margin" Value="0,8,0,6" />
       <Setter Property="BoxShadow" Value="0 6 24 0 #1A000000" />
     </Style>
     <Style Selector="Button.bar.primary, Button.bar.save">
@@ -214,7 +214,8 @@
           </Grid>
         </Border>
         <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
-        <ItemsControl ItemsSource="{Binding ValidationMessages}">
+        <!-- Shown only when there is something to say, so an empty bar keeps its buttons in the middle of the box -->
+        <ItemsControl ItemsSource="{Binding ValidationMessages}" IsVisible="{Binding !!ValidationMessages.Count}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="x:String">
               <TextBlock Text="{Binding StringFormat='• {0}'}" Foreground="{DynamicResource BadBrush}" FontSize="12" />
@@ -223,15 +224,13 @@
         </ItemsControl>
         <TextBlock Foreground="{DynamicResource WarnBrush}" Text="{Binding DataWarning}" IsVisible="{Binding DataWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <TextBlock Foreground="{DynamicResource BadBrush}" Text="{Binding PdfError}" IsVisible="{Binding PdfError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
-        <StackPanel Orientation="Horizontal" Spacing="6">
-          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding LastPdfPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-            <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
-            <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
-          </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding LastPdfPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
+          <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
         </StackPanel>
         <!-- Always one line: approve and save as PDF | preview and PDF; Cancel and Delete apart on the right. When the window is
              too narrow, Delete, Cancel, Open PDF, Preview and WhatsApp (in that order) show only their icon. Ctrl+S saves a draft. -->
-        <ctl:ActionBar Name="ActionButtons" Margin="0,2,0,0" Spacing="8" Gap="16">
+        <ctl:ActionBar Name="ActionButtons" Spacing="8" Gap="16">
           <Button Name="ApproveButton" Classes="primary bar" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}" IsVisible="{Binding MakesDocuments}"
                   ToolTip.Tip="Approve and make the PDF (Ctrl+Enter)">
             <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8 M8.5,15 L11,17.5 L15.5,12.5" Stroke="White" /><TextBlock Classes="lbl" Text="Approve" /></StackPanel>

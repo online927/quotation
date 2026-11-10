@@ -54,20 +54,40 @@ public static class ColourThemes
                 ["SidebarBrush"] = "#5E1024→#8E2238", ["SidebarBorderBrush"] = "#5E1024", ["SidebarTextBrush"] = "#FFFFFF",
                 ["SidebarMutedBrush"] = "#E8BCC5", ["SidebarHoverBrush"] = "#1FFFFFFF", ["SidebarSelectedBrush"] = "#33FFFFFF",
                 ["SidebarSelectedTextBrush"] = "#FFFFFF", ["TopBarBrush"] = "#F9ECEF",
-                // Solid white boxes (the maroon shows around them, not through them)
-                ["CardBrush"] = "#FFFFFF", ["HairlineBrush"] = "#EBD3D8", ["SubtleFillBrush"] = "#FBF3F5", ["FillBrush"] = "#F4E6E9",
-            }),
-        // More Maroon: maroon everywhere, also the boxes, with white text (a dark theme).
-        [AppTheme.MoreMaroon] = new("#3E0A16→#5C1222→#7A1A2E", "#FF9DB1", "#5A1E2C", "#7E2E42", true,
-            new()
-            {
-                ["CardBrush"] = "#5E1626", ["PopupBrush"] = "#521220", ["TopBarBrush"] = "#4A0E1B",
-                ["SidebarBrush"] = "#3A0914→#4E0F1C", ["SidebarBorderBrush"] = "#3A0914", ["SidebarSelectedBrush"] = "#7E2E42",
-                ["SidebarHoverBrush"] = "#2EFFFFFF", ["SidebarMutedBrush"] = "#D9A7B2", ["HairlineBrush"] = "#7A2A3C",
-                ["PanelBorderBrush"] = "#8A3A4C", ["SubtleFillBrush"] = "#6A1C2E", ["FillBrush"] = "#741F33",
-                ["MutedBrush"] = "#E0B7C0", ["ListHoverBrush"] = "#6E2234",
+                // Solid boxes with a soft maroon shade (the text boxes inside stay white)
+                ["CardBrush"] = "#FAEDEF", ["PopupBrush"] = "#FFFFFF", ["HairlineBrush"] = "#E8C7CE", ["SubtleFillBrush"] = "#F5E1E5",
+                ["FillBrush"] = "#EFD6DB", ["ListHoverBrush"] = "#F5E1E5",
             }),
         [AppTheme.GlassBlack] = new("#050507→#17171C→#2A2A31", "#0A84FF", "#1A2A40", "#2C3E57", true),
+        // Parchment: aged paper, a deep forest-green menu, antique gold and dark ink.
+        [AppTheme.Parchment] = new("#F4EAD0→#E9D8AE→#D8BF85", "#8B6B1E", "#F3E6C3", "#EEDDB0", false,
+            new()
+            {
+                ["SidebarBrush"] = "#1E2B1B→#2F3F26", ["SidebarBorderBrush"] = "#1E2B1B", ["SidebarTextBrush"] = "#F2E6C8",
+                ["SidebarMutedBrush"] = "#C8B583", ["SidebarHoverBrush"] = "#1FFFFFFF", ["SidebarSelectedBrush"] = "#C9A44A",
+                ["SidebarSelectedTextBrush"] = "#1E2B1B", ["TopBarBrush"] = "#F6ECD4", ["CardBrush"] = "#FFFAEC", ["PopupBrush"] = "#FFFAEC",
+                ["HairlineBrush"] = "#E3D2A8", ["PanelBorderBrush"] = "#D9C493", ["SubtleFillBrush"] = "#FAF1DA", ["FillBrush"] = "#F1E3BF",
+                ["MutedBrush"] = "#6B5A3A", ["TextBrush"] = "#2A2114", ["ListHoverBrush"] = "#F7EDD3", ["ZebraBrush"] = "#128B6B1E",
+                ["ActionBrush"] = "#7A5A12", ["PrimaryHoverBrush"] = "#8F6C1C", ["SaveBrush"] = "#3F5F2A", ["SaveHoverBrush"] = "#4D7334",
+                ["PrimaryPressedBrush"] = "#664A0E", ["PrimaryDisabledBrush"] = "#D8C696",
+                ["PageArtFarBrush"] = "#2E8B6B1E", ["PageArtNearBrush"] = "#473F5F2A", ["SidebarArtBrush"] = "#26C9A44A",
+                ["PictureScrimBrush"] = "#B3F4EAD0",
+            }),
+        // Forest & Gold: dark forest-green boxes, gold accents and warm light text.
+        [AppTheme.ForestGold] = new("#0E1A12→#16261A→#1F3322", "#D4AF37", "#2E3A22", "#3A4A2A", true,
+            new()
+            {
+                ["CardBrush"] = "#1C2B1F", ["PopupBrush"] = "#1A281C", ["TopBarBrush"] = "#132016",
+                ["SidebarBrush"] = "#0B140D→#122015", ["SidebarBorderBrush"] = "#0B140D", ["SidebarSelectedBrush"] = "#D4AF37",
+                ["SidebarSelectedTextBrush"] = "#0E1A12", ["SidebarTextBrush"] = "#EFE3C2", ["SidebarMutedBrush"] = "#B8A570",
+                ["SidebarHoverBrush"] = "#1FFFFFFF", ["HairlineBrush"] = "#2F4430", ["PanelBorderBrush"] = "#3A5238",
+                ["SubtleFillBrush"] = "#223425", ["FillBrush"] = "#28402B", ["MutedBrush"] = "#C9BB92", ["ListHoverBrush"] = "#26392A",
+                ["TextBrush"] = "#F3EAD3", ["ActionBrush"] = "#B8922A", ["PrimaryHoverBrush"] = "#CBA43A",
+                ["SaveBrush"] = "#4C7A3A", ["SaveHoverBrush"] = "#5A8C46",
+                ["PrimaryPressedBrush"] = "#9E7C20", ["PrimaryDisabledBrush"] = "#4A4220",
+                ["PageArtFarBrush"] = "#1AEFE3C2", ["PageArtNearBrush"] = "#3D4C7A3A", ["SidebarArtBrush"] = "#1FD4AF37",
+                ["PictureScrimBrush"] = "#990E1A12",
+            }),
     };
 
     private static Dictionary<string, string> GlassBrushes(Glass g) => g.Dark
@@ -113,6 +133,7 @@ public static class ColourThemes
             SetShape(app, "CardBottomRadius", new CornerRadius(0, 0, 22, 22));
             SetShape(app, "ButtonRadius", new CornerRadius(18));
             SetShape(app, "ControlCornerRadius", new CornerRadius(12));
+            SetShape(app, "InputPadding", new Thickness(11, 2)); // the cursor clears the round corner
             GlowShadow = GlassShadow;
             return;
         }
@@ -123,6 +144,7 @@ public static class ColourThemes
             SetShape(app, "CardBottomRadius", new CornerRadius(0, 0, 16, 16));
             SetShape(app, "ButtonRadius", new CornerRadius(12));
             SetShape(app, "ControlCornerRadius", new CornerRadius(10));
+            SetShape(app, "InputPadding", new Thickness(9, 2));
             GlowShadow = FrostShadow;
             return;
         }
@@ -167,10 +189,10 @@ public static class ColourThemes
         "AccentBrush", "AccentSoftBrush", "SidebarBrush", "SidebarBorderBrush", "SidebarHoverBrush", "SidebarSelectedBrush", "PageBrush",
         "ListSelectedBrush", "ListSelectedHoverBrush", "ListSelectedBarBrush", "ListHoverBrush", "TextControlBorderBrushFocused",
         "LinkHoverBrush", "TileHoverBorderBrush",
-    ]).Distinct().ToArray();
+    ]).Concat(GlassThemes.Values.SelectMany(g => g.Extra?.Keys ?? Enumerable.Empty<string>())).Distinct().ToArray();
 
     // Shapes (corners) live at the top of the app resources: remember the standard values to put them back.
-    private static readonly string[] ShapeKeys = ["CardRadius", "CardBottomRadius", "ButtonRadius", "ControlCornerRadius"];
+    private static readonly string[] ShapeKeys = ["CardRadius", "CardBottomRadius", "ButtonRadius", "ControlCornerRadius", "InputPadding"];
     private static readonly Dictionary<string, object?> Standard = [];
 
     private static void SetShape(Application app, string key, object value)

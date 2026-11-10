@@ -44,21 +44,25 @@ public partial class MainWindow : Window
         Services.ThemeService.ZoomChanged += ApplyZoom;
         Closed += (_, _) => Services.ThemeService.ZoomChanged -= ApplyZoom;
         ActualThemeVariantChanged += (_, _) => ApplyTitleBarColour();
+        Services.ThemeService.ColoursChanged += ApplyTitleBarColour;
+        Closed += (_, _) => Services.ThemeService.ColoursChanged -= ApplyTitleBarColour;
     }
 
     /// <summary>
-    /// White title bar with dark text (dark bar with light text in dark mode) instead of the Windows accent colour.
+    /// The title bar takes the colours of the theme's top bar (maroon blush in Glass (Maroon), parchment in Parchment,
+    /// dark green in Forest &amp; Gold …) instead of the Windows accent colour, so it looks like one piece with the app.
     /// Windows 11 only (its title-bar colour setting); elsewhere the title bar stays as Windows draws it.
     /// </summary>
     private void ApplyTitleBarColour()
     {
         if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000) || TryGetPlatformHandle()?.Handle is not { } hwnd || hwnd == IntPtr.Zero) return;
-        var dark = ActualThemeVariant == ThemeVariant.Dark;
+        var (caption, text, border) = Services.ThemeService.TitleBarColours();
+        static int Rgb(Avalonia.Media.Color c) => (c.R << 16) | (c.G << 8) | c.B;
         try
         {
-            SetColour(hwnd, DwmCaptionColour, dark ? 0x1C1C1E : 0xFFFFFF);
-            SetColour(hwnd, DwmTextColour, dark ? 0xF2F2F7 : 0x1D1D1F);
-            SetColour(hwnd, DwmBorderColour, dark ? 0x3A3A3C : 0xE5E5EA);
+            SetColour(hwnd, DwmCaptionColour, Rgb(caption));
+            SetColour(hwnd, DwmTextColour, Rgb(text));
+            SetColour(hwnd, DwmBorderColour, Rgb(border));
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
         {

@@ -194,12 +194,47 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
 
         BuildMenu();
         session.SettingsChanged += OnSettingsChanged;
+        session.BackgroundPictureChanged += OnBackgroundPictureChanged;
+        LoadBackgroundPicture();
         _ = ReadSwitchesAsync();
 
         Navigate("dashboard");
         _ = OfferRecoveryAsync();
         _ = PollStatusAsync(_cts.Token);
         _ = CheckForUpdateAsync();
+    }
+
+    // ================================================================= background picture (this PC)
+
+    /// <summary>The picture chosen in My Settings, shown behind the pages (decoded to screen width to keep memory low).</summary>
+    [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _backgroundPicture;
+    public bool HasBackgroundPicture => BackgroundPicture is not null;
+    partial void OnBackgroundPictureChanged(Avalonia.Media.Imaging.Bitmap? value) => OnPropertyChanged(nameof(HasBackgroundPicture));
+
+    private void LoadBackgroundPicture()
+    {
+        var old = BackgroundPicture;
+        Avalonia.Media.Imaging.Bitmap? picture = null;
+        if (_session.BackgroundPicturePath is { } path)
+        {
+            try
+            {
+                using var file = File.OpenRead(path);
+                picture = Avalonia.Media.Imaging.Bitmap.DecodeToWidth(file, 1920);
+            }
+            catch (Exception)
+            {
+                picture = null; // a damaged file: no picture
+            }
+        }
+        BackgroundPicture = picture;
+        old?.Dispose();
+    }
+
+    private void OnBackgroundPictureChanged(object? sender, EventArgs e)
+    {
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess()) LoadBackgroundPicture();
+        else Avalonia.Threading.Dispatcher.UIThread.Post(LoadBackgroundPicture);
     }
 
     // ================================================================= the side menu
@@ -701,6 +736,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     {
         if (!_cts.IsCancellationRequested) _cts.Cancel();
         _session.SettingsChanged -= OnSettingsChanged;
+        _session.BackgroundPictureChanged -= OnBackgroundPictureChanged;
         if (Avalonia.Application.Current is { } app) app.ActualThemeVariantChanged -= OnThemeChanged;
         PendingPrompt?.Choose(LeaveChoice.Cancel);
         PendingDialog?.Choose(false);

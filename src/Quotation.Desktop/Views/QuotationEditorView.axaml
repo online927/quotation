@@ -97,22 +97,22 @@
       <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="16" />
-      <Setter Property="Padding" Value="14,8" />
-      <Setter Property="Margin" Value="0,8,0,6" />
+      <Setter Property="Padding" Value="12,5" />
+      <Setter Property="Margin" Value="0,6,0,4" />
       <Setter Property="BoxShadow" Value="0 6 24 0 #1A000000" />
     </Style>
     <Style Selector="Button.bar.primary, Button.bar.save">
-      <Setter Property="CornerRadius" Value="22" />
-      <Setter Property="Padding" Value="22,10" />
-      <Setter Property="FontSize" Value="14.5" />
+      <Setter Property="CornerRadius" Value="20" />
+      <Setter Property="Padding" Value="18,7" />
+      <Setter Property="FontSize" Value="14" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <!-- Icon tiles: the icon above the name, no box until the mouse is on it -->
+    <!-- Icon buttons: the icon beside the name on one line, no box until the mouse is on it -->
     <Style Selector="Button.bar.tile">
-      <Setter Property="Padding" Value="10,4" />
-      <Setter Property="MinWidth" Value="72" />
-      <Setter Property="MinHeight" Value="44" />
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="FontSize" Value="13" />
       <Setter Property="CornerRadius" Value="10" />
     </Style>
     <Style Selector="Button.bar.tile /template/ ContentPresenter#PART_ContentPresenter">
@@ -123,12 +123,12 @@
       <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
     </Style>
     <Style Selector="Button.bar.tile Path.bi">
-      <Setter Property="Width" Value="18" />
-      <Setter Property="Height" Value="18" />
-      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="Button.bar.tile TextBlock.lbl">
-      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="Button.bar">
       <Setter Property="Padding" Value="16,8" />
@@ -245,14 +245,14 @@
                         VerticalAlignment="Center" ToolTip.Tip="{Binding SealHint}" />
           <Border Classes="groupline" />
           <Button Name="PreviewButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="4" Command="{Binding PreviewCommand}" HotKey="F11" ToolTip.Tip="Preview the PDF (F11)">
-            <StackPanel Spacing="3"><Path Classes="bi" Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Preview" /></StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Preview" /></StackPanel>
           </Button>
           <Button Name="OpenPdfButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="3" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" ToolTip.Tip="Open the PDF (Ctrl+P)">
-            <StackPanel Spacing="3"><Path Classes="bi" Data="M14,4 L20,4 L20,10 M20,4 L11,13 M18,14 L18,19 C18,19.6 17.6,20 17,20 L5,20 C4.4,20 4,19.6 4,19 L4,7 C4,6.4 4.4,6 5,6 L10,6" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Open PDF" /></StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M14,4 L20,4 L20,10 M20,4 L11,13 M18,14 L18,19 C18,19.6 17.6,20 17,20 L5,20 C4.4,20 4,19.6 4,19 L4,7 C4,6.4 4.4,6 5,6 L10,6" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Open PDF" /></StackPanel>
           </Button>
           <Button Classes="bar tile whatsapp" Name="WhatsAppButton" ctl:ActionBar.CollapseOrder="5" Command="{Binding WhatsAppCommand}" IsVisible="{Binding ShowWhatsApp}"
                   ToolTip.Tip="WhatsApp: copy the PDF and open the customer's chat (then Ctrl+V, Enter)">
-            <StackPanel Spacing="3"><Path Classes="bi" Data="M3,21 L4.6,16.4 A9,9 0 1 1 7.7,19.4 Z M9,8.5 C9,8 9.4,7.6 9.9,7.6 L10.6,7.6 L11.6,10 L10.8,11 C11.4,12.3 12.4,13.3 13.7,13.9 L14.7,13.1 L17,14.1 L17,14.8 C17,15.3 16.6,15.7 16.1,15.7 C12.2,15.7 9,12.5 9,8.5 Z" Stroke="#1FA855" /><TextBlock Classes="lbl" Text="WhatsApp" /></StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M3,21 L4.6,16.4 A9,9 0 1 1 7.7,19.4 Z M9,8.5 C9,8 9.4,7.6 9.9,7.6 L10.6,7.6 L11.6,10 L10.8,11 C11.4,12.3 12.4,13.3 13.7,13.9 L14.7,13.1 L17,14.1 L17,14.8 C17,15.3 16.6,15.7 16.1,15.7 C12.2,15.7 9,12.5 9,8.5 Z" Stroke="#1FA855" /><TextBlock Classes="lbl" Text="WhatsApp" /></StackPanel>
           </Button>
           <Button Classes="bar" Content="Regenerate PDF" Command="{Binding RegeneratePdfCommand}" IsVisible="{Binding CanRegeneratePdf}"
                   ToolTip.Tip="Making the PDF failed at approval: try again" />
@@ -264,7 +264,7 @@
           <Button Name="CancelDocButton" Classes="danger bar tile" ctl:ActionBar.Right="True" ctl:ActionBar.CollapseOrder="2"
                   Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding CanCancel}"
                   ToolTip.Tip="{Binding CancelTip}" ToolTip.ShowOnDisabled="True">
-            <StackPanel Spacing="3">
+            <StackPanel Orientation="Horizontal" Spacing="7">
               <Path Classes="bi" Data="M12,22 A10,10 0 1 0 12,2 A10,10 0 1 0 12,22 Z M4.9,4.9 L19.1,19.1" Stroke="{DynamicResource BadBrush}" />
               <TextBlock Classes="lbl" Text="Cancel" />
             </StackPanel>
@@ -272,7 +272,7 @@
           <Button Name="DeleteButton" Classes="danger bar tile" ctl:ActionBar.Right="True" ctl:ActionBar.CollapseOrder="1"
                   Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"
                   ToolTip.Tip="Delete (administrator): move to the Deleted list (can be restored for 30 days)">
-            <StackPanel Spacing="3"><Path Classes="bi" Data="M4,7 L20,7 M9,7 L9,4 L15,4 L15,7 M6,7 L7,20 L17,20 L18,7 M10,11 L10,16 M14,11 L14,16" Stroke="{DynamicResource BadBrush}" /><TextBlock Classes="lbl" Text="Delete" /></StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M4,7 L20,7 M9,7 L9,4 L15,4 L15,7 M6,7 L7,20 L17,20 L18,7 M10,11 L10,16 M14,11 L14,16" Stroke="{DynamicResource BadBrush}" /><TextBlock Classes="lbl" Text="Delete" /></StackPanel>
           </Button>
         </ctl:ActionBar>
       </StackPanel>

@@ -641,3 +641,16 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    and Delete; the Seal is a switch; the drag-PDF handle is removed; "Unsaved changes" is a chip.
 10. Striped item lines, friendly empty lists, a loading shimmer, error messages in a closable red banner on every page,
     Settings sections as a list on the left, and a side menu that folds to icons (remembered on each PC).
+
+### Round 19
+
+1. Themes: Parchment (aged paper, forest-green menu, gold) and Forest & Gold (dark green, gold), with drawn mountains
+   and pines (original line art, no pictures shipped). More Maroon removed (its users get Glass (Maroon)); Glass (Maroon)
+   boxes have a soft maroon blush.
+2. My Settings → Background picture (this PC): any picture behind the pages, kept on that PC only.
+3. Sign-in fills in the last Standard user's name on that PC, never the administrator's.
+4. Shorter quotation button bar (icon and name on one line).
+5. Glass and Frost themes: more room inside typing boxes, so the text cursor no longer pokes past the round corners.
+6. Passwords: at least 4 characters (was 6).
+7. App icon: a black-and-gold product box (window, taskbar, shortcuts, installers).
+8. The Windows 11 title bar takes each theme's top-bar colours.

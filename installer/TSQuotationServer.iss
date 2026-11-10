@@ -20,6 +20,8 @@ OutputBaseFilename=TSQuotationServer-Setup-{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\src\Quotation.Desktop\Assets\app.ico
+UninstallDisplayIcon={app}\TSQuotation.Server.exe
 UninstallDisplayName=TS Quotation Server
 
 [Files]

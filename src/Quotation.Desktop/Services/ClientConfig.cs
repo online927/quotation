@@ -16,6 +16,8 @@ public sealed class ClientConfig
     public string CompanyName { get; set; } = "";
     /// <summary>The side menu is folded to icons on this PC.</summary>
     public bool SidebarCollapsed { get; set; }
+    /// <summary>A picture behind the pages on this PC (a copy kept next to this file); empty = none.</summary>
+    public string BackgroundPicture { get; set; } = "";
 
     /// <summary>Where this config is saved; not serialized.</summary>
     [System.Text.Json.Serialization.JsonIgnore]

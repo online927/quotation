@@ -3,6 +3,7 @@
     <RootNamespace>Quotation.Server</RootNamespace>
     <AssemblyName>TSQuotation.Server</AssemblyName>
     <UserSecretsId>ts-quotation-server</UserSecretsId>
+    <ApplicationIcon>..\Quotation.Desktop\Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Quotation.Core\Quotation.Core.csproj" />

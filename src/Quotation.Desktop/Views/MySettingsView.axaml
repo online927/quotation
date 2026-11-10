@@ -55,6 +55,18 @@
         </StackPanel>
       </Border>
 
+      <Border Classes="card" Name="BackgroundPictureCard">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Background picture (this PC)" />
+          <TextBlock TextWrapping="Wrap" FontSize="12" Classes="muted"
+                     Text="A picture of your own behind the pages, on this PC only (it is not sent to the server or to other PCs). Use a picture you have the right to use." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Name="ChooseBackgroundButton" Content="Choose picture…" Click="OnChooseBackground" />
+            <Button Name="RemoveBackgroundButton" Content="Remove" Command="{Binding RemoveBackgroundPictureCommand}" IsVisible="{Binding HasBackgroundPicture}" />
+            <TextBlock VerticalAlignment="Center" FontSize="12" Text="{Binding BackgroundPictureText}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Save as PDF folders (this PC)" />

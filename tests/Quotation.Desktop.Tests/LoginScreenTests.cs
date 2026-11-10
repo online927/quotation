@@ -109,4 +109,29 @@ public class LoginScreenTests
         await Shot(window, "login-after-settings-name");
         window.Close();
     }
+
+    [AvaloniaFact]
+    public async Task User_name_is_filled_in_for_standard_users_but_never_for_admin()
+    {
+        using var server = new TestServer(products: 10, customers: 5, today: DateOnly.FromDateTime(DateTime.Today));
+        await server.LoginAsStandardAsync(); // makes the Standard user "ravi"
+        var config = new ClientConfig { FilePath = Path.Combine(server.DataDirectory, "c.json") };
+
+        async Task SignInAsync(string user, string password)
+        {
+            var login = new LoginViewModel(new AppSession(config, _ => server.CreateApi()), () => { }) { Username = user, Password = password };
+            await login.LoginCommand.ExecuteAsync(null);
+        }
+
+        await SignInAsync("ravi", "ravi-pass");
+        Assert.Equal("ravi", new LoginViewModel(new AppSession(config, _ => server.CreateApi()), () => { }).Username);
+
+        // The administrator signs in on Ravi's PC: Ravi's name is still filled in next time.
+        await SignInAsync("admin", "admin123");
+        Assert.Equal("ravi", new LoginViewModel(new AppSession(config, _ => server.CreateApi()), () => { }).Username);
+
+        // A PC where the older version remembered "admin": the box stays empty.
+        config.LastUsername = "admin";
+        Assert.Equal("", new LoginViewModel(new AppSession(config, _ => server.CreateApi()), () => { }).Username);
+    }
 }

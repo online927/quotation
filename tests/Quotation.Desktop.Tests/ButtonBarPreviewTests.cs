@@ -63,7 +63,7 @@ public class ButtonBarPreviewTests
 
             shell.OpenQuotation(approved.Id);
             var editor = (QuotationEditorViewModel)shell.CurrentPage!;
-            await UiHelpers.WaitUntil(() => editor.Lines.Count > 0 && editor.CanSeal);
+            await UiHelpers.WaitUntil(() => editor.Lines.Count > 0); // admin: no seal (Round 16)
             await Shot("2-approved-quotation");
 
             shell.Dispose();

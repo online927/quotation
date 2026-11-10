@@ -129,4 +129,17 @@ public class Round18Tests : QuotationTestBase
         var json = JsonSerializer.Serialize(new PartyPrintSettings { ShowContactDetails = true, ShowEmail = false });
         Assert.False(JsonSerializer.Deserialize<PartyPrintSettings>(json)!.ShowEmail);
     }
+
+    [Fact]
+    public async Task Passwords_of_four_characters_are_allowed()
+    {
+        var tooShort = await Assert.ThrowsAsync<ApiException>(() => Api.CreateUserAsync(new CreateUserRequest("asha", "Asha", "123", UserRole.User)));
+        Assert.Contains(tooShort.Details, d => d.Contains("at least 4"));
+
+        await Api.CreateUserAsync(new CreateUserRequest("asha", "Asha", "1234", UserRole.User));
+        var asha = Server.CreateApi();
+        await asha.LoginAsync("asha", "1234");
+        await asha.ChangePasswordAsync("1234", "4321");
+        await Server.CreateApi().LoginAsync("asha", "4321");
+    }
 }

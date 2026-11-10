@@ -49,7 +49,9 @@ public sealed partial class LoginViewModel : ViewModelBase
         _session = session;
         _onLoggedIn = onLoggedIn;
         _serverUrl = session.Config.ServerUrl;
-        _username = session.Config.LastUsername;
+        // The last Standard user of this PC is filled in; the administrator's name never is.
+        var last = session.Config.LastUsername.Trim();
+        _username = last.Equals("admin", StringComparison.OrdinalIgnoreCase) ? "" : last;
     }
 
     [RelayCommand]
@@ -83,8 +85,12 @@ public sealed partial class LoginViewModel : ViewModelBase
                 ShowServer = true; // the server could not be reached: show where the app looks for it
                 throw;
             }
-            _session.Config.LastUsername = Username.Trim();
-            _session.Config.Save();
+            if (_session.Api.CurrentUser?.Role != Core.Domain.UserRole.Admin)
+            {
+                // Remembered for next time; an administrator signing in keeps this PC's user name as it was.
+                _session.Config.LastUsername = Username.Trim();
+                _session.Config.Save();
+            }
         });
         Password = "";
         if (ok) _onLoggedIn();

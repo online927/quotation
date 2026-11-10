@@ -26,6 +26,44 @@ public static class ThemeService
         };
         ColourThemes.Apply(theme);
         ApplyShadow(app);
+        ColoursChanged?.Invoke();
+    }
+
+    /// <summary>Raised after a theme's colours are applied (the window's title bar follows them).</summary>
+    public static event Action? ColoursChanged;
+
+    /// <summary>
+    /// Colours for the Windows title bar so it looks like the app's own top bar: the theme's top-bar colour (made
+    /// solid over the page colour when it is see-through), its text colour and its line colour.
+    /// </summary>
+    public static (Color Caption, Color Text, Color Border) TitleBarColours()
+    {
+        var app = Application.Current;
+        var dark = IsDark;
+        Color Get(string key, Color fallback)
+        {
+            if (app is null || !app.TryGetResource(key, app.ActualThemeVariant, out var value)) return fallback;
+            return value switch
+            {
+                ISolidColorBrush solid => solid.Color,
+                IGradientBrush { GradientStops.Count: > 0 } gradient => gradient.GradientStops[0].Color,
+                Color c => c,
+                _ => fallback,
+            };
+        }
+        static Color Over(Color top, Color under)
+        {
+            if (top.A == 255) return top;
+            double a = top.A / 255.0;
+            byte Mix(byte t, byte u) => (byte)Math.Round(t * a + u * (1 - a));
+            return Color.FromRgb(Mix(top.R, under.R), Mix(top.G, under.G), Mix(top.B, under.B));
+        }
+        var baseColour = dark ? Color.FromRgb(0x1C, 0x1C, 0x1E) : Colors.White;
+        var page = Over(Get("PageBrush", baseColour), baseColour);
+        var caption = Over(Get("TopBarBrush", page), page);
+        var text = Over(Get("TextBrush", dark ? Colors.White : Color.FromRgb(0x1D, 0x1D, 0x1F)), caption);
+        var border = Over(Get("HairlineBrush", caption), caption);
+        return (caption, text, border);
     }
 
     /// <summary>The screens are dark now (chosen, or Windows is dark when following Windows).</summary>

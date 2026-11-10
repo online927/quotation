@@ -82,7 +82,7 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
     public UserDto Me(AppUser u) => ToDto(u) with { MakesDocuments = u.Role != UserRole.Admin || options.Value.AdministratorsMakeDocuments };
 
     public static UserDto ToDto(AppUser u) => new(u.Id, u.Username, u.DisplayName, u.Role, u.IsActive, u.MustChangePassword, u.WithoutGstNext,
-        AppTheme.IsValid(u.Theme) ? u.Theme : AppTheme.Light, PdfLayouts.IsValid(u.PdfLayout) ? u.PdfLayout : null,
+        AppTheme.Normalize(u.Theme), PdfLayouts.IsValid(u.PdfLayout) ? u.PdfLayout : null,
         AppDisplay.IsValidTextSize(u.TextSize) ? u.TextSize : AppDisplay.Normal,
         AppDisplay.IsValidSpacing(u.Spacing) ? u.Spacing : AppDisplay.Comfortable, u.ReduceMotion,
         PdfFileOrders.IsValid(u.PdfFileOrder) ? u.PdfFileOrder : PdfFileOrders.NumberFirst, u.HasSealImage, u.SealPinHash is not null);
@@ -154,10 +154,13 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
         return user.Username;
     }
 
+    /// <summary>Shortest password allowed (4: easy to type in the office; a seal PIN is separate).</summary>
+    public const int MinPasswordLength = 4;
+
     public static IReadOnlyList<string> ValidatePassword(string password)
     {
         var errors = new List<string>();
-        if (string.IsNullOrEmpty(password) || password.Length < 6) errors.Add("Password must be at least 6 characters.");
+        if (string.IsNullOrEmpty(password) || password.Length < MinPasswordLength) errors.Add($"Password must be at least {MinPasswordLength} characters.");
         return errors;
     }
 }

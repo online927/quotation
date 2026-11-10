@@ -37,14 +37,18 @@ public static class AppTheme
     /// <summary>Follows the Windows setting (light or dark apps).</summary>
     public const string System = "System";
     // Colour themes (My Settings > Appearance).
-    // (Lagoon, Cyberpunk and the colourful Glass were removed: users who had them get Default Light.)
+    // (Lagoon, Cyberpunk and the colourful Glass were removed: users who had them get Default Light.
+    //  More Maroon was removed in Round 19: its users get Glass (Maroon).)
     public const string Sunset = "Sunset", Graphite = "Graphite", Frost = "Frost", GlassBlue = "GlassBlue", GlassBlack = "GlassBlack",
-        GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon", MoreMaroon = "MoreMaroon", NeonNight = "NeonNight";
+        GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon", NeonNight = "NeonNight",
+        Parchment = "Parchment", ForestGold = "ForestGold";
 
-    public static readonly string[] All = [Light, Dark, System, Sunset, Graphite, Frost, GlassBlue, GlassBlack, GlassGreen, GlassMaroon, MoreMaroon, NeonNight];
+    public static readonly string[] All = [Light, Dark, System, Sunset, Graphite, Frost, GlassBlue, GlassBlack, GlassGreen, GlassMaroon, Parchment, ForestGold, NeonNight];
     public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
+    /// <summary>A saved theme that still exists: More Maroon → Glass (Maroon); any other removed theme → Default Light.</summary>
+    public static string Normalize(string? theme) => theme == "MoreMaroon" ? GlassMaroon : IsValid(theme) ? theme! : Light;
     /// <summary>Themes drawn on dark screens.</summary>
-    public static bool IsDarkTheme(string? theme) => theme is Dark or NeonNight or GlassBlack or MoreMaroon;
+    public static bool IsDarkTheme(string? theme) => theme is Dark or NeonNight or GlassBlack or ForestGold;
 }
 
 /// <summary>Text size and spacing, chosen by each user.</summary>

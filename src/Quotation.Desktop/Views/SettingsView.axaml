@@ -503,7 +503,7 @@
               <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
                          Text="Give the user a temporary password: they must choose a new one at their next login, and any PC still logged in as them is logged out." />
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBox Width="220" Text="{Binding ResetPassword}" PasswordChar="●" Watermark="Temporary password (min. 6)" />
+                <TextBox Width="220" Text="{Binding ResetPassword}" PasswordChar="●" Watermark="Temporary password (min. 4)" />
                 <Button Content="Reset password" Command="{Binding ResetUserPasswordCommand}" />
               </StackPanel>
             </StackPanel>

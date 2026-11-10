@@ -20,6 +20,8 @@ OutputBaseFilename=TSQuotation-Setup-{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\src\Quotation.Desktop\Assets\app.ico
+UninstallDisplayIcon={app}\TSQuotation.exe
 ; Setup asks the user to close a running copy first, so an update always replaces the program.
 AppMutex=TSQuotationClientRunning,Global\TSQuotationClientRunning
 CloseApplications=yes

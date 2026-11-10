@@ -32,6 +32,7 @@ public class SidebarTests
         var bar = view.FindControl<Border>("Sidebar")!;
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(262, bar.Bounds.Width);
+        Assert.NotNull(window.Icon); // the black-and-gold box icon (Assets/app.ico)
 
         view.FindControl<Button>("SidebarToggle")!.Command!.Execute(null);
         await Task.Delay(300);

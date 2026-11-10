@@ -19,6 +19,59 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
     public bool MakesDocuments => Api.CurrentUser?.MakesDocuments == true;
     /// <summary>Proforma invoices are switched on (Settings → Quotation), as last read from the server.</summary>
     public bool ProformaEnabled => Settings?.Quotation.ProformaEnabled == true;
+    /// <summary>The background picture of this PC was chosen or removed (My Settings).</summary>
+    public event EventHandler? BackgroundPictureChanged;
+
+    /// <summary>The background picture of this PC, if one is chosen and still there.</summary>
+    public string? BackgroundPicturePath =>
+        Config.BackgroundPicture is { Length: > 0 } p && File.Exists(p) ? p : null;
+
+    /// <summary>
+    /// Keeps a copy of <paramref name="source"/> next to this PC's settings and shows it behind the pages; returns an
+    /// error message, or null. The picture stays on this PC (it is not sent to the server).
+    /// </summary>
+    public string? SetBackgroundPicture(string source)
+    {
+        try
+        {
+            var info = new FileInfo(source);
+            if (!info.Exists) return "The picture was not found.";
+            if (info.Length > 20 * 1024 * 1024) return "The picture is larger than 20 MB.";
+            var ext = info.Extension.ToLowerInvariant();
+            if (ext is not (".jpg" or ".jpeg" or ".png" or ".bmp" or ".webp")) return "Choose a JPG, PNG, BMP or WEBP picture.";
+            using (var test = File.OpenRead(source)) _ = new Avalonia.Media.Imaging.Bitmap(test);
+            var folder = Path.GetDirectoryName(Config.FilePath ?? ClientConfig.DefaultPath)!;
+            Directory.CreateDirectory(folder);
+            var target = Path.Combine(folder, "background" + ext);
+            foreach (var old in Directory.GetFiles(folder, "background.*")) if (old != target) File.Delete(old);
+            File.Copy(source, target, overwrite: true);
+            Config.BackgroundPicture = target;
+            Config.Save();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException
+                                       or InvalidOperationException)
+        {
+            return "The picture could not be used: " + ex.Message;
+        }
+        BackgroundPictureChanged?.Invoke(this, EventArgs.Empty);
+        return null;
+    }
+
+    public void RemoveBackgroundPicture()
+    {
+        try
+        {
+            if (Config.BackgroundPicture is { Length: > 0 } p && File.Exists(p)) File.Delete(p);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The file stays, but it is no longer shown.
+        }
+        Config.BackgroundPicture = "";
+        try { Config.Save(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        BackgroundPictureChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>Settings were read again or saved (the menu shows or hides proforma invoices).</summary>
     public event EventHandler? SettingsChanged;
 

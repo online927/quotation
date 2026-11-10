@@ -347,9 +347,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         if (EditingUser is not { } user) return;
         InfoMessage = null;
-        if (ResetPassword.Length < 6)
+        if (ResetPassword.Length < 4)
         {
-            ErrorMessage = "The temporary password must have at least 6 characters.";
+            ErrorMessage = "The temporary password must have at least 4 characters.";
             return;
         }
         if (await RunAsync(() => _session.Api.ResetPasswordAsync(user.Id, ResetPassword)))

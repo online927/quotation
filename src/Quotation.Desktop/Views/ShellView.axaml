@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              xmlns:svc="using:Quotation.Desktop.Services"
+             xmlns:ctl="using:Quotation.Desktop.Controls"
              x:Class="Quotation.Desktop.Views.ShellView"
              x:DataType="vm:ShellViewModel">
   <Panel>
@@ -93,6 +94,10 @@
       <!-- Sidebar -->
       <Border Name="Sidebar" Classes="sidebar" Classes.collapsed="{Binding SidebarCollapsed}" DockPanel.Dock="Left" ZIndex="10"
               Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,1,0">
+        <Panel>
+        <!-- Pines at the foot of the menu (Parchment and Forest & Gold themes only) -->
+        <Path Name="SidebarArt" Classes="sideart" Data="{x:Static ctl:ThemeArt.SidebarPines}" Fill="{DynamicResource SidebarArtBrush}"
+              Stretch="Fill" Height="110" VerticalAlignment="Bottom" IsHitTestVisible="False" />
         <DockPanel>
         <Button Name="SidebarToggle" DockPanel.Dock="Bottom" Classes="nav" Command="{Binding ToggleSidebarCommand}" Margin="10,4,10,10"
                 ToolTip.Tip="{Binding SidebarToggleTip}">
@@ -138,36 +143,49 @@
           </ItemsControl>
         </ScrollViewer>
         </DockPanel>
+        </Panel>
       </Border>
 
-      <!-- Back / Forward and where you are -->
-      <Border DockPanel.Dock="Top" Padding="20,10,20,0">
-        <StackPanel Orientation="Horizontal" Spacing="6">
-          <Button Name="BackButton" Classes="round" Content="‹" Command="{Binding GoBackCommand}" IsEnabled="{Binding CanGoBack}" ToolTip.Tip="{Binding BackToolTip}" />
-          <Button Name="ForwardButton" Classes="round" Content="›" Command="{Binding GoForwardCommand}" IsEnabled="{Binding CanGoForward}"
-                  ToolTip.Tip="{Binding ForwardToolTip}" />
-          <Button Name="HomeButton" Classes="link" Margin="8,0,0,0" VerticalAlignment="Center" ToolTip.Tip="Dashboard"
-                  Command="{Binding NavigateCommand}" CommandParameter="dashboard">
-            <Path Data="M3,11 L12,3 L21,11 M5,9.5 L5,20 L10,20 L10,14 L14,14 L14,20 L19,20 L19,9.5" Stroke="{DynamicResource AccentBrush}"
-                  StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" Width="18" Height="18" Stretch="Uniform" />
-          </Button>
-          <TextBlock Text="›" Classes="muted" VerticalAlignment="Center" />
-          <ItemsControl ItemsSource="{Binding Breadcrumbs}" VerticalAlignment="Center" Margin="2,0,0,0">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:Crumb">
-                <StackPanel Orientation="Horizontal">
-                  <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0" IsVisible="{Binding IsCurrent}" />
-                </StackPanel>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </StackPanel>
-      </Border>
+      <!-- The page area: your own background picture (My Settings, this PC), or the theme's drawn scenery -->
+      <Panel>
+        <Image Name="BackgroundPicture" Source="{Binding BackgroundPicture}" Stretch="UniformToFill" IsVisible="{Binding HasBackgroundPicture}"
+               IsHitTestVisible="False" />
+        <Border Background="{DynamicResource PictureScrimBrush}" IsVisible="{Binding HasBackgroundPicture}" IsHitTestVisible="False" />
+        <Panel Name="PageArt" Height="200" VerticalAlignment="Bottom" IsVisible="{Binding !HasBackgroundPicture}" IsHitTestVisible="False">
+          <Path Data="{x:Static ctl:ThemeArt.FarMountains}" Fill="{DynamicResource PageArtFarBrush}" Stretch="Fill" />
+          <Path Data="{x:Static ctl:ThemeArt.PineRidge}" Fill="{DynamicResource PageArtNearBrush}" Stretch="Fill" />
+        </Panel>
+        <DockPanel>
+          <!-- Back / Forward and where you are -->
+          <Border DockPanel.Dock="Top" Padding="20,10,20,0">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Button Name="BackButton" Classes="round" Content="‹" Command="{Binding GoBackCommand}" IsEnabled="{Binding CanGoBack}" ToolTip.Tip="{Binding BackToolTip}" />
+              <Button Name="ForwardButton" Classes="round" Content="›" Command="{Binding GoForwardCommand}" IsEnabled="{Binding CanGoForward}"
+                      ToolTip.Tip="{Binding ForwardToolTip}" />
+              <Button Name="HomeButton" Classes="link" Margin="8,0,0,0" VerticalAlignment="Center" ToolTip.Tip="Dashboard"
+                      Command="{Binding NavigateCommand}" CommandParameter="dashboard">
+                <Path Data="M3,11 L12,3 L21,11 M5,9.5 L5,20 L10,20 L10,14 L14,14 L14,20 L19,20 L19,9.5" Stroke="{DynamicResource AccentBrush}"
+                      StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" Width="18" Height="18" Stretch="Uniform" />
+              </Button>
+              <TextBlock Text="›" Classes="muted" VerticalAlignment="Center" />
+              <ItemsControl ItemsSource="{Binding Breadcrumbs}" VerticalAlignment="Center" Margin="2,0,0,0">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:Crumb">
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0" IsVisible="{Binding IsCurrent}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
 
-      <TransitioningContentControl Classes="pages" Content="{Binding CurrentPage}" />
+          <TransitioningContentControl Classes="pages" Content="{Binding CurrentPage}" />
+        </DockPanel>
+      </Panel>
     </DockPanel>
 
     <!-- Short messages in the bottom-right corner ("Saved …", "PDF saved to …"); they fade after a few seconds -->

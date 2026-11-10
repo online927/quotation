@@ -13,6 +13,17 @@ public partial class MySettingsView : UserControl
 
     private void OnBrowseProforma(object? sender, RoutedEventArgs e) => Browse(proforma: true);
 
+    private async void OnChooseBackground(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MySettingsViewModel vm || TopLevel.GetTopLevel(this)?.StorageProvider is not { CanOpen: true } storage) return;
+        var picked = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Background picture", AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("Pictures") { Patterns = ["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.webp"] }],
+        });
+        if (picked.Count > 0 && picked[0].TryGetLocalPath() is { } path) vm.SetBackgroundPicture(path);
+    }
+
     private async void Browse(bool proforma)
     {
         if (DataContext is not MySettingsViewModel vm || TopLevel.GetTopLevel(this)?.StorageProvider is not { CanPickFolder: true } storage) return;

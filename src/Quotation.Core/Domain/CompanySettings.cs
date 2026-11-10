@@ -94,6 +94,9 @@ public sealed class QuotationSettings
     /// <summary>Allow generating a quotation when the last Tally sync is stale (with warning + audit).</summary>
     public bool AllowStaleDataOverride { get; set; } = true;
 
+    /// <summary>Proforma invoices can be made (administrator switch; off at first). Proforma invoices already made stay in History.</summary>
+    public bool ProformaEnabled { get; set; }
+
     /// <summary>Won / Lost / Follow-up on quotations (administrator switch; off by default).</summary>
     public bool TrackOutcomes { get; set; }
     /// <summary>Follow-up date = approval date + this many days.</summary>
@@ -180,10 +183,19 @@ public enum PartyDisplayName
 /// </summary>
 public sealed class PartyPrintSettings
 {
-    /// <summary>Contact (phone) and E-Mail lines.</summary>
+    /// <summary>The Contact (phone) line. Before Round 18 it also switched the E-Mail line.</summary>
     public bool ShowContactDetails { get; set; } = true;
-    /// <summary>The contact person's name before the phone number ("Contact : Mr. X, 98…").</summary>
+    /// <summary>The contact person's name before the phone number ("Contact : Mr. X, 98…"), with the Contact line.</summary>
     public bool ShowContactPerson { get; set; }
+    /// <summary>The E-Mail line; not saved yet (settings from before Round 18) = as <see cref="ShowContactDetails"/>.</summary>
+    public bool? ShowContactEmail { get; set; }
+    /// <summary>The E-Mail line is printed.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool ShowEmail
+    {
+        get => ShowContactEmail ?? ShowContactDetails;
+        set => ShowContactEmail = value;
+    }
     /// <summary>Name and address from the Tally ledger instead of what was typed on the quotation.</summary>
     public bool NameAndAddressFromMaster { get; set; }
     /// <summary>The address on one line, separated by commas.</summary>

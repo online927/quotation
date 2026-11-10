@@ -107,6 +107,17 @@
     </Style.Animations>
   </Style>
 
+  <!-- U7: loading placeholders shimmer gently -->
+  <Style Selector="Border.skeleton">
+    <Style.Animations>
+      <Animation Duration="0:0:1.2" IterationCount="INFINITE">
+        <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+        <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0.45" /></KeyFrame>
+        <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+      </Animation>
+    </Style.Animations>
+  </Style>
+
   <!-- N8: a new item line fades in -->
   <Style Selector="Border.row">
     <Style.Animations>

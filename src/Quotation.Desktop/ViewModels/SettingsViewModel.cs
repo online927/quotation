@@ -24,7 +24,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _newUsername = "";
     [ObservableProperty] private string _newDisplayName = "";
     [ObservableProperty] private string _newUserPassword = "";
-    [ObservableProperty] private bool _newUserIsAdmin;
     public ObservableCollection<UserDto> Users { get; } = [];
 
     // Editing a user (administrator)
@@ -257,14 +256,13 @@ public sealed partial class SettingsViewModel : ViewModelBase
         var ok = await RunAsync(async () =>
         {
             await _session.Api.CreateUserAsync(new CreateUserRequest(NewUsername, NewDisplayName, NewUserPassword,
-                NewUserIsAdmin ? UserRole.Admin : UserRole.User));
+                UserRole.User)); // one administrator: new users are Standard users
             await LoadUsersAsync();
         });
         if (ok)
         {
             InfoMessage = $"User '{NewUsername}' created. They must change the password at first login.";
             NewUsername = NewDisplayName = NewUserPassword = "";
-            NewUserIsAdmin = false;
         }
     }
 

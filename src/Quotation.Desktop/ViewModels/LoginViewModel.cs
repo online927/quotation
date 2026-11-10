@@ -13,6 +13,36 @@ public sealed partial class LoginViewModel : ViewModelBase
     [ObservableProperty] private string _username;
     [ObservableProperty] private string _password = "";
     [ObservableProperty] private string? _serverStatus;
+    /// <summary>The server address is hidden behind "Server settings"; it opens by itself when the server cannot be reached.</summary>
+    [ObservableProperty] private bool _showServer;
+
+    /// <summary>The company name from Settings → Company (remembered on this PC after the first sign-in), else "Quotations".</summary>
+    public string CompanyName => string.IsNullOrWhiteSpace(_session.Config.CompanyName) ? "Quotations" : _session.Config.CompanyName.Trim();
+
+    /// <summary>The first letters of the first two words of the company name ("T.SAIFUDDIN &amp; CO." → "TS").</summary>
+    public string CompanyInitials
+    {
+        get
+        {
+            var words = System.Text.RegularExpressions.Regex.Matches(CompanyName, "[A-Za-z0-9]+").Select(m => m.Value).ToList();
+            var letters = string.Concat(words.Take(2).Select(w => char.ToUpperInvariant(w[0])));
+            return letters.Length > 0 ? letters : "Q";
+        }
+    }
+
+    /// <summary>The time of day (replaced in tests).</summary>
+    public static Func<DateTime> Now { get; set; } = () => DateTime.Now;
+
+    /// <summary>Good morning (before 12), Good afternoon (before 5 pm), Good evening.</summary>
+    public string Greeting => Now().Hour switch
+    {
+        < 12 => "Good morning",
+        < 17 => "Good afternoon",
+        _ => "Good evening",
+    };
+
+    [RelayCommand]
+    private void ToggleServer() => ShowServer = !ShowServer;
 
     public LoginViewModel(AppSession session, Action onLoggedIn)
     {
@@ -44,7 +74,15 @@ public sealed partial class LoginViewModel : ViewModelBase
         var ok = await RunAsync(async () =>
         {
             ApplyServerUrl();
-            await _session.Api.LoginAsync(Username.Trim(), Password);
+            try
+            {
+                await _session.Api.LoginAsync(Username.Trim(), Password);
+            }
+            catch (Quotation.ApiClient.ApiException ex) when (ex.IsConnectionFailure)
+            {
+                ShowServer = true; // the server could not be reached: show where the app looks for it
+                throw;
+            }
             _session.Config.LastUsername = Username.Trim();
             _session.Config.Save();
         });

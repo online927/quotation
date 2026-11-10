@@ -10,7 +10,7 @@
     <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,0,8">
       <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search name, GSTIN, phone, e-mail, city…" />
       <TextBlock Classes="muted" FontSize="11" Text="{Binding ResultInfo}" />
-      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
     </StackPanel>
     <ListBox Grid.Row="2" Name="ResultList" ItemsSource="{Binding Results}" SelectedItem="{Binding Selected}">
       <ListBox.ItemTemplate>

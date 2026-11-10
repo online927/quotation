@@ -18,7 +18,7 @@
           <Button Classes="primary" Content="Test connection (Ctrl+T)" Command="{Binding TestConnectionCommand}" HotKey="Ctrl+T" />
         </StackPanel>
       </Grid>
-      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
 
       <Border Classes="card">
         <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">

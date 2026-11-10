@@ -9,6 +9,12 @@ public class ProformaTests : QuotationTestBase
 {
     private FinancialYear ActiveFy => FinancialYear.For(Today);
 
+    public override async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
+        await TestServer.EnableProformasAsync(Api); // off on a new server (Round 18)
+    }
+
     [Fact]
     public async Task Proforma_invoices_have_their_own_number_series()
     {

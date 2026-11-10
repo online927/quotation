@@ -18,7 +18,7 @@ namespace Quotation.Desktop.Tests;
 /// </summary>
 public class Round16UiTests
 {
-    private const string Png =
+    internal const string Png =
         "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAJUlEQVR4nGM4ICDwn5aYYdSCUQtGLRi1YNSCUQtGLRi1YGhYAAC4lDX9H0TkSwAAAABJRU5ErkJggg==";
 
     private sealed class Ctx : IDisposable
@@ -97,7 +97,7 @@ public class Round16UiTests
             var editor = await ApprovedAsync(admin);
             Assert.False(editor.CanSeal);
             Dispatcher.UIThread.RunJobs();
-            Assert.False(admin.Window.FindDescendantOfType<QuotationEditorView>()!.FindControl<CheckBox>("SealBox")!.IsVisible);
+            Assert.False(admin.Window.FindDescendantOfType<QuotationEditorView>()!.FindControl<ToggleSwitch>("SealSwitch")!.IsVisible);
         }
         using (var noSeal = await SetupAsync(asUser: true))
         {
@@ -111,7 +111,7 @@ public class Round16UiTests
         var mine = await ApprovedAsync(ctx);
         Assert.True(mine.CanSeal);
         Dispatcher.UIThread.RunJobs();
-        Assert.True(ctx.Window.FindDescendantOfType<QuotationEditorView>()!.FindControl<CheckBox>("SealBox")!.IsVisible);
+        Assert.True(ctx.Window.FindDescendantOfType<QuotationEditorView>()!.FindControl<ToggleSwitch>("SealSwitch")!.IsVisible);
         mine.SealPdf = true;
         var saving = mine.SaveAsPdfCommand.ExecuteAsync(null);
         await UiHelpers.WaitUntil(() => ctx.Shell.PendingDialog is { HasInput: true });
@@ -144,39 +144,33 @@ public class Round16UiTests
     }
 
     [AvaloniaFact]
-    public async Task Approved_pdf_can_be_dragged_and_the_buttons_stay_on_one_line()
+    public async Task Buttons_of_an_approved_quotation_stay_on_one_line()
     {
-        using var ctx = await SetupAsync(width: 1100, settings: s =>
+        using var ctx = await SetupAsync(width: 1024, settings: s =>
         {
             s.Quotation.WhatsAppButton = true;
             return Task.CompletedTask;
         });
-        var editor = await ApprovedAsync(ctx);
-        Assert.True(editor.CanDragPdf);
-        var file = await editor.PrepareDragFileAsync();
-        Assert.Equal(editor.PdfFileName(), file); // the test launcher records names instead of writing files
+        await ApprovedAsync(ctx);
         Dispatcher.UIThread.RunJobs();
         var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
-        Assert.True(view.FindControl<Border>("DragPdfHandle")!.IsVisible);
+        Assert.Null(view.FindControl<Border>("DragPdfHandle")); // the drag handle is gone (Round 18)
 
         // "Approve", and every button on one line; on a narrow window the less-used ones show only their icon.
         var bar = view.FindControl<ActionBar>("ActionButtons")!;
         var buttons = bar.Children.OfType<Button>().Where(b => b.IsVisible).ToList();
-        Assert.Equal(1, buttons.Select(b => Math.Round(b.Bounds.Y)).Distinct().Count());
+        Assert.Equal(1, buttons.Select(b => Math.Round(b.Bounds.Center.Y)).Distinct().Count()); // one line: pills and icon tiles share the centre line
         Assert.True(buttons.Max(b => b.Bounds.Right) <= bar.Bounds.Width + 0.5);
         Assert.Contains(buttons, ActionBar.IsIconOnly);
         Assert.False(ActionBar.IsIconOnly(view.FindControl<Button>("ApproveButton")!));
         Assert.False(ActionBar.IsIconOnly(view.FindControl<Button>("SaveAsPdfButton")!));
-        await Shot(ctx.Window, "r16-buttons-1100");
+        await Shot(ctx.Window, "r16-buttons-1024");
 
         ctx.Window.Width = 1920;
         await Task.Delay(200);
         Dispatcher.UIThread.RunJobs();
         Assert.DoesNotContain(bar.Children.OfType<Button>().Where(b => b.IsVisible), ActionBar.IsIconOnly);
         await Shot(ctx.Window, "r16-buttons-1920");
-
-        editor.Remarks = "Changed";
-        Assert.False(editor.CanDragPdf); // only the saved, approved version
     }
 
     [AvaloniaFact]

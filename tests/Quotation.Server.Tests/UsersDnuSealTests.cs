@@ -24,12 +24,12 @@ public class UsersDnuSealTests : QuotationTestBase
     }
 
     [Fact]
-    public async Task Administrator_renames_changes_role_and_resets_password()
+    public async Task Administrator_renames_and_resets_password()
     {
         var (user, dto) = await UserAsync();
-        var renamed = await Api.UpdateUserAsync(dto.Id, new UpdateUserRequest("keerthana.s", "Keerthana S", UserRole.Admin, true));
+        var renamed = await Api.UpdateUserAsync(dto.Id, new UpdateUserRequest("keerthana.s", "Keerthana S", UserRole.User, true));
         Assert.Equal("keerthana.s", renamed.Username);
-        Assert.Equal(UserRole.Admin, renamed.Role);
+        Assert.Equal(UserRole.User, renamed.Role); // one administrator (Round 18): users stay Standard
         Assert.Equal("Keerthana S", (await user.MeAsync()).DisplayName); // still logged in after a rename
 
         // Reset: logged out everywhere, a temporary password that must be changed.
@@ -54,14 +54,10 @@ public class UsersDnuSealTests : QuotationTestBase
         Assert.Contains("own account", (await Assert.ThrowsAsync<ApiException>(() =>
             Api.UpdateUserAsync(me.Id, new UpdateUserRequest(me.Username, me.DisplayName, UserRole.Admin, false)))).Message);
 
-        // A second administrator can change the first one (so a forgotten admin is never stuck), never themselves.
+        // There is no second administrator to make (a forgotten admin password is reset on the server PC instead).
         var (_, second) = await UserAsync("second");
-        await Api.UpdateUserAsync(second.Id, new UpdateUserRequest("second", "Second", UserRole.Admin, true));
-        var secondApi = Server.CreateApi();
-        await secondApi.LoginAsync("second", "user-pass");
-        Assert.Equal(UserRole.User, (await secondApi.UpdateUserAsync(me.Id, new UpdateUserRequest(me.Username, me.DisplayName, UserRole.User, true))).Role);
-        Assert.Contains("own administrator role", (await Assert.ThrowsAsync<ApiException>(() =>
-            secondApi.UpdateUserAsync(second.Id, new UpdateUserRequest("second", "Second", UserRole.User, true)))).Message);
+        Assert.Contains(AuthService.OnlyOneAdmin, (await Assert.ThrowsAsync<ApiException>(() =>
+            Api.UpdateUserAsync(second.Id, new UpdateUserRequest("second", "Second", UserRole.Admin, true)))).Message);
     }
 
     [Fact]

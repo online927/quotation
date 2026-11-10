@@ -18,7 +18,7 @@
             <TextBlock Text="Refresh" />
           </StackPanel>
         </Button>
-        <Button Classes="primary" Command="{Binding NewCommand}">
+        <Button Name="NewDocButton" Classes="primary" Command="{Binding NewCommand}" IsVisible="{Binding ShowNew}">
           <StackPanel Orientation="Horizontal" Spacing="7">
             <Path Data="M12,5 L12,19 M5,12 L19,12" Stroke="White" StrokeThickness="2" StrokeLineCap="Round" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
             <TextBlock Text="{Binding NewButtonText}" />
@@ -31,10 +31,10 @@
         <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search quotation number, customer, GSTIN, product, reference…" />
         <ComboBox Grid.Column="1" Name="OutcomeFilterBox" Margin="8,0,0,0" Width="150" IsVisible="{Binding ShowOutcomeFilter}"
                   ItemsSource="{x:Static vm:QuotationListViewModel.OutcomeFilters}" SelectedItem="{Binding OutcomeFilter}" />
-        <ComboBox Grid.Column="3" ItemsSource="{x:Static vm:QuotationListViewModel.TypeFilters}" SelectedItem="{Binding TypeFilter}" HorizontalAlignment="Stretch" />
+        <ComboBox Grid.Column="3" Name="TypeFilterBox" IsVisible="{Binding ShowTypeFilter}" ItemsSource="{x:Static vm:QuotationListViewModel.TypeFilters}" SelectedItem="{Binding TypeFilter}" HorizontalAlignment="Stretch" />
       </Grid>
       <TextBlock Classes="muted" FontSize="11" Text="{Binding Summary}" />
-      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
     </StackPanel>
     <Border DockPanel.Dock="Top" Classes="tablehead">
       <Grid ColumnDefinitions="120,80,100,*,*,110,100,90,70,90,Auto">
@@ -51,7 +51,32 @@
         <Panel Grid.Column="10" Width="{Binding ActionsWidth}" />
       </Grid>
     </Border>
-    <ListBox Classes="table" Name="List" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}">
+    <Panel>
+    <!-- While the list loads the first time: grey placeholder rows (U7) -->
+    <ItemsControl Name="Skeleton" ItemsSource="{Binding SkeletonRows}" IsVisible="{Binding ShowSkeleton}" Margin="0,6,0,0">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Grid ColumnDefinitions="120,80,100,*,*,110" Margin="12,9">
+            <Border Classes="skeleton" Width="80" />
+            <Border Grid.Column="1" Classes="skeleton" Width="50" />
+            <Border Grid.Column="2" Classes="skeleton" Width="70" />
+            <Border Grid.Column="3" Classes="skeleton" Width="160" />
+            <Border Grid.Column="4" Classes="skeleton" Width="120" />
+            <Border Grid.Column="5" Classes="skeleton" Width="70" HorizontalAlignment="Right" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <!-- Nothing to show: a friendly note (U5) -->
+    <StackPanel Name="EmptyNote" IsVisible="{Binding ShowEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="0,-40,0,0">
+      <Border Width="72" Height="72" CornerRadius="36" Background="{DynamicResource AccentSoftBrush}" HorizontalAlignment="Center">
+        <Path Data="{Binding EmptyIcon}" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
+              Width="30" Height="30" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <TextBlock Text="{Binding EmptyTitle}" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
+      <TextBlock Classes="muted" Text="{Binding EmptyText}" HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="420" TextWrapping="Wrap" />
+    </StackPanel>
+    <ListBox Classes="table" Name="List" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" IsVisible="{Binding ShowList}">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="vm:QuotationRow">
           <Grid ColumnDefinitions="120,80,100,*,*,110,100,90,70,90,Auto" Background="Transparent">
@@ -82,12 +107,13 @@
               </Button>
               <Button Content="Open" Classes="small"
                       Command="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).OpenCommand}" CommandParameter="{Binding}" />
-              <Button Content="Duplicate" Classes="small"
+              <Button Content="Duplicate" Classes="small" IsVisible="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).MakesDocuments}"
                       Command="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).DuplicateCommand}" CommandParameter="{Binding}" />
             </StackPanel>
           </Grid>
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
+    </Panel>
   </DockPanel>
 </UserControl>

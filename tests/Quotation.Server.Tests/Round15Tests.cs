@@ -36,6 +36,7 @@ public class Round15Tests : QuotationTestBase
     [Fact]
     public async Task Won_lost_and_follow_up_when_switched_on()
     {
+        await TestServer.EnableProformasAsync(Api);
         var q = await Api.CreateQuotationAsync(await BevelAsync(""));
         var approved = await Api.ApproveQuotationAsync(q.Id);
         Assert.Null(approved.FollowUpDate); // tracking off

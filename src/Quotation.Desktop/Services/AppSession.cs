@@ -15,6 +15,12 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
     }
 
     public bool IsAdmin => Api.CurrentUser?.Role == Core.Domain.UserRole.Admin;
+    /// <summary>Makes quotations and proforma invoices: everybody but the administrator.</summary>
+    public bool MakesDocuments => Api.CurrentUser?.MakesDocuments == true;
+    /// <summary>Proforma invoices are switched on (Settings → Quotation), as last read from the server.</summary>
+    public bool ProformaEnabled => Settings?.Quotation.ProformaEnabled == true;
+    /// <summary>Settings were read again or saved (the menu shows or hides proforma invoices).</summary>
+    public event EventHandler? SettingsChanged;
 
     public DocumentLauncher Documents { get; set; } = new(config);
 
@@ -57,11 +63,37 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
     }
 
     /// <summary>Settings cached for the session (company state, tax presentation, defaults).</summary>
-    public Contracts.AllSettingsDto? Settings { get; set; }
+    public Contracts.AllSettingsDto? Settings
+    {
+        get => _settings;
+        set
+        {
+            _settings = value;
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+    private Contracts.AllSettingsDto? _settings;
+
+    /// <summary>Keeps the company name (Settings → Company) on this PC for the sign-in screen.</summary>
+    private void RememberCompanyName(string? name)
+    {
+        name = (name ?? "").Trim();
+        if (name.Length == 0 || name == Config.CompanyName) return;
+        Config.CompanyName = name;
+        try
+        {
+            Config.Save();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Only the sign-in screen uses it.
+        }
+    }
 
     public async Task<Contracts.AllSettingsDto> GetSettingsAsync(bool refresh = false)
     {
         if (Settings is null || refresh) Settings = await Api.SettingsAsync();
+        RememberCompanyName(Settings.Company.CompanyName);
         return Settings;
     }
 }

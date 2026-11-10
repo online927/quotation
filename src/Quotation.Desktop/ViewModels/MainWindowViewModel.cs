@@ -21,6 +21,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     private void OnLoggedIn()
     {
+        _ = RememberCompanyAsync();
         _session.Api.SessionExpired += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(ShowLogin);
         if (_session.Api.CurrentUser?.MustChangePassword == true)
         {
@@ -29,6 +30,19 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         else
         {
             ShowShell();
+        }
+    }
+
+    /// <summary>The company name for the sign-in screen next time (from Settings → Company).</summary>
+    private async Task RememberCompanyAsync()
+    {
+        try
+        {
+            await _session.GetSettingsAsync(refresh: true);
+        }
+        catch (Exception)
+        {
+            // Not needed to work; tried again whenever settings are read.
         }
     }
 

@@ -34,7 +34,7 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
         // Housekeeping: drop expired sessions.
         await db.ApiSessions.Where(s => s.ExpiresUtc < now).ExecuteDeleteAsync(ct);
         await db.SaveChangesAsync(ct);
-        return new LoginResponse(token, session.ExpiresUtc, ToDto(user));
+        return new LoginResponse(token, session.ExpiresUtc, Me(user));
     }
 
     public async Task LogoutAsync(string token, CancellationToken ct)
@@ -43,9 +43,15 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
         await db.ApiSessions.Where(s => s.TokenHash == hash).ExecuteDeleteAsync(ct);
     }
 
+    public const string OnlyOneAdmin = "There is only one administrator. Other users are Standard users.";
+
     public async Task EnsureBootstrapAdminAsync(CancellationToken ct)
     {
-        if (await db.Users.AnyAsync(ct)) return;
+        if (await db.Users.AnyAsync(ct))
+        {
+            await KeepOneAdminAsync(ct);
+            return;
+        }
         db.Users.Add(new AppUser
         {
             Username = "admin",
@@ -57,6 +63,23 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
         });
         await db.SaveChangesAsync(ct);
     }
+
+    /// <summary>
+    /// One administrator: "admin" (or the first administrator when there is no "admin"). Any other administrator, from
+    /// before there was this rule, becomes a Standard user.
+    /// </summary>
+    public async Task KeepOneAdminAsync(CancellationToken ct)
+    {
+        var admins = await db.Users.Where(u => u.Role == UserRole.Admin).OrderBy(u => u.Id).ToListAsync(ct);
+        if (admins.Count <= 1) return;
+        var keep = admins.FirstOrDefault(u => u.Username == "admin" && u.IsActive)
+                   ?? admins.FirstOrDefault(u => u.IsActive) ?? admins[0];
+        foreach (var u in admins.Where(u => u != keep)) u.Role = UserRole.User;
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>The signed-in user, saying whether they make quotations (administrators do not).</summary>
+    public UserDto Me(AppUser u) => ToDto(u) with { MakesDocuments = u.Role != UserRole.Admin || options.Value.AdministratorsMakeDocuments };
 
     public static UserDto ToDto(AppUser u) => new(u.Id, u.Username, u.DisplayName, u.Role, u.IsActive, u.MustChangePassword, u.WithoutGstNext,
         AppTheme.IsValid(u.Theme) ? u.Theme : AppTheme.Light, PdfLayouts.IsValid(u.PdfLayout) ? u.PdfLayout : null,
@@ -80,6 +103,7 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
         var self = string.Equals(user.Username, actingUser, StringComparison.OrdinalIgnoreCase);
         if (self && !request.IsActive) return (null, "You cannot deactivate your own account.");
         if (self && request.Role != UserRole.Admin) return (null, "You cannot remove your own administrator role.");
+        if (request.Role == UserRole.Admin && user.Role != UserRole.Admin) return (null, OnlyOneAdmin);
         var losesAdmin = user.Role == UserRole.Admin && user.IsActive && (request.Role != UserRole.Admin || !request.IsActive);
         if (losesAdmin && !await db.Users.AnyAsync(u => u.Id != id && u.Role == UserRole.Admin && u.IsActive, ct))
             return (null, "At least one active administrator is needed.");
@@ -123,6 +147,8 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
         user.Role = UserRole.Admin;
         user.IsActive = true;
         user.MustChangePassword = false;
+        // Still one administrator: the recovered one.
+        foreach (var other in await db.Users.Where(u => u.Role == UserRole.Admin && u.Id != user.Id).ToListAsync(ct)) other.Role = UserRole.User;
         await db.SaveChangesAsync(ct);
         await db.ApiSessions.Where(s => s.UserId == user.Id).ExecuteDeleteAsync(ct);
         return user.Username;

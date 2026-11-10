@@ -129,6 +129,7 @@ public class PartyPrintTests : QuotationTestBase
     [Fact]
     public async Task Pdf_headings_are_set_in_settings()
     {
+        await TestServer.EnableProformasAsync(Api);
         var settings = await Api.SettingsAsync();
         settings.Quotation.QuotationHeading = "PRICE OFFER";
         settings.Quotation.ProformaHeading = "  ";

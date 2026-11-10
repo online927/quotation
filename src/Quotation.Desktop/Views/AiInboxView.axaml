@@ -34,7 +34,7 @@
           <Button Grid.Column="2" Classes="primary" VerticalAlignment="Top" Content="Analyse" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
         </Grid>
         <TextBlock Foreground="{DynamicResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
-        <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
       </StackPanel>
     </Border>
 
@@ -105,7 +105,7 @@
                   </ItemsControl>
                 </StackPanel>
 
-                <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
                 <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
                   <Button Classes="primary" Content="Create Draft" Command="{Binding CreateDraftCommand}" IsVisible="{Binding CanDecide}" IsEnabled="{Binding CanCreateDraft}" />
                   <Button Classes="primary" Content="Open Draft" Command="{Binding OpenDraftCommand}" IsVisible="{Binding HasDraft}" />

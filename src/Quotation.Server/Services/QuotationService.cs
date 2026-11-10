@@ -51,8 +51,18 @@ public sealed class QuotationService(
     IQuotationDocumentRenderer renderer,
     PdfStorage pdfStorage,
     TimeProvider clock,
-    ILogger<QuotationService> log)
+    ILogger<QuotationService> log,
+    Microsoft.Extensions.Options.IOptions<ServerOptions> serverOptions)
 {
+    public const string AdminsDoNotMakeDocuments = "Administrators do not make quotations.";
+
+    /// <summary>Administrators open, cancel and delete documents but do not make, change or approve them.</summary>
+    private void EnsureMaker(UserContext user)
+    {
+        if (user.IsAdmin && !serverOptions.Value.AdministratorsMakeDocuments)
+            throw new QuotationException(403, ApiErrorCodes.Forbidden, AdminsDoNotMakeDocuments);
+    }
+
     public async Task<QuotationDto> GetAsync(Guid id, CancellationToken ct) => await WithNoticesAsync(await LoadAsync(id, ct), ct);
 
     /// <summary>The quotation plus a warning about items marked "Do Not Use" (DNU) in Tally since it was made.</summary>
@@ -76,6 +86,10 @@ public sealed class QuotationService(
     public async Task<QuotationDto> CreateAsync(SaveQuotationRequest request, QuotationSource source, UserContext user,
         CancellationToken ct, bool assignNumber = true, int? sourceEmailId = null, Guid? duplicatedFrom = null)
     {
+        EnsureMaker(user);
+        if (request.DocType == DocumentType.ProformaInvoice && !settings.Quotation.ProformaEnabled)
+            throw new QuotationException(409, ApiErrorCodes.InvalidState,
+                "Proforma invoices are switched off. An administrator can switch them on in Settings → Quotation.");
         var now = clock.GetUtcNow().UtcDateTime;
         var q = new QuotationHeader
         {
@@ -118,6 +132,7 @@ public sealed class QuotationService(
     {
         var q = await LoadAsync(id, ct);
         if (q.Status == QuotationStatus.Cancelled) throw new QuotationException(409, ApiErrorCodes.InvalidState, "A cancelled quotation cannot be edited.");
+        EnsureMaker(user);
         EnsureEditable(q, user);
         if (request.Revision != q.Revision)
         {
@@ -167,6 +182,7 @@ public sealed class QuotationService(
     {
         var q = await LoadAsync(id, ct);
         if (q.Status == QuotationStatus.Cancelled) throw new QuotationException(409, ApiErrorCodes.InvalidState, "A cancelled quotation cannot be approved.");
+        EnsureMaker(user);
         if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated)) EnsureEditable(q, user);
         if (request.Revision is { } rev && rev != q.Revision)
         {
@@ -393,6 +409,7 @@ public sealed class QuotationService(
     /// <summary>New quotation (new number, today's date) with the same customer, products and descriptions.</summary>
     public async Task<QuotationDto> DuplicateAsync(Guid id, UserContext user, CancellationToken ct)
     {
+        EnsureMaker(user);
         var source = await LoadAsync(id, ct);
         var request = ToRequest(source);
         request.Date = fy.Today();
@@ -509,6 +526,7 @@ public sealed class QuotationService(
 
     public async Task<QuotationDto> ConvertToProformaAsync(Guid id, UserContext user, CancellationToken ct)
     {
+        EnsureMaker(user);
         var source = await LoadAsync(id, ct);
         if (source.DocType == DocumentType.ProformaInvoice)
             throw new QuotationException(409, ApiErrorCodes.InvalidState, "This is already a proforma invoice.");

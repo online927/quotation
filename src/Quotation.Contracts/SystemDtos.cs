@@ -13,6 +13,10 @@ public sealed record UserDto(int Id, string Username, string DisplayName, UserRo
 {
     /// <summary>A user (not an administrator) with both a seal picture and a seal PIN may seal PDFs.</summary>
     public bool CanSeal => Role != UserRole.Admin && HasSealImage && HasSealPin;
+    /// <summary>The signed-in user makes quotations and proforma invoices (administrators do not).</summary>
+    public bool MakesDocuments { get; init; } = Role != UserRole.Admin;
+    /// <summary>"Administrator" or "Standard".</summary>
+    public string RoleName => UserRoles.Name(Role);
 }
 
 /// <summary>The order in PDF file names, chosen by each user (My Settings).</summary>
@@ -35,12 +39,12 @@ public static class AppTheme
     // Colour themes (My Settings > Appearance).
     // (Lagoon, Cyberpunk and the colourful Glass were removed: users who had them get Default Light.)
     public const string Sunset = "Sunset", Graphite = "Graphite", Frost = "Frost", GlassBlue = "GlassBlue", GlassBlack = "GlassBlack",
-        GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon", NeonNight = "NeonNight";
+        GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon", MoreMaroon = "MoreMaroon", NeonNight = "NeonNight";
 
-    public static readonly string[] All = [Light, Dark, System, Sunset, Graphite, Frost, GlassBlue, GlassBlack, GlassGreen, GlassMaroon, NeonNight];
+    public static readonly string[] All = [Light, Dark, System, Sunset, Graphite, Frost, GlassBlue, GlassBlack, GlassGreen, GlassMaroon, MoreMaroon, NeonNight];
     public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
     /// <summary>Themes drawn on dark screens.</summary>
-    public static bool IsDarkTheme(string? theme) => theme is Dark or NeonNight or GlassBlack;
+    public static bool IsDarkTheme(string? theme) => theme is Dark or NeonNight or GlassBlack or MoreMaroon;
 }
 
 /// <summary>Text size and spacing, chosen by each user.</summary>
@@ -155,3 +159,9 @@ public sealed record RestoreSummaryDto(int Quotations, int Pdfs, bool Seal, bool
 
 /// <summary>The client version the server hands out (null when it has none), whether clients must update, and its size.</summary>
 public sealed record ClientUpdateDto(string? Version, bool Required, long Size);
+
+/// <summary>The names of the two roles: one Administrator, and Standard users.</summary>
+public static class UserRoles
+{
+    public static string Name(UserRole role) => role == UserRole.Admin ? "Administrator" : "Standard";
+}

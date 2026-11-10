@@ -166,7 +166,8 @@ public sealed partial class AiRequestItemViewModel : ViewModelBase
     public IReadOnlyList<string> Questions => Dto.Analysis?.Questions ?? [];
     public bool HasAnalysis => Dto.Analysis is not null && Dto.Status != AiRequestStatus.NotAQuotation;
     public bool HasDraft => Dto.QuotationId is not null;
-    public bool CanDecide => HasAnalysis && !HasDraft && Dto.Status is not (AiRequestStatus.Dismissed or AiRequestStatus.Failed);
+    /// <summary>Choosing the customer and products for a draft: not for the administrator, who makes no quotations.</summary>
+    public bool CanDecide => HasAnalysis && !HasDraft && Dto.Status is not (AiRequestStatus.Dismissed or AiRequestStatus.Failed) && _session.MakesDocuments;
 
     public List<CustomerOption> CustomerOptions { get; }
     [ObservableProperty] private CustomerOption? _selectedCustomer;

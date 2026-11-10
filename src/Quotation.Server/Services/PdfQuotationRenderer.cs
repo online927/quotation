@@ -230,7 +230,7 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             o.ShowStateNameAndCode ? p.StateCode : "",
             contact && o.ShowContactPerson ? p.ContactPerson : "",
             contact ? p.Phone : "",
-            contact ? p.Email : "",
+            o.ShowEmail ? p.Email : "",
             o.ShowPan ? master?.Pan ?? "" : "",
             o.AddressHalfWidth);
     }

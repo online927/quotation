@@ -167,6 +167,10 @@ public class NavigationTests
     public async Task Proforma_invoice_from_the_menu_and_from_a_quotation()
     {
         using var ctx = await SetupAsync();
+        Assert.DoesNotContain(ctx.Shell.NavItems, n => n.Key is "newproforma" or "proforma"); // off on a new server
+        await TestServer.EnableProformasAsync(ctx.Session.Api);
+        await ctx.Session.GetSettingsAsync(refresh: true);
+        await UiHelpers.WaitUntil(() => ctx.Shell.NavItems.Any(n => n.Key == "newproforma"));
         var proforma = await SavedQuotationAsync(ctx, "newproforma");
         Assert.True(proforma.IsProforma);
         Assert.StartsWith("TSPI", proforma.Number);

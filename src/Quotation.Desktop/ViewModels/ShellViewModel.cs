@@ -183,36 +183,83 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public ShellViewModel(AppSession session, Action onLogout)
     {
         _session = session;
+        _sidebarCollapsed = session.Config.SidebarCollapsed;
         _onLogout = onLogout;
         var user = session.Api.CurrentUser;
         UserDisplay = user is null ? "" : user.DisplayName;
-        UserRole = user?.Role.ToString() ?? "";
+        UserRole = user is null ? "" : user.Role == Core.Domain.UserRole.Admin ? "Admin" : "Standard";
         UserInitials = user is null ? "" : string.Concat(user.DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
         if (user is not null) session.ApplyAppearance(user);
         if (Avalonia.Application.Current is { } app) app.ActualThemeVariantChanged += OnThemeChanged;
 
-        NavItems.Add(new NavItem("dashboard", "Dashboard", "", () => new DashboardViewModel(_session, Navigate)));
-        NavItems.Add(new NavItem("new", "New Quotation", "", () => new QuotationEditorViewModel(_session, this), "Create"));
-        NavItems.Add(new NavItem("newproforma", "New Proforma Invoice", "",
-            () => new QuotationEditorViewModel(_session, this, docType: DocumentType.ProformaInvoice)));
-        NavItems.Add(new NavItem("inbox", "AI Inbox", "", () => new AiInboxViewModel(_session, this)));
-        NavItems.Add(new NavItem("drafts", "Draft Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Drafts), "Documents"));
-        NavItems.Add(new NavItem("today", "Today's Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Today)));
-        NavItems.Add(new NavItem("history", "Quotation History", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.History)));
-        NavItems.Add(new NavItem("proforma", "Proforma Invoices", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Proforma)));
-        if (session.IsAdmin) NavItems.Add(new NavItem("deleted", "Deleted", "", () => new DeletedQuotationsViewModel(_session, this)));
-        NavItems.Add(new NavItem("customers", "Customers", "", () => new CustomersViewModel(_session), "Tally masters"));
-        NavItems.Add(new NavItem("products", "Products", "", () => new ProductsViewModel(_session)));
-        NavItems.Add(new NavItem("tally", "Tally Connection", "", () => new TallyViewModel(_session), "System"));
-        NavItems.Add(new NavItem("gmail", "Gmail Connection", "", () => new GmailViewModel(_session, this)));
-        NavItems.Add(new NavItem("mysettings", "My Settings", "", () => new MySettingsViewModel(_session)));
-        NavItems.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session)));
-        if (session.IsAdmin) NavItems.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session, this, () => _onLogout())));
+        BuildMenu();
+        session.SettingsChanged += OnSettingsChanged;
+        _ = ReadSwitchesAsync();
 
         Navigate("dashboard");
         _ = OfferRecoveryAsync();
         _ = PollStatusAsync(_cts.Token);
         _ = CheckForUpdateAsync();
+    }
+
+    // ================================================================= the side menu
+
+    /// <summary>
+    /// The side menu. The administrator makes no quotations (no "New Quotation" / "New Proforma Invoice"); proforma
+    /// invoices show only while they are switched on in Settings → Quotation.
+    /// </summary>
+    private void BuildMenu()
+    {
+        var makes = _session.MakesDocuments;
+        var proforma = _session.ProformaEnabled;
+        var items = new List<NavItem> { new("dashboard", "Dashboard", "", () => new DashboardViewModel(_session, Navigate)) };
+        if (makes)
+        {
+            items.Add(new NavItem("new", "New Quotation", "", () => new QuotationEditorViewModel(_session, this), "Create"));
+            if (proforma)
+                items.Add(new NavItem("newproforma", "New Proforma Invoice", "",
+                    () => new QuotationEditorViewModel(_session, this, docType: DocumentType.ProformaInvoice)));
+        }
+        items.Add(new NavItem("inbox", "AI Inbox", "", () => new AiInboxViewModel(_session, this), makes ? "" : "Requests"));
+        items.Add(new NavItem("drafts", "Draft Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Drafts), "Documents"));
+        items.Add(new NavItem("today", "Today's Quotations", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Today)));
+        items.Add(new NavItem("history", "Quotation History", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.History)));
+        if (proforma) items.Add(new NavItem("proforma", "Proforma Invoices", "", () => new QuotationListViewModel(_session, this, QuotationListPreset.Proforma)));
+        if (_session.IsAdmin) items.Add(new NavItem("deleted", "Deleted", "", () => new DeletedQuotationsViewModel(_session, this)));
+        items.Add(new NavItem("customers", "Customers", "", () => new CustomersViewModel(_session), "Tally masters"));
+        items.Add(new NavItem("products", "Products", "", () => new ProductsViewModel(_session)));
+        items.Add(new NavItem("tally", "Tally Connection", "", () => new TallyViewModel(_session), "System"));
+        items.Add(new NavItem("gmail", "Gmail Connection", "", () => new GmailViewModel(_session, this)));
+        items.Add(new NavItem("mysettings", "My Settings", "", () => new MySettingsViewModel(_session)));
+        items.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session)));
+        if (_session.IsAdmin) items.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session, this, () => _onLogout())));
+
+        if (items.Select(n => n.Key).SequenceEqual(NavItems.Select(n => n.Key))) return;
+        NavItems.Clear();
+        foreach (var n in items)
+        {
+            n.IsSelected = n.Key == _current?.NavKey;
+            NavItems.Add(n);
+        }
+    }
+
+    /// <summary>Reads Settings once after signing in, for the proforma switch.</summary>
+    private async Task ReadSwitchesAsync()
+    {
+        try
+        {
+            await _session.GetSettingsAsync();
+        }
+        catch (Exception)
+        {
+            // The menu stays without proforma invoices until settings can be read.
+        }
+    }
+
+    private void OnSettingsChanged(object? sender, EventArgs e)
+    {
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess()) BuildMenu();
+        else Avalonia.Threading.Dispatcher.UIThread.Post(BuildMenu);
     }
 
     // ================================================================= automatic client updates (A2)
@@ -293,6 +340,32 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public string BackToolTip => CanGoBack ? $"Back to {TitleOf(_back[^1])} (Alt+← or Esc)" : "Back";
     public string ForwardToolTip => CanGoForward ? $"Forward to {TitleOf(_forward[^1])} (Alt+→)" : "Forward";
 
+    // ================================================================= folded menu (U1)
+
+    [ObservableProperty] private bool _sidebarCollapsed;
+    public string SidebarToggleTip => SidebarCollapsed ? "Show the menu" : "Hide the menu (icons only)";
+    public string SidebarToggleText => SidebarCollapsed ? "Show menu" : "Hide menu";
+    public string SidebarToggleIcon => SidebarCollapsed ? "M9,5 L16,12 L9,19 M4,5 L4,19" : "M15,5 L8,12 L15,19 M20,5 L20,19";
+    partial void OnSidebarCollapsedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(SidebarToggleTip));
+        OnPropertyChanged(nameof(SidebarToggleIcon));
+        OnPropertyChanged(nameof(SidebarToggleText));
+        if (_session.Config.SidebarCollapsed == value) return;
+        _session.Config.SidebarCollapsed = value;
+        try
+        {
+            _session.Config.Save();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Only this PC's menu width depends on it.
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleSidebar() => SidebarCollapsed = !SidebarCollapsed;
+
     [RelayCommand]
     public void Navigate(string key)
     {
@@ -308,7 +381,10 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
 
     public void OpenQuotation(Guid id) => _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this, id));
 
-    public void NewQuotation() => Navigate("new");
+    public void NewQuotation()
+    {
+        if (_session.MakesDocuments) Navigate("new");
+    }
 
     /// <summary>Back one page; with no history, Back leads to the dashboard (like Esc to Gateway in Tally).</summary>
     [RelayCommand]
@@ -475,6 +551,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     /// </summary>
     private Task OfferRecoveryAsync()
     {
+        if (!_session.MakesDocuments) return Task.CompletedTask;
         if (_session.Api.CurrentUser?.Username is not { } user || RecoveryStore.For(_session.Config).Load(user) is not { } snap) return Task.CompletedTask;
         var q = snap.Quotation;
         var what = string.IsNullOrWhiteSpace(q.Buyer.Name) ? (q.Number ?? "your quotation") : q.Buyer.Name;
@@ -623,6 +700,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public void Dispose()
     {
         if (!_cts.IsCancellationRequested) _cts.Cancel();
+        _session.SettingsChanged -= OnSettingsChanged;
         if (Avalonia.Application.Current is { } app) app.ActualThemeVariantChanged -= OnThemeChanged;
         PendingPrompt?.Choose(LeaveChoice.Cancel);
         PendingDialog?.Choose(false);

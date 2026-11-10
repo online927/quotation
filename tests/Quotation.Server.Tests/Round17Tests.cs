@@ -10,6 +10,7 @@ public class Round17Tests : QuotationTestBase
     [Fact]
     public async Task Upi_id_is_checked_and_the_qr_is_printed_on_quotations()
     {
+        await TestServer.EnableProformasAsync(Api);
         var settings = await Api.SettingsAsync();
         settings.Company.UpiQrOnQuotations = true;
         Assert.Equal(HttpStatusCode.BadRequest, (await Assert.ThrowsAsync<ApiException>(() => Api.SaveSettingsAsync(settings))).Status);

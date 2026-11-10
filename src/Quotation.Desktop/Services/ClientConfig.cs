@@ -12,6 +12,10 @@ public sealed class ClientConfig
     public string ProformaPdfFolder { get; set; } = "";
     /// <summary>Light/dark of the last user on this PC, used for the login screen.</summary>
     public string Theme { get; set; } = "Light";
+    /// <summary>The company name from Settings → Company, remembered for the sign-in screen on this PC.</summary>
+    public string CompanyName { get; set; } = "";
+    /// <summary>The side menu is folded to icons on this PC.</summary>
+    public bool SidebarCollapsed { get; set; }
 
     /// <summary>Where this config is saved; not serialized.</summary>
     [System.Text.Json.Serialization.JsonIgnore]

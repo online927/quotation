@@ -8,6 +8,9 @@ namespace Quotation.Desktop.ViewModels;
 public sealed partial class QuotationLineViewModel : ObservableObject
 {
     [ObservableProperty] private int _lineNo;
+    /// <summary>Every second line is lightly shaded (easier to follow across the columns).</summary>
+    public bool IsEven => LineNo % 2 == 0;
+    partial void OnLineNoChanged(int value) => OnPropertyChanged(nameof(IsEven));
     /// <summary>Being dragged to another place in the list.</summary>
     [ObservableProperty] private bool _isDragging;
     [ObservableProperty] private int? _productId;
@@ -33,7 +36,8 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     public bool HasPartNumber => PartNumber.Length > 0;
     partial void OnPartNumberChanged(string value) => OnPropertyChanged(nameof(HasPartNumber));
     public string QuantityText => IndianFormat.Quantity(Quantity);
-    public string RateText => IndianFormat.Amount(Rate);
+    /// <summary>Empty while there is no rate yet (approving asks for one).</summary>
+    public string RateText => Rate > 0 ? IndianFormat.Amount(Rate) : "";
     public string AmountText => IndianFormat.Amount(Amount);
     public string GstText => ZeroGst ? "0%" : GstRate is null ? "?" : $"{GstRate:0.##}%";
     public string DiscountText => DiscountPercent == 0 ? "" : $"{DiscountPercent:0.##}%";

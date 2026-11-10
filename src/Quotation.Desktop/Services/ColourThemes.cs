@@ -41,13 +41,32 @@ public static class ColourThemes
     /// Glass themes: a wallpaper in one simple colour behind see-through panels with a bright edge, round corners and
     /// blue / green buttons. Flat colours only (no live blur), so they are as light as the other themes.
     /// </summary>
-    private sealed record Glass(string Wallpaper, string Accent, string AccentSoft, string Selected, bool Dark);
+    private sealed record Glass(string Wallpaper, string Accent, string AccentSoft, string Selected, bool Dark,
+        Dictionary<string, string>? Extra = null);
 
     private static readonly Dictionary<string, Glass> GlassThemes = new()
     {
         [AppTheme.GlassBlue] = new("#6F9FE6→#A4C4F0→#D6E5F9", "#0A5FD0", "#DCE9FB", "#C7DCF8", false),
         [AppTheme.GlassGreen] = new("#6DBF97→#A5D9BD→#D8EFE2", "#0E7A4F", "#DBF1E6", "#C4E6D3", false),
-        [AppTheme.GlassMaroon] = new("#B97683→#D6A6AF→#EFD8DC", "#8E1B2E", "#F6E1E5", "#EDC9D0", false),
+        [AppTheme.GlassMaroon] = new("#F2DCE0→#D9A1AD→#A84D61", "#8E1B2E", "#F6E1E5", "#EDC9D0", false,
+            new()
+            {
+                ["SidebarBrush"] = "#5E1024→#8E2238", ["SidebarBorderBrush"] = "#5E1024", ["SidebarTextBrush"] = "#FFFFFF",
+                ["SidebarMutedBrush"] = "#E8BCC5", ["SidebarHoverBrush"] = "#1FFFFFFF", ["SidebarSelectedBrush"] = "#33FFFFFF",
+                ["SidebarSelectedTextBrush"] = "#FFFFFF", ["TopBarBrush"] = "#F9ECEF",
+                // Solid white boxes (the maroon shows around them, not through them)
+                ["CardBrush"] = "#FFFFFF", ["HairlineBrush"] = "#EBD3D8", ["SubtleFillBrush"] = "#FBF3F5", ["FillBrush"] = "#F4E6E9",
+            }),
+        // More Maroon: maroon everywhere, also the boxes, with white text (a dark theme).
+        [AppTheme.MoreMaroon] = new("#3E0A16→#5C1222→#7A1A2E", "#FF9DB1", "#5A1E2C", "#7E2E42", true,
+            new()
+            {
+                ["CardBrush"] = "#5E1626", ["PopupBrush"] = "#521220", ["TopBarBrush"] = "#4A0E1B",
+                ["SidebarBrush"] = "#3A0914→#4E0F1C", ["SidebarBorderBrush"] = "#3A0914", ["SidebarSelectedBrush"] = "#7E2E42",
+                ["SidebarHoverBrush"] = "#2EFFFFFF", ["SidebarMutedBrush"] = "#D9A7B2", ["HairlineBrush"] = "#7A2A3C",
+                ["PanelBorderBrush"] = "#8A3A4C", ["SubtleFillBrush"] = "#6A1C2E", ["FillBrush"] = "#741F33",
+                ["MutedBrush"] = "#E0B7C0", ["ListHoverBrush"] = "#6E2234",
+            }),
         [AppTheme.GlassBlack] = new("#050507→#17171C→#2A2A31", "#0A84FF", "#1A2A40", "#2C3E57", true),
     };
 
@@ -89,6 +108,7 @@ public static class ColourThemes
         if (theme is not null && GlassThemes.TryGetValue(theme, out var glass))
         {
             foreach (var (key, colour) in GlassBrushes(glass)) app.Resources[key] = BrushOf(colour);
+            foreach (var (key, colour) in glass.Extra ?? []) app.Resources[key] = BrushOf(colour);
             SetShape(app, "CardRadius", new CornerRadius(22));
             SetShape(app, "CardBottomRadius", new CornerRadius(0, 0, 22, 22));
             SetShape(app, "ButtonRadius", new CornerRadius(18));

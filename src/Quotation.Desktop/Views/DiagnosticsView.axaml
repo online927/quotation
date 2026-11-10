@@ -22,7 +22,7 @@
         </Button>
       </StackPanel>
     </Grid>
-    <TextBlock DockPanel.Dock="Top" Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    <ctl:ErrorBanner DockPanel.Dock="Top" Text="{Binding ErrorMessage}" />
     <TabControl>
       <TabItem Header="System">
         <Border Classes="card" Margin="0,8" VerticalAlignment="Top">

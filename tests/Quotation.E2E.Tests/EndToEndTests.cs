@@ -77,9 +77,11 @@ public class EndToEndTests(ITestOutputHelper output) : IDisposable
         Assert.Equal(SyncStatus.Succeeded, sync!.Status);
         output.WriteLine(sync.Message);
 
-        // --- quotation from a second PC
+        // --- quotation from a second PC, by a Standard user (the administrator makes no quotations)
+        await api.CreateUserAsync(new CreateUserRequest("ravi", "Ravi", "ravi-first", UserRole.User));
         var pc2 = QuotationApiClient.Create(baseUrl);
-        await pc2.LoginAsync("admin", "Str0ng-pass");
+        await pc2.LoginAsync("ravi", "ravi-first");
+        await pc2.ChangePasswordAsync("ravi-first", "Ravi-pass1");
         var customer = (await pc2.SearchCustomersAsync("sonepar india private")).First().Customer;
         var product = (await pc2.SearchProductsAsync("universal bevel")).First().Product;
         Assert.Equal(15600m, product.Rate);
@@ -107,7 +109,7 @@ public class EndToEndTests(ITestOutputHelper output) : IDisposable
         server.Kill();
         server = StartServer(serverPort);
         await ProcessHost.WaitForHttpAsync($"{baseUrl}/api/health", TimeSpan.FromSeconds(60), () => server.Output);
-        await pc2.LoginAsync("admin", "Str0ng-pass");
+        await pc2.LoginAsync("ravi", "Ravi-pass1");
         Assert.Equal(QuotationStatus.Generated, (await pc2.QuotationAsync(q.Id)).Status);
         var q2 = await pc2.DuplicateQuotationAsync(q.Id);
         Assert.EndsWith("-2", q2.Number);

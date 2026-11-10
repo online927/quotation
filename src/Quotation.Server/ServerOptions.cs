@@ -13,6 +13,11 @@ public sealed class ServerOptions
         string.IsNullOrWhiteSpace(ClientUpdateFolder) ? Path.Combine(AppContext.BaseDirectory, "client") : ClientUpdateFolder;
     /// <summary>Password for the initial "admin" user (first start only). The user must change it.</summary>
     public string BootstrapAdminPassword { get; set; } = "admin";
+    /// <summary>
+    /// Administrators make no quotations or proforma invoices (they open, cancel and delete them). True lets the
+    /// administrator make documents again, for an office with nobody else to make them.
+    /// </summary>
+    public bool AdministratorsMakeDocuments { get; set; }
     /// <summary>Disable background workers (used by tests).</summary>
     public bool EnableBackgroundWorkers { get; set; } = true;
 

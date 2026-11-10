@@ -161,7 +161,11 @@ CONTENTS
       Open PDF asks "Save & approve" first if you changed it.
     * Cancel Quotation keeps it (marked CANCELLED). Delete (administrators)
       moves it to Deleted for 30 days, then it is removed.
-    * Proforma invoices work the same way with their own numbers.
+    * Proforma invoices work the same way with their own numbers (when they
+      are switched on in Settings > Quotation; off at first).
+    * The administrator does not make quotations: on a quotation they have
+      Preview, Open PDF, the history, Cancel and Delete.
+    * An item without a rate in Tally shows an empty Rate box; type the rate.
     * Unsaved work is copied to the PC every 30 seconds. After a power cut,
       a crash or closing without saving, it opens again by itself the next
       time, with a message "Last quotation restored: <customer>, N lines".
@@ -210,15 +214,18 @@ CONTENTS
 7. USERS, PASSWORDS AND SECURITY
 ---------------------------------------------------------------------
 
-  * Settings > Users (administrators): add users, administrator or user,
+  * Settings > Users (administrator): add users (always Standard users),
     active or not, reset a password (the user must change it at next login).
+  * One administrator ("admin"); everyone else is a Standard user who makes
+    quotations.
   * Everyone: click your name (top right) > Change my password.
   * Passwords and seal PINs are stored scrambled; nobody can read them.
   * Seals: each user (not administrators) can have their own seal picture
     and 4-digit PIN: Settings > Users > Edit > Seal, choose the picture,
     type the PIN, press Save user ("Seal ready"). Administrators do not
     seal. Five wrong PINs block that user's seal for 15 minutes.
-  * Keep at least TWO administrator accounts.
+  * There is one administrator: keep its password safe (section 13 resets it
+    on the server PC).
   * Only AI Inbox (the AI service) and Gmail reach the internet, and only when
     they are switched on. Everything else stays in the office.
 
@@ -418,6 +425,10 @@ CONTENTS
 ---------------------------------------------------------------------
 15. EXTRA FEATURES AN ADMINISTRATOR CAN SWITCH ON
 ---------------------------------------------------------------------
+
+  Proforma invoices  (Settings > Quotation, off at first)
+    * On: New Proforma Invoice, the Proforma Invoices list and Make proforma.
+      Off: none of these; proforma invoices already made stay in History.
 
   Won / Lost / Follow-up  (Settings > Quotation, off at first)
     * Approved quotations get "Outcome: Open / Won / Lost" under the title

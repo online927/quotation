@@ -3,38 +3,76 @@
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.LoginView"
              x:DataType="vm:LoginViewModel">
-  <Grid Background="{DynamicResource PageBrush}">
-    <Border Classes="card" Width="420" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="36,32" CornerRadius="20"
-            BoxShadow="0 8 30 0 #14000000">
-      <StackPanel Spacing="10">
-        <Border Width="52" Height="52" CornerRadius="14" Background="{DynamicResource AccentBrush}" HorizontalAlignment="Center">
-          <TextBlock Text="TS" Foreground="White" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+  <!-- Sign in: greeting and boxes on the left, a quotation sketch on the right, the server address behind "Server settings" -->
+  <Grid Background="{DynamicResource PageBrush}" RowDefinitions="Auto,*,Auto" ColumnDefinitions="*,*">
+    <!-- Top left: who we are -->
+    <StackPanel Orientation="Horizontal" Spacing="10" Margin="48,36,0,0">
+      <Border Width="38" Height="38" CornerRadius="10" Background="{DynamicResource AccentBrush}">
+        <TextBlock Name="CompanyInitials" Text="{Binding CompanyInitials}" Foreground="White" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <TextBlock Name="CompanyNameText" Text="{Binding CompanyName}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" />
+    </StackPanel>
+
+    <!-- Left: the greeting and sign in -->
+    <StackPanel Grid.Row="1" Width="380" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+      <TextBlock Name="GreetingText" Text="{Binding Greeting}" FontSize="34" FontWeight="SemiBold" />
+      <TextBlock Classes="muted" Text="Sign in to make quotations" FontSize="15" Margin="0,0,0,20" />
+      <TextBox Name="UserBox" Text="{Binding Username}" Watermark="Username" Height="42" VerticalContentAlignment="Center" />
+      <TextBox Name="PasswordBox" Text="{Binding Password}" PasswordChar="●" Watermark="Password" Height="42" VerticalContentAlignment="Center">
+        <TextBox.KeyBindings>
+          <KeyBinding Gesture="Enter" Command="{Binding LoginCommand}" />
+        </TextBox.KeyBindings>
+      </TextBox>
+      <TextBlock Classes="error" Text="{Binding ErrorMessage}"
+                 IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="18,12" Margin="0,10,0,0"
+              Content="Sign in" Command="{Binding LoginCommand}" IsDefault="True" IsEnabled="{Binding !IsBusy}" />
+    </StackPanel>
+
+    <!-- Right: a quotation sketch on a soft panel -->
+    <Border Grid.Column="1" Grid.RowSpan="3" Margin="0,24,24,24" CornerRadius="28" Background="{DynamicResource AccentSoftBrush}">
+      <Grid>
+        <Border Width="300" Height="380" CornerRadius="16" Background="{DynamicResource CardBrush}" BoxShadow="0 18 50 0 #26000000"
+                HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransform="rotate(-4deg)" Padding="24">
+          <StackPanel Spacing="12">
+            <TextBlock Text="QUOTATION" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource AccentBrush}" />
+            <Border Height="8" Width="160" CornerRadius="4" Background="{DynamicResource FillBrush}" HorizontalAlignment="Left" />
+            <Border Height="8" Width="110" CornerRadius="4" Background="{DynamicResource FillBrush}" HorizontalAlignment="Left" />
+            <Border Height="1" Background="{DynamicResource HairlineBrush}" Margin="0,8" />
+            <Grid ColumnDefinitions="*,Auto"><Border Height="8" Width="150" CornerRadius="4" Background="{DynamicResource FillBrush}" HorizontalAlignment="Left" /><Border Grid.Column="1" Height="8" Width="50" CornerRadius="4" Background="{DynamicResource FillBrush}" /></Grid>
+            <Grid ColumnDefinitions="*,Auto"><Border Height="8" Width="120" CornerRadius="4" Background="{DynamicResource FillBrush}" HorizontalAlignment="Left" /><Border Grid.Column="1" Height="8" Width="50" CornerRadius="4" Background="{DynamicResource FillBrush}" /></Grid>
+            <Grid ColumnDefinitions="*,Auto"><Border Height="8" Width="170" CornerRadius="4" Background="{DynamicResource FillBrush}" HorizontalAlignment="Left" /><Border Grid.Column="1" Height="8" Width="50" CornerRadius="4" Background="{DynamicResource FillBrush}" /></Grid>
+            <Border Height="1" Background="{DynamicResource HairlineBrush}" Margin="0,8" />
+            <Border CornerRadius="8" Background="{DynamicResource AccentSoftBrush}" Padding="12,10">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Total" FontWeight="Bold" />
+                <TextBlock Grid.Column="1" Text="₹ 37,406.00" FontWeight="Bold" />
+              </Grid>
+            </Border>
+            <Border Width="70" Height="70" CornerRadius="35" BorderBrush="#5C1E7FD6" BorderThickness="3" HorizontalAlignment="Right" Margin="0,10,0,0">
+              <TextBlock Text="✓" FontSize="30" Foreground="#801E7FD6" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+          </StackPanel>
         </Border>
-        <TextBlock Classes="h1" Text="Sign in to Quotations" HorizontalAlignment="Center" Margin="0,6,0,0" />
-        <TextBlock Classes="muted" Text="T.SAIFUDDIN &amp; CO. · Quotation Server" HorizontalAlignment="Center" Margin="0,0,0,12" />
-
-        <TextBlock Classes="label" Text="Server address" />
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBox Name="ServerBox" Text="{Binding ServerUrl}" Watermark="http://server-pc:5080" />
-          <Button Grid.Column="1" Margin="6,0,0,0" Content="Test" Command="{Binding TestServerCommand}" />
-        </Grid>
-        <TextBlock Text="{Binding ServerStatus}" Foreground="{DynamicResource OkBrush}" FontSize="12"
-                   IsVisible="{Binding ServerStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-
-        <TextBlock Classes="label" Text="Username" />
-        <TextBox Name="UserBox" Text="{Binding Username}" />
-        <TextBlock Classes="label" Text="Password" />
-        <TextBox Name="PasswordBox" Text="{Binding Password}" PasswordChar="●">
-          <TextBox.KeyBindings>
-            <KeyBinding Gesture="Enter" Command="{Binding LoginCommand}" />
-          </TextBox.KeyBindings>
-        </TextBox>
-
-        <TextBlock Classes="error" Text="{Binding ErrorMessage}"
-                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-        <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="18,9" Margin="0,8,0,0"
-                Content="Sign in" Command="{Binding LoginCommand}" IsDefault="True" IsEnabled="{Binding !IsBusy}" />
-      </StackPanel>
+      </Grid>
     </Border>
+
+    <!-- Bottom left: the server, hidden until "Server settings" (or when it cannot be reached) -->
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="48,0,0,30">
+      <Button Name="ServerSettingsButton" Classes="link" Command="{Binding ToggleServerCommand}" VerticalAlignment="Center"
+              ToolTip.Tip="Where this PC finds the Quotation Server">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Path Data="M12,15.2 A3.2,3.2 0 1 0 11.99,15.2 Z M19.4,13 L21.5,14.6 L19.5,18.1 L17,17.1 C16.4,17.6 15.7,18 15,18.3 L14.6,21 L10.6,21 L10.2,18.3 C9.5,18 8.8,17.6 8.2,17.1 L5.7,18.1 L3.7,14.6 L5.8,13 C5.7,12.3 5.7,11.7 5.8,11 L3.7,9.4 L5.7,5.9 L8.2,6.9 C8.8,6.4 9.5,6 10.2,5.7 L10.6,3 L14.6,3 L15,5.7 C15.7,6 16.4,6.4 17,6.9 L19.5,5.9 L21.5,9.4 L19.4,11 C19.5,11.7 19.5,12.3 19.4,13 Z"
+                Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.4" StrokeJoin="Round" Width="14" Height="14" Stretch="Uniform" VerticalAlignment="Center" />
+          <TextBlock Text="Server settings" FontSize="12" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+      <StackPanel Name="ServerPanel" Orientation="Horizontal" Spacing="8" IsVisible="{Binding ShowServer}">
+        <TextBox Name="ServerBox" Text="{Binding ServerUrl}" Watermark="http://server-pc:5080" Width="230" />
+        <Button Content="Test" Command="{Binding TestServerCommand}" />
+        <TextBlock Text="{Binding ServerStatus}" Foreground="{DynamicResource OkBrush}" FontSize="12" VerticalAlignment="Center"
+                   IsVisible="{Binding ServerStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </StackPanel>
   </Grid>
 </UserControl>

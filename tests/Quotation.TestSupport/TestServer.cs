@@ -34,6 +34,12 @@ public sealed class TestServer : WebApplicationFactory<Program>
         public Quotation.Gmail.IGmailClient? Create() => server.Gmail;
     }
 
+    /// <summary>
+    /// Most tests sign in as "admin" and make quotations, so this test server lets the administrator make documents
+    /// (Server:AdministratorsMakeDocuments). False = the real office rule: administrators make no quotations.
+    /// </summary>
+    public bool AdministratorsMakeDocuments { get; set; } = true;
+
     /// <summary>Simulated TallyPrime that the server's "tally" HTTP client talks to.</summary>
     public TallySimulatorEngine Tally { get; }
 
@@ -50,6 +56,7 @@ public sealed class TestServer : WebApplicationFactory<Program>
         builder.UseSetting("Server:EnableBackgroundWorkers", "false");
         builder.UseSetting("Server:ClientUpdateFolder", ClientUpdateFolder);
         builder.UseSetting("Server:BootstrapAdminPassword", "admin123");
+        builder.UseSetting("Server:AdministratorsMakeDocuments", AdministratorsMakeDocuments ? "true" : "false");
         builder.UseEnvironment("Testing");
         builder.ConfigureServices(services =>
         {
@@ -78,6 +85,28 @@ public sealed class TestServer : WebApplicationFactory<Program>
     {
         var api = CreateApi(machine);
         await api.LoginAsync("admin", "admin123");
+        return api;
+    }
+
+    /// <summary>Switches proforma invoices on (Settings → Quotation; off on a new server).</summary>
+    public static async Task EnableProformasAsync(QuotationApiClient api)
+    {
+        var all = await api.SettingsAsync();
+        all.Quotation.ProformaEnabled = true;
+        await api.SaveSettingsAsync(all);
+    }
+
+    /// <summary>A Standard user (makes quotations), signed in.</summary>
+    public async Task<QuotationApiClient> LoginAsStandardAsync(string username = "ravi", string machine = "TEST-PC")
+    {
+        var admin = await LoginAsAdminAsync(machine);
+        if ((await admin.UsersAsync()).All(u => u.Username != username))
+        {
+            await admin.CreateUserAsync(new Quotation.Contracts.CreateUserRequest(username, username, username + "-pass",
+                Quotation.Core.Domain.UserRole.User));
+        }
+        var api = CreateApi(machine);
+        await api.LoginAsync(username, username + "-pass");
         return api;
     }
 

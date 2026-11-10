@@ -30,22 +30,9 @@
               <TextBlock Text="Refresh" />
             </StackPanel>
           </Button>
-          <Button Classes="proforma" Command="{Binding GoCommand}" CommandParameter="newproforma">
-            <StackPanel Orientation="Horizontal" Spacing="7">
-              <Path Data="M12,5 L12,19 M5,12 L19,12" Stroke="{DynamicResource PurpleBrush}" StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
-              <TextBlock Text="New Proforma Invoice" />
-            </StackPanel>
-          </Button>
-          <Button Classes="primary" Command="{Binding GoCommand}" CommandParameter="new">
-            <StackPanel Orientation="Horizontal" Spacing="7">
-              <Path Data="M12,5 L12,19 M5,12 L19,12" Stroke="White" StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
-              <TextBlock Text="New Quotation" />
-            </StackPanel>
-          </Button>
         </StackPanel>
       </Grid>
-      <TextBlock Classes="error" Text="{Binding ErrorMessage}"
-                 IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
 
       <!-- Administrators: things to fix before they become a problem -->
       <ItemsControl Name="HealthWarnings" ItemsSource="{Binding Warnings}" IsVisible="{Binding HasWarnings}">
@@ -160,13 +147,6 @@
         </Grid>
       </Border>
 
-      <WrapPanel>
-        <Button Margin="0,0,8,8" Content="AI Inbox" Command="{Binding GoCommand}" CommandParameter="inbox" />
-        <Button Margin="0,0,8,8" Content="Draft Quotations" Command="{Binding GoCommand}" CommandParameter="drafts" />
-        <Button Margin="0,0,8,8" Content="Quotation History" Command="{Binding GoCommand}" CommandParameter="history" />
-        <Button Classes="proforma" Margin="0,0,8,8" Content="Proforma Invoices" Command="{Binding GoCommand}" CommandParameter="proforma" />
-        <Button Margin="0,0,8,8" Content="Tally Connection" Command="{Binding GoCommand}" CommandParameter="tally" />
-      </WrapPanel>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

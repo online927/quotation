@@ -6,6 +6,31 @@
              x:Class="Quotation.Desktop.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
   <UserControl.Styles>
+    <Style Selector="TabControl.sidetabs /template/ ItemsPresenter#PART_ItemsPresenter">
+      <Setter Property="Margin" Value="0,4,18,0" />
+    </Style>
+    <Style Selector="TabControl.sidetabs TabItem">
+      <Setter Property="MinWidth" Value="190" />
+      <Setter Property="MinHeight" Value="38" />
+      <Setter Property="Padding" Value="14,0" />
+      <Setter Property="Margin" Value="0,1" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+    <Style Selector="TabControl.sidetabs TabItem /template/ Border#PART_SelectedPipe">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="TabControl.sidetabs TabItem:selected">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TabControl.sidetabs TabItem:pointerover">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+    </Style>
+    <Style Selector="TabControl.sidetabs TabItem:selected:pointerover">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    </Style>
     <Style Selector="TextBlock.notready">
       <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
     </Style>
@@ -28,10 +53,11 @@
     </Grid>
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
       <TextBlock Classes="muted" Text="Only administrators can change settings." IsVisible="{Binding IsReadOnly}" />
-      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
     </StackPanel>
 
-    <TabControl IsEnabled="{Binding Settings, Converter={x:Static ObjectConverters.IsNotNull}}">
+    <!-- Sections as a list on the left (U9) -->
+    <TabControl Classes="sidetabs" TabStripPlacement="Left" IsEnabled="{Binding Settings, Converter={x:Static ObjectConverters.IsNotNull}}">
       <TabItem Header="Company">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="200,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
@@ -120,7 +146,7 @@
       <TabItem Header="Quotation">
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="Quotation number pattern" />
             <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
               <TextBox Text="{Binding Settings.Quotation.NumberPattern}" />
@@ -210,9 +236,13 @@
               </StackPanel>
             </Border>
             <!-- Administrator switches: Won / Lost / Follow-up and the WhatsApp button (both off by default) -->
-            <Border Grid.Row="16" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
+            <Border Grid.Row="24" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
               <StackPanel Spacing="10">
-                <TextBlock Classes="h2" Text="Won / Lost / Follow-up" />
+                <TextBlock Classes="h2" Text="Proforma invoices" />
+                <ToggleSwitch Name="ProformaSwitch" IsChecked="{Binding Settings.Quotation.ProformaEnabled}"
+                              OnContent="On: New Proforma Invoice, the Proforma Invoices list and 'Make proforma'"
+                              OffContent="Off: nobody makes proforma invoices (those already made stay in Quotation History)" />
+                <TextBlock Classes="h2" Text="Won / Lost / Follow-up" Margin="0,8,0,0" />
                 <ToggleSwitch Name="TrackOutcomesSwitch" IsChecked="{Binding Settings.Quotation.TrackOutcomes}"
                               OnContent="On: approved quotations get Open / Won / Lost and a follow-up date" OffContent="Off" />
                 <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Settings.Quotation.TrackOutcomes}">
@@ -272,31 +302,33 @@
           <StackPanel Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" Spacing="8">
             <TextBlock Classes="muted" TextWrapping="Wrap"
                        Text="How Buyer (Bill to) and Consignee (Ship to) are printed on every PDF, like Tally's print configuration &#x2018;Party Details&#x2019;. PDFs already made change only when they are regenerated." />
-            <Grid Classes="form" ColumnDefinitions="320,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-              <TextBlock Grid.Row="0" Text="Show Contact details" />
-              <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" Content="Contact (phone) and E-Mail" />
+            <Grid Classes="form" ColumnDefinitions="320,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+              <TextBlock Grid.Row="0" Text="Show Contact (phone)" />
+              <CheckBox Grid.Row="0" Grid.Column="1" Name="ShowContactBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" Content="Contact : 98…" />
               <TextBlock Grid.Row="1" Text="     Show contact person's name" />
               <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactPerson}"
                         IsEnabled="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" Content="Contact : Mr. Name, 98…" />
-              <TextBlock Grid.Row="2" Text="Show Name and Address from Party master" />
-              <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.NameAndAddressFromMaster}"
+              <TextBlock Grid.Row="2" Text="Show E-mail" />
+              <CheckBox Grid.Row="2" Grid.Column="1" Name="ShowEmailBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowEmail}" Content="E-Mail : name@company.com" />
+              <TextBlock Grid.Row="3" Text="Show Name and Address from Party master" />
+              <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.NameAndAddressFromMaster}"
                         Content="Tally ledger's name and address, not what was typed on the quotation" />
-              <TextBlock Grid.Row="3" Text="Show Address in a continuous line" />
-              <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.AddressInContinuousLine}" Content="One line, separated by commas" />
-              <TextBlock Grid.Row="4" Text="Display name for Parties" />
-              <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding PartyDisplayNames}" SelectedIndex="{Binding PartyDisplayNameIndex}" Width="200" />
-              <TextBlock Grid.Row="5" Text="Show Buyer's Tax Registration No. / GSTIN" />
-              <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowGstin}" Content="GSTIN/UIN" />
-              <TextBlock Grid.Row="6" Text="Show PAN / Income Tax No." />
-              <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPan}" Content="PAN/IT No, from the Tally ledger" />
-              <TextBlock Grid.Row="7" Text="Show State Name &amp; State Code" />
-              <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowStateNameAndCode}" />
-              <TextBlock Grid.Row="8" Text="Show Consignee details" />
-              <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding ConsigneeChoices}" SelectedIndex="{Binding ConsigneeChoiceIndex}" Width="260" />
-              <TextBlock Grid.Row="9" Text="Show PIN code" />
-              <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPinCode}" Content="At the end of the address: Bangalore - 562111" />
-              <TextBlock Grid.Row="10" Text="Address width" />
-              <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.AddressHalfWidth}"
+              <TextBlock Grid.Row="4" Text="Show Address in a continuous line" />
+              <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.AddressInContinuousLine}" Content="One line, separated by commas" />
+              <TextBlock Grid.Row="5" Text="Display name for Parties" />
+              <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding PartyDisplayNames}" SelectedIndex="{Binding PartyDisplayNameIndex}" Width="200" />
+              <TextBlock Grid.Row="6" Text="Show Buyer's Tax Registration No. / GSTIN" />
+              <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowGstin}" Content="GSTIN/UIN" />
+              <TextBlock Grid.Row="7" Text="Show PAN / Income Tax No." />
+              <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPan}" Content="PAN/IT No, from the Tally ledger" />
+              <TextBlock Grid.Row="8" Text="Show State Name &amp; State Code" />
+              <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowStateNameAndCode}" />
+              <TextBlock Grid.Row="9" Text="Show Consignee details" />
+              <ComboBox Grid.Row="9" Grid.Column="1" ItemsSource="{Binding ConsigneeChoices}" SelectedIndex="{Binding ConsigneeChoiceIndex}" Width="260" />
+              <TextBlock Grid.Row="10" Text="Show PIN code" />
+              <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPinCode}" Content="At the end of the address: Bangalore - 562111" />
+              <TextBlock Grid.Row="11" Text="Address width" />
+              <CheckBox Grid.Row="11" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.AddressHalfWidth}"
                         Content="Half the width of the box (the address wraps; name, GSTIN, state and contact use the full width)" />
             </Grid>
             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -398,10 +430,10 @@
           <ItemsControl ItemsSource="{Binding Users}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="c:UserDto">
-                <Grid ColumnDefinitions="160,220,80,90,130,*" Margin="0,2">
+                <Grid ColumnDefinitions="160,220,100,90,130,*" Margin="0,2">
                   <TextBlock Text="{Binding Username}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Text="{Binding DisplayName}" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="2" Text="{Binding Role}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding RoleName}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="3" Text="{Binding IsActive, StringFormat='Active: {0}'}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="4" Text="{Binding Converter={x:Static vm:SettingsViewModel.SealStateText}}" VerticalAlignment="Center" FontSize="12" />
                   <Button Grid.Column="5" HorizontalAlignment="Left" Content="Edit"
@@ -419,12 +451,11 @@
                 <TextBlock Grid.Row="1" Classes="label" Text="Display name (Prepared by)" Margin="0,4,12,4" />
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditDisplayName}" />
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,4">
-                  <CheckBox Content="Administrator" IsChecked="{Binding EditIsAdmin}" />
                   <CheckBox Content="Active (can log in)" IsChecked="{Binding EditIsActive}" />
                 </StackPanel>
               </Grid>
               <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                         Text="Old quotations and the history keep the name used at the time. You cannot remove your own administrator role or deactivate yourself, and one active administrator must remain." />
+                         Text="Old quotations and the history keep the name used at the time. There is one administrator (who cannot be deactivated); every other user is a Standard user, who makes quotations." />
               <!-- Personal seal (users only) -->
               <StackPanel Name="UserSealSection" Spacing="8" IsVisible="{Binding EditingUserCanHaveSeal}">
                 <TextBlock Classes="h2" Text="Seal" Margin="0,8,0,0" />
@@ -478,13 +509,13 @@
             </StackPanel>
           </Border>
           <TextBlock Classes="h2" Text="Add user" />
-          <Grid ColumnDefinitions="160,8,220,8,160,8,Auto,8,Auto">
+          <Grid ColumnDefinitions="160,8,220,8,160,8,Auto">
             <TextBox Text="{Binding NewUsername}" Watermark="Username" />
             <TextBox Grid.Column="2" Text="{Binding NewDisplayName}" Watermark="Display name" />
             <TextBox Grid.Column="4" Text="{Binding NewUserPassword}" PasswordChar="●" Watermark="Initial password" />
-            <CheckBox Grid.Column="6" Content="Admin" IsChecked="{Binding NewUserIsAdmin}" />
-            <Button Grid.Column="8" Content="Add user" Command="{Binding AddUserCommand}" />
+            <Button Grid.Column="6" Name="AddUserButton" Content="Add user" Command="{Binding AddUserCommand}" />
           </Grid>
+          <TextBlock Classes="muted" FontSize="11" Text="New users are Standard users: they make quotations, and do not change Settings." />
         </StackPanel>
         </ScrollViewer>
       </TabItem>

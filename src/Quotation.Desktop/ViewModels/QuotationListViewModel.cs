@@ -115,6 +115,11 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         _ => "history",
     };
     public string NewButtonText => IsProformaList ? "New Proforma Invoice" : "New Quotation";
+    /// <summary>Administrators make no quotations: no New button and no Duplicate.</summary>
+    public bool MakesDocuments => _session.MakesDocuments;
+    public bool ShowNew => MakesDocuments && (!IsProformaList || _session.ProformaEnabled);
+    /// <summary>"All documents / Quotations / Proforma invoices" only while proforma invoices are switched on.</summary>
+    public bool ShowTypeFilter => _session.ProformaEnabled;
 
     public QuotationListViewModel(AppSession session, INavigator navigator, QuotationListPreset preset, string? initialQuery = null)
     {
@@ -123,7 +128,45 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         Preset = preset;
         _query = initialQuery ?? "";
         _typeFilter = TypeFilters[preset == QuotationListPreset.Proforma ? 2 : 0];
+        Rows.CollectionChanged += (_, _) => NotifyEmpty();
+        PropertyChanged += (_, e) => { if (e.PropertyName == nameof(IsBusy)) NotifyEmpty(); };
         _ = LoadAsync();
+    }
+
+    // ---------------------------------------------------------------- empty list and loading (U5, U7)
+
+    private bool _loadedOnce;
+    /// <summary>Grey placeholder rows while the first page loads.</summary>
+    public bool ShowSkeleton => IsBusy && Rows.Count == 0 && !_loadedOnce;
+    /// <summary>A friendly note instead of an empty table.</summary>
+    public bool ShowEmpty => !IsBusy && Rows.Count == 0 && _loadedOnce;
+    public bool ShowList => !ShowEmpty && !ShowSkeleton;
+    public Avalonia.Media.Geometry? EmptyIcon => NavIcons.For(IconKey);
+    public string EmptyTitle => Query.Trim().Length > 0 ? $"Nothing found for \"{Query.Trim()}\"" : Preset switch
+    {
+        QuotationListPreset.Drafts => "No drafts",
+        QuotationListPreset.Today => "No quotations today yet",
+        QuotationListPreset.Proforma => "No proforma invoices",
+        QuotationListPreset.FollowUp => "Nothing to follow up",
+        _ => "No quotations yet",
+    };
+    public string EmptyText => Query.Trim().Length > 0 ? "Try fewer words, a part number, the customer's GSTIN or the quotation number." : Preset switch
+    {
+        QuotationListPreset.Drafts => "Every quotation is approved. Nice work!",
+        QuotationListPreset.Today => "Quotations made today appear here.",
+        QuotationListPreset.Proforma => "Proforma invoices appear here once they are made.",
+        QuotationListPreset.FollowUp => "Approved quotations appear here on their follow-up date.",
+        _ => "Quotations appear here once they are saved.",
+    };
+    public IReadOnlyList<int> SkeletonRows { get; } = [1, 2, 3, 4, 5, 6, 7];
+
+    private void NotifyEmpty()
+    {
+        OnPropertyChanged(nameof(ShowSkeleton));
+        OnPropertyChanged(nameof(ShowEmpty));
+        OnPropertyChanged(nameof(ShowList));
+        OnPropertyChanged(nameof(EmptyTitle));
+        OnPropertyChanged(nameof(EmptyText));
     }
 
     partial void OnQueryChanged(string value) => _debounce.Run(_ => LoadAsync());
@@ -152,6 +195,8 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         Rows.Clear();
         foreach (var s in list) Rows.Add(new QuotationRow(s));
         Selected = Rows.FirstOrDefault(r => r.Id == selectedId);
+        _loadedOnce = true;
+        NotifyEmpty();
         var active = list.Where(s => s.Status != QuotationStatus.Cancelled).ToList();
         Summary = $"{list.Count} document(s)" + (active.Count > 0 ? $", total ₹ {IndianFormat.Amount(active.Sum(s => s.GrandTotal))}" : "");
     });
@@ -204,5 +249,8 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
     });
 
     [RelayCommand]
-    private void New() => _navigator.Navigate(IsProformaList ? "newproforma" : "new");
+    private void New()
+    {
+        if (ShowNew) _navigator.Navigate(IsProformaList ? "newproforma" : "new");
+    }
 }

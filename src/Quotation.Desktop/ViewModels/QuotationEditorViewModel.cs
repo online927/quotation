@@ -222,7 +222,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     // ---------------------------------------------------------------- WhatsApp (E2)
 
-    public bool ShowWhatsApp => _settings.Quotation.WhatsAppButton && IsFinal;
+    public bool ShowWhatsApp => _settings.Quotation.WhatsAppButton && IsFinal && MakesDocuments;
 
     /// <summary>Makes the PDF, copies it, and opens WhatsApp Desktop in the customer's chat with the message typed.</summary>
     [RelayCommand]
@@ -232,7 +232,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         var bytes = await _session.Api.QuotationPdfAsync(id);
         var path = _session.Documents.Save(bytes, PdfFileName(), _session.Documents.FolderFor(IsProforma));
         LastPdfPath = path;
-        _lastPdfKey = PdfKey();
         var message = (_settings.Quotation.WhatsAppMessage ?? "")
             .Replace("{number}", Number ?? "", StringComparison.OrdinalIgnoreCase)
             .Replace("{customer}", BuyerName, StringComparison.OrdinalIgnoreCase);
@@ -324,7 +323,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [ObservableProperty] private int _revision;
     [ObservableProperty] private DateTime? _date = DateTime.Today;
     [ObservableProperty] private bool _isDirty;
-    partial void OnIsDirtyChanged(bool value) => OnPropertyChanged(nameof(CanDragPdf));
     [ObservableProperty] private bool _hasPdf;
     [ObservableProperty] private string? _pdfError;
     [ObservableProperty] private string? _dataWarning;
@@ -491,8 +489,14 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         ? $"Locked — made more than {_settings.Quotation.UserEditDays} days ago (editable until {until:dd-MMM-yyyy}). Ask an administrator to change it, or use Duplicate."
         : "";
     public bool IsEditable => Status != QuotationStatus.Cancelled && !IsLocked;
+    /// <summary>Administrators do not make quotations: they open, preview, cancel and delete them.</summary>
+    public bool MakesDocuments => _session.MakesDocuments;
+    /// <summary>The items, parties and terms can be changed: by the person who makes quotations, while not locked or cancelled.</summary>
+    public bool CanEditContent => IsEditable && MakesDocuments;
+    /// <summary>Cancel: as long as it can be edited, or always for an administrator (until it is cancelled).</summary>
+    public bool CanCancel => Status != QuotationStatus.Cancelled && (IsEditable || (IsAdmin && Id is not null));
     /// <summary>Only administrators change the date; for users it is the day the quotation is first saved (enforced by the server).</summary>
-    public bool CanChangeDate => IsAdmin && IsEditable;
+    public bool CanChangeDate => IsAdmin && CanEditContent;
     public bool CanApprove => Status is QuotationStatus.Draft or QuotationStatus.PendingReview && Lines.Count > 0 && !IsLocked;
     public bool CanDelete => IsAdmin && Id is not null;
     /// <summary>
@@ -525,9 +529,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool ShowSource => Source != QuotationSource.Manual;
     public string Title => Number is null ? "New " + DocLabel : $"{DocLabel} {Number}";
     /// <summary>A saved quotation can be turned into a proforma invoice (a new document with its own TSPI number).</summary>
-    public bool CanConvertToProforma => !IsProforma && Id is not null && Status != QuotationStatus.Cancelled;
+    public bool CanConvertToProforma => !IsProforma && Id is not null && Status != QuotationStatus.Cancelled && MakesDocuments
+                                        && _settings.Quotation.ProformaEnabled;
     /// <summary>Unsaved header/line changes, or a line typed in the entry row but not added yet.</summary>
-    public bool HasUnsavedChanges => IsEditable && (IsDirty || EntryProduct is not null || EditingLine is not null);
+    public bool HasUnsavedChanges => CanEditContent && (IsDirty || EntryProduct is not null || EditingLine is not null);
 
     public Task<bool> SaveChangesAsync() => SaveAsync();
 
@@ -705,6 +710,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     private void NotifyState()
     {
         OnPropertyChanged(nameof(IsEditable));
+        OnPropertyChanged(nameof(CanEditContent));
+        OnPropertyChanged(nameof(CanCancel));
         OnPropertyChanged(nameof(CanChangeDate));
         OnPropertyChanged(nameof(CanApprove));
         OnPropertyChanged(nameof(IsFinal));
@@ -714,7 +721,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(ChangedByText));
         OnPropertyChanged(nameof(ShowOutcome));
         OnPropertyChanged(nameof(ShowWhatsApp));
-        OnPropertyChanged(nameof(CanDragPdf));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(CanConvertToProforma));
@@ -744,6 +750,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     partial void OnIdChanged(Guid? value)
     {
+        OnPropertyChanged(nameof(CanCancel));
         OnPropertyChanged(nameof(CanConvertToProforma));
         OnPropertyChanged(nameof(ChangedByText));
         _ = CheckPresenceAsync();
@@ -875,7 +882,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public void SelectProduct(ProductSummaryDto p)
     {
         EntryProduct = p;
-        EntryRate = p.Rate;
+        EntryRate = p.Rate > 0 ? p.Rate : null; // no rate in Tally: an empty box to type into, not 0.00
         if (EditingLine is null || EditingLine.ProductId != p.Id)
         {
             EntryDescription = p.Description;
@@ -948,7 +955,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         EntryProduct = line.ProductId is null ? null : new ProductSummaryDto(line.ProductId.Value, line.ItemName, "", "", "", line.Unit, line.Hsn, line.GstRate, line.TallyRate, line.Description);
         SetProductTextSilently(line.ItemName);
         EntryQuantity = line.Quantity;
-        EntryRate = line.Rate;
+        EntryRate = line.Rate > 0 ? line.Rate : null;
         EntryDiscount = line.DiscountPercent;
         EntryDescription = line.Description;
         EntryDueOn = line.DueOn;
@@ -1082,6 +1089,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [RelayCommand]
     public async Task<bool> SaveAsync()
     {
+        if (!MakesDocuments) return false; // Ctrl+S on an administrator's screen
         if (EntryProduct is not null || EditingLine is not null) CommitEntry();
         InfoMessage = null;
         ValidationMessages.Clear();
@@ -1125,6 +1133,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// <summary>Approval with all checks. True when the quotation is approved afterwards.</summary>
     private async Task<bool> ApproveCoreAsync(bool overrideStale, bool openPdf)
     {
+        if (!MakesDocuments) return false; // Ctrl+Enter on an administrator's screen
         if ((IsDirty || Id is null) && !await SaveAsync()) return false;
         ValidationMessages.Clear();
         NeedsStaleOverride = false;
@@ -1219,8 +1228,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             // In the user's own layout (My Settings → PDF layout: Tally or Zoho).
             var bytes = pin is null ? await _session.Api.QuotationPdfAsync(Id.Value) : await _session.Api.SealedPdfAsync(Id.Value, pin.Trim());
             LastPdfPath = _session.Documents.Save(bytes, PdfFileName(), _session.Documents.FolderFor(IsProforma));
-            _lastPdfKey = PdfKey();
-            InfoMessage = (pin is null ? "Saved to " : "Sealed and saved to ") + LastPdfPath;
+                InfoMessage = (pin is null ? "Saved to " : "Sealed and saved to ") + LastPdfPath;
         });
     }
 
@@ -1244,45 +1252,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         if (name.Length == 0) return file.TrimEnd('.', ' ') + ".pdf";
         return (customerFirst ? $"{name.TrimEnd('.', ' ')} {file}" : $"{file} {name}").TrimEnd('.', ' ') + ".pdf";
     }
-
-    // ---------------------------------------------------------------- drag the PDF (W2)
-
-    /// <summary>The PDF can be dragged from the quotation into WhatsApp, Outlook or a folder (approved and saved only).</summary>
-    public bool CanDragPdf => IsFinal && Id is not null && !IsDirty;
-    private string? _dragFile;
-    private string? _dragKey;
-
-    private string PdfKey() => $"{Id}:{Revision}:{PdfFileName()}";
-
-    /// <summary>
-    /// The file to drag: the one just saved with Save as PDF (sealed if it was) when the quotation has not changed since,
-    /// otherwise a fresh PDF (in the user's layout) made in a temporary folder. Prepared when the mouse comes onto the icon.
-    /// </summary>
-    public async Task<string?> PrepareDragFileAsync()
-    {
-        if (!CanDragPdf || Id is not { } id) return null;
-        var key = PdfKey();
-        if (LastPdfPath is { } saved && _lastPdfKey == key) return saved;
-        if (_dragFile is not null && _dragKey == key) return _dragFile;
-        try
-        {
-            var bytes = await _session.Api.QuotationPdfAsync(id);
-            if (PdfKey() != key) return null; // changed meanwhile
-            _dragFile = _session.Documents.Save(bytes, PdfFileName(), Path.Combine(Path.GetTempPath(), "TSQuotation", "drag"));
-            _dragKey = key;
-            return _dragFile;
-        }
-        catch (Exception ex) when (ex is ApiException or IOException or HttpRequestException)
-        {
-            ErrorMessage = "The PDF could not be prepared for dragging: " + ex.Message;
-            return null;
-        }
-    }
-
-    public void ShowDragNotReady() => _navigator.Toast("Preparing the PDF… drag again in a moment.", 3);
-
-    /// <summary>The quotation the file in <see cref="LastPdfPath"/> was made from (number, revision, name).</summary>
-    private string? _lastPdfKey;
 
     [RelayCommand]
     private void OpenPdfFolder()
@@ -1333,7 +1302,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             var bytes = await _session.Api.PreviewPdfAsync(Id!.Value);
             LastPdfPath = _session.Documents.SaveAndOpen(bytes, "Preview-" + QuotationNumberFormatter.ToFileName(Number ?? "draft") + ".pdf");
-            _lastPdfKey = null; // a preview is not the final PDF
         });
     }
 
@@ -1344,7 +1312,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         // The same file as Save as PDF: "Number Customer.pdf".
         LastPdfPath = _session.Documents.SaveAndOpen(bytes, PdfFileName(),
             folder: _session.Documents.FolderFor(IsProforma));
-        _lastPdfKey = PdfKey();
     }
 
     [RelayCommand]
@@ -1393,7 +1360,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     });
 
     [RelayCommand]
-    private void NewQuotation() => _navigator.Navigate(IsProforma ? "newproforma" : "new");
+    private void NewQuotation()
+    {
+        if (MakesDocuments) _navigator.Navigate(IsProforma ? "newproforma" : "new");
+    }
 
     [RelayCommand]
     private Task LoadAuditTrailAsync() => RunAsync(async () =>

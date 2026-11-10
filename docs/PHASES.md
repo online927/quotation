@@ -619,3 +619,25 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 3. Settings → Users, Claude AI and Gmail scroll.
 4. The Total band keeps inside the Totals box in every theme (rounder glass/frost corners).
 5. Cancel on a quotation that was never saved also forgets its recovery copy (it is not restored again).
+
+### Round 18
+
+1. The administrator makes no quotations or proforma invoices: no New Quotation / New Proforma, Duplicate, Make proforma
+   or AI Inbox "Create Draft". On a document the administrator has Preview, Open PDF, the history, Cancel and Delete
+   (the server refuses the rest: "Administrators do not make quotations"). `Server:AdministratorsMakeDocuments = true`
+   in appsettings.json allows it again for an office with nobody else.
+2. One administrator, everyone else a Standard user: no Administrator tick box; new users are Standard; the server refuses
+   a second administrator; on the first start any extra administrator becomes Standard ("admin" stays).
+3. Settings → Party Details: "Show Contact (phone)" (with the contact person's name) and "Show E-mail" are separate ticks,
+   both starting as the old "Contact details" tick.
+4. An item without a rate shows an empty Rate box (not 0.00); Approve still asks for a rate.
+5. Settings → Quotation → Proforma invoices switch, off: no New Proforma, Proforma list, filter or Make proforma, and the
+   server refuses new ones. Proforma invoices already made stay in Quotation History.
+6. New sign-in screen: greeting, company name (from Settings, remembered on each PC), server address under
+   "Server settings" (opens by itself when the server cannot be reached).
+7. Dashboard without the New Quotation / New Proforma buttons and shortcuts.
+8. Themes: Glass (Maroon) with a maroon menu and white boxes; new More Maroon (dark, maroon boxes).
+9. Quotation buttons in a floating bar: Approve and Save as PDF pills, icon tiles for Preview, Open PDF, WhatsApp, Cancel
+   and Delete; the Seal is a switch; the drag-PDF handle is removed; "Unsaved changes" is a chip.
+10. Striped item lines, friendly empty lists, a loading shimmer, error messages in a closable red banner on every page,
+    Settings sections as a list on the left, and a side menu that folds to icons (remembered on each PC).

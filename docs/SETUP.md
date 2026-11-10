@@ -85,10 +85,14 @@ voucher, company setting or anything else in Tally.
 1. Run **`TSQuotation-Setup-x.y.z.exe`**. When asked for the **Server address**, enter `http://SERVER-PC-NAME:5080`
    (or its IP, e.g. `http://192.168.1.10:5080`).
    For silent roll-out: `TSQuotation-Setup-x.y.z.exe /VERYSILENT /SERVER=http://192.168.1.10:5080`.
-2. Start **TS Quotation**. The login screen shows the server address — press **Test** to check the connection.
+2. Start **TS Quotation**. The server address is under **Server settings** on the sign-in screen (it opens by itself
+   when the server cannot be reached) — press **Test** to check the connection.
 3. First login: user **`admin`**, password **`admin`**. You must set a new password immediately.
 4. Create a user for each person: **Settings → Users → Add user** (they choose their own password at first login).
-   Only administrators can change settings, Tally/Gmail connections and view Diagnostics.
+   There is one administrator (`admin`); every other user is a **Standard** user. Standard users make quotations;
+   the administrator changes settings, Tally/Gmail connections and views Diagnostics, and opens, cancels and deletes
+   quotations but does not make, change or approve them. (Only if nobody else can make quotations: set
+   `"AdministratorsMakeDocuments": true` in the `Server` section of the server's `appsettings.json` and restart it.)
 
 ---
 
@@ -169,7 +173,7 @@ conditions (one per line), default payment terms and footer.
   (it stays the same when they edit or approve it later); Duplicate and Convert to Proforma take today's date.
 
 **Settings → Party Details** (administrators): how Buyer and Consignee print, like Tally's print configuration
-*Party Details* — Show Contact details (Contact = phone, and E-Mail), Show contact person's name, Name and Address
+*Party Details* — Show Contact (phone), Show contact person's name (with the Contact line), Show E-mail, Name and Address
 from Party master, Address in a continuous line, Display name for Parties (Name Only / Alias Only / Name (Alias) /
 Alias (Name)), GSTIN, PAN / Income Tax No., State Name & Code, Consignee details (Yes / No / Only when different from
 Buyer / **Buyer/Consignee when same** — one block captioned *Buyer/Consignee*, the default) and PIN code (joined to the last
@@ -177,6 +181,8 @@ address line: *Bangalore - 562111*) and **Address width** (half the box: the add
 other lines keep the full width). The defaults are the office's Tally settings. **Preview PDF** prints the latest
 quotation with the options on screen before saving. Labels and colons line up as on the Tally print, and a long address
 line prints in a slightly smaller font to stay on one line. Existing PDFs change only when regenerated.
+* **Proforma invoices** switch (off at first): when off, nobody makes proforma invoices — no New Proforma Invoice,
+  Proforma Invoices list, document filter or Make proforma. Proforma invoices already made stay in Quotation History.
 * **Proforma invoice number pattern**: default `TSPI{FY}-{SEQ}` → `TSPI2526-13`, a series of its own. Under
   **Next proforma invoice number** enter the number after your last Tally proforma (last was TSPI2526-12 → **13**).
 
@@ -345,10 +351,11 @@ asked **Save** (Enter) / **Don't Save** (N) / **Cancel** (Esc).
   (unsaved work is kept). **Settings → Backup & updates → Clients must update** removes *Later*. The first version with
   automatic updates must be installed by hand on each client PC.
 * **Users** (administrator): **Settings → Users → Edit**: change the login name (printed as *By:* on PDFs), display
-  name, administrator or user, active; **Reset password** gives a temporary password the user must change at the
+  name, active; **Reset password** gives a temporary password the user must change at the
   next login (and logs them out on every PC). Everyone can change their own password: click your name at the top
-  right → **Change my password**. Create a second administrator so a forgotten password can always be reset.
-* **Forgotten administrator password** (no other administrator): on the **server PC**, open Command Prompt **as
+  right → **Change my password**. There is only one administrator (new users are Standard users); when the server is
+  updated, any other administrator from before becomes a Standard user.
+* **Forgotten administrator password**: on the **server PC**, open Command Prompt **as
   administrator** and run
   `"C:\Program Files\TSQuotation\Server\TSQuotation.Server.exe" --reset-admin-password NewPassword`
   (add `--user name` for another administrator). It prints *Password of administrator 'admin' changed*. Log in with

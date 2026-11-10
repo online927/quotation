@@ -41,10 +41,10 @@ public static class SystemEndpoints
             return Results.NoContent();
         }).RequireAuthorization();
 
-        auth.MapGet("/me", async (HttpContext ctx, QuotationDbContext db, CancellationToken ct) =>
+        auth.MapGet("/me", async (HttpContext ctx, QuotationDbContext db, AuthService svc, CancellationToken ct) =>
         {
             var user = await db.Users.FirstAsync(u => u.Username == ctx.User.UserName(), ct);
-            return AuthService.ToDto(user);
+            return svc.Me(user);
         }).RequireAuthorization();
 
         auth.MapPost("/change-password", async (ChangePasswordRequest req, HttpContext ctx, QuotationDbContext db,
@@ -121,6 +121,7 @@ public static class SystemEndpoints
             if (username.Length == 0) return Results.BadRequest(new ApiError("Username is required."));
             var errors = AuthService.ValidatePassword(req.Password);
             if (errors.Count > 0) return Results.BadRequest(new ApiError("Invalid password.", errors));
+            if (req.Role == UserRole.Admin) return Results.BadRequest(new ApiError(AuthService.OnlyOneAdmin));
             if (await db.Users.AnyAsync(u => u.Username == username, ct))
                 return Results.Conflict(new ApiError($"User '{username}' already exists."));
             var user = new AppUser
@@ -180,7 +181,7 @@ public static class SystemEndpoints
         });
 
         // The current user's own switches.
-        app.MapPut("/api/me/preferences", async (MyPreferencesDto req, HttpContext ctx, QuotationDbContext db, CancellationToken ct) =>
+        app.MapPut("/api/me/preferences", async (MyPreferencesDto req, HttpContext ctx, QuotationDbContext db, AuthService svc, CancellationToken ct) =>
         {
             if (req.Theme is not null && !AppTheme.IsValid(req.Theme)) return Results.BadRequest(new ApiError("Unknown theme: " + req.Theme));
             if (req.TextSize is not null && !AppDisplay.IsValidTextSize(req.TextSize)) return Results.BadRequest(new ApiError("Text size must be Normal or Large."));
@@ -196,7 +197,7 @@ public static class SystemEndpoints
             if (req.ReduceMotion is { } reduce) user.ReduceMotion = reduce;
             if (req.PdfFileOrder is { } order) user.PdfFileOrder = order;
             await db.SaveChangesAsync(ct);
-            return Results.Ok(AuthService.ToDto(user));
+            return Results.Ok(svc.Me(user));
         }).RequireAuthorization();
 
         static AllSettingsDto ForClient(SettingsService s, SealService seal)

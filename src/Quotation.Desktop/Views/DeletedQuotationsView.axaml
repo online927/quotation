@@ -18,7 +18,7 @@
       </Button>
     </Grid>
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
-      <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
     </StackPanel>
     <Border DockPanel.Dock="Top" Classes="tablehead">
       <Grid ColumnDefinitions="130,80,100,*,110,220,110,230">

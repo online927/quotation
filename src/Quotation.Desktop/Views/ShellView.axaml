@@ -91,27 +91,53 @@
       </Border>
 
       <!-- Sidebar -->
-      <Border DockPanel.Dock="Left" Width="262" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,1,0">
+      <Border Name="Sidebar" Classes="sidebar" Classes.collapsed="{Binding SidebarCollapsed}" DockPanel.Dock="Left" ZIndex="10"
+              Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,1,0">
+        <DockPanel>
+        <Button Name="SidebarToggle" DockPanel.Dock="Bottom" Classes="nav" Command="{Binding ToggleSidebarCommand}" Margin="10,4,10,10"
+                ToolTip.Tip="{Binding SidebarToggleTip}">
+          <Panel>
+            <Grid Classes="navgrid" ColumnDefinitions="32,*">
+              <Path Classes="icon" Data="{Binding SidebarToggleIcon}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                    Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0" />
+              <TextBlock Grid.Column="1" Text="{Binding SidebarToggleText}" FontSize="12" VerticalAlignment="Center" />
+            </Grid>
+            <StackPanel Classes="navmini">
+              <Path Classes="icon" Data="{Binding SidebarToggleIcon}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                    Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" />
+            </StackPanel>
+          </Panel>
+        </Button>
         <ScrollViewer>
           <ItemsControl ItemsSource="{Binding NavItems}" Margin="10,10">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:NavItem">
                 <StackPanel>
-                  <TextBlock Classes="sidehead" Text="{Binding Section}" IsVisible="{Binding HasSection}" Margin="12,14,0,4" />
+                  <Panel IsVisible="{Binding HasSection}">
+                    <TextBlock Classes="sidehead" Text="{Binding Section}" Margin="12,14,0,4" />
+                    <Border Classes="sidegap" Height="12" />
+                  </Panel>
                   <Button Classes="nav" Classes.selected="{Binding IsSelected}"
                           Command="{Binding $parent[ItemsControl].((vm:ShellViewModel)DataContext).NavigateCommand}"
-                          CommandParameter="{Binding Key}">
-                    <Grid ColumnDefinitions="32,*,Auto" Width="216">
+                          CommandParameter="{Binding Key}" ToolTip.Tip="{Binding Title}">
+                    <Panel>
+                    <StackPanel Classes="navmini">
+                      <Path Classes="icon" Data="{Binding Icon}" StrokeThickness="1.7" Width="20" Height="20" Stretch="Uniform"
+                            StrokeLineCap="Round" StrokeJoin="Round" HorizontalAlignment="Center" />
+                    </StackPanel>
+                    <Grid Classes="navgrid" ColumnDefinitions="32,*,Auto" Width="216">
                       <Path Classes="icon" Data="{Binding Icon}" StrokeThickness="1.7" Width="20" Height="20" Stretch="Uniform"
                             StrokeLineCap="Round" StrokeJoin="Round" VerticalAlignment="Center" HorizontalAlignment="Left" />
                       <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13" TextTrimming="CharacterEllipsis" Margin="0,0,6,0" VerticalAlignment="Center" />
                     </Grid>
+                    </Panel>
                   </Button>
                 </StackPanel>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </ScrollViewer>
+        </DockPanel>
       </Border>
 
       <!-- Back / Forward and where you are -->

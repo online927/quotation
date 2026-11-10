@@ -162,6 +162,7 @@ public class OfficeFeaturesUiTests
     public async Task Proforma_invoices_are_saved_in_their_own_folder()
     {
         using var ctx = await SetupAsync();
+        await TestServer.EnableProformasAsync(ctx.Session.Api);
         var editor = await DraftAsync(ctx);
         await editor.SaveAsPdfCommand.ExecuteAsync(null);
         Assert.Equal(ctx.Files.Folder, ctx.Files.Folders[^1]);

@@ -186,11 +186,12 @@ CONTENTS
 
   My Settings > Appearance (saved with your login, on every PC)
     * Theme: Default Light / Dark / Same as Windows, Sunset, Graphite, Frost,
-      Glass (Blue / Black / Green / Maroon), Parchment, Forest & Gold,
+      Glass (Blue / Black / Green / Maroon), Parchment, Forest & Gold, Hero Light,
       Neon Night. The moon button switches light / dark. On Windows 11 the
       window's title bar takes the theme's colours.
     * Parchment and Forest & Gold draw misty mountains and pines behind the
       pages and at the foot of the menu.
+    * Hero Light draws rays of light and a city skyline behind the pages.
   My Settings > Background picture (this PC only)
     * Choose a picture of your own to show behind the pages (any theme);
       Remove goes back to the theme. It stays on this PC and is not sent to

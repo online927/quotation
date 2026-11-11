@@ -98,6 +98,8 @@
         <!-- Pines at the foot of the menu (Parchment and Forest & Gold themes only) -->
         <Path Name="SidebarArt" Classes="sideart" Data="{x:Static ctl:ThemeArt.SidebarPines}" Fill="{DynamicResource SidebarArtBrush}"
               Stretch="Fill" Height="110" VerticalAlignment="Bottom" IsHitTestVisible="False" />
+        <Path Classes="sideart" Data="{x:Static ctl:ThemeArt.SidebarCity}" Fill="{DynamicResource SidebarCityBrush}"
+              Stretch="Fill" Height="120" VerticalAlignment="Bottom" IsHitTestVisible="False" />
         <DockPanel>
         <Button Name="SidebarToggle" DockPanel.Dock="Bottom" Classes="nav" Command="{Binding ToggleSidebarCommand}" Margin="10,4,10,10"
                 ToolTip.Tip="{Binding SidebarToggleTip}">
@@ -151,6 +153,12 @@
         <Image Name="BackgroundPicture" Source="{Binding BackgroundPicture}" Stretch="UniformToFill" IsVisible="{Binding HasBackgroundPicture}"
                IsHitTestVisible="False" />
         <Border Background="{DynamicResource PictureScrimBrush}" IsVisible="{Binding HasBackgroundPicture}" IsHitTestVisible="False" />
+        <Path Name="HeroRays" Data="{x:Static ctl:ThemeArt.LightRays}" Fill="{DynamicResource RaysBrush}" Stretch="Fill"
+              IsVisible="{Binding !HasBackgroundPicture}" IsHitTestVisible="False" />
+        <Panel Name="HeroCity" Height="230" VerticalAlignment="Bottom" IsVisible="{Binding !HasBackgroundPicture}" IsHitTestVisible="False">
+          <Path Data="{x:Static ctl:ThemeArt.CityFar}" Fill="{DynamicResource CityFarBrush}" Stretch="Fill" />
+          <Path Data="{x:Static ctl:ThemeArt.CityNear}" Fill="{DynamicResource CityNearBrush}" Stretch="Fill" Height="150" VerticalAlignment="Bottom" />
+        </Panel>
         <Panel Name="PageArt" Height="200" VerticalAlignment="Bottom" IsVisible="{Binding !HasBackgroundPicture}" IsHitTestVisible="False">
           <Path Data="{x:Static ctl:ThemeArt.FarMountains}" Fill="{DynamicResource PageArtFarBrush}" Stretch="Fill" />
           <Path Data="{x:Static ctl:ThemeArt.PineRidge}" Fill="{DynamicResource PageArtNearBrush}" Stretch="Fill" />

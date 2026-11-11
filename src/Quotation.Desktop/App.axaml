@@ -103,6 +103,10 @@
           <SolidColorBrush x:Key="PageArtFarBrush">Transparent</SolidColorBrush>
           <SolidColorBrush x:Key="PageArtNearBrush">Transparent</SolidColorBrush>
           <SolidColorBrush x:Key="SidebarArtBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CityFarBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CityNearBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="RaysBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarCityBrush">Transparent</SolidColorBrush>
           <SolidColorBrush x:Key="PictureScrimBrush">#B3F6F8FD</SolidColorBrush>
           <SolidColorBrush x:Key="BadBorderBrush">#F5B7B7</SolidColorBrush>
           <SolidColorBrush x:Key="PopupBorderBrush">#9AABBF</SolidColorBrush>
@@ -197,6 +201,10 @@
           <SolidColorBrush x:Key="PageArtFarBrush">Transparent</SolidColorBrush>
           <SolidColorBrush x:Key="PageArtNearBrush">Transparent</SolidColorBrush>
           <SolidColorBrush x:Key="SidebarArtBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CityFarBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CityNearBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="RaysBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarCityBrush">Transparent</SolidColorBrush>
           <SolidColorBrush x:Key="PictureScrimBrush">#99000000</SolidColorBrush>
           <SolidColorBrush x:Key="BadBorderBrush">#6E2E31</SolidColorBrush>
           <SolidColorBrush x:Key="PopupBorderBrush">#5A6878</SolidColorBrush>

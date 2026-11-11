@@ -41,9 +41,9 @@ public static class AppTheme
     //  More Maroon was removed in Round 19: its users get Glass (Maroon).)
     public const string Sunset = "Sunset", Graphite = "Graphite", Frost = "Frost", GlassBlue = "GlassBlue", GlassBlack = "GlassBlack",
         GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon", NeonNight = "NeonNight",
-        Parchment = "Parchment", ForestGold = "ForestGold";
+        Parchment = "Parchment", ForestGold = "ForestGold", HeroLight = "HeroLight";
 
-    public static readonly string[] All = [Light, Dark, System, Sunset, Graphite, Frost, GlassBlue, GlassBlack, GlassGreen, GlassMaroon, Parchment, ForestGold, NeonNight];
+    public static readonly string[] All = [Light, Dark, System, Sunset, Graphite, Frost, GlassBlue, GlassBlack, GlassGreen, GlassMaroon, Parchment, ForestGold, HeroLight, NeonNight];
     public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
     /// <summary>A saved theme that still exists: More Maroon → Glass (Maroon); any other removed theme → Default Light.</summary>
     public static string Normalize(string? theme) => theme == "MoreMaroon" ? GlassMaroon : IsValid(theme) ? theme! : Light;

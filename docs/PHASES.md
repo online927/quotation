@@ -676,3 +676,8 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    approve, cancel, duplicate, print and seal only their own; a Gmail draft belongs to the first user who saves it.
 9. Settings → Users redesigned: people list with search on the left, the chosen person with Account / Seal / Password
    tabs on the right, "+ Add" for a new user.
+
+### Round 22
+
+1. New theme Hero Light: navy menu, white boxes, bold red highlights, with drawn light rays behind the pages and a city
+   skyline along the bottom (original line art, no pictures shipped).

@@ -73,6 +73,20 @@ public static class ColourThemes
                 ["PageArtFarBrush"] = "#2E8B6B1E", ["PageArtNearBrush"] = "#473F5F2A", ["SidebarArtBrush"] = "#26C9A44A",
                 ["PictureScrimBrush"] = "#B3F4EAD0",
             }),
+        // Hero Light: navy menu, white boxes, bold red highlights.
+        [AppTheme.HeroLight] = new("#EEF2F8→#E2E9F4→#D3DDEE", "#C8102E", "#FBE3E7", "#F6D0D7", false,
+            new()
+            {
+                ["SidebarBrush"] = "#0B1F4A→#163572", ["SidebarBorderBrush"] = "#0B1F4A", ["SidebarTextBrush"] = "#FFFFFF",
+                ["SidebarMutedBrush"] = "#AFC2E6", ["SidebarHoverBrush"] = "#1FFFFFFF", ["SidebarSelectedBrush"] = "#C8102E",
+                ["SidebarSelectedTextBrush"] = "#FFFFFF", ["TopBarBrush"] = "#FFFFFF", ["CardBrush"] = "#FFFFFF", ["PopupBrush"] = "#FFFFFF",
+                ["HairlineBrush"] = "#DCE3EF", ["SubtleFillBrush"] = "#F4F7FC", ["FillBrush"] = "#E9EEF7", ["MutedBrush"] = "#4A5670",
+                ["TextBrush"] = "#0E1A33", ["ActionBrush"] = "#1D3A8A", ["PrimaryHoverBrush"] = "#2A4BA6",
+                ["PrimaryPressedBrush"] = "#162D6B", ["PrimaryDisabledBrush"] = "#B9C6E2",
+                // Epic background: rays of light from the top right and a city skyline (drawn, no pictures)
+                ["RaysBrush"] = "#14FFFFFF", ["CityFarBrush"] = "#1F1D3A8A", ["CityNearBrush"] = "#381D3A8A",
+                ["SidebarCityBrush"] = "#1FFFFFFF", ["PageBrush"] = "#F4F7FC→#DCE5F3→#B9C9E6",
+            }),
         // Forest & Gold: dark forest-green boxes, gold accents and warm light text.
         [AppTheme.ForestGold] = new("#0E1A12→#16261A→#1F3322", "#D4AF37", "#2E3A22", "#3A4A2A", true,
             new()

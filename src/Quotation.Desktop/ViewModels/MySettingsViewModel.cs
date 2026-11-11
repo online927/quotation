@@ -33,6 +33,8 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
 
     /// <summary>0 = "TSQ2627-5 Customer.pdf", 1 = "Customer TSQ2627-5.pdf" (saved with the login).</summary>
     [ObservableProperty] private int _pdfFileOrderIndex;
+    /// <summary>Save as PDF also opens the PDF (saved with the login; on by default).</summary>
+    [ObservableProperty] private bool _openPdfAfterSave = true;
     public IReadOnlyList<string> PdfFileOrderChoices { get; } =
         ["Number then customer:  TSQ2627-5 Sonepar India.pdf", "Customer then number:  Sonepar India TSQ2627-5.pdf"];
 
@@ -94,6 +96,7 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         SpacingIndex = me.Spacing == AppDisplay.Compact ? 1 : 0;
         ReduceMotion = me.ReduceMotion;
         PdfFileOrderIndex = me.PdfFileOrder == PdfFileOrders.CustomerFirst ? 1 : 0;
+        OpenPdfAfterSave = me.OpenPdfAfterSave;
         var settings = await _session.GetSettingsAsync(refresh: true);
         PdfLayout = Core.Domain.PdfLayouts.IsValid(me.PdfLayout) ? me.PdfLayout! : settings.Quotation.DefaultPdfLayout;
         PdfFolder = _session.Config.PdfFolder;
@@ -109,6 +112,16 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         {
             _session.Api.UpdateCurrentUser(await _session.Api.SetMyPreferencesAsync(new MyPreferencesDto(PdfLayout: value)));
             InfoMessage = $"Your PDFs will be made in the {value} layout (Save as PDF, Approve, Open PDF, Preview). Saved with your login.";
+        });
+    }
+
+    partial void OnOpenPdfAfterSaveChanged(bool value)
+    {
+        if (_loading) return;
+        _ = RunAsync(async () =>
+        {
+            _session.Api.UpdateCurrentUser(await _session.Api.SetMyPreferencesAsync(new MyPreferencesDto(OpenPdfAfterSave: value)));
+            InfoMessage = value ? "Save as PDF will also open the PDF." : "Save as PDF will only save the PDF in your folder.";
         });
     }
 

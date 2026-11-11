@@ -31,6 +31,10 @@ public sealed record DocTypeFilter(string Label, DocumentType? Type)
 public sealed class QuotationRow(QuotationSummaryDto s)
 {
     public QuotationSummaryDto Summary { get; } = s;
+    /// <summary>This user may change it (always, unless "users change only their own" is on and someone else made it).</summary>
+    public bool Mine { get; init; } = true;
+    /// <summary>Duplicate shows for those who make quotations, on their own documents.</summary>
+    public bool CanDuplicate { get; init; } = true;
     public Guid Id => Summary.Id;
     public string Number => Summary.Number ?? "(not numbered)";
     public bool IsProforma => Summary.DocType == DocumentType.ProformaInvoice;
@@ -193,7 +197,13 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         };
         var selectedId = Selected?.Id;
         Rows.Clear();
-        foreach (var s in list) Rows.Add(new QuotationRow(s));
+        var me = _session.Api.CurrentUser?.Username;
+        var ownOnly = _session.Settings?.Quotation.UsersChangeOnlyTheirOwn == true && !_session.IsAdmin;
+        foreach (var s in list)
+        {
+            var mine = !ownOnly || s.Owner is null || string.Equals(s.Owner, me, StringComparison.OrdinalIgnoreCase);
+            Rows.Add(new QuotationRow(s) { Mine = mine, CanDuplicate = mine && _session.MakesDocuments });
+        }
         Selected = Rows.FirstOrDefault(r => r.Id == selectedId);
         _loadedOnce = true;
         NotifyEmpty();

@@ -31,6 +31,9 @@
           <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
                      Text="The order in the names of your PDF files (Approve, Save as PDF, Open PDF, WhatsApp). Saved with your login; files already saved keep their names." />
           <ComboBox Name="PdfFileOrderBox" ItemsSource="{Binding PdfFileOrderChoices}" SelectedIndex="{Binding PdfFileOrderIndex}" Width="420" />
+          <TextBlock Classes="fl" Text="After Save as PDF" Margin="0,6,0,0" />
+          <ToggleSwitch Name="OpenPdfAfterSaveSwitch" IsChecked="{Binding OpenPdfAfterSave}"
+                        OnContent="Open the PDF (to look at it, print it or e-mail it)" OffContent="Only save it in my PDF folder" />
         </StackPanel>
       </Border>
 

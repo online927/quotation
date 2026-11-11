@@ -8,7 +8,7 @@
   <UserControl.KeyBindings>
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
     <KeyBinding Gesture="Ctrl+Enter" Command="{Binding ApproveCommand}" />
-    <KeyBinding Gesture="Ctrl+P" Command="{Binding OpenPdfCommand}" />
+    <KeyBinding Gesture="Ctrl+P" Command="{Binding PrintShortcutCommand}" />
   </UserControl.KeyBindings>
   <UserControl.Styles>
     <Style Selector="TextBlock.fl">
@@ -203,6 +203,9 @@
         <Border Classes="notice" IsVisible="{Binding IsLocked}">
           <TextBlock Text="{Binding LockText}" TextWrapping="Wrap" />
         </Border>
+        <Border Name="NotMineNotice" Classes="notice" IsVisible="{Binding ShowNotMine}">
+          <TextBlock Text="{Binding NotMineText}" TextWrapping="Wrap" />
+        </Border>
         <Border Classes="notice" IsVisible="{Binding DoNotUseWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
           <TextBlock Text="{Binding DoNotUseWarning}" TextWrapping="Wrap" />
         </Border>
@@ -231,11 +234,11 @@
         <!-- Always one line: approve and save as PDF | preview and PDF; Cancel and Delete apart on the right. When the window is
              too narrow, Delete, Cancel, Open PDF, Preview and WhatsApp (in that order) show only their icon. Ctrl+S saves a draft. -->
         <ctl:ActionBar Name="ActionButtons" Spacing="8" Gap="16">
-          <Button Name="ApproveButton" Classes="primary bar" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}" IsVisible="{Binding MakesDocuments}"
+          <Button Name="ApproveButton" Classes="primary bar" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}" IsVisible="{Binding CanAct}"
                   ToolTip.Tip="Approve and make the PDF (Ctrl+Enter)">
             <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8 M8.5,15 L11,17.5 L15.5,12.5" Stroke="White" /><TextBlock Classes="lbl" Text="Approve" /></StackPanel>
           </Button>
-          <Button Name="SaveAsPdfButton" Classes="save bar" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}" IsVisible="{Binding MakesDocuments}"
+          <Button Name="SaveAsPdfButton" Classes="save bar" Command="{Binding SaveAsPdfCommand}" IsEnabled="{Binding CanSaveAsPdf}" IsVisible="{Binding CanAct}"
                   ToolTip.Tip="Approves a draft first, then saves the PDF in your PDF folder (My Settings)">
             <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M12,3 L12,15 M7,10 L12,15 L17,10 M4,17 L4,20 L20,20 L20,17" Stroke="White" /><TextBlock Classes="lbl" Text="Save as PDF" /></StackPanel>
           </Button>
@@ -246,7 +249,7 @@
           <Button Name="PreviewButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="4" Command="{Binding PreviewCommand}" HotKey="F11" ToolTip.Tip="Preview the PDF (F11)">
             <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Preview" /></StackPanel>
           </Button>
-          <Button Name="OpenPdfButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="3" Command="{Binding OpenPdfCommand}" IsVisible="{Binding HasPdf}" ToolTip.Tip="Open the PDF (Ctrl+P)">
+          <Button Name="OpenPdfButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="3" Command="{Binding OpenPdfCommand}" IsVisible="{Binding ShowOpenPdf}" ToolTip.Tip="Open the PDF (Ctrl+P)">
             <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M14,4 L20,4 L20,10 M20,4 L11,13 M18,14 L18,19 C18,19.6 17.6,20 17,20 L5,20 C4.4,20 4,19.6 4,19 L4,7 C4,6.4 4.4,6 5,6 L10,6" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Open PDF" /></StackPanel>
           </Button>
           <Button Classes="bar tile whatsapp" Name="WhatsAppButton" ctl:ActionBar.CollapseOrder="5" Command="{Binding WhatsAppCommand}" IsVisible="{Binding ShowWhatsApp}"
@@ -261,7 +264,7 @@
             <TextBlock FontSize="11" FontWeight="SemiBold" Text="● Unsaved changes" Foreground="{DynamicResource WarnBrush}" />
           </Border>
           <Button Name="CancelDocButton" Classes="danger bar tile" ctl:ActionBar.Right="True" ctl:ActionBar.CollapseOrder="2"
-                  Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding CanCancel}"
+                  Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding CanCancel}" IsVisible="{Binding ShowCancel}"
                   ToolTip.Tip="{Binding CancelTip}" ToolTip.ShowOnDisabled="True">
             <StackPanel Orientation="Horizontal" Spacing="7">
               <Path Classes="bi" Data="M12,22 A10,10 0 1 0 12,2 A10,10 0 1 0 12,22 Z M4.9,4.9 L19.1,19.1" Stroke="{DynamicResource BadBrush}" />
@@ -566,7 +569,8 @@
                     <Button Content="Clear" Command="{Binding CancelEntryCommand}" />
                   </StackPanel>
                 </Grid>
-                <Grid ColumnDefinitions="*,12,3*">
+                <!-- Description box: 30 % of the line (was 25 %) -->
+                <Grid ColumnDefinitions="3*,12,7*">
                   <StackPanel>
                     <TextBlock Classes="fl" Text="Description (Shift + Enter for next line)" />
                     <TextBox Name="DescriptionBox" Text="{Binding EntryDescription}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
@@ -648,7 +652,8 @@
               </Grid>
               <Grid ColumnDefinitions="Auto,*,Auto">
                 <TextBlock Text="{Binding PackingLabel}" VerticalAlignment="Center" />
-                <NumericUpDown Grid.Column="1" Value="{Binding PackingForwarding}" Minimum="0" FormatString="0.00" Width="90"
+                <!-- Enter here goes to Approve (or Save as PDF) without pressing it -->
+                <NumericUpDown Grid.Column="1" Name="PackingBox" Value="{Binding PackingForwarding}" Minimum="0" FormatString="0.00" Width="90"
                                HorizontalAlignment="Left" Margin="6,0,0,0" />
                 <TextBlock Grid.Column="2" Text="{Binding PackingText}" VerticalAlignment="Center" />
               </Grid>

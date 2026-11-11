@@ -9,7 +9,7 @@
     <Style Selector="TabControl.sidetabs /template/ ItemsPresenter#PART_ItemsPresenter">
       <Setter Property="Margin" Value="0,4,18,0" />
     </Style>
-    <Style Selector="TabControl.sidetabs TabItem">
+    <Style Selector="TabControl.sidetabs > TabItem">
       <Setter Property="MinWidth" Value="190" />
       <Setter Property="MinHeight" Value="38" />
       <Setter Property="Padding" Value="14,0" />
@@ -17,20 +17,39 @@
       <Setter Property="FontSize" Value="14" />
       <Setter Property="CornerRadius" Value="10" />
     </Style>
-    <Style Selector="TabControl.sidetabs TabItem /template/ Border#PART_SelectedPipe">
+    <Style Selector="TabControl.sidetabs > TabItem /template/ Border#PART_SelectedPipe">
       <Setter Property="IsVisible" Value="False" />
     </Style>
-    <Style Selector="TabControl.sidetabs TabItem:selected">
+    <Style Selector="TabControl.sidetabs > TabItem:selected">
       <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
-    <Style Selector="TabControl.sidetabs TabItem:pointerover">
+    <Style Selector="TabControl.sidetabs > TabItem:pointerover">
       <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
     </Style>
-    <Style Selector="TabControl.sidetabs TabItem:selected:pointerover">
+    <Style Selector="TabControl.sidetabs > TabItem:selected:pointerover">
       <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
     </Style>
+    <!-- Users page: small coloured tags (Administrator / Standard, Active / Inactive, seal state) -->
+    <Style Selector="Border.tag">
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="Padding" Value="9,2" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+    </Style>
+    <Style Selector="Border.tag TextBlock">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+    </Style>
+    <Style Selector="Border.tag.role"><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /></Style>
+    <Style Selector="Border.tag.role TextBlock"><Setter Property="Foreground" Value="{DynamicResource AccentBrush}" /></Style>
+    <Style Selector="Border.tag.status TextBlock"><Setter Property="Foreground" Value="{DynamicResource GreenBrush}" /></Style>
+    <Style Selector="Border.tag.status.off TextBlock"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></Style>
+    <Style Selector="Border.tag.seal"><Setter Property="Background" Value="{DynamicResource WarnSoftBrush}" /></Style>
+    <Style Selector="Border.tag.seal TextBlock"><Setter Property="Foreground" Value="{DynamicResource WarnBrush}" /></Style>
+    <Style Selector="ListBox.people ListBoxItem"><Setter Property="Padding" Value="8,6" /><Setter Property="CornerRadius" Value="10" /></Style>
+    <Style Selector="TextBlock.sealstate"><Setter Property="Foreground" Value="{DynamicResource GreenBrush}" /></Style>
     <Style Selector="TextBlock.notready">
       <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
     </Style>
@@ -242,6 +261,10 @@
                 <ToggleSwitch Name="ProformaSwitch" IsChecked="{Binding Settings.Quotation.ProformaEnabled}"
                               OnContent="On: New Proforma Invoice, the Proforma Invoices list and 'Make proforma'"
                               OffContent="Off: nobody makes proforma invoices (those already made stay in Quotation History)" />
+                <TextBlock Classes="h2" Text="Users and others' quotations" Margin="0,8,0,0" />
+                <ToggleSwitch Name="OwnOnlySwitch" IsChecked="{Binding Settings.Quotation.UsersChangeOnlyTheirOwn}"
+                              OnContent="On: users see everyone's quotations but change, approve, cancel, duplicate and print only their own"
+                              OffContent="Off: users can work on each other's quotations" />
                 <TextBlock Classes="h2" Text="Won / Lost / Follow-up" Margin="0,8,0,0" />
                 <ToggleSwitch Name="TrackOutcomesSwitch" IsChecked="{Binding Settings.Quotation.TrackOutcomes}"
                               OnContent="On: approved quotations get Open / Won / Lost and a follow-up date" OffContent="Off" />
@@ -426,97 +449,147 @@
 
       <TabItem Header="Users" IsVisible="{Binding IsAdmin}">
         <ScrollViewer>
-        <StackPanel Margin="4,8" Spacing="10" MaxWidth="900" HorizontalAlignment="Left">
-          <ItemsControl ItemsSource="{Binding Users}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="c:UserDto">
-                <Grid ColumnDefinitions="160,220,100,90,130,*" Margin="0,2">
-                  <TextBlock Text="{Binding Username}" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Text="{Binding DisplayName}" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="2" Text="{Binding RoleName}" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="3" Text="{Binding IsActive, StringFormat='Active: {0}'}" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="4" Text="{Binding Converter={x:Static vm:SettingsViewModel.SealStateText}}" VerticalAlignment="Center" FontSize="12" />
-                  <Button Grid.Column="5" HorizontalAlignment="Left" Content="Edit"
-                          Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).EditUserCommand}" CommandParameter="{Binding}" />
-                </Grid>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-          <Border Classes="card" IsVisible="{Binding IsEditingUser}">
+        <!-- Layout B: the people on the left, the chosen person (or a new one) on the right -->
+        <Grid ColumnDefinitions="290,16,*" Margin="4,8" MaxWidth="1100" HorizontalAlignment="Stretch">
+          <Border Classes="card" Padding="12" VerticalAlignment="Top">
             <StackPanel Spacing="8">
-              <TextBlock Classes="h2" Text="{Binding EditingUser.Username, StringFormat='Edit user {0}', FallbackValue=''}" />
-              <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto">
-                <TextBlock Classes="label" Text="Login name (printed as 'By:' on PDFs)" Margin="0,4,12,4" />
-                <TextBox Grid.Column="1" Text="{Binding EditUsername}" />
-                <TextBlock Grid.Row="1" Classes="label" Text="Display name (Prepared by)" Margin="0,4,12,4" />
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditDisplayName}" />
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,4">
-                  <CheckBox Content="Active (can log in)" IsChecked="{Binding EditIsActive}" />
-                </StackPanel>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="h2" Text="Users" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Name="StartAddUserButton" Classes="primary" Content="+ Add" Command="{Binding StartAddUserCommand}" />
               </Grid>
+              <TextBox Name="UserSearchBox" Text="{Binding UserFilter}" Watermark="Search users" />
+              <ListBox Name="UserList" Classes="people" ItemsSource="{Binding FilteredUsers}" SelectedItem="{Binding SelectedUser}" Background="Transparent">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="c:UserDto">
+                    <Grid ColumnDefinitions="Auto,10,*,Auto" Margin="0,2">
+                      <Border Width="34" Height="34" CornerRadius="17" Background="{DynamicResource AccentSoftBrush}">
+                        <TextBlock Text="{Binding Converter={x:Static vm:SettingsViewModel.Initials}}" FontWeight="Bold" FontSize="12"
+                                   Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                      <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Username}" Classes="muted" FontSize="11" />
+                      </StackPanel>
+                      <Panel Grid.Column="3" VerticalAlignment="Center">
+                        <Border Classes="tag role" IsVisible="{Binding Converter={x:Static vm:SettingsViewModel.IsAdminUser}}"><TextBlock Text="Administrator" /></Border>
+                        <Border Classes="tag off" IsVisible="{Binding Converter={x:Static vm:SettingsViewModel.IsInactive}}"><TextBlock Text="Inactive" /></Border>
+                      </Panel>
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
               <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                         Text="Old quotations and the history keep the name used at the time. There is one administrator (who cannot be deactivated); every other user is a Standard user, who makes quotations." />
-              <!-- Personal seal (users only) -->
-              <StackPanel Name="UserSealSection" Spacing="8" IsVisible="{Binding EditingUserCanHaveSeal}">
-                <TextBlock Classes="h2" Text="Seal" Margin="0,8,0,0" />
-                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                           Text="This user's own seal: a picture (PNG with a transparent background looks best) and a 4-digit PIN. With both set, they see 'Seal' next to Save as PDF and seal with their PIN. Five wrong PINs block the seal for 15 minutes." />
-                <Grid ColumnDefinitions="Auto,16,*">
-                  <Border Width="180" Height="110" CornerRadius="10" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1" Background="White">
-                    <Panel>
-                      <Image Source="{Binding UserSealImage}" Stretch="Uniform" Margin="6" />
-                      <TextBlock Text="No seal picture" Foreground="#6E6E73" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasUserSealImage}" />
-                    </Panel>
-                  </Border>
-                  <StackPanel Grid.Column="2" Spacing="8">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <Button Name="UploadUserSealButton" Content="Choose picture…" Click="OnChooseUserSeal" />
-                      <Button Content="Preview on a page" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Classes="label" Text="New seal PIN (4 digits)" VerticalAlignment="Center" />
-                      <TextBox Name="UserSealPinBox" Text="{Binding NewUserSealPin}" PasswordChar="●" MaxLength="4" Width="90" Watermark="••••" />
-                      <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="saved with Save user" />
-                    </StackPanel>
-                    <TextBlock Name="UserSealStateLine" FontWeight="SemiBold" FontSize="12" Text="{Binding UserSealState}"
-                               Foreground="{DynamicResource GreenBrush}" Classes.notready="{Binding !UserSealReady}" />
-                    <TextBlock Classes="label" Text="Size and place on the PDF (the same for every user's seal)" Margin="0,4,0,0" />
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Classes="label" Text="Width (pt)" VerticalAlignment="Center" />
-                      <NumericUpDown Name="SealWidthBox" Value="{Binding SealWidth}" Minimum="30" Maximum="280" Increment="10" FormatString="0" Width="110" />
-                      <TextBlock Classes="label" Text="Move right" Margin="8,0,0,0" VerticalAlignment="Center" />
-                      <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="110" />
-                      <TextBlock Classes="label" Text="Move up" Margin="8,0,0,0" VerticalAlignment="Center" />
-                      <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-200" Maximum="300" Increment="5" FormatString="0" Width="110" />
-                    </StackPanel>
-                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                               Text="Points (72 = 1 inch); a minus number moves it left / down. 'Preview on a page' shows these numbers straight away; Save user keeps them." />
-                    <Button Content="Remove seal" Classes="danger" Command="{Binding RemoveUserSealCommand}" IsVisible="{Binding UserHasAnySeal}" HorizontalAlignment="Left" />
-                  </StackPanel>
-                </Grid>
-              </StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Classes="primary" Content="Save user" Command="{Binding SaveUserCommand}" />
-                <Button Content="Close" Command="{Binding CancelEditUserCommand}" />
-              </StackPanel>
-              <TextBlock Classes="h2" Text="Reset password" Margin="0,8,0,0" />
-              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                         Text="Give the user a temporary password: they must choose a new one at their next login, and any PC still logged in as them is logged out." />
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBox Width="220" Text="{Binding ResetPassword}" PasswordChar="●" Watermark="Temporary password (min. 4)" />
-                <Button Content="Reset password" Command="{Binding ResetUserPasswordCommand}" />
-              </StackPanel>
+                         Text="One administrator; everyone else is a Standard user who makes quotations." />
             </StackPanel>
           </Border>
-          <TextBlock Classes="h2" Text="Add user" />
-          <Grid ColumnDefinitions="160,8,220,8,160,8,Auto">
-            <TextBox Text="{Binding NewUsername}" Watermark="Username" />
-            <TextBox Grid.Column="2" Text="{Binding NewDisplayName}" Watermark="Display name" />
-            <TextBox Grid.Column="4" Text="{Binding NewUserPassword}" PasswordChar="●" Watermark="Initial password" />
-            <Button Grid.Column="6" Name="AddUserButton" Content="Add user" Command="{Binding AddUserCommand}" />
-          </Grid>
-          <TextBlock Classes="muted" FontSize="11" Text="New users are Standard users: they make quotations, and do not change Settings." />
-        </StackPanel>
+
+          <Border Grid.Column="2" Classes="card" Padding="18" VerticalAlignment="Top" MinHeight="300">
+            <Panel>
+              <TextBlock Classes="muted" Text="Choose a person on the left, or + Add for a new user." IsVisible="{Binding ShowUserHint}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+              <!-- New user -->
+              <StackPanel Name="AddUserForm" Spacing="12" IsVisible="{Binding IsAddingUser}">
+                <TextBlock Classes="h2" Text="New user" />
+                <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" MaxWidth="560">
+                  <StackPanel VerticalAlignment="Center"><TextBlock Text="Login name" /><TextBlock Classes="muted" FontSize="11" Text="printed as 'By:' on PDFs" /></StackPanel>
+                  <TextBox Grid.Column="1" Name="NewUsernameBox" Text="{Binding NewUsername}" Watermark="e.g. ravi" />
+                  <StackPanel Grid.Row="1" VerticalAlignment="Center"><TextBlock Text="Display name" /><TextBlock Classes="muted" FontSize="11" Text="'Prepared by'" /></StackPanel>
+                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding NewDisplayName}" Watermark="e.g. Ravi Kumar" />
+                  <StackPanel Grid.Row="2" VerticalAlignment="Center"><TextBlock Text="First password" /><TextBlock Classes="muted" FontSize="11" Text="at least 4 characters" /></StackPanel>
+                  <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding NewUserPassword}" PasswordChar="●" />
+                </Grid>
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="New users are Standard users: they make quotations and do not change Settings. They choose their own password at their first sign-in." />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Name="AddUserButton" Classes="primary" Content="Add user" Command="{Binding AddUserCommand}" />
+                  <Button Content="Cancel" Command="{Binding CancelEditUserCommand}" />
+                </StackPanel>
+              </StackPanel>
+
+              <!-- The chosen person -->
+              <StackPanel Name="UserDetails" Spacing="12" IsVisible="{Binding IsEditingUser}">
+                <Grid ColumnDefinitions="Auto,12,*,Auto">
+                  <Border Width="48" Height="48" CornerRadius="24" Background="{DynamicResource AccentSoftBrush}">
+                    <TextBlock Text="{Binding EditingUser, Converter={x:Static vm:SettingsViewModel.Initials}}" FontWeight="Bold" FontSize="16"
+                               Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  </Border>
+                  <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="4">
+                    <TextBlock Text="{Binding EditingUser.DisplayName, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Border Classes="tag role"><TextBlock Text="{Binding EditingUser.RoleName, FallbackValue=''}" /></Border>
+                      <Border Classes="tag status" Classes.off="{Binding EditingUser, Converter={x:Static vm:SettingsViewModel.IsInactive}}"><TextBlock Text="{Binding EditingUser, Converter={x:Static vm:SettingsViewModel.StatusText}}" /></Border>
+                      <Border Classes="tag seal" IsVisible="{Binding EditingUserCanHaveSeal}"><TextBlock Text="{Binding EditingUser, Converter={x:Static vm:SettingsViewModel.SealTag}}" /></Border>
+                    </StackPanel>
+                  </StackPanel>
+                  <Button Grid.Column="3" Name="SaveUserButton" Classes="primary" Content="Save user" Command="{Binding SaveUserCommand}" VerticalAlignment="Center" />
+                </Grid>
+                <TabControl Name="UserTabs" Classes="usertabs">
+                  <TabItem Header="Account">
+                    <StackPanel Spacing="10" Margin="0,12,0,0">
+                      <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" MaxWidth="560">
+                        <StackPanel VerticalAlignment="Center"><TextBlock Text="Login name" /><TextBlock Classes="muted" FontSize="11" Text="printed as 'By:' on PDFs" /></StackPanel>
+                        <TextBox Grid.Column="1" Name="EditUsernameBox" Text="{Binding EditUsername}" />
+                        <StackPanel Grid.Row="1" VerticalAlignment="Center"><TextBlock Text="Display name" /><TextBlock Classes="muted" FontSize="11" Text="'Prepared by'" /></StackPanel>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditDisplayName}" />
+                        <TextBlock Grid.Row="2" Text="Can sign in" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Row="2" Grid.Column="1" Name="EditActiveSwitch" IsChecked="{Binding EditIsActive}" OnContent="Active" OffContent="Inactive" />
+                      </Grid>
+                      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left"
+                                 Text="Old quotations and the history keep the name used at the time. The administrator cannot be made inactive." />
+                    </StackPanel>
+                  </TabItem>
+                  <TabItem Header="Seal" Name="UserSealTab" IsVisible="{Binding EditingUserCanHaveSeal}">
+      <StackPanel Name="UserSealSection" Spacing="10" Margin="0,12,0,0">
+                      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                 Text="This user's own seal: a picture (PNG with a transparent background looks best) and a 4-digit PIN. With both set, they get the Seal switch next to Save as PDF and seal with their PIN. Five wrong PINs block the seal for 15 minutes." />
+                      <Grid ColumnDefinitions="Auto,16,*">
+                        <Border Width="170" Height="104" CornerRadius="10" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1" Background="White">
+                          <Panel>
+                            <Image Source="{Binding UserSealImage}" Stretch="Uniform" Margin="6" />
+                            <TextBlock Text="No seal picture" Foreground="#6E6E73" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasUserSealImage}" />
+                          </Panel>
+                        </Border>
+                        <StackPanel Grid.Column="2" Spacing="8">
+                          <WrapPanel ItemSpacing="8" LineSpacing="8">
+                            <Button Name="UploadUserSealButton" Content="Choose picture…" Click="OnChooseUserSeal" />
+                            <Button Content="Preview on a page" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}" />
+                          </WrapPanel>
+                          <TextBlock Text="New seal PIN (4 digits, saved with Save user)" FontSize="12" />
+                          <TextBox Name="UserSealPinBox" Text="{Binding NewUserSealPin}" PasswordChar="●" MaxLength="4" Width="110" HorizontalAlignment="Left" Watermark="••••" />
+                        </StackPanel>
+                      </Grid>
+                      <TextBlock Name="UserSealStateLine" FontWeight="SemiBold" FontSize="12" Text="{Binding UserSealState}" TextWrapping="Wrap"
+                                 Classes="sealstate" Classes.notready="{Binding !UserSealReady}" />
+                      <TextBlock Classes="h2" FontSize="13" Text="Size and place on the PDF (the same for every user's seal)" Margin="0,6,0,0" TextWrapping="Wrap" />
+                      <WrapPanel ItemSpacing="14" LineSpacing="8">
+                        <StackPanel Spacing="3"><TextBlock FontSize="12" Text="Width (pt)" />
+                          <NumericUpDown Name="SealWidthBox" Value="{Binding SealWidth}" Minimum="30" Maximum="280" Increment="10" FormatString="0" Width="120" /></StackPanel>
+                        <StackPanel Spacing="3"><TextBlock FontSize="12" Text="Move right" />
+                          <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="120" /></StackPanel>
+                        <StackPanel Spacing="3"><TextBlock FontSize="12" Text="Move up" />
+                          <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-200" Maximum="300" Increment="5" FormatString="0" Width="120" /></StackPanel>
+                      </WrapPanel>
+                      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                 Text="Points (72 = 1 inch); a minus number moves it left / down. 'Preview on a page' shows these numbers straight away; Save user keeps them." />
+                      <Button Content="Remove seal" Classes="danger" Command="{Binding RemoveUserSealCommand}" IsVisible="{Binding UserHasAnySeal}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </TabItem>
+                  <TabItem Header="Password" Name="UserPasswordTab">
+                    <StackPanel Spacing="10" Margin="0,12,0,0" MaxWidth="640" HorizontalAlignment="Left">
+                      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                 Text="Give the user a temporary password: they must choose a new one at their next sign-in, and any PC still signed in as them is signed out." />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox Width="240" Text="{Binding ResetPassword}" PasswordChar="●" Watermark="Temporary password (min. 4)" />
+                        <Button Content="Reset password" Command="{Binding ResetUserPasswordCommand}" />
+                      </StackPanel>
+                    </StackPanel>
+                  </TabItem>
+                </TabControl>
+              </StackPanel>
+            </Panel>
+          </Border>
+        </Grid>
         </ScrollViewer>
       </TabItem>
     </TabControl>

@@ -1,4 +1,4 @@
-; TS Quotation — desktop application for client PCs.
+; Quotations — desktop application for client PCs (files and folders keep the TSQuotation names).
 ; Build: ISCC.exe /DAppVersion=0.9.0 TSQuotationClient.iss   (after installer\publish.ps1)
 ; Silent install with server address:  TSQuotation-Setup.exe /VERYSILENT /SERVER=http://server-pc:5080
 #ifndef AppVersion
@@ -7,11 +7,13 @@
 
 [Setup]
 AppId={{7C1B1E7A-5D41-4B2E-9C11-2D5A1F0E0A02}
-AppName=TS Quotation
+AppName=Quotations
 AppVersion={#AppVersion}
 AppPublisher=T.SAIFUDDIN & CO.
 DefaultDirName={autopf}\TSQuotation\Client
-DefaultGroupName=TS Quotation
+DefaultGroupName=Quotations
+; Use the new Start-menu folder name also when updating an installation made under the old name.
+UsePreviousGroup=no
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -32,12 +34,18 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 [Files]
 Source: "..\publish\desktop\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 
+[InstallDelete]
+; Shortcuts from before the app was called "Quotations"
+Type: files; Name: "{autodesktop}\TS Quotation.lnk"
+Type: files; Name: "{autoprograms}\TS Quotation\TS Quotation.lnk"
+Type: dirifempty; Name: "{autoprograms}\TS Quotation"
+
 [Icons]
-Name: "{group}\TS Quotation"; Filename: "{app}\TSQuotation.exe"
-Name: "{autodesktop}\TS Quotation"; Filename: "{app}\TSQuotation.exe"; Tasks: desktopicon
+Name: "{group}\Quotations"; Filename: "{app}\TSQuotation.exe"
+Name: "{autodesktop}\Quotations"; Filename: "{app}\TSQuotation.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\TSQuotation.exe"; Description: "Start TS Quotation"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\TSQuotation.exe"; Description: "Start Quotations"; Flags: nowait postinstall skipifsilent
 ; Automatic update (silent, started by the program itself): open the program again for the signed-in Windows user.
 Filename: "{app}\TSQuotation.exe"; Flags: nowait runasoriginaluser; Check: WizardSilent
 
@@ -48,7 +56,7 @@ var
 procedure InitializeWizard;
 begin
   ServerPage := CreateInputQueryPage(wpSelectDir, 'Quotation Server', 'Where is the Quotation Server installed?',
-    'Enter the address of the PC running the TS Quotation Server (for example http://SERVER-PC:5080). ' +
+    'Enter the address of the PC running the Quotations Server (for example http://SERVER-PC:5080). ' +
     'Each user can change it later on the login screen.');
   ServerPage.Add('Server address:', False);
   ServerPage.Values[0] := ExpandConstant('{param:SERVER|http://localhost:5080}');

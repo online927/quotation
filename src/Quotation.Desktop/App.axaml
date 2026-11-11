@@ -29,6 +29,8 @@
     <x:Double x:Key="InputMinHeight">28</x:Double>
     <!-- Room inside typing boxes; rounder themes (Glass, Frost) need more at the sides so the cursor clears the corner -->
     <Thickness x:Key="InputPadding">4,2</Thickness>
+    <!-- The right-hand corners of a number box's last button (follows ControlCornerRadius) -->
+    <CornerRadius x:Key="SpinnerEndRadius">0,6,6,0</CornerRadius>
     <Thickness x:Key="RowPadding">12,6</Thickness>
     <CornerRadius x:Key="OverlayCornerRadius">12</CornerRadius>
 
@@ -290,6 +292,33 @@
     </Style>
     <Style Selector="CalendarDatePicker">
       <Setter Property="Padding" Value="{DynamicResource InputPadding}" />
+    </Style>
+    <!-- Up / down buttons of number boxes: see-through on the box's own rounded background (no grey or square block);
+         a soft shade under the mouse; a button that cannot be used only fades its arrow. The ":not(.never)" makes these
+         styles strong enough to replace the control's built-in button colours. -->
+    <Style Selector="RepeatButton#PART_IncreaseButton:not(.never) /template/ ContentPresenter#PART_ContentPresenter,
+                     RepeatButton#PART_DecreaseButton:not(.never) /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="RepeatButton#PART_DecreaseButton:not(.never) /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="CornerRadius" Value="{DynamicResource SpinnerEndRadius}" />
+    </Style>
+    <Style Selector="RepeatButton#PART_IncreaseButton:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                     RepeatButton#PART_DecreaseButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+    </Style>
+    <Style Selector="RepeatButton#PART_IncreaseButton:pressed /template/ ContentPresenter#PART_ContentPresenter,
+                     RepeatButton#PART_DecreaseButton:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FillBrush}" />
+    </Style>
+    <Style Selector="RepeatButton#PART_IncreaseButton:disabled /template/ ContentPresenter#PART_ContentPresenter,
+                     RepeatButton#PART_DecreaseButton:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="RepeatButton#PART_IncreaseButton:disabled, RepeatButton#PART_DecreaseButton:disabled">
+      <Setter Property="Opacity" Value="0.35" />
     </Style>
     <!-- Pages change without animation unless animations are on (Styles/MotionStyles) -->
     <Style Selector="TransitioningContentControl.pages">

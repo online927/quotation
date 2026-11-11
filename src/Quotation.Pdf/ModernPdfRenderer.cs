@@ -58,7 +58,7 @@ public sealed class ModernPdfRenderer
             using var pdf = new PdfDocument();
             pdf.Info.Title = $"{doc.ModernTitle} {doc.Number}";
             pdf.Info.Author = doc.Company.CompanyName;
-            pdf.Info.Creator = "TS Quotation System";
+            pdf.Info.Creator = "Quotations";
             pdf.Info.Subject = $"{doc.ModernTitle} {doc.Number} — {doc.Buyer.Name}";
 
             var measurePage = new PdfDocument().AddPage();

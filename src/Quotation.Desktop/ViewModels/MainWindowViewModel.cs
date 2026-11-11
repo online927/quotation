@@ -15,7 +15,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         _content = CreateLogin();
     }
 
-    public string Title => "TS Quotation System";
+    public string Title => "Quotations";
 
     private LoginViewModel CreateLogin() => new(_session, OnLoggedIn);
 

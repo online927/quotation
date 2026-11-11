@@ -68,7 +68,8 @@ public static class QuotationEndpoints
                 .Skip(Math.Max(0, skip ?? 0)).Take(Math.Clamp(take ?? 100, 1, 1000))
                 .Select(x => new QuotationSummaryDto(x.Id, x.Number, x.Date, x.Status, x.Source, x.Buyer.Name, x.Buyer.Gstin,
                     x.Lines.OrderBy(l => l.LineNo).Select(l => l.ItemName).FirstOrDefault() ?? "", x.Lines.Count, x.GrandTotal,
-                    x.CreatedBy, x.CreatedUtc, x.ApprovedBy, x.PdfPath != null, x.DocType, x.Outcome, x.FollowUpDate))
+                    x.CreatedBy, x.CreatedUtc, x.ApprovedBy, x.PdfPath != null, x.DocType, x.Outcome, x.FollowUpDate,
+                    x.Owner ?? (x.CreatedBy == QuotationService.GmailUserName ? null : x.CreatedBy)))
                 .ToListAsync(ct);
             return rows;
         });

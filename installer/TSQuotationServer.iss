@@ -1,4 +1,5 @@
-; TS Quotation Server — installs the central Quotation Server as a Windows Service.
+; Quotations Server — installs the central Quotation Server as a Windows Service (files, folders and the service
+; keep the TSQuotation names).
 ; Build: ISCC.exe /DAppVersion=0.9.0 TSQuotationServer.iss   (after installer\publish.ps1)
 #ifndef AppVersion
   #define AppVersion "0.9.0"
@@ -7,7 +8,7 @@
 
 [Setup]
 AppId={{7C1B1E7A-5D41-4B2E-9C11-2D5A1F0E0A01}
-AppName=TS Quotation Server
+AppName=Quotations Server
 AppVersion={#AppVersion}
 AppPublisher=T.SAIFUDDIN & CO.
 DefaultDirName={autopf}\TSQuotation\Server
@@ -22,7 +23,7 @@ SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=..\src\Quotation.Desktop\Assets\app.ico
 UninstallDisplayIcon={app}\TSQuotation.Server.exe
-UninstallDisplayName=TS Quotation Server
+UninstallDisplayName=Quotations Server
 
 [Files]
 Source: "..\publish\server\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion; Excludes: "appsettings.json"
@@ -38,13 +39,16 @@ Source: "..\publish\installers\TSQuotation-Setup-{#AppVersion}.exe"; DestDir: "{
 Name: "{commonappdata}\TSQuotation"; Permissions: system-full admins-full; Flags: uninsneveruninstall
 
 [Run]
-Filename: "{sys}\sc.exe"; Parameters: "create {#ServiceName} binPath= ""{app}\TSQuotation.Server.exe"" start= delayed-auto DisplayName= ""TS Quotation Server"""; Flags: runhidden waituntilterminated; Check: not ServiceExists
+Filename: "{sys}\sc.exe"; Parameters: "create {#ServiceName} binPath= ""{app}\TSQuotation.Server.exe"" start= delayed-auto DisplayName= ""Quotations Server"""; Flags: runhidden waituntilterminated; Check: not ServiceExists
+; The name shown in Windows Services (also for a service created under the old name).
+Filename: "{sys}\sc.exe"; Parameters: "config {#ServiceName} DisplayName= ""Quotations Server"""; Flags: runhidden waituntilterminated
 ; An existing service may have been set to Manual (e.g. while troubleshooting): always start with Windows again.
 Filename: "{sys}\sc.exe"; Parameters: "config {#ServiceName} start= delayed-auto"; Flags: runhidden waituntilterminated
 Filename: "{sys}\sc.exe"; Parameters: "description {#ServiceName} ""Central quotation server (TallyPrime integration, numbering, PDF, AI, Gmail)"""; Flags: runhidden waituntilterminated
 Filename: "{sys}\sc.exe"; Parameters: "failure {#ServiceName} reset= 86400 actions= restart/60000/restart/60000/restart/60000"; Flags: runhidden waituntilterminated
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""TS Quotation Server"""; Flags: runhidden waituntilterminated
-Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""TS Quotation Server"" dir=in action=allow protocol=TCP localport=5080 profile=domain,private"; Flags: runhidden waituntilterminated
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Quotations Server"""; Flags: runhidden waituntilterminated
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Quotations Server"" dir=in action=allow protocol=TCP localport=5080 profile=domain,private"; Flags: runhidden waituntilterminated
 Filename: "{sys}\sc.exe"; Parameters: "start {#ServiceName}"; Flags: runhidden waituntilterminated; StatusMsg: "Starting the Quotation Server…"
 
 [UninstallDelete]
@@ -53,7 +57,8 @@ Type: files; Name: "{app}\client\version.txt"
 [UninstallRun]
 Filename: "{sys}\sc.exe"; Parameters: "stop {#ServiceName}"; Flags: runhidden waituntilterminated; RunOnceId: "StopService"
 Filename: "{sys}\sc.exe"; Parameters: "delete {#ServiceName}"; Flags: runhidden waituntilterminated; RunOnceId: "DeleteService"
-Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""TS Quotation Server"""; Flags: runhidden waituntilterminated; RunOnceId: "DeleteFirewall"
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Quotations Server"""; Flags: runhidden waituntilterminated; RunOnceId: "DeleteFirewall"
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""TS Quotation Server"""; Flags: runhidden waituntilterminated; RunOnceId: "DeleteOldFirewall"
 
 [Code]
 function ServiceExists: Boolean;

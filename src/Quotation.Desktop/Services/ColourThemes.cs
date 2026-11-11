@@ -134,6 +134,7 @@ public static class ColourThemes
             SetShape(app, "ButtonRadius", new CornerRadius(18));
             SetShape(app, "ControlCornerRadius", new CornerRadius(12));
             SetShape(app, "InputPadding", new Thickness(11, 2)); // the cursor clears the round corner
+            SetShape(app, "SpinnerEndRadius", new CornerRadius(0, 12, 12, 0));
             GlowShadow = GlassShadow;
             return;
         }
@@ -145,6 +146,7 @@ public static class ColourThemes
             SetShape(app, "ButtonRadius", new CornerRadius(12));
             SetShape(app, "ControlCornerRadius", new CornerRadius(10));
             SetShape(app, "InputPadding", new Thickness(9, 2));
+            SetShape(app, "SpinnerEndRadius", new CornerRadius(0, 10, 10, 0));
             GlowShadow = FrostShadow;
             return;
         }
@@ -192,7 +194,7 @@ public static class ColourThemes
     ]).Concat(GlassThemes.Values.SelectMany(g => g.Extra?.Keys ?? Enumerable.Empty<string>())).Distinct().ToArray();
 
     // Shapes (corners) live at the top of the app resources: remember the standard values to put them back.
-    private static readonly string[] ShapeKeys = ["CardRadius", "CardBottomRadius", "ButtonRadius", "ControlCornerRadius", "InputPadding"];
+    private static readonly string[] ShapeKeys = ["CardRadius", "CardBottomRadius", "ButtonRadius", "ControlCornerRadius", "InputPadding", "SpinnerEndRadius"];
     private static readonly Dictionary<string, object?> Standard = [];
 
     private static void SetShape(Application app, string key, object value)

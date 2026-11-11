@@ -94,6 +94,12 @@ public sealed class QuotationSettings
     /// <summary>Allow generating a quotation when the last Tally sync is stale (with warning + audit).</summary>
     public bool AllowStaleDataOverride { get; set; } = true;
 
+    /// <summary>
+    /// Users may look at everyone's quotations but change, approve, cancel, duplicate, print or seal only their own
+    /// (administrator switch; off at first). Administrators always may.
+    /// </summary>
+    public bool UsersChangeOnlyTheirOwn { get; set; }
+
     /// <summary>Proforma invoices can be made (administrator switch; off at first). Proforma invoices already made stay in History.</summary>
     public bool ProformaEnabled { get; set; }
 

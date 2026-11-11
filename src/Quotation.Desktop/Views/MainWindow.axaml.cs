@@ -14,7 +14,7 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Closing the window (✕, Alt+F4): asks first - Save / Don't Save / Cancel with unsaved work, otherwise
-    /// "Close TS Quotation?". When Windows shuts down it does not ask; unsaved work is kept on the PC for next time.
+    /// "Close Quotations?". When Windows shuts down it does not ask; unsaved work is kept on the PC for next time.
     /// </summary>
     protected override void OnClosing(WindowClosingEventArgs e)
     {

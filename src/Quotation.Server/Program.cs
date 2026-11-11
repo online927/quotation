@@ -123,7 +123,7 @@ app.MapAiEndpoints();
 app.MapGmailEndpoints();
 app.MapDiagnosticsEndpoints();
 
-app.Logger.LogInformation("TS Quotation Server starting. Data directory: {DataDir}", dataDir);
+app.Logger.LogInformation("Quotations Server starting. Data directory: {DataDir}", dataDir);
 await app.RunAsync();
 
 public partial class Program;

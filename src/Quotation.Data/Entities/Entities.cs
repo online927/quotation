@@ -182,6 +182,14 @@ public class QuotationHeader
     public string? CancelledBy { get; set; }
     public DateTime? CancelledUtc { get; set; }
 
+    /// <summary>Approved at least once (stays true when it is edited back to draft): then only an administrator cancels it.</summary>
+    public bool EverApproved { get; set; }
+    /// <summary>
+    /// The user it belongs to when "users change only their own" is on: who made it, or, for a draft Gmail made, the first
+    /// user who saved it. Null = <see cref="CreatedBy"/>.
+    /// </summary>
+    public string? Owner { get; set; }
+
     /// <summary>Won / Lost / still open (only used when outcome tracking is on).</summary>
     public QuotationOutcome Outcome { get; set; }
     public string LostReason { get; set; } = "";
@@ -299,6 +307,8 @@ public class AppUser
     public bool HasSealImage { get; set; }
     /// <summary>Hash of this user's own 4-digit seal PIN; null = not set.</summary>
     public string? SealPinHash { get; set; }
+    /// <summary>Save as PDF also opens the PDF (My Settings; on by default).</summary>
+    public bool OpenPdfAfterSave { get; set; } = true;
     public DateTime CreatedUtc { get; set; }
     public DateTime? LastLoginUtc { get; set; }
 }

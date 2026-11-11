@@ -32,7 +32,7 @@ CONTENTS
   * The Quotation Server is a background program (a Windows service) on one PC.
     It keeps a copy of Tally's items and customers, all quotations and
     proforma invoices, numbers, users, settings and PDFs.
-  * The client app ("TS Quotation") runs on each user's PC. It only talks to
+  * The client app ("Quotations") runs on each user's PC. It only talks to
     the Quotation Server, never to Tally directly.
 
 
@@ -42,10 +42,10 @@ CONTENTS
 
   What is installed
     Program      C:\Program Files\TSQuotation\Server\TSQuotation.Server.exe
-    Service      "TS Quotation Server" (service name TSQuotationServer)
+    Service      "Quotations Server" (service name TSQuotationServer)
                  - starts by itself with Windows (no one has to log in)
                  - if it stops by error, Windows restarts it after 1 minute
-    Firewall     rule "TS Quotation Server": TCP port 5080 open for the
+    Firewall     rule "Quotations Server": TCP port 5080 open for the
                  office (private/domain) network
     Address      http://<server PC name or IP>:5080
                  e.g. http://TSAIFUDDIN3:5080 or http://192.168.1.10:5080
@@ -110,7 +110,7 @@ CONTENTS
 ---------------------------------------------------------------------
 
   What is installed
-    Program      C:\Program Files\TSQuotation\Client\  ("TS Quotation" icon)
+    Program      C:\Program Files\TSQuotation\Client\  ("Quotations" icon)
     Settings     %AppData%\TSQuotation\client.json   (server address, PDF folders,
                  theme on this PC - no passwords)
     Unsaved work %AppData%\TSQuotation\recovery\<user>.json  (see section 5)
@@ -159,7 +159,8 @@ CONTENTS
       administrators always. Only administrators change the date.
     * Changing an approved quotation sends it back to draft; approve again.
       Open PDF asks "Save & approve" first if you changed it.
-    * Cancel Quotation keeps it (marked CANCELLED). Delete (administrators)
+    * Cancel keeps it (marked CANCELLED). Once a quotation has been approved,
+      only the administrator can cancel it. Delete (administrators)
       moves it to Deleted for 30 days, then it is removed.
     * Proforma invoices work the same way with their own numbers (when they
       are switched on in Settings > Quotation; off at first).
@@ -273,7 +274,7 @@ CONTENTS
     the next sync.
 
   Restoring by hand (if the app cannot be opened)
-    1. Services (Windows) > TS Quotation Server > Stop.
+    1. Services (Windows) > Quotations Server > Stop.
     2. Copy the chosen backup file to C:\ProgramData\TSQuotation\quotation.db
        (replace it). Delete quotation.db-wal and quotation.db-shm if present.
     3. Start the service again.
@@ -312,7 +313,7 @@ CONTENTS
     - Windows on the server PC must see the office network as "Private"
       (Settings > Network > the network > Private). On a "Public" network the
       firewall blocks port 5080.
-    - On the server PC: Services > TS Quotation Server > Running? If not, Start.
+    - On the server PC: Services > Quotations Server > Running? If not, Start.
     - Did the server PC's IP change? Give it a fixed IP in the router.
 
   The app is slow on one PC (lightning number orange/red)
@@ -411,7 +412,7 @@ CONTENTS
 
   Server address         http://<server PC>:5080   (firewall rule opens port 5080)
   Tally address          http://<Tally PC>:9000    (TallyPrime XML port)
-  Windows service        TS Quotation Server  (TSQuotationServer)
+  Windows service        Quotations Server  (TSQuotationServer)
   Server program         C:\Program Files\TSQuotation\Server\
   Server data            C:\ProgramData\TSQuotation\  (quotation.db, pdf, backups,
                          seal, logo.png, logs)
@@ -432,6 +433,10 @@ CONTENTS
 ---------------------------------------------------------------------
 15. EXTRA FEATURES AN ADMINISTRATOR CAN SWITCH ON
 ---------------------------------------------------------------------
+
+  Users and others' quotations  (Settings > Quotation, off at first)
+    * On: users see everyone's quotations but change, approve, cancel,
+      duplicate, print and seal only their own (the administrator always can).
 
   Proforma invoices  (Settings > Quotation, off at first)
     * On: New Proforma Invoice, the Proforma Invoices list and Make proforma.

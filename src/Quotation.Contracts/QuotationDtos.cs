@@ -122,6 +122,10 @@ public sealed class QuotationDto
     public DateTime? UpdatedUtc { get; set; }
     public string? ApprovedBy { get; set; }
     public DateTime? ApprovedUtc { get; set; }
+    /// <summary>Approved at least once: only the administrator can cancel it.</summary>
+    public bool EverApproved { get; set; }
+    /// <summary>Who it belongs to (null: a Gmail draft nobody has saved yet).</summary>
+    public string? Owner { get; set; }
     public string? CancelledBy { get; set; }
     public DateTime? CancelledUtc { get; set; }
     /// <summary>Last day (office time) on which users who are not administrators may still edit or cancel it.</summary>
@@ -169,7 +173,8 @@ public sealed record QuotationSummaryDto(
     bool HasPdf,
     DocumentType DocType = DocumentType.Quotation,
     QuotationOutcome Outcome = QuotationOutcome.Open,
-    DateOnly? FollowUpDate = null);
+    DateOnly? FollowUpDate = null,
+    string? Owner = null);
 
 public sealed record ApproveRequest(bool OverrideStaleData = false, int? Revision = null);
 

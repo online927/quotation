@@ -1,11 +1,11 @@
-# TS Quotation System — Setup Guide
+# Quotations — Setup Guide
 
 This guide takes you from nothing to your first approved quotation PDF.
 
 ```
  SERVER PC  ─ TallyPrime Server + a TallyPrime instance with the company open (XML port 9000)
-            ─ TS Quotation Server (Windows Service, port 5080)  ← database, numbering, PDFs, AI, Gmail
- CLIENT PCs ─ TS Quotation (desktop app)  → talks only to the Quotation Server
+            ─ Quotations Server (Windows Service, port 5080)  ← database, numbering, PDFs, AI, Gmail
+ CLIENT PCs ─ Quotations (desktop app)  → talks only to the Quotation Server
 ```
 
 The Quotation Server only **reads** from Tally. It never creates or changes vouchers or masters in Tally.
@@ -29,7 +29,7 @@ The Quotation Server only **reads** from Tally. It never creates or changes vouc
 1. Run **`TSQuotationServer-Setup-x.y.z.exe`** as administrator and accept the defaults.
    The installer:
    * installs to `C:\Program Files\TSQuotation\Server`,
-   * registers and starts the Windows Service **TS Quotation Server** (starts automatically, restarts on failure),
+   * registers and starts the Windows Service **Quotations Server** (starts automatically, restarts on failure),
    * opens Windows Firewall TCP 5080 for domain/private networks,
    * creates the data folder `C:\ProgramData\TSQuotation` (database, PDFs, logs, backups).
 2. Check it runs: on the server open `http://localhost:5080/api/health` in a browser → `{"status":"ok",…}`.
@@ -37,7 +37,7 @@ The Quotation Server only **reads** from Tally. It never creates or changes vouc
    * `"Urls": "http://0.0.0.0:5080"` — change the port if 5080 is in use (then update the firewall rule and the clients).
    * `"Server": { "DataDirectory": "" }` — leave empty for `C:\ProgramData\TSQuotation`.
 
-Service control: `services.msc` → *TS Quotation Server*, or `sc stop TSQuotationServer` / `sc start TSQuotationServer`.
+Service control: `services.msc` → *Quotations Server*, or `sc stop TSQuotationServer` / `sc start TSQuotationServer`.
 
 ---
 
@@ -85,7 +85,7 @@ voucher, company setting or anything else in Tally.
 1. Run **`TSQuotation-Setup-x.y.z.exe`**. When asked for the **Server address**, enter `http://SERVER-PC-NAME:5080`
    (or its IP, e.g. `http://192.168.1.10:5080`).
    For silent roll-out: `TSQuotation-Setup-x.y.z.exe /VERYSILENT /SERVER=http://192.168.1.10:5080`.
-2. Start **TS Quotation**. The server address is under **Server settings** on the sign-in screen (it opens by itself
+2. Start **Quotations**. The server address is under **Server settings** on the sign-in screen (it opens by itself
    when the server cannot be reached) — press **Test** to check the connection.
 3. First login: user **`admin`**, password **`admin`**. You must set a new password immediately.
 4. Create a user for each person: **Settings → Users → Add user** (they choose their own password at first login).
@@ -218,7 +218,7 @@ against Tally; a person approves.
 The app uses Google's OAuth sign-in; it never asks for your Gmail password. Access is **read-only**.
 
 **A. Create an OAuth client (once)**
-1. Go to <https://console.cloud.google.com> → create a project (e.g. "TS Quotation").
+1. Go to <https://console.cloud.google.com> → create a project (e.g. "Quotations").
 2. **APIs & Services → Library** → enable **Gmail API**.
 3. **APIs & Services → OAuth consent screen**: User type **Internal** (Google Workspace) or **External**
    (personal Gmail). Fill in the app name and your e-mail. Add the scope `.../auth/gmail.readonly`.

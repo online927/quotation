@@ -18,7 +18,7 @@ public partial class DiagnosticsView : UserControl
             AllowMultiple = false,
             FileTypeFilter =
             [
-                new FilePickerFileType("TS Quotation backup") { Patterns = ["*.tsq", "*.db"] },
+                new FilePickerFileType("Quotations backup") { Patterns = ["*.tsq", "*.db"] },
             ],
         });
         if (files.Count > 0 && files[0].TryGetLocalPath() is { } path) await vm.RestoreAsync(path);

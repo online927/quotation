@@ -145,7 +145,8 @@ public sealed class CatalogSearchService
     public async Task<ProductSummaryDto> WithRememberedAsync(ProductSummaryDto p, CancellationToken ct)
     {
         await LoadRememberedAsync(ct);
-        return _remembered.TryGetValue(p.Id, out var d) && d.Length > 0 ? p with { Description = d } : p;
+        // Items without a part number get no remembered description (also ones remembered before this rule).
+        return !string.IsNullOrWhiteSpace(p.PartNumber) && _remembered.TryGetValue(p.Id, out var d) && d.Length > 0 ? p with { Description = d } : p;
     }
 
     /// <summary>Called when a quotation is saved: these descriptions are offered next time (search results update at once).</summary>

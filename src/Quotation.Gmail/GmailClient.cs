@@ -98,7 +98,7 @@ public sealed class GoogleGmailClient : IGmailClient, IDisposable
         _service = new GmailService(new BaseClientService.Initializer
         {
             HttpClientInitializer = credential,
-            ApplicationName = "TS Quotation System",
+            ApplicationName = "Quotations",
         });
     }
 

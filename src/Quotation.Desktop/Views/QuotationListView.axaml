@@ -98,8 +98,14 @@
             <StackPanel Grid.Column="10" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right"
                         Width="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).ActionsWidth}">
               <Button Classes="small" Name="FollowUpWhatsAppButton" ToolTip.Tip="Follow up on WhatsApp: copies the PDF and opens the customer's chat with the follow-up message (then Ctrl+V, Enter)"
-                      IsVisible="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).ShowFollowUpWhatsApp}"
                       Command="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).FollowUpWhatsAppCommand}" CommandParameter="{Binding}">
+                <!-- Only on the user's own quotations when "users change only their own" is on -->
+                <Button.IsVisible>
+                  <MultiBinding Converter="{x:Static BoolConverters.And}">
+                    <Binding Path="$parent[UserControl].((vm:QuotationListViewModel)DataContext).ShowFollowUpWhatsApp" />
+                    <Binding Path="Mine" />
+                  </MultiBinding>
+                </Button.IsVisible>
                 <StackPanel Orientation="Horizontal" Spacing="5">
                   <Path Data="M3,21 L4.6,16.4 A9,9 0 1 1 7.7,19.4 Z M9,8.5 C9,8 9.4,7.6 9.9,7.6 L10.6,7.6 L11.6,10 L10.8,11 C11.4,12.3 12.4,13.3 13.7,13.9 L14.7,13.1 L17,14.1 L17,14.8 C17,15.3 16.6,15.7 16.1,15.7 C12.2,15.7 9,12.5 9,8.5 Z"
                         Stroke="#1FA855" StrokeThickness="1.6" StrokeJoin="Round" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
@@ -107,7 +113,7 @@
               </Button>
               <Button Content="Open" Classes="small"
                       Command="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).OpenCommand}" CommandParameter="{Binding}" />
-              <Button Content="Duplicate" Classes="small" IsVisible="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).MakesDocuments}"
+              <Button Content="Duplicate" Classes="small" IsVisible="{Binding CanDuplicate}"
                       Command="{Binding $parent[UserControl].((vm:QuotationListViewModel)DataContext).DuplicateCommand}" CommandParameter="{Binding}" />
             </StackPanel>
           </Grid>

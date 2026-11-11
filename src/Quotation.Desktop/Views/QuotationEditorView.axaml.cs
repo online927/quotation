@@ -117,6 +117,11 @@ public partial class QuotationEditorView : UserControl
             return;
         }
         if (owner is NumericUpDown n && n.Text is { } text && decimal.TryParse(text, out var value)) n.Value = value;
+        if (owner == PackingBox && FocusApprove())
+        {
+            e.Handled = true;
+            return;
+        }
 
         var next = KeyboardNavigationHandler.GetNext(owner, NavigationDirection.Next);
         if (next is Control c)
@@ -124,6 +129,19 @@ public partial class QuotationEditorView : UserControl
             c.Focus();
             e.Handled = true;
         }
+    }
+
+    /// <summary>
+    /// Enter in Packing &amp; Forwarding: the cursor goes to Approve (or Save as PDF when Approve is not available) without
+    /// pressing it; Enter again approves. False when neither can be used.
+    /// </summary>
+    public bool FocusApprove()
+    {
+        var target = new[] { ApproveButton, SaveAsPdfButton }
+            .FirstOrDefault(b => b is { IsEffectivelyVisible: true, IsEffectivelyEnabled: true });
+        if (target is null) return false;
+        target.Focus(NavigationMethod.Tab); // keyboard focus: the button shows its focus ring
+        return true;
     }
 
     private void OnLostReasonLostFocus(object? sender, RoutedEventArgs e) => Vm?.SaveLostReasonCommand.Execute(null);

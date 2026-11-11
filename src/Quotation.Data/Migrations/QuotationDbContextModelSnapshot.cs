@@ -156,6 +156,9 @@ namespace Quotation.Data.Migrations
                     b.Property<bool>("MustChangePassword")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("OpenPdfAfterSave")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -646,6 +649,9 @@ namespace Quotation.Data.Migrations
                     b.Property<Guid?>("DuplicatedFromId")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("EverApproved")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("FinancialYearStart")
                         .HasColumnType("INTEGER");
 
@@ -673,6 +679,9 @@ namespace Quotation.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("OutcomeUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Owner")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("PackingForwarding")

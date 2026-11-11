@@ -116,7 +116,7 @@ public sealed class QuotationPdfRenderer
         using var pdf = new PdfDocument();
         pdf.Info.Title = $"{doc.Title} {doc.Number}";
         pdf.Info.Author = doc.Company.CompanyName;
-        pdf.Info.Creator = "TS Quotation System";
+        pdf.Info.Creator = "Quotations";
         pdf.Info.Subject = $"{doc.Title} {doc.Number} — {doc.Buyer.Name}";
 
         // Measure once with a scratch page so layout is deterministic.

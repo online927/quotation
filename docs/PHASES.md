@@ -659,3 +659,20 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 
 1. Quotation button bar: the buttons sit in the middle of their box (empty message lines no longer push them down) with
    10 px of room above and below.
+
+### Round 21
+
+1. A quotation or proforma invoice that has been approved (even if it was edited back to draft later) can be cancelled
+   only by the administrator; users no longer see Cancel on it. The server refuses it too.
+2. Wider Description box when adding an item (30 % of the line instead of 25 %).
+3. Enter in Packing & Forwarding moves to Approve (or Save as PDF) without pressing it.
+4. Descriptions are remembered only for items with a part number.
+5. Open PDF removed for users (the administrator keeps it); My Settings → "After Save as PDF: Open the PDF" (on at
+   first); Ctrl+P is Save as PDF for users.
+6. Number boxes: the up/down buttons sit on the box (no grey block or square end; an unusable arrow just fades).
+7. The app is called "Quotations" (window, shortcuts, installers, Apps & features, Windows service display name and
+   firewall rule: "Quotations Server"); program and data folders keep their TSQuotation names.
+8. Settings → Quotation → "Users and others' quotations" (off at first): users see everyone's quotations but change,
+   approve, cancel, duplicate, print and seal only their own; a Gmail draft belongs to the first user who saves it.
+9. Settings → Users redesigned: people list with search on the left, the chosen person with Account / Seal / Password
+   tabs on the right, "+ Add" for a new user.

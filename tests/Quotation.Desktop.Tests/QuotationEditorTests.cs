@@ -20,9 +20,13 @@ internal sealed class RecordingLauncher(ClientConfig config) : DocumentLauncher(
 
     public List<string> Folders { get; } = [];
 
+    /// <summary>Files that were also opened (not only saved).</summary>
+    public List<string> Opened { get; } = [];
+
     public override string SaveAndOpen(byte[] pdf, string fileName, bool open = true, string? folder = null)
     {
         Saved.Add(fileName);
+        if (open) Opened.Add(fileName);
         Folders.Add(folder ?? Folder);
         return fileName;
     }

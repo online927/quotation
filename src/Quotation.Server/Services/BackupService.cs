@@ -192,7 +192,7 @@ public sealed class BackupService(
             else
             {
                 try { zip = ZipFile.OpenRead(uploaded); }
-                catch (InvalidDataException) { throw new QuotationException(400, ApiErrorCodes.Validation, "This is not a TS Quotation backup file (.tsq or .db)."); }
+                catch (InvalidDataException) { throw new QuotationException(400, ApiErrorCodes.Validation, "This is not a Quotations backup file (.tsq or .db)."); }
                 var entry = zip.GetEntry("quotation.db") ?? throw new QuotationException(400, ApiErrorCodes.Validation, "The backup file has no database in it.");
                 database = Path.Combine(work, "quotation.db");
                 entry.ExtractToFile(database);
@@ -200,7 +200,7 @@ public sealed class BackupService(
             using (zip)
             {
                 if (!LooksLikeOurDatabase(database))
-                    throw new QuotationException(400, ApiErrorCodes.Validation, "The file is not a TS Quotation database.");
+                    throw new QuotationException(400, ApiErrorCodes.Validation, "The file is not a Quotations database.");
 
                 await BackupNowAsync(ct, "quotation-before-restore");
 

@@ -55,6 +55,27 @@ public sealed class QuotationService(
     Microsoft.Extensions.Options.IOptions<ServerOptions> serverOptions)
 {
     public const string AdminsDoNotMakeDocuments = "Administrators do not make quotations.";
+    public const string OnlyAdminCancelsApproved = "Only the administrator can cancel a quotation that has been approved.";
+
+    /// <summary>The documents Gmail makes belong to nobody until a user saves one.</summary>
+    public const string GmailUserName = "gmail";
+
+    /// <summary>Who a document belongs to (null: a Gmail draft nobody has saved yet).</summary>
+    public static string? OwnerOf(QuotationHeader q) =>
+        q.Owner ?? (string.Equals(q.CreatedBy, GmailUserName, StringComparison.OrdinalIgnoreCase) ? null : q.CreatedBy);
+
+    /// <summary>
+    /// With "users change only their own" on (Settings → Quotation), a user may look at someone else's document but not
+    /// change, approve, cancel, duplicate, convert, print or seal it; administrators always may.
+    /// </summary>
+    private void EnsureOwner(QuotationHeader q, UserContext user)
+    {
+        if (user.IsAdmin || !settings.Quotation.UsersChangeOnlyTheirOwn) return;
+        var owner = OwnerOf(q);
+        if (owner is null || string.Equals(owner, user.UserName, StringComparison.OrdinalIgnoreCase)) return;
+        throw new QuotationException(403, ApiErrorCodes.Forbidden,
+            $"{q.Number ?? "This document"} belongs to {owner}: only {owner} or the administrator can change it.");
+    }
 
     /// <summary>Administrators open, cancel and delete documents but do not make, change or approve them.</summary>
     private void EnsureMaker(UserContext user)
@@ -133,7 +154,9 @@ public sealed class QuotationService(
         var q = await LoadAsync(id, ct);
         if (q.Status == QuotationStatus.Cancelled) throw new QuotationException(409, ApiErrorCodes.InvalidState, "A cancelled quotation cannot be edited.");
         EnsureMaker(user);
+        EnsureOwner(q, user);
         EnsureEditable(q, user);
+        if (OwnerOf(q) is null && !user.IsAdmin) q.Owner = user.UserName; // a Gmail draft becomes this user's
         if (request.Revision != q.Revision)
         {
             throw new QuotationException(409, ApiErrorCodes.Concurrency,
@@ -183,6 +206,7 @@ public sealed class QuotationService(
         var q = await LoadAsync(id, ct);
         if (q.Status == QuotationStatus.Cancelled) throw new QuotationException(409, ApiErrorCodes.InvalidState, "A cancelled quotation cannot be approved.");
         EnsureMaker(user);
+        EnsureOwner(q, user);
         if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated)) EnsureEditable(q, user);
         if (request.Revision is { } rev && rev != q.Revision)
         {
@@ -243,6 +267,7 @@ public sealed class QuotationService(
         q.Status = QuotationStatus.Approved;
         q.ApprovedBy = user.UserName;
         q.ApprovedUtc = now;
+        q.EverApproved = true;
         if (settings.Quotation.TrackOutcomes && q.DocType == DocumentType.Quotation && q.FollowUpDate is null)
             q.FollowUpDate = fy.Today().AddDays(Math.Max(0, settings.Quotation.FollowUpDays));
         q.DataFreshnessWarning = warning;
@@ -294,6 +319,9 @@ public sealed class QuotationService(
     {
         var q = await LoadAsync(id, ct);
         if (q.Status == QuotationStatus.Cancelled) return ToDto(q);
+        if (q.EverApproved && !user.IsAdmin)
+            throw new QuotationException(403, ApiErrorCodes.Forbidden, OnlyAdminCancelsApproved);
+        EnsureOwner(q, user);
         EnsureEditable(q, user);
         q.Status = QuotationStatus.Cancelled;
         q.CancelledBy = user.UserName;
@@ -411,6 +439,7 @@ public sealed class QuotationService(
     {
         EnsureMaker(user);
         var source = await LoadAsync(id, ct);
+        EnsureOwner(source, user);
         var request = ToRequest(source);
         request.Date = fy.Today();
         request.BuyersReference = "";
@@ -467,6 +496,7 @@ public sealed class QuotationService(
     {
         var q = await LoadAsync(id, ct);
         if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated)) return null;
+        EnsureOwner(q, user);
         var chosen = await LayoutOfAsync(user, ct, layout);
         if (seal is not null)
         {
@@ -528,6 +558,7 @@ public sealed class QuotationService(
     {
         EnsureMaker(user);
         var source = await LoadAsync(id, ct);
+        EnsureOwner(source, user);
         if (source.DocType == DocumentType.ProformaInvoice)
             throw new QuotationException(409, ApiErrorCodes.InvalidState, "This is already a proforma invoice.");
         var request = ToRequest(source);
@@ -661,8 +692,9 @@ public sealed class QuotationService(
     }
 
     /// <summary>
-    /// The description typed for an item is offered the next time the item is picked (H1). Only non-empty descriptions are
-    /// remembered; nothing is written to Tally.
+    /// The description typed for an item is offered the next time the item is picked (H1). Only non-empty descriptions of
+    /// items with a part number are remembered (an item without one is often a general item described differently each
+    /// time); nothing is written to Tally.
     /// </summary>
     private async Task RememberDescriptionsAsync(List<QuotationLine> lines, CancellationToken ct)
     {
@@ -670,9 +702,14 @@ public sealed class QuotationService(
             .GroupBy(l => l.ProductId!.Value).ToDictionary(g => g.Key, g => g.OrderBy(l => l.LineNo).Last().Description.Trim());
         if (latest.Count == 0) return;
         var ids = latest.Keys.ToList();
+        var remembered = new Dictionary<int, string>();
         foreach (var p in await db.Products.Where(p => ids.Contains(p.Id)).ToListAsync(ct))
+        {
+            if (string.IsNullOrWhiteSpace(p.PartNumber)) continue;
             if (p.LastDescription != latest[p.Id]) p.LastDescription = latest[p.Id];
-        catalog.Remember(latest);
+            remembered[p.Id] = latest[p.Id];
+        }
+        if (remembered.Count > 0) catalog.Remember(remembered);
     }
 
     /// <summary>The calculation input of a saved quotation: its own GST presentation, round off and "Without GST".</summary>
@@ -908,6 +945,8 @@ public sealed class QuotationService(
             ApprovedUtc = q.ApprovedUtc,
             CancelledBy = q.CancelledBy,
             CancelledUtc = q.CancelledUtc,
+            EverApproved = q.EverApproved,
+            Owner = OwnerOf(q),
             EditableUntil = EditableUntil(q),
             Outcome = q.Outcome,
             LostReason = q.LostReason,

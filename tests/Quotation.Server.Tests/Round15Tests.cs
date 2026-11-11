@@ -109,7 +109,7 @@ public class Round15Tests : QuotationTestBase
         Assert.Contains(Directory.GetFiles(Path.Combine(Server.DataDirectory, "backups")), f => Path.GetFileName(f).StartsWith("quotation-before-restore"));
 
         var wrong = await Assert.ThrowsAsync<ApiException>(() => fresh.RestoreFromBackupAsync(new MemoryStream("not a backup"u8.ToArray())));
-        Assert.Contains("not a TS Quotation backup", wrong.Message);
+        Assert.Contains("not a Quotations backup", wrong.Message);
     }
 
     [Fact]

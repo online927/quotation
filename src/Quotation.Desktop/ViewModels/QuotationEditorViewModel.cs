@@ -222,7 +222,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     // ---------------------------------------------------------------- WhatsApp (E2)
 
-    public bool ShowWhatsApp => _settings.Quotation.WhatsAppButton && IsFinal && MakesDocuments;
+    public bool ShowWhatsApp => _settings.Quotation.WhatsAppButton && IsFinal && CanAct;
 
     /// <summary>Makes the PDF, copies it, and opens WhatsApp Desktop in the customer's chat with the message typed.</summary>
     [RelayCommand]
@@ -324,6 +324,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [ObservableProperty] private DateTime? _date = DateTime.Today;
     [ObservableProperty] private bool _isDirty;
     [ObservableProperty] private bool _hasPdf;
+    partial void OnHasPdfChanged(bool value) => OnPropertyChanged(nameof(ShowOpenPdf));
     [ObservableProperty] private string? _pdfError;
     [ObservableProperty] private string? _dataWarning;
     [ObservableProperty] private string? _lastPdfPath;
@@ -491,10 +492,27 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool IsEditable => Status != QuotationStatus.Cancelled && !IsLocked;
     /// <summary>Administrators do not make quotations: they open, preview, cancel and delete them.</summary>
     public bool MakesDocuments => _session.MakesDocuments;
+    /// <summary>Approved at least once: only the administrator can cancel it (also after it was edited back to draft).</summary>
+    public bool EverApproved => _loaded?.EverApproved == true;
+    /// <summary>Who it belongs to (null: new, or a Gmail draft nobody has saved yet).</summary>
+    public string? OwnerName => _loaded?.Owner;
+    /// <summary>
+    /// With "users change only their own" on (Settings → Quotation), someone else's document can only be looked at.
+    /// </summary>
+    public bool IsMine => IsAdmin || !_settings.Quotation.UsersChangeOnlyTheirOwn || OwnerName is null
+                          || string.Equals(OwnerName, _session.Api.CurrentUser?.Username, StringComparison.OrdinalIgnoreCase);
+    public string NotMineText => $"Made by {OwnerName}: you can look at it, but only {OwnerName} or the administrator can change it.";
+    public bool ShowNotMine => !IsMine;
+    /// <summary>Approve, Save as PDF and the rest: this user makes quotations and this one is theirs.</summary>
+    public bool CanAct => MakesDocuments && IsMine;
     /// <summary>The items, parties and terms can be changed: by the person who makes quotations, while not locked or cancelled.</summary>
-    public bool CanEditContent => IsEditable && MakesDocuments;
+    public bool CanEditContent => IsEditable && CanAct;
+    /// <summary>Cancel shows for the administrator, and for a user on their own document that was never approved.</summary>
+    public bool ShowCancel => IsAdmin || (!EverApproved && IsMine);
     /// <summary>Cancel: as long as it can be edited, or always for an administrator (until it is cancelled).</summary>
-    public bool CanCancel => Status != QuotationStatus.Cancelled && (IsEditable || (IsAdmin && Id is not null));
+    public bool CanCancel => ShowCancel && Status != QuotationStatus.Cancelled && (IsEditable || (IsAdmin && Id is not null));
+    /// <summary>Open PDF: the administrator's way to see an approved PDF (users have Save as PDF, which can open it).</summary>
+    public bool ShowOpenPdf => HasPdf && IsAdmin;
     /// <summary>Only administrators change the date; for users it is the day the quotation is first saved (enforced by the server).</summary>
     public bool CanChangeDate => IsAdmin && CanEditContent;
     public bool CanApprove => Status is QuotationStatus.Draft or QuotationStatus.PendingReview && Lines.Count > 0 && !IsLocked;
@@ -503,7 +521,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// The Seal tick-box shows only for a user (not an administrator) who has their own seal picture and PIN
     /// (set by an administrator in Settings → Users).
     /// </summary>
-    public bool CanSeal => _session.Api.CurrentUser?.CanSeal == true;
+    public bool CanSeal => _session.Api.CurrentUser?.CanSeal == true && IsMine;
     public bool SealAvailable => CanSeal;
     public string SealHint => "Put your seal on the PDF (asks for your 4-digit seal PIN)";
     public bool CanSaveAsPdf => Status != QuotationStatus.Cancelled && (IsFinal || (Lines.Count > 0 && !IsLocked));
@@ -686,6 +704,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         }
         ClearEntry();
         _loading = false;
+        NotifyState(); // who it belongs to and whether it was ever approved came with it
         if (CustomerId is { } cid) _ = LoadShipToOptionsAsync(cid, keepCurrent: true);
         RecalculateTotals();
         if (PackingForwardingPercent is > 0 && Totals is { } t)
@@ -712,6 +731,15 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(IsEditable));
         OnPropertyChanged(nameof(CanEditContent));
         OnPropertyChanged(nameof(CanCancel));
+        OnPropertyChanged(nameof(ShowCancel));
+        OnPropertyChanged(nameof(EverApproved));
+        OnPropertyChanged(nameof(OwnerName));
+        OnPropertyChanged(nameof(IsMine));
+        OnPropertyChanged(nameof(NotMineText));
+        OnPropertyChanged(nameof(ShowNotMine));
+        OnPropertyChanged(nameof(CanAct));
+        OnPropertyChanged(nameof(CanSeal));
+        OnPropertyChanged(nameof(ShowOpenPdf));
         OnPropertyChanged(nameof(CanChangeDate));
         OnPropertyChanged(nameof(CanApprove));
         OnPropertyChanged(nameof(IsFinal));
@@ -1089,7 +1117,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [RelayCommand]
     public async Task<bool> SaveAsync()
     {
-        if (!MakesDocuments) return false; // Ctrl+S on an administrator's screen
+        if (!CanAct) return false; // Ctrl+S on an administrator's screen, or on someone else's document
         if (EntryProduct is not null || EditingLine is not null) CommitEntry();
         InfoMessage = null;
         ValidationMessages.Clear();
@@ -1133,7 +1161,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// <summary>Approval with all checks. True when the quotation is approved afterwards.</summary>
     private async Task<bool> ApproveCoreAsync(bool overrideStale, bool openPdf)
     {
-        if (!MakesDocuments) return false; // Ctrl+Enter on an administrator's screen
+        if (!CanAct) return false; // Ctrl+Enter on an administrator's screen, or on someone else's document
         if ((IsDirty || Id is null) && !await SaveAsync()) return false;
         ValidationMessages.Clear();
         NeedsStaleOverride = false;
@@ -1227,8 +1255,11 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             // In the user's own layout (My Settings → PDF layout: Tally or Zoho).
             var bytes = pin is null ? await _session.Api.QuotationPdfAsync(Id.Value) : await _session.Api.SealedPdfAsync(Id.Value, pin.Trim());
-            LastPdfPath = _session.Documents.Save(bytes, PdfFileName(), _session.Documents.FolderFor(IsProforma));
-                InfoMessage = (pin is null ? "Saved to " : "Sealed and saved to ") + LastPdfPath;
+            // My Settings → "Open the PDF after Save as PDF" (on by default): the saved file also opens.
+            LastPdfPath = _session.Api.CurrentUser?.OpenPdfAfterSave != false
+                ? _session.Documents.SaveAndOpen(bytes, PdfFileName(), folder: _session.Documents.FolderFor(IsProforma))
+                : _session.Documents.Save(bytes, PdfFileName(), _session.Documents.FolderFor(IsProforma));
+            InfoMessage = (pin is null ? "Saved to " : "Sealed and saved to ") + LastPdfPath;
         });
     }
 
@@ -1291,6 +1322,14 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             return;
         }
         await RunAsync(OpenPdfCoreAsync);
+    }
+
+    /// <summary>Ctrl+P: Save as PDF for users; Open PDF for the administrator (who does not save PDFs).</summary>
+    [RelayCommand]
+    private async Task PrintShortcutAsync()
+    {
+        if (IsAdmin) { if (HasPdf) await OpenPdfAsync(); }
+        else if (CanAct && CanSaveAsPdf) await SaveAsPdfAsync();
     }
 
     /// <summary>Saves pending changes and opens a DRAFT-watermarked preview of the current quotation.</summary>

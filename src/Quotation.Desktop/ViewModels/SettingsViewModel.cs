@@ -26,6 +26,62 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _newUserPassword = "";
     public ObservableCollection<UserDto> Users { get; } = [];
 
+    // Users page (layout B): people on the left with a search box, the chosen person on the right
+    [ObservableProperty] private string _userFilter = "";
+    [ObservableProperty] private UserDto? _selectedUser;
+    [ObservableProperty] private bool _isAddingUser;
+    public ObservableCollection<UserDto> FilteredUsers { get; } = [];
+    /// <summary>Nobody chosen and not adding: a short hint on the right.</summary>
+    public bool ShowUserHint => !IsAddingUser && EditingUser is null;
+    partial void OnUserFilterChanged(string value) => FilterUsers();
+    partial void OnSelectedUserChanged(UserDto? value)
+    {
+        if (value is null) return;
+        IsAddingUser = false;
+        if (EditingUser?.Id != value.Id || EditingUser != value) EditUser(value);
+    }
+    partial void OnIsAddingUserChanged(bool value) => OnPropertyChanged(nameof(ShowUserHint));
+
+    private void FilterUsers()
+    {
+        var f = UserFilter.Trim();
+        var keep = SelectedUser?.Id;
+        FilteredUsers.Clear();
+        foreach (var u in Users.Where(u => f.Length == 0 || u.Username.Contains(f, StringComparison.OrdinalIgnoreCase)
+                                                   || u.DisplayName.Contains(f, StringComparison.OrdinalIgnoreCase)))
+            FilteredUsers.Add(u);
+        SelectedUser = FilteredUsers.FirstOrDefault(u => u.Id == keep);
+    }
+
+    /// <summary>"+ Add": the right side shows the new-user form.</summary>
+    [RelayCommand]
+    private void StartAddUser()
+    {
+        SelectedUser = null;
+        EditingUser = null;
+        IsAddingUser = true;
+        NewUsername = NewDisplayName = NewUserPassword = "";
+    }
+
+    /// <summary>Two letters for the round badge: "Ravi Kumar" → "RK".</summary>
+    public static Avalonia.Data.Converters.FuncValueConverter<UserDto?, string> Initials { get; } = new(u =>
+    {
+        var words = (u?.DisplayName ?? u?.Username ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return words.Length == 0 ? "?" : string.Concat(words.Take(2).Select(w => char.ToUpperInvariant(w[0])));
+    });
+    public static Avalonia.Data.Converters.FuncValueConverter<UserDto?, string> StatusText { get; } = new(u => u is { IsActive: false } ? "Inactive" : "Active");
+    public static Avalonia.Data.Converters.FuncValueConverter<UserDto?, bool> IsInactive { get; } = new(u => u is { IsActive: false });
+    public static Avalonia.Data.Converters.FuncValueConverter<UserDto?, bool> IsAdminUser { get; } = new(u => u is { Role: UserRole.Admin });
+    /// <summary>"Seal ready" / "No seal" … tag of a Standard user.</summary>
+    public static Avalonia.Data.Converters.FuncValueConverter<UserDto?, string> SealTag { get; } = new(u => u switch
+    {
+        null or { Role: UserRole.Admin } => "",
+        { HasSealImage: true, HasSealPin: true } => "Seal ready",
+        { HasSealImage: true } => "Seal: no PIN",
+        { HasSealPin: true } => "Seal: no picture",
+        _ => "No seal",
+    });
+
     // Editing a user (administrator)
     [ObservableProperty] private UserDto? _editingUser;
     [ObservableProperty] private string _editUsername = "";
@@ -37,6 +93,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     partial void OnEditingUserChanged(UserDto? value)
     {
         OnPropertyChanged(nameof(IsEditingUser));
+        OnPropertyChanged(nameof(ShowUserHint));
         OnPropertyChanged(nameof(EditingUserCanHaveSeal));
         OnPropertyChanged(nameof(UserSealState));
         OnPropertyChanged(nameof(UserHasAnySeal));
@@ -247,22 +304,28 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         Users.Clear();
         foreach (var u in await _session.Api.UsersAsync()) Users.Add(u);
+        FilterUsers();
     }
 
     [RelayCommand]
     private async Task AddUserAsync()
     {
         InfoMessage = null;
+        UserDto? created = null;
         var ok = await RunAsync(async () =>
         {
-            await _session.Api.CreateUserAsync(new CreateUserRequest(NewUsername, NewDisplayName, NewUserPassword,
+            created = await _session.Api.CreateUserAsync(new CreateUserRequest(NewUsername, NewDisplayName, NewUserPassword,
                 UserRole.User)); // one administrator: new users are Standard users
             await LoadUsersAsync();
         });
         if (ok)
         {
-            InfoMessage = $"User '{NewUsername}' created. They must change the password at first login.";
+            var name = NewUsername;
             NewUsername = NewDisplayName = NewUserPassword = "";
+            IsAddingUser = false;
+            UserFilter = "";
+            SelectedUser = FilteredUsers.FirstOrDefault(u => u.Id == created?.Id); // straight on to their seal and details
+            InfoMessage = $"User '{name}' created. They must change the password at first login.";
         }
     }
 
@@ -278,6 +341,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         EditingUser = user;
         if (user is null) return;
+        IsAddingUser = false;
+        if (SelectedUser?.Id != user.Id) SelectedUser = FilteredUsers.FirstOrDefault(u => u.Id == user.Id) ?? SelectedUser;
         EditUsername = user.Username;
         EditDisplayName = user.DisplayName;
         EditIsAdmin = user.Role == UserRole.Admin;
@@ -290,7 +355,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void CancelEditUser() => EditingUser = null;
+    private void CancelEditUser()
+    {
+        EditingUser = null;
+        SelectedUser = null;
+        IsAddingUser = false;
+    }
 
     /// <summary>Saves login name, display name, role and active; old quotations keep the name used at the time.</summary>
     [RelayCommand]
@@ -325,8 +395,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
                     };
             }))
         {
-            InfoMessage = $"User '{EditUsername.Trim()}' saved." + sealNote;
-            EditingUser = null;
+            var name = EditUsername.Trim();
+            // Stay on this person (layout B): the list was read again, so pick them in it again.
+            var again = FilteredUsers.FirstOrDefault(u => u.Id == user.Id);
+            SelectedUser = null;
+            SelectedUser = again;
+            InfoMessage = $"User '{name}' saved." + sealNote;
         }
     }
 

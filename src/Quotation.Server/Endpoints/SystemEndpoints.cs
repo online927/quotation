@@ -196,6 +196,7 @@ public static class SystemEndpoints
             if (req.Spacing is { } spacing) user.Spacing = spacing;
             if (req.ReduceMotion is { } reduce) user.ReduceMotion = reduce;
             if (req.PdfFileOrder is { } order) user.PdfFileOrder = order;
+            if (req.OpenPdfAfterSave is { } open) user.OpenPdfAfterSave = open;
             await db.SaveChangesAsync(ct);
             return Results.Ok(svc.Me(user));
         }).RequireAuthorization();

@@ -89,7 +89,7 @@ public sealed class GmailIngestionService(
     ILogger<GmailIngestionService> log)
 {
     public const int MaxAttempts = 3;
-    private static readonly UserContext GmailUser = new("gmail", "Gmail", "server");
+    private static readonly UserContext GmailUser = new(QuotationService.GmailUserName, "Gmail", "server");
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     public DateTime? LastPollUtc { get; private set; }

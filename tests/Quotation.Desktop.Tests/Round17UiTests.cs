@@ -110,6 +110,9 @@ public class Round17UiTests
         await Task.Delay(300);
         Dispatcher.UIThread.RunJobs();
         Assert.IsType<ScrollViewer>(users.Content);
+        view.FindControl<TabControl>("UserTabs")!.SelectedItem = view.FindControl<TabItem>("UserSealTab"); // Round 21: Seal tab
+        await Task.Delay(200);
+        Dispatcher.UIThread.RunJobs();
         var widthBox = view.FindControl<NumericUpDown>("SealWidthBox")!;
         Assert.True(widthBox.IsEffectivelyVisible); // seal size and place next to the user's seal
         Assert.Null(view.FindControl<Button>("FormerSealButton"));

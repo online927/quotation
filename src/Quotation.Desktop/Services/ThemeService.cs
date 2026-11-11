@@ -118,6 +118,11 @@ public static class ThemeService
     }
 
     /// <summary>Glow shadows of a theme, unless animations are reduced (then the standard small shadow).</summary>
-    private static void ApplyShadow(Application app) =>
+    private static void ApplyShadow(Application app)
+    {
         app.Resources["CardShadow"] = BoxShadows.Parse(ColourThemes.GlowShadow is { } glow && !_reduceMotion ? glow : "0 1 3 0 #0F000000");
+        // Keyboard focus: a soft halo in the theme's accent colour that follows the button's round corners.
+        var accent = app.TryGetResource("AccentBrush", app.ActualThemeVariant, out var a) && a is ISolidColorBrush b ? b.Color : Color.Parse("#0A66D9");
+        app.Resources["FocusRing"] = BoxShadows.Parse($"0 0 0 4 #99{accent.R:X2}{accent.G:X2}{accent.B:X2}");
+    }
 }

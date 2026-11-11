@@ -681,3 +681,8 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 
 1. New theme Hero Light: navy menu, white boxes, bold red highlights, with drawn light rays behind the pages and a city
    skyline along the bottom (original line art, no pictures shipped).
+
+### Round 23
+
+1. Focus highlight on buttons (e.g. Approve after Enter in P&F): a soft glow in the theme's highlight colour instead of
+   the old dotted outline.

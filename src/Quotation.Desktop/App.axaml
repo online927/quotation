@@ -23,6 +23,8 @@
     <CornerRadius x:Key="CardBottomRadius">0,0,10,10</CornerRadius>
     <CornerRadius x:Key="ButtonRadius">999</CornerRadius>
     <BoxShadows x:Key="CardShadow">0 1 3 0 #0F000000</BoxShadows>
+    <!-- Keyboard focus on a button: a soft accent halo (set per theme by ThemeService) -->
+    <BoxShadows x:Key="FocusRing">0 0 0 3 #730A66D9</BoxShadows>
     <!-- Spacing a user may make compact (My Settings > Appearance) -->
     <Thickness x:Key="CardPadding">18</Thickness>
     <x:Double x:Key="SectionSpacing">10</x:Double>
@@ -488,6 +490,13 @@
     <Style Selector="Button">
       <Setter Property="CornerRadius" Value="{DynamicResource ButtonRadius}" />
       <Setter Property="Padding" Value="14,5" />
+    </Style>
+    <!-- Keyboard focus (Tab, or Enter from Packing & Forwarding): no square black box, a soft halo around the button's own shape -->
+    <Style Selector="Button">
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
+    <Style Selector="Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BoxShadow" Value="{DynamicResource FocusRing}" />
     </Style>
     <Style Selector="Button.primary">
       <Setter Property="Padding" Value="18,6" />

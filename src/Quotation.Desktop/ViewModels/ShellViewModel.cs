@@ -640,13 +640,160 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         if (entry.Page is IDisposable d) d.Dispose();
     }
 
-    /// <summary>Global search: quotation number, customer, GSTIN, product, reference or date.</summary>
+    // ---------------------------------------------------------------- top search: jump by number
+
+    /// <summary>Quotations whose number matches the typed number ("142" or "TSQ2627-142"): this year's first, quotations before proformas.</summary>
+    public ObservableCollection<NumberMatchViewModel> NumberMatches { get; } = [];
+
+    [ObservableProperty] private bool _isSearchFocused;
+    private CancellationTokenSource? _numberCts;
+
+    public bool ShowNumberMatches => IsSearchFocused && NumberMatches.Count > 0;
+    public string SearchAllText => $"Search all quotations for “{GlobalSearch.Trim()}”";
+    public static TimeSpan NumberLookupDelay { get; set; } = TimeSpan.FromMilliseconds(200);
+
+    partial void OnIsSearchFocusedChanged(bool value) => OnPropertyChanged(nameof(ShowNumberMatches));
+
+    partial void OnGlobalSearchChanged(string value)
+    {
+        OnPropertyChanged(nameof(SearchAllText));
+        _numberCts?.Cancel();
+        var cts = _numberCts = new CancellationTokenSource();
+        if (NumberQuery(value) is null)
+        {
+            SetNumberMatches([]);
+            return;
+        }
+        _ = LookUpNumberAsync(value, cts.Token);
+    }
+
+    /// <summary>"142" → (142, null); "TSQ2627-142" → (null, "TSQ2627-142"); other text → null (a normal search).</summary>
+    public static (int? Sequence, string? FullNumber)? NumberQuery(string? text)
+    {
+        var t = (text ?? "").Trim();
+        if (t.Length == 0 || t.Length > 30 || t.Contains(' ')) return null;
+        if (t.Length <= 6 && t.All(char.IsDigit)) return int.TryParse(t, out var n) && n > 0 ? (n, null) : null;
+        // A full number has letters and digits, and ends in digits (TSQ2627-142, TSQ/25-26/0142).
+        if (t.Any(char.IsLetter) && char.IsDigit(t[^1])) return (null, t);
+        return null;
+    }
+
+    private async Task LookUpNumberAsync(string text, CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(NumberLookupDelay, ct);
+            var found = await FindByNumberAsync(text, ct);
+            if (!ct.IsCancellationRequested) SetNumberMatches(found);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception) { if (!ct.IsCancellationRequested) SetNumberMatches([]); }
+    }
+
+    private async Task<List<NumberMatchViewModel>> FindByNumberAsync(string text, CancellationToken ct)
+    {
+        if (NumberQuery(text) is not { } query) return [];
+        List<QuotationSummaryDto> rows;
+        if (query.Sequence is { } seq)
+        {
+            rows = (await _session.Api.QuotationsAsync(take: 20, ct: ct, sequence: seq))
+                .Where(r => r.Number is { } n && TrailingNumber(n) == seq).ToList();
+        }
+        else
+        {
+            var wanted = Compact(query.FullNumber!);
+            rows = (await _session.Api.QuotationsAsync(query.FullNumber, take: 20, ct: ct))
+                .Where(r => r.Number is { } n && Compact(n) == wanted).ToList();
+        }
+        var startMonth = _session.Settings?.Quotation.FinancialYearStartMonth ?? 4;
+        var thisYear = FinancialYear.For(DateOnly.FromDateTime(DateTime.Today), startMonth);
+        return rows
+            .Select(r => (Row: r, Year: FinancialYear.For(r.Date, startMonth)))
+            .OrderByDescending(x => x.Year.StartYear)
+            .ThenBy(x => x.Row.DocType)
+            .ThenByDescending(x => x.Row.Date)
+            .Select(x => new NumberMatchViewModel(x.Row,
+                x.Year.StartYear >= thisYear.StartYear ? "" : x.Year.StartYear == thisYear.StartYear - 1 ? "(last year)" : $"({x.Year.Label})"))
+            .Take(8)
+            .ToList();
+    }
+
+    private static int? TrailingNumber(string number)
+    {
+        var end = number.Length;
+        var start = end;
+        while (start > 0 && char.IsDigit(number[start - 1])) start--;
+        return start < end && int.TryParse(number[start..end], out var n) ? n : null;
+    }
+
+    private static string Compact(string s) => new(s.Where(char.IsLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
+
+    private void SetNumberMatches(IReadOnlyList<NumberMatchViewModel> matches)
+    {
+        NumberMatches.Clear();
+        foreach (var m in matches) NumberMatches.Add(m);
+        if (NumberMatches.Count > 0) NumberMatches[0].IsHighlighted = true;
+        OnPropertyChanged(nameof(ShowNumberMatches));
+    }
+
+    /// <summary>↑ / ↓ in the search box move the highlight through the matches.</summary>
+    public void MoveNumberHighlight(int step)
+    {
+        if (NumberMatches.Count == 0) return;
+        var i = NumberMatches.ToList().FindIndex(m => m.IsHighlighted);
+        var next = Math.Clamp((i < 0 ? 0 : i) + step, 0, NumberMatches.Count - 1);
+        for (var k = 0; k < NumberMatches.Count; k++) NumberMatches[k].IsHighlighted = k == next;
+    }
+
     [RelayCommand]
-    private void Search()
+    private void OpenNumberMatch(NumberMatchViewModel? match)
+    {
+        if (match is null) return;
+        ClearSearch();
+        OpenQuotation(match.Id);
+    }
+
+    /// <summary>The last line of the list: the usual search in Quotation History.</summary>
+    [RelayCommand]
+    private void SearchAll()
     {
         if (string.IsNullOrWhiteSpace(GlobalSearch)) return;
         var query = GlobalSearch.Trim();
+        SetNumberMatches([]);
         _ = OpenAsync("history", () => new QuotationListViewModel(_session, this, QuotationListPreset.History, query));
+    }
+
+    private void ClearSearch()
+    {
+        _numberCts?.Cancel();
+        GlobalSearch = "";
+        SetNumberMatches([]);
+    }
+
+    /// <summary>
+    /// Enter in the top search box: a number opens its quotation straight away (the highlighted one when several share the
+    /// number); anything else searches Quotation History by number, customer, GSTIN, product, reference or date.
+    /// </summary>
+    [RelayCommand]
+    private async Task SearchAsync()
+    {
+        if (string.IsNullOrWhiteSpace(GlobalSearch)) return;
+        if (NumberQuery(GlobalSearch) is not null)
+        {
+            if (NumberMatches.Count == 0)
+            {
+                // Enter pressed before the lookup finished: look it up now.
+                _numberCts?.Cancel();
+                try { SetNumberMatches(await FindByNumberAsync(GlobalSearch, CancellationToken.None)); }
+                catch (Exception) { }
+            }
+            if ((NumberMatches.FirstOrDefault(m => m.IsHighlighted) ?? NumberMatches.FirstOrDefault()) is { } match)
+            {
+                OpenNumberMatch(match);
+                return;
+            }
+        }
+        SearchAll();
     }
 
     [RelayCommand]

@@ -686,3 +686,15 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 
 1. Focus highlight on buttons (e.g. Approve after Enter in P&F): a soft glow in the theme's highlight colour instead of
    the old dotted outline.
+
+### Round 24
+
+1. Paste a list: copy a list of items from WhatsApp, e-mail or Excel and press Ctrl+V in the Product box. A "Pasted list"
+   box shows each line with the item found (green), close matches to choose from (orange) or "Not found" with a Search
+   button (red); quantities are read from "x 2", "2 nos", "qty 2", "- 2" or a number at the end (none = 1). "Add N lines"
+   adds them with the Tally rates as typing would. Greetings, signatures and phone numbers are skipped. Items are looked up
+   in the app's own item list on the server; Tally is not asked. A single line pastes into the box as before.
+2. Jump by number: typing a quotation number in the top search box ("142" or "TSQ2627-142") lists the quotation(s) with
+   that number below the box (this year's first, quotations before proformas); Enter opens the highlighted one, ↑ / ↓
+   pick another, Esc closes the list. Anything else (or a number no quotation has) searches Quotation History as before.
+3. Part numbers without dashes or with spaces ("18790110", "187 901 10") already find "187-901-10" (no change needed).

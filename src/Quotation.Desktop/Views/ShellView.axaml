@@ -5,6 +5,48 @@
              xmlns:ctl="using:Quotation.Desktop.Controls"
              x:Class="Quotation.Desktop.Views.ShellView"
              x:DataType="vm:ShellViewModel">
+  <UserControl.Styles>
+    <!-- Rows of the number list under the top search box -->
+    <Style Selector="Button.numbermatch">
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+    <Style Selector="Button.numbermatch /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    </Style>
+    <Style Selector="Button.numbermatch:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    </Style>
+    <Style Selector="Button.numbermatch.hi /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    </Style>
+    <Style Selector="Button.numbermatch Border.badge">
+      <Setter Property="Background" Value="{DynamicResource FillBrush}" />
+    </Style>
+    <Style Selector="Button.numbermatch Border.badge TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+    </Style>
+    <Style Selector="Button.numbermatch.hi Border.badge">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Button.numbermatch.hi Border.badge TextBlock">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Border.key">
+      <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+      <Setter Property="BorderThickness" Value="1,1,1,2" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+    </Style>
+    <Style Selector="Border.key TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+    </Style>
+  </UserControl.Styles>
   <Panel>
     <DockPanel>
       <!-- Top bar -->
@@ -27,6 +69,55 @@
               <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}" />
             </TextBox.KeyBindings>
           </TextBox>
+          <!-- Typing a quotation number: its quotation(s) below the box; Enter opens the highlighted one -->
+          <Popup Name="NumberPopup" PlacementTarget="{Binding #GlobalSearchBox}" Placement="BottomEdgeAlignedLeft" VerticalOffset="6"
+                 IsOpen="{Binding ShowNumberMatches, Mode=OneWay}" IsLightDismissEnabled="False"
+                 Width="{Binding #GlobalSearchBox.Bounds.Width}">
+            <Border Background="{DynamicResource PopupBrush}" BorderBrush="{DynamicResource PopupBorderBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="8" BoxShadow="0 10 30 0 #33000000">
+              <StackPanel Spacing="2">
+                <TextBlock Text="OPEN" Classes="muted" FontSize="11" Margin="10,2,0,4" />
+                <ItemsControl Name="NumberMatchList" ItemsSource="{Binding NumberMatches}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:NumberMatchViewModel">
+                      <Button Classes="numbermatch" Classes.hi="{Binding IsHighlighted}" Focusable="False" HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch" Padding="10,8"
+                              Command="{Binding $parent[UserControl].((vm:ShellViewModel)DataContext).OpenNumberMatchCommand}" CommandParameter="{Binding}">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                          <Border Classes="badge" Width="34" Height="34" CornerRadius="9" Margin="0,0,12,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Badge}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                              <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                              <TextBlock Text="{Binding YearNote}" Classes="muted" FontSize="11" IsVisible="{Binding HasYearNote}" VerticalAlignment="Center" />
+                              <Border Classes="pill status" Classes.ok="{Binding IsFinal}" Classes.pending="{Binding IsPending}" Classes.bad="{Binding IsCancelled}"
+                                      VerticalAlignment="Center">
+                                <TextBlock Text="{Binding StatusText}" FontSize="10.5" FontWeight="SemiBold" />
+                              </Border>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Detail}" Classes="muted" FontSize="11.5" TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <Border Grid.Column="2" Classes="key" IsVisible="{Binding IsHighlighted}" VerticalAlignment="Center" Margin="8,0,0,0">
+                            <TextBlock Text="Enter" FontSize="11" />
+                          </Border>
+                        </Grid>
+                      </Button>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Border Height="1" Background="{DynamicResource HairlineBrush}" Margin="0,4" />
+                <Button Name="SearchAllButton" Classes="numbermatch" Focusable="False" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                        Padding="10,8" Command="{Binding SearchAllCommand}">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Text="⌕" FontSize="20" Classes="muted" Margin="2,-4,12,0" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding SearchAllText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="customer, GSTIN, part no. …" Classes="muted" FontSize="11" VerticalAlignment="Center" />
+                  </Grid>
+                </Button>
+              </StackPanel>
+            </Border>
+          </Popup>
           <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
             <!-- Status: green / orange / red dot; details when pointing at it or clicking -->
             <Button Name="StatusChip" Classes="link" Padding="8,4" Margin="0,0,4,0" ToolTip.Tip="{Binding HealthDetails}">

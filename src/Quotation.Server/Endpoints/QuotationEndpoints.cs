@@ -24,9 +24,11 @@ public static class QuotationEndpoints
 
         g.MapGet("/", async (QuotationDbContext db, string? q, QuotationStatus? status, QuotationSource? source,
             DateOnly? from, DateOnly? to, int? customerId, int? take, int? skip, DocumentType? type, QuotationOutcome? outcome, bool? followUpDue,
-            FinancialYearService fy, CancellationToken ct) =>
+            int? sequence, FinancialYearService fy, CancellationToken ct) =>
         {
             var query = db.Quotations.AsNoTracking().AsQueryable();
+            // The number part of a quotation number ("142" of TSQ2627-142), in every year: the top search jumps to it.
+            if (sequence is not null) query = query.Where(x => x.Number != null && x.Sequence == sequence);
             if (outcome is not null) query = query.Where(x => x.Outcome == outcome
                 && (x.Status == QuotationStatus.Approved || x.Status == QuotationStatus.Generated) && x.DocType == DocumentType.Quotation);
             if (followUpDue == true)

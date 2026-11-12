@@ -7,6 +7,7 @@ using Quotation.Contracts;
 using Quotation.Core.Calculation;
 using Quotation.Core.Domain;
 using Quotation.Core.Numbering;
+using Quotation.Core.Search;
 using Quotation.Desktop.Services;
 
 namespace Quotation.Desktop.ViewModels;
@@ -1026,6 +1027,122 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         Renumber();
         MarkDirty();
         return true;
+    }
+
+    // ================================================================= pasted list
+
+    /// <summary>The lines of a list pasted into the Product box (WhatsApp, e-mail, Excel), each with the item found for it.</summary>
+    public ObservableCollection<PasteRowViewModel> PasteRows { get; } = [];
+
+    [ObservableProperty] private bool _isPasteOpen;
+
+    public string PasteTitle => $"Pasted list — {PasteRows.Count} line{(PasteRows.Count == 1 ? "" : "s")}";
+    public int PasteReadyCount => PasteRows.Count(r => r.IsFound && r.IsReady);
+    public int PasteChooseCount => PasteRows.Count(r => r.IsChoose);
+    public int PasteNotFoundCount => PasteRows.Count(r => r.IsNotFound);
+    public bool PasteStillSearching => PasteRows.Any(r => r.IsLoading);
+    public string PasteReadyText => $"{PasteReadyCount} ready";
+    public string PasteChooseText => $"{PasteChooseCount} to choose";
+    public string PasteNotFoundText => $"{PasteNotFoundCount} not found";
+    public int PasteAddCount => PasteRows.Count(r => r.IsReady);
+    public string PasteAddText => PasteAddCount == 1 ? "Add 1 line" : $"Add {PasteAddCount} lines";
+    public bool CanAddPasted => PasteAddCount > 0 && !PasteStillSearching;
+
+    /// <summary>
+    /// Opens the pasted-list box when <paramref name="text"/> holds two or more item lines, and looks each one up (the
+    /// app's own item list on the server; Tally is not asked). False for a single line: it is typed into the box as usual.
+    /// </summary>
+    public async Task<bool> OpenPastedListAsync(string? text)
+    {
+        if (!CanEditContent) return false;
+        var lines = PastedListParser.Parse(text);
+        if (lines.Count < 2) return false;
+
+        PasteRows.Clear();
+        foreach (var (line, i) in lines.Select((l, i) => (l, i)))
+        {
+            var row = new PasteRowViewModel { No = i + 1, Raw = line.Raw, Query = line.Query, Quantity = line.Quantity, SearchText = line.Query };
+            row.Changed = OnPasteRowsChanged;
+            PasteRows.Add(row);
+        }
+        IsPasteOpen = true;
+        OnPasteRowsChanged();
+
+        using var gate = new SemaphoreSlim(4);
+        await Task.WhenAll(PasteRows.ToList().Select(async row =>
+        {
+            await gate.WaitAsync();
+            try
+            {
+                IReadOnlyList<ProductSearchHitDto> hits;
+                try { hits = await _session.Api.SearchProductsAsync(row.Query, 8); }
+                catch (Exception) { hits = []; }
+                row.SetResults(hits);
+            }
+            finally { gate.Release(); }
+        }));
+        OnPasteRowsChanged();
+        return true;
+    }
+
+    private void OnPasteRowsChanged()
+    {
+        foreach (var name in new[]
+                 {
+                     nameof(PasteTitle), nameof(PasteReadyCount), nameof(PasteChooseCount), nameof(PasteNotFoundCount), nameof(PasteStillSearching),
+                     nameof(PasteReadyText), nameof(PasteChooseText), nameof(PasteNotFoundText), nameof(PasteAddCount), nameof(PasteAddText),
+                     nameof(CanAddPasted),
+                 })
+            OnPropertyChanged(name);
+        AddPastedLinesCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand]
+    private void SearchPasteRow(PasteRowViewModel? row)
+    {
+        if (row is not null) row.IsSearching = true;
+    }
+
+    [RelayCommand]
+    private void ClosePasteList()
+    {
+        IsPasteOpen = false;
+        PasteRows.Clear();
+    }
+
+    /// <summary>Adds every ready line (found or chosen, quantity above zero) with the item's Tally rate, as typing it would.</summary>
+    [RelayCommand(CanExecute = nameof(CanAddPasted))]
+    private void AddPastedLines()
+    {
+        if (!CanEditContent) return;
+        foreach (var row in PasteRows.Where(r => r.IsReady))
+        {
+            var p = row.Selected!.Product;
+            Lines.Add(new QuotationLineViewModel
+            {
+                LineNo = Lines.Count + 1,
+                ProductId = p.Id,
+                ItemName = p.Name,
+                PartNumber = p.PartNumber,
+                Hsn = p.Hsn,
+                GstRate = p.GstRate,
+                Unit = p.Unit,
+                TallyRate = p.Rate,
+                Quantity = row.Quantity!.Value,
+                Rate = p.Rate > 0 ? p.Rate.Value : 0,
+                DiscountPercent = 0,
+                Description = (p.Description ?? "").Trim(),
+                ZeroGst = WithoutGst,
+            });
+        }
+        var added = PasteRows.Count(r => r.IsReady);
+        ClosePasteList();
+        Renumber();
+        MarkDirty();
+        RecalculateTotals();
+        OnPropertyChanged(nameof(CanApprove));
+        OnPropertyChanged(nameof(CanSaveAsPdf));
+        _navigator.Toast(added == 1 ? "1 line added from the pasted list." : $"{added} lines added from the pasted list.");
     }
 
     [RelayCommand]

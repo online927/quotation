@@ -38,11 +38,16 @@ public class HistoryUiTests
         await e2.SelectCustomerAsync((await session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id);
         Assert.Equal("27AAACS1234F1Z3", e2.BuyerGstin);
 
-        // Global search (the half-filled second quotation is not kept).
+        // Global search by the quotation number opens it straight away (the half-filled second quotation is not kept).
         shell.GlobalSearch = e1.Number!;
-        shell.SearchCommand.Execute(null);
-        Assert.NotNull(shell.PendingPrompt);
+        _ = shell.SearchCommand.ExecuteAsync(null);
+        await UiHelpers.WaitUntil(() => shell.PendingPrompt is not null);
         shell.AnswerPromptCommand.Execute(LeaveChoice.DontSave);
+        await UiHelpers.WaitUntil(() => shell.CurrentPage is QuotationEditorViewModel { Id: not null } e && e.Id == e1.Id);
+
+        // Any other search lists Quotation History.
+        shell.GlobalSearch = "sonepar";
+        await shell.SearchCommand.ExecuteAsync(null);
         await UiHelpers.WaitUntil(() => shell.CurrentPage is QuotationListViewModel);
         var list = Assert.IsType<QuotationListViewModel>(shell.CurrentPage);
         await UiHelpers.WaitUntil(() => list.Rows.Count == 1);

@@ -320,8 +320,8 @@ public partial class QuotationApiClient
     public Task<List<QuotationSummaryDto>> QuotationsAsync(string? q = null, Quotation.Core.Domain.QuotationStatus? status = null,
         DateOnly? from = null, DateOnly? to = null, int? customerId = null, int take = 100, Quotation.Core.Domain.QuotationSource? source = null,
         Quotation.Core.Domain.DocumentType? type = null, CancellationToken ct = default,
-        Quotation.Core.Domain.QuotationOutcome? outcome = null, bool followUpDue = false) =>
-        GetAsync<List<QuotationSummaryDto>>($"api/quotations?take={take}{Q("q", q)}{Q("status", status?.ToString())}{Q("source", source?.ToString())}{Q("type", type?.ToString())}" +
+        Quotation.Core.Domain.QuotationOutcome? outcome = null, bool followUpDue = false, int? sequence = null) =>
+        GetAsync<List<QuotationSummaryDto>>($"api/quotations?take={take}{Q("q", q)}{Q("sequence", sequence?.ToString())}{Q("status", status?.ToString())}{Q("source", source?.ToString())}{Q("type", type?.ToString())}" +
                                             $"{Q("from", from?.ToString("yyyy-MM-dd"))}{Q("to", to?.ToString("yyyy-MM-dd"))}{Q("customerId", customerId?.ToString())}" +
                                             $"{Q("outcome", outcome?.ToString())}{(followUpDue ? "&followUpDue=true" : "")}", ct);
 

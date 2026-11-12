@@ -36,6 +36,8 @@ public partial class QuotationEditorView : UserControl
                     if (e.PropertyName == nameof(QuotationEditorViewModel.EditingLine) && vm.EditingLine is not null) FocusLater(QtyBox);
                 };
         };
+        // A list pasted into the Product box opens the pasted-list box; a single line is typed in as usual.
+        ProductBox.InputBox.AddHandler(TextBox.PastingFromClipboardEvent, OnProductPasting, RoutingStrategies.Bubble);
         LinesList.PointerMoved += OnLinesPointerMoved;
         LinesList.PointerReleased += (_, _) => EndDrag();
         LinesList.PointerCaptureLost += (_, _) => EndDrag();
@@ -61,6 +63,19 @@ public partial class QuotationEditorView : UserControl
         if (e.Source is not Control source) return;
         var picker = source.FindAncestorOfType<SearchPicker>(includeSelf: true);
 
+        if (e.Key == Key.Escape && Vm is { IsPasteOpen: true } pasting)
+        {
+            if (picker is { IsDropDownOpen: true }) return;
+            pasting.ClosePasteListCommand.Execute(null);
+            ProductBox.Focus();
+            e.Handled = true;
+            return;
+        }
+        if (Vm is { IsPasteOpen: true } && e.Key == Key.Enter && PasteOverlay.IsVisualAncestorOf(source))
+        {
+            // Inside the pasted-list box Enter belongs to its own controls (a search box, a list, the Add button).
+            return;
+        }
         if (e.Key == Key.Escape)
         {
             // An open list closes first; the next Esc cancels editing of a line.
@@ -142,6 +157,57 @@ public partial class QuotationEditorView : UserControl
         if (target is null) return false;
         target.Focus(NavigationMethod.Tab); // keyboard focus: the button shows its focus ring
         return true;
+    }
+
+    private async void OnProductPasting(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { CanEditContent: true } vm || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard) return;
+        e.Handled = true; // the text is put in below (one line) or goes to the pasted-list box (two or more)
+        var box = ProductBox.InputBox;
+        string? text;
+        try { text = await clipboard.GetTextAsync(); }
+        catch (Exception) { return; }
+        if (string.IsNullOrEmpty(text)) return;
+        await PasteIntoProductAsync(vm, box, text);
+    }
+
+    /// <summary>What Ctrl+V in the Product box does with <paramref name="text"/> (also used by tests).</summary>
+    public async Task PasteIntoProductAsync(QuotationEditorViewModel vm, TextBox box, string text)
+    {
+        if (Quotation.Core.Search.PastedListParser.LooksLikeAList(text) && await vm.OpenPastedListAsync(text))
+        {
+            // Enter adds the lines; Esc closes the box.
+            FocusLater(PasteAddButton.IsEffectivelyEnabled ? PasteAddButton : PasteCancelButton);
+            return;
+        }
+        // One line: typed into the box at the cursor, as a normal paste would.
+        var line = string.Join(' ', text.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        var current = box.Text ?? "";
+        var start = Math.Clamp(Math.Min(box.SelectionStart, box.SelectionEnd), 0, current.Length);
+        var end = Math.Clamp(Math.Max(box.SelectionStart, box.SelectionEnd), 0, current.Length);
+        box.Text = current[..start] + line + current[end..];
+        box.SelectionStart = box.SelectionEnd = box.CaretIndex = start + line.Length;
+    }
+
+    /// <summary>"Search…" on a pasted line that was not found: a search box in its place, already searching the pasted words.</summary>
+    private void OnPasteRowSearchClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: PasteRowViewModel row } button) return;
+        Vm?.SearchPasteRowCommand.Execute(row);
+        var picker = button.FindAncestorOfType<Grid>()?.GetVisualDescendants().OfType<SearchPicker>().FirstOrDefault();
+        if (picker is null) return;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            picker.InputBox.Focus();
+            picker.InputBox.SelectAll();
+            picker.SearchNow();
+        }, Avalonia.Threading.DispatcherPriority.Input);
+    }
+
+    /// <summary>An item picked in the search box of a pasted line that was not found.</summary>
+    private void OnPasteRowPicked(object? sender, ItemPickedEventArgs e)
+    {
+        if (sender is Control { DataContext: PasteRowViewModel row } && e.Item is ProductSearchHitDto hit) row.Pick(hit);
     }
 
     private void OnLostReasonLostFocus(object? sender, RoutedEventArgs e) => Vm?.SaveLostReasonCommand.Execute(null);

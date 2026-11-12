@@ -24,6 +24,16 @@ public partial class ShellView : UserControl
             Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() => GlobalSearchBox.Focus()),
         });
         AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
+        // Top search: a typed number shows its quotation(s) below the box; ↑ / ↓ pick one, Enter opens it, Esc closes the list.
+        GlobalSearchBox.GotFocus += (_, _) => { if (Vm is { } vm) vm.IsSearchFocused = true; };
+        GlobalSearchBox.LostFocus += (_, _) =>
+            DispatcherTimer.RunOnce(() => { if (Vm is { } vm && !GlobalSearchBox.IsFocused) vm.IsSearchFocused = false; }, TimeSpan.FromMilliseconds(200));
+        GlobalSearchBox.AddHandler(KeyDownEvent, OnSearchKeyDown, RoutingStrategies.Tunnel);
+        GlobalSearchBox.PropertyChanged += (_, e) =>
+        {
+            // Typing again after Esc shows the list again.
+            if (e.Property == TextBox.TextProperty && GlobalSearchBox.IsFocused && Vm is { } vm) vm.IsSearchFocused = true;
+        };
         DialogPanel.PropertyChanged += (_, e) =>
         {
             if (e.Property != IsVisibleProperty) return;
@@ -132,6 +142,26 @@ public partial class ShellView : UserControl
                 return;
         }
         e.Handled = true;
+    }
+
+    private void OnSearchKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (Vm is not { ShowNumberMatches: true } vm) return;
+        switch (e.Key)
+        {
+            case Key.Down:
+                vm.MoveNumberHighlight(+1);
+                e.Handled = true;
+                break;
+            case Key.Up:
+                vm.MoveNumberHighlight(-1);
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                vm.IsSearchFocused = false; // the list closes; the text stays
+                e.Handled = true;
+                break;
+        }
     }
 
     private void OnPreviewPointerPressed(object? sender, PointerPressedEventArgs e)

@@ -81,7 +81,6 @@ public class PartyPrintTests : QuotationTestBase
     {
         var settings = await Api.SettingsAsync();
         settings.Quotation.ModernHeading = "Quotation/Proforma";
-        settings.Quotation.ModernSignOff = ["Regards,", "{name}", "Tsaifuddin and Company"];
         await Api.SaveSettingsAsync(settings);
 
         var request = await BevelRequest();
@@ -108,7 +107,7 @@ public class PartyPrintTests : QuotationTestBase
         Assert.Contains("Buyer/Consignee", zoho);
         Assert.Contains("Sub Total", zoho);
         Assert.Matches(@"CGST9 \(9%\)|IGST18 \(18%\)", zoho); // tax lines by rate
-        Assert.Contains("Keerthana", zoho);             // {name} = prepared by
+        Assert.DoesNotContain("Regards", zoho);         // no sign-off under the terms (Round 25)
         Assert.DoesNotContain("Amount Chargeable", zoho);
         Assert.Contains("Quotation/Proforma", GstAndEditingRulesTests.PdfText(await Api.PreviewPdfAsync(q.Id)));
 

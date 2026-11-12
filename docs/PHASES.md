@@ -698,3 +698,16 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    that number below the box (this year's first, quotations before proformas); Enter opens the highlighted one, ↑ / ↓
    pick another, Esc closes the list. Anything else (or a number no quotation has) searches Quotation History as before.
 3. Part numbers without dashes or with spaces ("18790110", "187 901 10") already find "187-901-10" (no change needed).
+
+### Round 25
+
+1. Pay by UPI: Settings → Company → "Payment note": Quotation number / Order number / Both (Both at first, e.g.
+   "TSQ2627-142 PO/4471"; the order number is the Buyer's Ref./Order No.; at most 50 characters). "Test QR (₹1)" shows a
+   test QR from what is typed (before Save) to check the name and UPI ID with a phone.
+2. Zoho layout foot: no sign-off ("Regards, name, company"; its Settings box is removed); Company's PAN / MSME No / IEC at
+   the left, bank details in the middle (slightly smaller text when long), the Pay by UPI QR 10 % smaller at the bottom
+   right with its UPI ID level with the last bank line; the seal at the bottom middle.
+3. Zoho layout: "Order No: PO/4471 dt. 28 Oct 2026" under Ref No.; a GST % column; "E. & O.E" under the total; "This is a
+   Computer Generated Document" at the foot; "Page X of Y" when there is more than one page.
+4. Before Approve, a GST check: a GSTIN from another state than the party's, a GSTIN of the wrong shape, or a party with no
+   state asks "Approve anyway" / "Go back" and says which GST the quotation gets (IGST or CGST + SGST).

@@ -108,7 +108,6 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             ShowPartNumber = q.DocType == DocumentType.ProformaInvoice ? settings.PartNumberOnProforma : settings.PartNumberOnQuotations,
             TaxLines = calc.Taxes.Select(t => new PdfTaxLine(t.Name, t.RatePercent, t.Amount)).ToList(),
             ModernTitle = string.IsNullOrWhiteSpace(settings.ModernHeading) ? "Quotation/Proforma" : settings.ModernHeading.Trim(),
-            SignOff = settings.ModernSignOff.Select(l => l.Replace("{name}", q.PreparedBy, StringComparison.OrdinalIgnoreCase)).ToList(),
             Lines = lines,
             Subtotal = calc.Subtotal,
             SummaryRows = summary,

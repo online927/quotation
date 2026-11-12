@@ -1,4 +1,3 @@
-using System.Globalization;
 using PdfSharp.Drawing;
 using QRCoder;
 using Quotation.Core.Domain;
@@ -18,14 +17,7 @@ public static class UpiQr
         var c = doc.Company;
         var upi = (c.UpiId ?? "").Trim();
         if (doc.Kind != DocumentType.Quotation || !c.UpiQrOnQuotations || upi.Length == 0) return null;
-        static string E(string s) => Uri.EscapeDataString(s);
-        var name = string.IsNullOrWhiteSpace(c.CompanyName) ? upi : c.CompanyName.Trim();
-        // The UPI ID as typed (letters, digits, . _ - and one @; checked in Settings): some UPI apps do not accept "%40".
-        var plain = upi.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '.' or '_' or '-' or '@');
-        var link = $"upi://pay?pa={(plain ? upi : E(upi))}&pn={E(name)}&cu=INR";
-        if (doc.GrandTotal > 0) link += "&am=" + doc.GrandTotal.ToString("0.00", CultureInfo.InvariantCulture);
-        if (!string.IsNullOrWhiteSpace(doc.Number)) link += "&tn=" + E(doc.Number);
-        return link;
+        return UpiLink.Build(upi, c.CompanyName, doc.GrandTotal, UpiLink.Note(c.UpiNote, doc.Number, doc.BuyersReference));
     }
 
     /// <summary>Draws the QR code as a square of <paramref name="size"/> points with its top-left corner at (x, y).</summary>

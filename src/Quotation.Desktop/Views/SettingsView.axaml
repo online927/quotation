@@ -62,6 +62,7 @@
       <Setter Property="Margin" Value="0,3" />
     </Style>
   </UserControl.Styles>
+  <Panel>
   <DockPanel Margin="24,12,24,20">
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
       <ctl:PageTitle Text="Settings" Icon="settings" />
@@ -146,16 +147,31 @@
               <StackPanel Spacing="8">
                 <TextBlock Classes="h2" Text="Pay by UPI QR code (quotations)" />
                 <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                           Text="A QR code on quotations (not proforma invoices): in the Tally layout in the right half of 'Terms of Delivery', in the Zoho layout at the bottom right. Only 'Pay by UPI' and the UPI ID are printed. Scanning it opens the customer's UPI app with the UPI ID, the quotation total and the quotation number filled in." />
-                <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+                           Text="A QR code on quotations (not proforma invoices): in the Tally layout in the right half of 'Terms of Delivery', in the Zoho layout at the bottom right. Only 'Pay by UPI' and the UPI ID are printed. Scanning it opens the customer's UPI app with your UPI ID, company name, the quotation total and the note below filled in." />
+                <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
                   <TextBlock Text="UPI ID" VerticalAlignment="Center" />
                   <TextBox Name="UpiIdBox" Grid.Column="1" Text="{Binding Settings.Company.UpiId}" Watermark="e.g. tsaifuddin@okhdfcbank" Width="300" HorizontalAlignment="Left" />
                   <TextBlock Grid.Row="1" Text="QR on quotations" VerticalAlignment="Center" />
                   <ToggleSwitch Name="UpiQrSwitch" Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.Company.UpiQrOnQuotations}"
                                 OnContent="On (when a UPI ID is set)" OffContent="Off" />
+                  <TextBlock Grid.Row="2" Text="Payment note" VerticalAlignment="Top" Margin="0,5,0,0" />
+                  <StackPanel Grid.Row="2" Grid.Column="1" Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="18">
+                      <RadioButton Name="UpiNoteQuotationRadio" GroupName="UpiNote" Content="Quotation number" IsChecked="{Binding UpiNoteQuotation}" />
+                      <RadioButton Name="UpiNoteOrderRadio" GroupName="UpiNote" Content="Order number" IsChecked="{Binding UpiNoteOrder}" />
+                      <RadioButton Name="UpiNoteBothRadio" GroupName="UpiNote" Content="Both" IsChecked="{Binding UpiNoteBoth}" />
+                    </StackPanel>
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                               Text="e.g. TSQ2627-142 PO/4471. The order number is the quotation's 'Buyer's Ref./Order No.'; when it is empty, the quotation number is used. The customer can still change the note before paying." />
+                  </StackPanel>
+                  <TextBlock Grid.Row="3" Text="Check with your phone" VerticalAlignment="Center" />
+                  <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Name="TestQrButton" Classes="primary" Content="Test QR (₹1)" Command="{Binding ShowTestQrCommand}" />
+                    <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="Uses what is typed above, before Save." />
+                  </StackPanel>
                 </Grid>
                 <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                           Text="Press Save (top right), then Preview or Open PDF on a quotation to see it. Check the QR with your own phone before sending quotations." />
+                           Text="Press Save (top right), then Preview or Open PDF on a quotation to see it." />
               </StackPanel>
             </Border>
           </Grid>
@@ -207,8 +223,6 @@
               <ComboBox ItemsSource="{Binding PdfLayoutChoices}" SelectedItem="{Binding Settings.Quotation.DefaultPdfLayout}" Width="200" />
               <TextBlock Classes="muted" FontSize="11" Text="Zoho layout: heading" Margin="0,6,0,0" />
               <TextBox Text="{Binding Settings.Quotation.ModernHeading}" Watermark="Quotation/Proforma" Width="300" HorizontalAlignment="Left" />
-              <TextBlock Classes="muted" FontSize="11" Text="Zoho layout: sign-off under the terms (one line per row; {name} = who prepared it)" />
-              <TextBox Text="{Binding ModernSignOff}" AcceptsReturn="True" Height="64" Width="300" HorizontalAlignment="Left" />
             </StackPanel>
             <TextBlock Grid.Row="22" Text="Part No. column" />
             <StackPanel Grid.Row="22" Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,3">
@@ -594,4 +608,43 @@
       </TabItem>
     </TabControl>
   </DockPanel>
+
+  <!-- Test QR (₹1): scan it with your phone before switching the QR on -->
+  <Border Name="TestQrOverlay" Background="#40000000" IsVisible="{Binding IsTestQrOpen}">
+    <Border Classes="card" Width="500" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="22,18"
+            Background="{DynamicResource PopupBrush}" BoxShadow="0 18 50 0 #40000000">
+      <StackPanel Spacing="12">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="Test QR" FontSize="17" FontWeight="SemiBold" />
+          <Button Grid.Column="1" Classes="link" Content="✕" FontSize="15" Command="{Binding CloseTestQrCommand}" />
+        </Grid>
+        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedBrush}">
+          <Run Text="Scan it with your phone's UPI app. It should show the name and amount below. " />
+          <Run Text="Don't pay" FontWeight="Bold" Foreground="{DynamicResource BadBrush}" />
+          <Run Text=" (or pay ₹1 to be sure the money reaches the right account)." />
+        </TextBlock>
+        <Grid ColumnDefinitions="Auto,*">
+          <Border Background="White" Padding="10" CornerRadius="6" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1">
+            <Image Name="TestQrImage" Source="{Binding TestQrImage}" Width="190" Height="190" RenderOptions.BitmapInterpolationMode="None" />
+          </Border>
+          <StackPanel Grid.Column="1" Margin="18,0,0,0" Spacing="2" VerticalAlignment="Center">
+            <TextBlock Classes="muted" FontSize="11" Text="Paying to" />
+            <TextBlock Text="{Binding TestQrPayee}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,6" />
+            <TextBlock Classes="muted" FontSize="11" Text="UPI ID" />
+            <TextBlock Text="{Binding TestQrUpiId}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,6" />
+            <TextBlock Classes="muted" FontSize="11" Text="Amount" />
+            <TextBlock Text="₹ 1.00" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <TextBlock Classes="muted" FontSize="11" Text="Note" />
+            <TextBlock Text="{x:Static vm:SettingsViewModel.TestQrNote}" FontWeight="SemiBold" />
+          </StackPanel>
+        </Grid>
+        <Border Background="{DynamicResource WarnSoftBrush}" CornerRadius="8" Padding="10,8">
+          <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource WarnBrush}"
+                     Text="If your phone shows a different name, the UPI ID is wrong: correct it before switching the QR on." />
+        </Border>
+        <Button Name="TestQrCloseButton" Content="Close" HorizontalAlignment="Right" Command="{Binding CloseTestQrCommand}" />
+      </StackPanel>
+    </Border>
+  </Border>
+  </Panel>
 </UserControl>

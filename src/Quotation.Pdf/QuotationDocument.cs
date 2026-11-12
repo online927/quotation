@@ -108,6 +108,4 @@ public sealed record QuotationDocument
     public IReadOnlyList<PdfTaxLine> TaxLines { get; init; } = [];
     /// <summary>Heading of the Modern layout, e.g. "Quotation/Proforma".</summary>
     public string ModernTitle { get; init; } = "Quotation/Proforma";
-    /// <summary>Lines under the terms, e.g. "Regards," / name / "Tsaifuddin and Company".</summary>
-    public IReadOnlyList<string> SignOff { get; init; } = [];
 }

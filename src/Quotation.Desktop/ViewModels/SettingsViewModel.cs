@@ -134,7 +134,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private decimal? _sealMoveUp;
     [ObservableProperty] private string _hiddenMarkers = "";
     /// <summary>Sign-off lines of the Zoho layout, one per row.</summary>
-    [ObservableProperty] private string _modernSignOff = "";
 
     // Numbering
     [ObservableProperty] private NumberSeriesDto? _series;
@@ -181,7 +180,59 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(PartyDisplayNameIndex));
         OnPropertyChanged(nameof(ConsigneeChoiceIndex));
+        OnPropertyChanged(nameof(UpiNoteQuotation));
+        OnPropertyChanged(nameof(UpiNoteOrder));
+        OnPropertyChanged(nameof(UpiNoteBoth));
     }
+
+    // ---------------------------------------------------------------- Pay by UPI: payment note and Test QR
+
+    public bool UpiNoteQuotation { get => Settings?.Company.UpiNote == UpiNoteKind.QuotationNumber; set => SetUpiNote(value, UpiNoteKind.QuotationNumber); }
+    public bool UpiNoteOrder { get => Settings?.Company.UpiNote == UpiNoteKind.OrderNumber; set => SetUpiNote(value, UpiNoteKind.OrderNumber); }
+    public bool UpiNoteBoth { get => Settings?.Company.UpiNote == UpiNoteKind.Both; set => SetUpiNote(value, UpiNoteKind.Both); }
+
+    private void SetUpiNote(bool chosen, UpiNoteKind kind)
+    {
+        if (!chosen || Settings is null) return;
+        Settings.Company.UpiNote = kind;
+        OnPropertyChanged(nameof(UpiNoteQuotation));
+        OnPropertyChanged(nameof(UpiNoteOrder));
+        OnPropertyChanged(nameof(UpiNoteBoth));
+    }
+
+    [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _testQrImage;
+    [ObservableProperty] private bool _isTestQrOpen;
+    [ObservableProperty] private string _testQrPayee = "";
+    [ObservableProperty] private string _testQrUpiId = "";
+    public const string TestQrNote = "Test from Quotations";
+
+    /// <summary>
+    /// A ₹1 QR from what is typed (before Save): scanning it with a phone shows the name and UPI ID the customers' apps will
+    /// show, so a mistyped UPI ID is found before the QR goes on quotations. Made on this PC; nothing is sent anywhere.
+    /// </summary>
+    [RelayCommand]
+    private void ShowTestQr()
+    {
+        if (Settings is null) return;
+        var upi = (Settings.Company.UpiId ?? "").Trim();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(upi, @"^[A-Za-z0-9._-]{2,256}@[A-Za-z0-9.-]{2,64}$"))
+        {
+            ErrorMessage = "Type the UPI ID first (like name@bank, e.g. tsaifuddin@okhdfcbank).";
+            return;
+        }
+        ErrorMessage = null;
+        var link = UpiLink.Build(upi, Settings.Company.CompanyName, 1m, TestQrNote);
+        using var generator = new QRCoder.QRCodeGenerator();
+        using var data = generator.CreateQrCode(link, QRCoder.QRCodeGenerator.ECCLevel.M);
+        var png = new QRCoder.PngByteQRCode(data).GetGraphic(10);
+        TestQrImage = new Avalonia.Media.Imaging.Bitmap(new MemoryStream(png));
+        TestQrPayee = string.IsNullOrWhiteSpace(Settings.Company.CompanyName) ? upi : Settings.Company.CompanyName.Trim();
+        TestQrUpiId = upi;
+        IsTestQrOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseTestQr() => IsTestQrOpen = false;
     public IReadOnlyList<string> RateSources { get; } = ["StandardPrice", "PriceLevel"];
 
     public string ExampleNumber
@@ -216,7 +267,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         CustomerGroups = string.Join(Environment.NewLine, s.Tally.CustomerGroups);
         LastRateVoucherTypes = string.Join(Environment.NewLine, s.Tally.LastRateVoucherTypes);
         HiddenMarkers = string.Join(Environment.NewLine, s.Tally.HiddenProductMarkers);
-        ModernSignOff = string.Join(Environment.NewLine, s.Quotation.ModernSignOff);
         SealWidth = (decimal)s.Company.SealWidth;
         SealOffsetX = (decimal)s.Company.SealOffsetX;
         SealMoveUp = -(decimal)s.Company.SealOffsetY;
@@ -270,7 +320,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Settings.Tally.CustomerGroups = SplitLines(CustomerGroups);
         Settings.Tally.LastRateVoucherTypes = SplitLines(LastRateVoucherTypes);
         Settings.Tally.HiddenProductMarkers = SplitLines(HiddenMarkers);
-        Settings.Quotation.ModernSignOff = SplitLines(ModernSignOff);
         Settings.Company.SealWidth = (double)(SealWidth ?? 150);
         Settings.Company.SealOffsetX = (double)(SealOffsetX ?? 0);
         Settings.Company.SealOffsetY = -(double)(SealMoveUp ?? 0);

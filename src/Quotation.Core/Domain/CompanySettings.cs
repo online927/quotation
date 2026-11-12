@@ -56,6 +56,16 @@ public sealed class CompanySettings
     public string UpiId { get; set; } = "";
     /// <summary>Print a "Pay by UPI" QR code on quotations (not proforma invoices). Off at first.</summary>
     public bool UpiQrOnQuotations { get; set; }
+    /// <summary>What the QR puts in the payment's note: the quotation number, the customer's order (PO) number, or both.</summary>
+    public UpiNoteKind UpiNote { get; set; } = UpiNoteKind.Both;
+}
+
+/// <summary>The note of a "Pay by UPI" payment (it shows in the payer's app and with the payment in yours).</summary>
+public enum UpiNoteKind
+{
+    QuotationNumber = 0,
+    OrderNumber = 1,
+    Both = 2,
 }
 
 /// <summary>Quotation behaviour settings.</summary>
@@ -131,8 +141,6 @@ public sealed class QuotationSettings
     public string DefaultPdfLayout { get; set; } = PdfLayouts.Tally;
     /// <summary>Heading of the Zoho PDF layout.</summary>
     public string ModernHeading { get; set; } = "Quotation/Proforma";
-    /// <summary>Lines under the terms on the Zoho layout; {name} is the person who prepared the quotation.</summary>
-    public List<string> ModernSignOff { get; set; } = ["Regards,", "{name}", "Tsaifuddin and Company"];
     public const string DefaultQuotationHeading = "QUOTATION";
     public const string DefaultProformaHeading = "PROFORMA INVOICE";
 

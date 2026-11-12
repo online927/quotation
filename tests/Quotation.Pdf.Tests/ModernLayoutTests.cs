@@ -36,7 +36,6 @@ public class ModernLayoutTests
         GrandTotal = 70864.90m,
         AmountInWords = "",
         TermsAndConditions = ["Payment: 100% Against Proforma", "Packing and forwarding charges extra"],
-        SignOff = ["Regards,", "Name,", "Tsaifuddin and Company"],
     };
 
     [Fact]
@@ -51,7 +50,8 @@ public class ModernLayoutTests
         foreach (var s in new[] { "Quotation/Proforma", "Ref No. 100186", "Other Ref: R", "Buyer/Consignee", "BuyersHub", "GSTIN 36AAZFB2304B1ZQ",
                      "02 Nov 2026", "Vernier Hook Depth Gauge", "Make - Insize", "5.00", "Nos", "12,011.00", "60,055.00", "Sub Total",
                      "IGST18 (18%)", "10,809.90", "Total", "₹70,864.90", "Terms & Conditions", "1. Payment: 100% Against Proforma",
-                     "2. Packing and forwarding charges extra", "Regards,", "Tsaifuddin and Company", "HSN/SAC", "Disc %" })
+                     "2. Packing and forwarding charges extra", "HSN/SAC", "GST", "Disc %", "E. & O.E",
+                     "This is a Computer Generated Document" })
         {
             Assert.Contains(s, text);
         }
@@ -66,8 +66,7 @@ public class ModernLayoutTests
         Assert.Equal(86.3, Left("Vernier"), 0);
         Assert.Equal(467.3, Baseline("₹70,864.90"), 0);
         Assert.Equal(553.1, page.GetWords().First(w => w.Text == "₹70,864.90").BoundingBox.Right, 0);
-        Assert.Equal(758.3, Baseline("Regards,"), 0);
-        Assert.Equal(717.5, Baseline("Terms"), 0);
+        Assert.DoesNotContain("Regards", text);
     }
 
     [Fact]

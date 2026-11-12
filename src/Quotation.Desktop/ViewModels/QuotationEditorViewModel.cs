@@ -1275,10 +1275,30 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     private bool _saveAsPdfAfterApproval;
 
+    /// <summary>
+    /// Before approving: a GSTIN from another state, a mistyped GSTIN or a party without a state would put the wrong kind of
+    /// GST on the quotation. Asks "Approve anyway" / "Go back"; true when there is nothing to check or the user goes on.
+    /// </summary>
+    private async Task<bool> TaxLooksRightAsync()
+    {
+        // No customer yet: the usual checks say "Select a customer" first.
+        if (CustomerId is null || BuyerName.Trim().Length == 0) return true;
+        var parties = new List<Quotation.Core.Gst.TaxCheck.Party> { new("The buyer", BuyerGstin, BuyerState, BuyerStateCode) };
+        if (!ConsigneeSameAsBuyer && ConsigneeName.Trim().Length > 0)
+            parties.Add(new("The consignee", ConsigneeGstin, ConsigneeState, ConsigneeStateCode));
+        var problems = Quotation.Core.Gst.TaxCheck.Problems([.. parties]);
+        if (problems.Count == 0) return true;
+        var placeOfSupply = !ConsigneeSameAsBuyer && ConsigneeStateCode.Length > 0 ? ConsigneeStateCode : BuyerStateCode;
+        var message = string.Join(Environment.NewLine, problems.Select(p => "• " + p)) + Environment.NewLine + Environment.NewLine +
+                      "GST on this quotation: " + Quotation.Core.Gst.TaxCheck.Describe(_settings.Company.StateCode, placeOfSupply) + ".";
+        return await _navigator.ConfirmAsync("Check the GST before approving", message, "Approve anyway", "Go back");
+    }
+
     /// <summary>Approval with all checks. True when the quotation is approved afterwards.</summary>
     private async Task<bool> ApproveCoreAsync(bool overrideStale, bool openPdf)
     {
         if (!CanAct) return false; // Ctrl+Enter on an administrator's screen, or on someone else's document
+        if (!overrideStale && !await TaxLooksRightAsync()) return false;
         if ((IsDirty || Id is null) && !await SaveAsync()) return false;
         ValidationMessages.Clear();
         NeedsStaleOverride = false;

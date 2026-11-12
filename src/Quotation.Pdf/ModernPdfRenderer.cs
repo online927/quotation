@@ -28,7 +28,7 @@ public sealed class ModernPdfRenderer
 
     // ---- table columns ----
     private const double TableX = 45.6, TableW = 515;
-    private const double SlX = 57.8, SlHeadX = 50.9, ItemX = 86.3, HsnX = 300, QtyRight = 386, RateRight = 446, DiscRight = 486, AmountRight = 553.1;
+    private const double SlX = 57.8, SlHeadX = 50.9, ItemX = 86.3, HsnX = 266, GstRight = 346, QtyRight = 386, RateRight = 446, DiscRight = 486, AmountRight = 553.1;
     private const double ItemWidth = HsnX - ItemX - 8;
     private const double TotalsLabelRight = 451.8;
     private const double LeftX = 46.4;
@@ -94,7 +94,7 @@ public sealed class ModernPdfRenderer
         var headTop = Math.Max(FirstHeadTop, HeaderBottom(g, doc) + 22);
         var rows = doc.Lines.Select(l => MakeRow(g, doc, l)).ToList();
         var totals = Totals(doc);
-        var totalsHeight = 9.2 + 25.4 * (totals.Count - 1) + 14;
+        var totalsHeight = 9.2 + 25.4 * (totals.Count - 1) + 14 + 10; // and "E. & O.E" under the total
         var (bottom, bottomTop) = BottomBlock(g, doc);
         var lastLimit = bottomTop - 12 - totalsHeight;
 
@@ -165,13 +165,75 @@ public sealed class ModernPdfRenderer
         return rows;
     }
 
-    /// <summary>Remarks, terms &amp; conditions and sign-off, stacked upward from just above the footer rule (SPEC §6).</summary>
+    /// <summary>
+    /// The foot of the last page, stacked upward from just above the footer rule: the company's PAN / MSME / IEC (left) and
+    /// bank details (right) on the last lines, terms &amp; conditions and remarks above them, and the "Pay by UPI" QR above the
+    /// bank details.
+    /// </summary>
     private (List<TextLine> Lines, double Top) BottomBlock(XGraphics g, QuotationDocument doc)
     {
-        // With the "Pay by UPI" QR at the bottom right, the terms keep clear of it.
         var hasQr = UpiQr.LinkFor(doc) is not null;
+        var c = doc.Company;
+        var ids = new List<(string Label, string Value)>();
+        if (doc.Kind != Quotation.Core.Domain.DocumentType.ProformaInvoice && !string.IsNullOrWhiteSpace(c.Pan)) ids.Add(("Company's PAN", c.Pan.Trim()));
+        if (!string.IsNullOrWhiteSpace(c.MsmeNumber)) ids.Add(("Company's MSME No", c.MsmeNumber.Trim()));
+        if (!string.IsNullOrWhiteSpace(c.Iec)) ids.Add(("Company's IEC", c.Iec.Trim()));
+        var bank = new List<(string Label, string Value)>();
+        if (!string.IsNullOrWhiteSpace(c.BankName) || !string.IsNullOrWhiteSpace(c.BankAccountNumber))
+        {
+            bank.Add(("A/c Holder's Name", (c.BankAccountHolder ?? "").Trim()));
+            bank.Add(("Bank Name", (c.BankName ?? "").Trim()));
+            bank.Add(("A/c No.", (c.BankAccountNumber ?? "").Trim()));
+            bank.Add(("Branch & IFS Code", string.Join(" & ", new[] { c.BankBranch, c.BankIfsc }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!.Trim()))));
+        }
+
+        var bottom = FootBottom;
+        _pairs = [];
+        var pairRows = Math.Max(ids.Count, bank.Count);
+        if (pairRows > 0)
+        {
+            var labelFont = F(PairSize);
+            var valueFont = F(PairSize, true);
+            var idsRight = LeftX;
+            if (ids.Count > 0)
+            {
+                var labelW = ids.Max(p => g.MeasureString(p.Label, labelFont).Width);
+                var valueW = ids.Max(p => g.MeasureString(p.Value, valueFont).Width);
+                idsRight = LeftX + labelW + PairGap + valueW;
+                var top = bottom - PairStep * (ids.Count - 1);
+                for (var i = 0; i < ids.Count; i++) _pairs.Add((LeftX, top + PairStep * i, ids[i].Label, ids[i].Value, labelW, PairSize));
+            }
+            if (bank.Count > 0)
+            {
+                // In the middle: between the company's numbers and the QR (or the right margin); slightly smaller text when
+                // long bank details would otherwise run into the UPI ID.
+                var from = idsRight + 16;
+                var to = hasQr ? AmountRight - QrTextWidth(g, doc) - 20 : AmountRight;
+                double size = PairSize, labelW, blockW;
+                while (true)
+                {
+                    var lf = F(size);
+                    var vf = F(size, true);
+                    labelW = bank.Max(p => g.MeasureString(p.Label, lf).Width);
+                    blockW = labelW + PairGap + bank.Max(p => g.MeasureString(p.Value, vf).Width);
+                    if (blockW <= to - from || size <= 6.5) break;
+                    size -= 0.25;
+                }
+                var x = Math.Max(from, from + (to - from - blockW) / 2);
+                var top = bottom - PairStep * (bank.Count - 1);
+                for (var i = 0; i < bank.Count; i++) _pairs.Add((x, top + PairStep * i + (PairSize - size) * 0.85, bank[i].Label, bank[i].Value, labelW, size));
+            }
+            bottom = bottom - PairStep * (pairRows - 1) - 18;
+        }
+        else
+        {
+            bottom -= 21;
+        }
+
+        var placed = new List<(double T, TextLine Line)>();
+
+        // Terms and remarks above them; with the "Pay by UPI" QR at the right, the terms keep clear of it.
         var width = hasQr ? 500 - QrSize - 20 : 500;
-        var signOff = doc.SignOff.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
         var terms = new List<string>();
         for (var i = 0; i < doc.TermsAndConditions.Count; i++)
         {
@@ -180,18 +242,6 @@ public sealed class ModernPdfRenderer
         var remarks = string.IsNullOrWhiteSpace(doc.Remarks) ? [] : Wrap(g, "Remarks: " + doc.Remarks, F(8, true), width);
 
         // Lines from the bottom up; each item is (T, line).
-        var placed = new List<(double T, TextLine Line)>();
-        var bottom = 772.5;
-        if (signOff.Count > 0)
-        {
-            var top = bottom - 10.5 * (signOff.Count - 1);
-            for (var i = 0; i < signOff.Count; i++) placed.Add((top + 10.5 * i, new TextLine(signOff[i], 8, false)));
-            bottom = top - 18;
-        }
-        else
-        {
-            bottom -= 21;
-        }
         if (terms.Count > 0)
         {
             var top = bottom - 10.5 * (terms.Count - 1);
@@ -205,15 +255,37 @@ public sealed class ModernPdfRenderer
             for (var i = 0; i < remarks.Count; i++) placed.Add((top + 10.5 * i, new TextLine(remarks[i], 8, true)));
         }
         _bottomPositions = placed;
-        var blockTop = placed.Count == 0 ? 772.5 : placed.Min(p => p.T);
+        var blockTop = Math.Min(placed.Count == 0 ? FootBottom : placed.Min(p => p.T), _pairs.Count == 0 ? FootBottom : _pairs.Min(p => p.T));
         if (hasQr) blockTop = Math.Min(blockTop, QrTop);
         return (placed.Select(p => p.Line).ToList(), blockTop);
     }
 
-    /// <summary>"Pay by UPI" QR code at the bottom right of the last page, across from Terms &amp; Conditions.</summary>
-    private const double QrSize = 64;
-    private const double QrBottom = 772.5;
-    private const double QrTop = QrBottom - 11 - 3 - QrSize - 3 - 8;
+    private const double PairSize = 7.5, PairStep = 10.5, PairGap = 12;
+
+    private List<(double X, double T, string Label, string Value, double LabelWidth, double Size)> _pairs = [];
+
+    /// <summary>"Company's PAN : AAAFT0000A" — the label, a colon in line with the others and the value in bold.</summary>
+    private void DrawPairs(XGraphics g)
+    {
+        foreach (var (x, t, label, value, labelWidth, size) in _pairs)
+        {
+            Text(g, x, t, label, size);
+            Text(g, x + labelWidth + 4, t, ":", size);
+            Text(g, x + labelWidth + PairGap, t, value, size, true, Black);
+        }
+    }
+
+    /// <summary>"Pay by UPI" QR code at the bottom right of the last page.</summary>
+    private const double QrSize = 57.6; // 10 % smaller than the first 64
+    private const double QrBottom = FootBottom;
+    /// <summary>The top of the last line above the footer rule (791.3).</summary>
+    private const double FootBottom = 778;
+    /// <summary>The "UPI ID" line is the last line, level with the last bank-detail line.</summary>
+    private const double QrTop = QrBottom - 11 - 3 - QrSize - 3;
+
+    /// <summary>The width of the QR block: the code or the "UPI ID: …" line under it, whichever is wider.</summary>
+    private double QrTextWidth(XGraphics g, QuotationDocument doc) =>
+        Math.Max(QrSize, Math.Min(160, g.MeasureString("UPI ID: " + doc.Company.UpiId.Trim(), F(PairSize)).Width));
 
     private void DrawUpiQr(XGraphics g, QuotationDocument doc)
     {
@@ -224,7 +296,7 @@ public sealed class ModernPdfRenderer
         t += 11 + 3;
         UpiQr.Draw(g, link, right - QrSize, t, QrSize);
         t += QrSize + 3;
-        TextFit(g, right, t, "UPI ID: " + doc.Company.UpiId.Trim(), 7, 160);
+        TextFit(g, right, t, "UPI ID: " + doc.Company.UpiId.Trim(), PairSize, 160);
     }
 
     private List<(double T, TextLine Line)> _bottomPositions = [];
@@ -302,7 +374,15 @@ public sealed class ModernPdfRenderer
         // Title (top right).
         Text(g, 559.9, 139.9, doc.ModernTitle, 24, align: Right);
         Text(g, 559.8, 165.5, $"Ref No. {doc.Number}", 10, true, align: Right);
-        if (!string.IsNullOrWhiteSpace(doc.OtherReferences)) Text(g, 559.8, 178.5, $"Other Ref: {doc.OtherReferences}", 10, true, align: Right);
+        var refTop = 178.5;
+        if (!string.IsNullOrWhiteSpace(doc.BuyersReference))
+        {
+            // The customer's PO / order number (Buyer's Ref./Order No.) and its date.
+            var po = doc.BuyersReference.Trim() + (doc.BuyersReferenceDate is { } d ? " dt. " + d.ToString("dd MMM yyyy", CultureInfo.InvariantCulture) : "");
+            Text(g, 559.8, refTop, $"Order No: {po}", 10, true, align: Right);
+            refTop += 13;
+        }
+        if (!string.IsNullOrWhiteSpace(doc.OtherReferences)) Text(g, 559.8, refTop, $"Other Ref: {doc.OtherReferences}", 10, true, align: Right);
 
         // Buyer (and consignee when it is a different party).
         var top = BuyerTop(doc);
@@ -364,6 +444,7 @@ public sealed class ModernPdfRenderer
         Text(g, SlHeadX, headTop + 8.1, "S.No", 9, color: White);
         Text(g, ItemX, headTop + 8.1, "Item & Description", 9, color: White);
         Text(g, HsnX, headTop + 8.1, "HSN/SAC", 9, color: White);
+        Text(g, GstRight, headTop + 8.1, "GST", 9, color: White, align: Right);
         Text(g, QtyRight, headTop + 8.1, "Qty", 9, color: White, align: Right);
         Text(g, RateRight, headTop + 8.1, "Rate", 9, color: White, align: Right);
         Text(g, DiscRight, headTop + 8.1, "Disc %", 9, color: White, align: Right);
@@ -376,6 +457,7 @@ public sealed class ModernPdfRenderer
         {
             DrawTotals(g, layout.Totals, rowTop);
             foreach (var (t, line) in _bottomPositions) Text(g, LeftX, t, line.Text, line.Size, line.Bold);
+            DrawPairs(g);
             DrawUpiQr(g, doc);
             if (doc.Seal is not null) DrawSeal(g, doc);
         }
@@ -389,7 +471,12 @@ public sealed class ModernPdfRenderer
             Text(g, LeftX, 801, $"Printed on {p.LocalTime.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)} at " +
                 $"{p.LocalTime.ToString("HH:mm", CultureInfo.InvariantCulture)}   By: {p.User}", 6, color: PageNo);
         }
-        Text(g, 562.8, 801, (index + 1).ToString(CultureInfo.InvariantCulture), 6, color: PageNo, align: Right);
+        var pageText = layout.Pages.Count == 1
+            ? "1"
+            : $"Page {(index + 1).ToString(CultureInfo.InvariantCulture)} of {layout.Pages.Count.ToString(CultureInfo.InvariantCulture)}";
+        Text(g, 562.8, 801, pageText, 6, color: PageNo, align: Right);
+        var note = "This is a Computer Generated Document";
+        Text(g, PageW / 2 - g.MeasureString(note, F(6)).Width / 2, 801, note, 6, color: PageNo);
         if (!string.IsNullOrWhiteSpace(doc.Watermark)) DrawWatermark(g, doc.Watermark);
     }
 
@@ -412,7 +499,8 @@ public sealed class ModernPdfRenderer
         Text(g, SlX, y, l.SlNo.ToString(CultureInfo.InvariantCulture), 9, color: Black);
         for (var i = 0; i < row.NameLines.Count; i++) Text(g, ItemX, y + 10.8 * i, row.NameLines[i], 9, color: Black);
         Text(g, HsnX, y, l.Hsn, 9, color: Black);
-        TextFit(g, QtyRight, y, IndianFormat.Amount(l.Quantity), 9, QtyRight - HsnX - 46);
+        if (l.GstRate is { } gst) Text(g, GstRight, y, gst.ToString("0.##", CultureInfo.InvariantCulture) + "%", 9, color: Black, align: Right);
+        TextFit(g, QtyRight, y, IndianFormat.Amount(l.Quantity), 9, QtyRight - GstRight - 6);
         Text(g, QtyRight, rowTop + 18.9, l.Unit, 7, align: Right);
         TextFit(g, RateRight, y, Money(l.Rate), 9, RateRight - QtyRight - 6);
         if (l.DiscountPercent != 0)
@@ -435,6 +523,7 @@ public sealed class ModernPdfRenderer
             TextFit(g, AmountRight, y, value, 9, AmountRight - TotalsLabelRight - 8, bold);
             y += 25.4;
         }
+        Text(g, AmountRight, y - 25.4 + 14, "E. & O.E", 7, color: PageNo, align: Right);
     }
 
     private void DrawSeal(XGraphics g, QuotationDocument doc)
@@ -445,10 +534,9 @@ public sealed class ModernPdfRenderer
             using var img = XImage.FromStream(ms);
             var width = Math.Clamp(doc.Company.SealWidth, 40, 260);
             var height = width * img.PointHeight / Math.Max(1, img.PointWidth);
-            // Beside the sign-off, like a stamp over "Regards …".
-            var signOff = _bottomPositions.Count == 0 ? 760 : _bottomPositions.Max(p => p.T);
+            // At the foot of the page, between the company's numbers and the bank details, like a stamp.
             var x = Math.Clamp(230 - width / 2 + doc.Company.SealOffsetX, 0, PageW - width);
-            var y = Math.Clamp(signOff - 4 - height / 2 + doc.Company.SealOffsetY, 0, PageH - height);
+            var y = Math.Clamp(756 - height / 2 + doc.Company.SealOffsetY, 0, PageH - height);
             g.DrawImage(img, x, y, width, height);
         }
         catch (Exception)

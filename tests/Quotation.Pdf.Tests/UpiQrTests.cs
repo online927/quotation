@@ -20,7 +20,16 @@ public class UpiQrTests
     public void Link_has_the_upi_id_total_and_quotation_number()
     {
         var doc = TallyQuotation() with { Number = "TSQ2627-5", GrandTotal = 2537m };
-        Assert.Equal("upi://pay?pa=tsaifuddin@okhdfcbank&pn=T.SAIFUDDIN%20%26%20CO.&cu=INR&am=2537.00&tn=TSQ2627-5", UpiQr.LinkFor(doc));
+        // Payment note: both numbers at first (the order number is the Buyer's Ref./Order No.).
+        Assert.Equal("upi://pay?pa=tsaifuddin@okhdfcbank&pn=T.SAIFUDDIN%20%26%20CO.&cu=INR&am=2537.00&tn=TSQ2627-5%20PO%2F4471", UpiQr.LinkFor(doc));
+        doc.Company.UpiNote = UpiNoteKind.QuotationNumber;
+        Assert.EndsWith("&tn=TSQ2627-5", UpiQr.LinkFor(doc));
+        doc.Company.UpiNote = UpiNoteKind.OrderNumber;
+        Assert.EndsWith("&tn=PO%2F4471", UpiQr.LinkFor(doc));
+        Assert.EndsWith("&tn=TSQ2627-5", UpiQr.LinkFor(doc with { BuyersReference = "" })); // no order number: the quotation number
+        Assert.Equal(UpiLink.MaxNoteLength, UpiLink.Note(UpiNoteKind.Both, "TSQ2627-5", new string('9', 80))[..UpiLink.MaxNoteLength].Length);
+        Assert.EndsWith("&tn=" + new string('9', 50), UpiLink.Build("a@b", "X", 1, new string('9', 80)));
+        doc.Company.UpiNote = UpiNoteKind.Both;
         Assert.Null(UpiQr.LinkFor(TallyQuotation(on: false)));
         Assert.Null(UpiQr.LinkFor(doc with { Kind = DocumentType.ProformaInvoice }));
         var noId = TallyQuotation();

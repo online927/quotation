@@ -20,7 +20,8 @@ public sealed record ValidationInput(
     FinancialYear ActiveFinancialYear,
     IReadOnlyList<ValidationLine> Lines,
     decimal PackingForwarding,
-    bool RequireHsn);
+    bool RequireHsn,
+    bool TypedPartiesAllowed = false);
 
 public sealed record ValidationIssue(string Field, string Message, int? LineNo = null)
 {
@@ -36,7 +37,8 @@ public static class QuotationValidator
     public static List<ValidationIssue> Validate(ValidationInput q)
     {
         var issues = new List<ValidationIssue>();
-        if (q.CustomerId is null) issues.Add(new("Customer", "Select a customer from Tally."));
+        // Formater page: a customer or item that is not in Tally may be typed (stored only in this app).
+        if (q.CustomerId is null && !q.TypedPartiesAllowed) issues.Add(new("Customer", "Select a customer from Tally."));
         if (string.IsNullOrWhiteSpace(q.BuyerName)) issues.Add(new("Buyer", "Buyer name is empty."));
         if (!q.ActiveFinancialYear.Contains(q.Date))
         {
@@ -48,13 +50,14 @@ public static class QuotationValidator
 
         foreach (var l in q.Lines)
         {
-            if (l.ProductId is null) issues.Add(new("Product", "Select the product from the Tally product list.", l.LineNo));
+            if (l.ProductId is null && !q.TypedPartiesAllowed) issues.Add(new("Product", "Select the product from the Tally product list.", l.LineNo));
+            if (string.IsNullOrWhiteSpace(l.ItemName)) issues.Add(new("Product", "The item has no name.", l.LineNo));
             if (l.Quantity <= 0) issues.Add(new("Quantity", "Quantity must be greater than zero.", l.LineNo));
             if (l.Rate <= 0) issues.Add(new("Rate", "Rate must be greater than zero.", l.LineNo));
             if (l.DiscountPercent is < 0 or >= 100) issues.Add(new("Discount", "Discount must be between 0 and 100%.", l.LineNo));
             if (l.GstRate is null) issues.Add(new("GST", "GST rate is missing (not set in Tally).", l.LineNo));
             else if (!ValidGstRates.Contains(l.GstRate.Value)) issues.Add(new("GST", $"GST rate {l.GstRate}% is not a valid GST rate.", l.LineNo));
-            if (q.RequireHsn && string.IsNullOrWhiteSpace(l.Hsn)) issues.Add(new("HSN", "HSN/SAC is missing.", l.LineNo));
+            if (q.RequireHsn && !(q.TypedPartiesAllowed && l.ProductId is null) && string.IsNullOrWhiteSpace(l.Hsn)) issues.Add(new("HSN", "HSN/SAC is missing.", l.LineNo));
             else if (!string.IsNullOrWhiteSpace(l.Hsn) && !IsValidHsn(l.Hsn)) issues.Add(new("HSN", $"HSN/SAC '{l.Hsn}' is not 4, 6 or 8 digits.", l.LineNo));
             if (string.IsNullOrWhiteSpace(l.Unit)) issues.Add(new("Unit", "Unit is missing.", l.LineNo));
         }

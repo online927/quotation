@@ -1,0 +1,261 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Desktop.ViewModels"
+             xmlns:ctl="using:Quotation.Desktop.Controls"
+             x:Class="Quotation.Desktop.Views.FormaterView"
+             x:DataType="vm:FormaterViewModel">
+  <!-- The Formater page: the same cards, item table and button bar as the quotation page (Styles/DocumentStyles), so it follows every theme -->
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Ctrl+E" Command="{Binding ApproveCommand}" />
+    <KeyBinding Gesture="Ctrl+Enter" Command="{Binding ApproveCommand}" />
+    <KeyBinding Gesture="F11" Command="{Binding PreviewCommand}" />
+  </UserControl.KeyBindings>
+  <UserControl.Styles>
+    <StyleInclude Source="/Styles/DocumentStyles.axaml" />
+    <Style Selector="TextBox.formatertext">
+      <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, DejaVu Sans Mono, monospace" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="AcceptsReturn" Value="True" />
+      <Setter Property="AcceptsTab" Value="True" />
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="VerticalContentAlignment" Value="Top" />
+    </Style>
+    <Style Selector="Border.chip">
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="Padding" Value="8,1" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Border.chip.tally">
+      <Setter Property="Background" Value="{DynamicResource PillOkBrush}" />
+    </Style>
+    <Style Selector="Border.chip.tally TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource GreenBrush}" />
+    </Style>
+    <Style Selector="Border.chip.typed">
+      <Setter Property="Background" Value="{DynamicResource PillPendingBrush}" />
+    </Style>
+    <Style Selector="Border.chip.typed TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource OrangeBrush}" />
+    </Style>
+    <Style Selector="Border.chip TextBlock">
+      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel Margin="20,12,20,12">
+    <!-- Title bar (as on the quotation page) -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,0,0,8">
+      <TextBlock Classes="h1" Text="Formater" VerticalAlignment="Center" />
+      <Border Grid.Column="1" Classes="pill status" Margin="12,0" VerticalAlignment="Center">
+        <TextBlock Text="DRAFT" FontWeight="Bold" FontSize="12" />
+      </Border>
+      <TextBlock Grid.Column="2" Classes="muted" FontSize="11" VerticalAlignment="Center"
+                 Text="Paste or type the customer and the items. PDF in the Zoho layout." />
+      <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,14,0">
+        <TextBlock Classes="fl" Text="Quotation No." VerticalAlignment="Center" Margin="0" />
+        <TextBlock Name="NumberText" Text="{Binding NumberText}" FontWeight="Bold" VerticalAlignment="Center" />
+      </StackPanel>
+      <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+        <TextBlock Classes="fl" Text="Dated" VerticalAlignment="Center" Margin="0" />
+        <TextBlock Text="{Binding DateText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Button bar (as on the quotation page) -->
+    <Border Name="ActionDock" Classes="dock" DockPanel.Dock="Bottom">
+      <StackPanel Spacing="6">
+        <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
+        <ItemsControl Name="ProblemList" ItemsSource="{Binding Problems}" IsVisible="{Binding HasProblems}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding StringFormat='• {0}'}" Foreground="{DynamicResource BadBrush}" FontSize="12" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <ctl:ActionBar Name="ActionButtons" Spacing="8" Gap="16">
+          <Button Name="ApproveButton" Classes="primary bar" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanApprove}"
+                  ToolTip.Tip="Approve and make the PDF (Ctrl+E): it gets the next quotation number and goes to Quotation History">
+            <StackPanel Orientation="Horizontal" Spacing="8"><Path Classes="bi" Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8 M8.5,15 L11,17.5 L15.5,12.5" Stroke="White" /><TextBlock Classes="lbl" Text="Approve" /></StackPanel>
+          </Button>
+          <Border Classes="groupline" />
+          <Button Name="PreviewButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="3" Command="{Binding PreviewCommand}"
+                  ToolTip.Tip="Preview the PDF (F11): nothing is saved and no number is used">
+            <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Preview" /></StackPanel>
+          </Button>
+          <Button Name="OpenInEditorButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="2" Command="{Binding OpenInEditorCommand}"
+                  ToolTip.Tip="Open it on the quotation screen for small changes before approving">
+            <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M4,20 V16 L15,5 L19,9 L8,20 Z M13,7 L17,11" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Open in editor" /></StackPanel>
+          </Button>
+          <Button Name="ExampleButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="4" Command="{Binding InsertExampleCommand}"
+                  ToolTip.Tip="Put an example in the text box">
+            <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M12,3 A9,9 0 1 1 11.99,3 Z M9.5,9.5 C9.5,8 10.6,7 12,7 C13.4,7 14.5,8 14.5,9.3 C14.5,11.2 12,11.3 12,13.5 M12,16.6 L12,17" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Example" /></StackPanel>
+          </Button>
+          <Button Name="ClearButton" Classes="danger bar tile" ctl:ActionBar.Right="True" ctl:ActionBar.CollapseOrder="1" Command="{Binding ClearCommand}"
+                  ToolTip.Tip="Empty the text box">
+            <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M4,7 L20,7 M9,7 L9,4 L15,4 L15,7 M6,7 L7,20 L17,20 L18,7" Stroke="{DynamicResource BadBrush}" /><TextBlock Classes="lbl" Text="Clear" /></StackPanel>
+          </Button>
+        </ctl:ActionBar>
+      </StackPanel>
+    </Border>
+
+    <Grid ColumnDefinitions="4*,Auto,7*">
+      <!-- The text -->
+      <Border Classes="card" Padding="0">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="14,12,14,8">
+            <Path Classes="si" Data="M4,5 H20 M4,9.5 H14 M4,14 H20 M4,18.5 H11" />
+            <TextBlock Classes="h2" Text="Quotation text" Margin="0" VerticalAlignment="Center" />
+          </StackPanel>
+          <TextBlock DockPanel.Dock="Bottom" Classes="muted" FontSize="11" TextWrapping="Wrap" Margin="14,6,14,12"
+                     Text="First line: the customer. Second line: the other reference (the next lines may be the address, GSTIN, phone, e-mail). Then the items: name or part no., discount, qty, rate (unit and description optional; indented lines are the item's description)." />
+          <TextBox Name="FormaterTextBox" Classes="formatertext" Text="{Binding Text}" Margin="14,0,14,0"
+                   Watermark="BuyersHub&#10;Your enquiry dated 10-Nov-2026&#10;36AAZFB2304B1ZQ&#10;&#10;Vernier Hook Depth Gauge, 10%, 5, 12011&#10;  Make - Insize" />
+        </DockPanel>
+      </Border>
+
+      <Border Grid.Column="1" Width="{DynamicResource SectionSpacing}" />
+
+      <!-- What the app understood -->
+      <ScrollViewer Grid.Column="2" Margin="0,0,-16,0">
+        <StackPanel Spacing="{DynamicResource SectionSpacing}" Margin="0,0,16,0">
+          <!-- Customer -->
+          <Border Name="CustomerCard" Classes="card" Padding="14,12">
+            <StackPanel Spacing="6">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Path Classes="si" Data="M9,4 A3.5,3.5 0 1 1 8.99,4 Z M3,20 C3,16 6,14 9,14 C12,14 15,16 15,20" />
+                <TextBlock Classes="h2" Text="Customer" Margin="0" VerticalAlignment="Center" />
+              </StackPanel>
+              <TextBlock Classes="muted" FontSize="12" Text="No customer yet: type the customer's name on the first line." IsVisible="{Binding !HasCustomer}" />
+              <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasCustomer}">
+                <StackPanel Spacing="3">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Name="CustomerNameText" Text="{Binding CustomerName}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis" />
+                    <Border Classes="chip tally" IsVisible="{Binding CustomerIsTally}"><TextBlock Text="Tally ✓" /></Border>
+                    <Border Classes="chip typed" IsVisible="{Binding CustomerIsTyped}"><TextBlock Text="Typed (not in Tally)" /></Border>
+                    <Button Classes="link" FontSize="11" Content="Keep as typed" Command="{Binding KeepCustomerTypedCommand}" IsVisible="{Binding CustomerIsTally}" />
+                  </StackPanel>
+                  <TextBlock Text="{Binding CustomerDetails}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasCustomerSuggestion}">
+                    <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" Text="{Binding CustomerSuggestion, StringFormat='Tally has: {0}'}" />
+                    <Button Name="UseCustomerSuggestionButton" Classes="small" Content="Use" Command="{Binding UseCustomerSuggestionCommand}" />
+                  </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="2" Margin="14,0,0,0" MinWidth="150">
+                  <TextBlock Classes="fl" Text="Order No" Margin="0" IsVisible="{Binding OrderText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="{Binding OrderText}" FontWeight="SemiBold" IsVisible="{Binding OrderText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Classes="fl" Text="Other ref." IsVisible="{Binding OtherRefText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="{Binding OtherRefText}" FontWeight="SemiBold" IsVisible="{Binding OtherRefText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <!-- Items: the same table as the quotation page -->
+          <Border Classes="card" Padding="0">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="10" Margin="14,12,14,8">
+                <Path Classes="si" Data="M12,2 L21,7 L21,17 L12,22 L3,17 L3,7 Z M3,7 L12,12 L21,7 M12,12 L12,22" />
+                <TextBlock Classes="h2" Text="Items" Margin="0" VerticalAlignment="Center" />
+              </StackPanel>
+              <Border Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,1" Padding="12,9">
+                <Grid ColumnDefinitions="26,*,66,40,54,78,38,46,88">
+                  <TextBlock Classes="th" Text="Sl" />
+                  <TextBlock Classes="th" Grid.Column="1" Text="Description of Goods" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Classes="th" Grid.Column="2" Text="HSN/SAC" />
+                  <TextBlock Classes="th" Grid.Column="3" Text="GST" />
+                  <TextBlock Classes="th" Grid.Column="4" Text="Quantity" HorizontalAlignment="Right" />
+                  <TextBlock Classes="th" Grid.Column="5" Text="Rate" HorizontalAlignment="Right" />
+                  <TextBlock Classes="th" Grid.Column="6" Text="per" Margin="6,0,0,0" />
+                  <TextBlock Classes="th" Grid.Column="7" Text="Disc. %" HorizontalAlignment="Right" />
+                  <TextBlock Classes="th" Grid.Column="8" Text="Amount" HorizontalAlignment="Right" />
+                </Grid>
+              </Border>
+              <TextBlock Classes="muted" FontSize="12" Margin="14,12" Text="No items yet. Item lines look like:  Item name, discount, qty, rate" IsVisible="{Binding !HasLines}" />
+              <ItemsControl Name="LinesList" ItemsSource="{Binding Lines}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:FormaterLineViewModel">
+                    <Border Classes="row" Classes.alt="{Binding IsEven}" BorderBrush="{DynamicResource RowLineBrush}" BorderThickness="0,0,0,1" Padding="{DynamicResource RowPadding}">
+                      <Grid ColumnDefinitions="26,*,66,40,54,78,38,46,88">
+                        <TextBlock Classes="td" Text="{Binding No}" />
+                        <StackPanel Grid.Column="1" Spacing="1">
+                          <TextBlock Classes="td" Text="{Binding ItemName}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                          <TextBlock Classes="td" Text="{Binding PartNumber, StringFormat='Part No. {0}'}" FontSize="11" Foreground="{DynamicResource MutedBrush}" IsVisible="{Binding HasPartNumber}" />
+                          <TextBlock Classes="td" Text="{Binding Description}" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
+                          <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                            <Border Classes="chip tally" IsVisible="{Binding IsTally}"><TextBlock Text="Tally ✓" /></Border>
+                            <Border Classes="chip typed" IsVisible="{Binding IsTyped}"><TextBlock Text="Typed (not in Tally)" /></Border>
+                            <Button Classes="link" FontSize="11" Content="Keep as typed" IsVisible="{Binding IsTally}"
+                                    Command="{Binding $parent[UserControl].((vm:FormaterViewModel)DataContext).KeepItemTypedCommand}" CommandParameter="{Binding}" />
+                            <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Text="{Binding SuggestionText}"
+                                       IsVisible="{Binding HasSuggestion}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                            <Button Classes="small" Content="Use" IsVisible="{Binding HasSuggestion}"
+                                    Command="{Binding $parent[UserControl].((vm:FormaterViewModel)DataContext).UseItemSuggestionCommand}" CommandParameter="{Binding}" />
+                          </StackPanel>
+                        </StackPanel>
+                        <TextBlock Classes="td" Grid.Column="2" Text="{Binding Hsn}" />
+                        <TextBlock Classes="td" Grid.Column="3" Text="{Binding GstText}" />
+                        <TextBlock Classes="td" Grid.Column="4" Text="{Binding QuantityText}" HorizontalAlignment="Right" />
+                        <TextBlock Classes="td" Grid.Column="5" Text="{Binding RateText}" HorizontalAlignment="Right" />
+                        <TextBlock Classes="td" Grid.Column="6" Text="{Binding Unit}" Margin="6,0,0,0" />
+                        <TextBlock Classes="td" Grid.Column="7" Text="{Binding DiscountText}" HorizontalAlignment="Right" />
+                        <TextBlock Classes="td" Grid.Column="8" Text="{Binding AmountText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
+          <!-- GST and notes | Totals (as on the quotation page) -->
+          <Grid ColumnDefinitions="*,Auto,300">
+            <Border Classes="card" Padding="14,12" VerticalAlignment="Top">
+              <StackPanel Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Path Classes="si" Data="M12,3 A9,9 0 1 1 11.99,3 Z M12,8 L12,13 M12,16.5 L12,17" />
+                  <TextBlock Classes="h2" Text="GST and notes" Margin="0" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Name="GstNoteText" Text="{Binding GstNote}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <ItemsControl ItemsSource="{Binding Notes}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding StringFormat='• {0}'}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,1" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Width="{DynamicResource SectionSpacing}" />
+            <Border Grid.Column="2" Classes="card" Padding="14,14,14,0" VerticalAlignment="Top">
+              <StackPanel Spacing="8">
+                <Border Classes="headbar blue" Margin="0"><TextBlock Classes="h2" Text="Totals" /></Border>
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Subtotal" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" VerticalAlignment="Center" />
+                </Grid>
+                <TextBlock Text="{Binding TaxText}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+                           IsVisible="{Binding TaxText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding RoundOffText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Text="Round off" />
+                  <TextBlock Grid.Column="1" Text="{Binding RoundOffText}" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Total quantity" />
+                  <TextBlock Grid.Column="1" Text="{Binding TotalQuantityText}" />
+                </Grid>
+                <Border Name="TotalBand" Background="{DynamicResource AccentSoftBrush}" Margin="-14,4,-14,0" Padding="14,12" CornerRadius="{DynamicResource CardBottomRadius}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Total" FontWeight="Bold" FontSize="17" VerticalAlignment="Center" />
+                    <TextBlock Name="GrandTotalText" Grid.Column="1" Text="{Binding GrandTotalText}" FontWeight="Bold" FontSize="19" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+              </StackPanel>
+            </Border>
+          </Grid>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</UserControl>

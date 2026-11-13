@@ -339,6 +339,13 @@ public partial class QuotationApiClient
 public partial class QuotationApiClient
 {
     public Task<byte[]> PreviewPdfAsync(Guid id, CancellationToken ct = default) => GetBytesAsync($"api/quotations/{id}/preview", ct);
+
+    /// <summary>The PDF of a quotation that is not saved yet (nothing is saved and no number is used).</summary>
+    public async Task<byte[]> PreviewUnsavedPdfAsync(SaveQuotationRequest request, CancellationToken ct = default)
+    {
+        using var response = await SendRawAsync(HttpMethod.Post, "api/quotations/preview", request, ct);
+        return await response.Content.ReadAsByteArrayAsync(ct);
+    }
 }
 
 public partial class QuotationApiClient

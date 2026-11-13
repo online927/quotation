@@ -31,6 +31,8 @@ public enum QuotationSource
     Manual = 0,
     Ai = 1,
     Gmail = 2,
+    /// <summary>Made on the Formater page from pasted text; the customer and items may be typed (not in Tally).</summary>
+    Formater = 3,
 }
 
 /// <summary>Processing state of an ingested e-mail.</summary>

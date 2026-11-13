@@ -1,0 +1,134 @@
+<!--
+  The look of the quotation screen (cards, item table, button bar), shared by the quotation editor and the Formater page so
+  both follow every theme the same way.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style Selector="TextBlock.fl">
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Margin" Value="0,4,0,1" />
+    </Style>
+    <Style Selector="TextBlock.th">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.td">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style Selector="NumericUpDown">
+      <Setter Property="ShowButtonSpinner" Value="False" />
+    </Style>
+    <!-- Item lines: the whole line reacts to the mouse (faint highlight, Edit and remove appear) -->
+    <Style Selector="Border.row">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.row.alt">
+      <Setter Property="Background" Value="{DynamicResource ZebraBrush}" />
+    </Style>
+    <Style Selector="Border.row:pointerover">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+    </Style>
+    <Style Selector="Border.row.dragging">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    </Style>
+    <Style Selector="Border.grip">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Cursor" Value="SizeNorthSouth" />
+      <Setter Property="Opacity" Value="0.55" />
+    </Style>
+    <Style Selector="Border.grip:pointerover">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <!-- Edit and remove appear when the mouse is on the line (and on the line being edited) -->
+    <Style Selector="StackPanel.lineactions">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="Border.row:pointerover StackPanel.lineactions, Border.row.editing StackPanel.lineactions, StackPanel.lineactions:focus-within">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Border.row.editing">
+      <Setter Property="Background" Value="{DynamicResource EditingRowBrush}" />
+    </Style>
+    <Style Selector="Border.card TextBlock.h2">
+      <Setter Property="Margin" Value="0,0,0,4" />
+      <Setter Property="FontSize" Value="17" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <!-- Icons inside buttons take the button's text colour -->
+    <!-- Not enough room on the button line: only the icon (the name is in the tooltip) -->
+    <Style Selector="Button.iconly TextBlock.lbl">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Path.bi">
+      <Setter Property="Width" Value="15" />
+      <Setter Property="Height" Value="15" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="StrokeThickness" Value="1.9" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="StrokeJoin" Value="Round" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- Section icons (Items, Remarks) -->
+    <Style Selector="Path.si">
+      <Setter Property="Width" Value="20" />
+      <Setter Property="Height" Value="20" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="StrokeThickness" Value="1.8" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="StrokeJoin" Value="Round" />
+      <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- Action bar: taller buttons (colours unchanged) -->
+    <!-- The floating card under the quotation -->
+    <Style Selector="Border.dock">
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="16" />
+      <Setter Property="Padding" Value="14,10" />
+      <Setter Property="Margin" Value="0,8,0,6" />
+      <Setter Property="BoxShadow" Value="0 6 24 0 #1A000000" />
+    </Style>
+    <Style Selector="Button.bar.primary, Button.bar.save">
+      <Setter Property="CornerRadius" Value="20" />
+      <Setter Property="Padding" Value="18,7" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- Icon buttons: the icon beside the name on one line, no box until the mouse is on it -->
+    <Style Selector="Button.bar.tile">
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+    <Style Selector="Button.bar.tile /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.bar.tile:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+    </Style>
+    <Style Selector="Button.bar.tile Path.bi">
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.bar.tile TextBlock.lbl">
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.bar">
+      <Setter Property="Padding" Value="16,8" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="FontSize" Value="13.5" />
+    </Style>
+    <Style Selector="Border.pill.status">
+      <Setter Property="Padding" Value="13,4" />
+    </Style>
+</Styles>

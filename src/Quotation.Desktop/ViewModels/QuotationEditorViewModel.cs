@@ -59,6 +59,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     private readonly Avalonia.Threading.DispatcherTimer _recoveryTimer;
     private readonly Avalonia.Threading.DispatcherTimer _presenceTimer;
     private QuotationDto? _restore;
+
+    /// <summary>Set by the Formater page: approve as soon as the quotation is on screen.</summary>
+    public bool ApproveWhenLoaded { get; init; }
     private QuotationDto? _loaded;
     private bool _ownsRecovery;
     private string? RecoveryUser => _session.Api.CurrentUser?.Username;
@@ -605,6 +608,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 ApplyUnsaved(kept, 0);
                 _restore = null;
                 await RefreshNumberPreviewAsync();
+                // From the Formater page: "Approve & make PDF" goes straight on to the usual approval.
+                if (ApproveWhenLoaded) Avalonia.Threading.Dispatcher.UIThread.Post(() => _ = ApproveCommand.ExecuteAsync(null));
             }
             else
             {
@@ -1228,6 +1233,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         PreparedBy = PreparedBy,
         VerifiedBy = VerifiedBy,
         WithoutGst = WithoutGst,
+        FromFormater = Source == QuotationSource.Formater,
         Lines = Lines.Select(l => l.ToDto()).ToList(),
     };
 
@@ -1282,7 +1288,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     private async Task<bool> TaxLooksRightAsync()
     {
         // No customer yet: the usual checks say "Select a customer" first.
-        if (CustomerId is null || BuyerName.Trim().Length == 0) return true;
+        if (BuyerName.Trim().Length == 0) return true;
         var parties = new List<Quotation.Core.Gst.TaxCheck.Party> { new("The buyer", BuyerGstin, BuyerState, BuyerStateCode) };
         if (!ConsigneeSameAsBuyer && ConsigneeName.Trim().Length > 0)
             parties.Add(new("The consignee", ConsigneeGstin, ConsigneeState, ConsigneeStateCode));

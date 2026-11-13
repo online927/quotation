@@ -18,6 +18,8 @@ public interface INavigator
     void Toast(string message, int seconds = 5) { }
     /// <summary>A corner message with a button (e.g. "Line 2 removed — Undo").</summary>
     void Toast(string message, string actionText, Action action, int seconds = 8) { }
+    /// <summary>Opens an unsaved quotation (made on the Formater page) on the quotation screen; approves it when asked.</summary>
+    void OpenUnsavedQuotation(Quotation.Contracts.QuotationDto quotation, bool approve) { }
 }
 
 /// <summary>A question shown over the app window (Yes/No, or with an input box).</summary>

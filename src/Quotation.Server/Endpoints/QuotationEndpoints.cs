@@ -79,7 +79,7 @@ public static class QuotationEndpoints
         g.MapGet("/{id:guid}", (Guid id, QuotationService svc, CancellationToken ct) => Handle(() => svc.GetAsync(id, ct)));
 
         g.MapPost("/", (SaveQuotationRequest r, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
-            Handle(() => svc.CreateAsync(r, QuotationSource.Manual, User(ctx), ct)));
+            Handle(() => svc.CreateAsync(r, r.FromFormater ? QuotationSource.Formater : QuotationSource.Manual, User(ctx), ct)));
 
         g.MapPut("/{id:guid}", (Guid id, SaveQuotationRequest r, QuotationService svc, HttpContext ctx, CancellationToken ct) =>
             Handle(() => svc.UpdateAsync(id, r, User(ctx), ct)));
@@ -143,6 +143,19 @@ public static class QuotationEndpoints
                 return bytes is null
                     ? Results.Json(new ApiError("Only an approved quotation can be sealed: approve it first.", null, ApiErrorCodes.InvalidState), statusCode: 409)
                     : Results.File(bytes, "application/pdf");
+            }
+            catch (QuotationException ex)
+            {
+                return Results.Json(new ApiError(ex.Message, null, ex.Code), statusCode: ex.Status);
+            }
+        });
+
+        // Preview of a quotation that is not saved yet (Formater page): nothing is saved, no number is used.
+        g.MapPost("/preview", async (SaveQuotationRequest r, QuotationService svc, PdfQuotationRenderer pdf, HttpContext ctx, CancellationToken ct) =>
+        {
+            try
+            {
+                return Results.File(await svc.PreviewRequestPdfAsync(r, pdf, User(ctx), ct), "application/pdf", "preview.pdf");
             }
             catch (QuotationException ex)
             {

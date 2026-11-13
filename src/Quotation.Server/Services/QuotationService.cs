@@ -115,7 +115,7 @@ public sealed class QuotationService(
         var q = new QuotationHeader
         {
             Id = Guid.NewGuid(),
-            Status = source == QuotationSource.Manual ? QuotationStatus.Draft : QuotationStatus.PendingReview,
+            Status = source is QuotationSource.Manual or QuotationSource.Formater ? QuotationStatus.Draft : QuotationStatus.PendingReview,
             Source = source,
             CreatedBy = user.UserName,
             CreatedUtc = now,
@@ -466,7 +466,7 @@ public sealed class QuotationService(
     }
 
     private byte[] RenderAs(string layout, QuotationHeader q, Quotation.Pdf.PrintStamp? stamp, byte[]? seal = null) =>
-        layout == PdfLayouts.Zoho
+        layout == PdfLayouts.Zoho || q.Source == QuotationSource.Formater // Formater quotations always print in the Zoho layout
             ? renderer.RenderModern(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q))
             : renderer.Render(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q));
 
@@ -475,7 +475,7 @@ public sealed class QuotationService(
     {
         var q = await LoadAsync(id, ct);
         var stamp = user is null ? null : Stamp(user);
-        var zoho = user is not null && await LayoutOfAsync(user, ct) == PdfLayouts.Zoho;
+        var zoho = q.Source == QuotationSource.Formater || (user is not null && await LayoutOfAsync(user, ct) == PdfLayouts.Zoho);
         if (q.Status is QuotationStatus.Generated or QuotationStatus.Approved)
         {
             return zoho
@@ -587,11 +587,34 @@ public sealed class QuotationService(
         q.Lines.OrderBy(l => l.LineNo).Select(l => new ValidationLine(l.LineNo, l.ProductId, l.ItemName, l.Hsn, l.GstRate,
             l.Quantity, l.Unit, l.Rate, l.DiscountPercent)).ToList(),
         q.PackingForwarding,
-        settings.Quotation.RequireHsn));
+        settings.Quotation.RequireHsn,
+        q.Source == QuotationSource.Formater));
 
     // ------------------------------------------------------------------ mapping
 
-    private async Task ApplyAsync(QuotationHeader q, SaveQuotationRequest r, bool isNew, CancellationToken ct)
+    /// <summary>
+    /// The PDF of a quotation that is not saved yet (Formater page: Preview), with a DRAFT watermark and the provisional number.
+    /// Nothing is saved and no number is used.
+    /// </summary>
+    public async Task<byte[]> PreviewRequestPdfAsync(SaveQuotationRequest r, PdfQuotationRenderer pdf, UserContext user, CancellationToken ct)
+    {
+        var q = new QuotationHeader
+        {
+            Id = Guid.NewGuid(),
+            DocType = r.DocType,
+            Source = r.FromFormater ? QuotationSource.Formater : QuotationSource.Manual,
+            Status = QuotationStatus.Draft,
+            CreatedBy = user.UserName,
+        };
+        await ApplyAsync(q, r, isNew: true, ct, remember: false);
+        var provisional = (await numbering.PreviewAsync(db, fy.GetActive().Year, ct, q.DocType)).Number + " (provisional)";
+        var zoho = q.Source == QuotationSource.Formater || await LayoutOfAsync(user, ct) == PdfLayouts.Zoho;
+        return zoho
+            ? pdf.RenderModernPreview(q, settings.Company, settings.Quotation, provisional, Stamp(user), MasterOf(q))
+            : pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional, Stamp(user), MasterOf(q));
+    }
+
+    private async Task ApplyAsync(QuotationHeader q, SaveQuotationRequest r, bool isNew, CancellationToken ct, bool remember = true)
     {
         q.Date = r.Date == default ? fy.Today() : r.Date;
         q.BuyersReference = Trim(r.BuyersReference, 200);
@@ -629,6 +652,11 @@ public sealed class QuotationService(
             if (string.IsNullOrWhiteSpace(q.Buyer.ContactPerson)) q.Buyer.ContactPerson = c.ContactPerson;
             if (string.IsNullOrWhiteSpace(q.Buyer.Phone)) q.Buyer.Phone = c.Mobile.Length > 0 ? c.Mobile : c.Phone;
             if (string.IsNullOrWhiteSpace(q.Buyer.Email)) q.Buyer.Email = c.Email;
+        }
+        else if (q.Buyer.StateCode.Length == 0)
+        {
+            // A typed customer (Formater page): the state from the GSTIN or the state name.
+            q.Buyer.StateCode = Core.Gst.IndianStates.ResolveCode(q.Buyer.Gstin, q.Buyer.StateName);
         }
         q.ConsigneeSameAsBuyer = r.ConsigneeSameAsBuyer;
         q.Consignee = r.ConsigneeSameAsBuyer ? Copy(q.Buyer) : ToSnapshot(r.Consignee);
@@ -688,7 +716,7 @@ public sealed class QuotationService(
         }
         q.Lines = lines;
         Recalculate(q);
-        await RememberDescriptionsAsync(lines, ct);
+        if (remember) await RememberDescriptionsAsync(lines, ct);
     }
 
     /// <summary>

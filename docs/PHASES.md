@@ -711,3 +711,18 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    Computer Generated Document" at the foot; "Page X of Y" when there is more than one page.
 4. Before Approve, a GST check: a GSTIN from another state than the party's, a GSTIN of the wrong shape, or a party with no
    state asks "Approve anyway" / "Go back" and says which GST the quotation gets (IGST or CGST + SGST).
+
+### Round 26
+
+1. Formater page (menu: under New Quotation, for users who make quotations): the customer and items are pasted or typed
+   as text, the way of the separate Formater app, without labels: the first line is the customer, the second line the
+   other reference (the next lines may be its address, GSTIN, phone, e-mail), then the items "name or part no., discount, qty, rate[, unit][, description]";
+   indented lines are an item's description. (Labelled lines such as Company:, Order No:, Other Ref:, Date:, GST: still
+   work.) "What the app understood" shows the customer, items, GST and totals as you type.
+   - The customer and items are matched to the Tally lists when it is clear (read only; Tally is never changed); otherwise
+     they are printed as typed and kept only in this app, with "Tally has: … — Use" offered; "Keep as typed" undoes a match.
+   - Approve (Ctrl+E) puts it on the quotation screen and approves it there like any quotation: the next quotation number,
+     Quotation History, the GST check, seal and PDF folder; Formater quotations always print in the Zoho layout.
+   - Preview (F11) makes the PDF without saving or using a number; "Open in editor" opens it on the quotation screen.
+   - Terms and T&C are not typed here: they come from Settings → Company as on any new quotation.
+   - Same look as the quotation page in every theme (its styles are shared: Styles/DocumentStyles.axaml).

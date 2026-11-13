@@ -29,6 +29,7 @@ public static class NavIcons
     {
         ["dashboard"] = "M4,4 H10 V10 H4 Z M14,4 H20 V10 H14 Z M4,14 H10 V20 H4 Z M14,14 H20 V20 H14 Z",
         ["new"] = "M6,3 H14 L19,8 V21 H6 Z M14,3 V8 H19 M12.5,11 V18 M9,14.5 H16",
+        ["formater"] = "M4,5 H20 M4,9.5 H14 M4,14 H20 M4,18.5 H11 M17,16 L19.5,18.5 L17,21",
         ["newproforma"] = "M6,3 H18 V21 L15,19 L12,21 L9,19 L6,21 Z M12,8 V14 M9,11 H15",
         ["inbox"] = "M12,3 L13.8,9.2 L20,11 L13.8,12.8 L12,19 L10.2,12.8 L4,11 L10.2,9.2 Z",
         ["drafts"] = "M4,20 V16 L15,5 L19,9 L8,20 Z M13,7 L17,11",
@@ -251,6 +252,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         if (makes)
         {
             items.Add(new NavItem("new", "New Quotation", "", () => new QuotationEditorViewModel(_session, this), "Create"));
+            items.Add(new NavItem("formater", "Formater", "", () => new FormaterViewModel(_session, this)));
             if (proforma)
                 items.Add(new NavItem("newproforma", "New Proforma Invoice", "",
                     () => new QuotationEditorViewModel(_session, this, docType: DocumentType.ProformaInvoice)));
@@ -415,6 +417,10 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     }
 
     public void OpenQuotation(Guid id) => _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this, id));
+
+    public void OpenUnsavedQuotation(QuotationDto quotation, bool approve) =>
+        _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this,
+            new RecoverySnapshot(_session.Api.CurrentUser?.Username ?? "", DateTime.Now, quotation)) { ApproveWhenLoaded = approve });
 
     public void NewQuotation()
     {

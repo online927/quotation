@@ -9,7 +9,7 @@ public sealed record FormaterMessage(int Line, string Text)
     public override string ToString() => Line > 0 ? $"Line {Line}: {Text}" : Text;
 }
 
-/// <summary>One item line: "name, discount, qty, rate[, unit][, description | description]".</summary>
+/// <summary>One item line: "name, qty, rate[, discount][, unit][, description | description]".</summary>
 public sealed class FormaterItem
 {
     public int LineNo { get; init; }
@@ -71,8 +71,9 @@ public sealed class FormaterParse
 
 /// <summary>
 /// Reads the text of the Formater page (the way of the separate Formater app): labelled lines (Company:, Address:, GSTIN:,
-/// Order No:, …) fill the header; item lines are "item name, discount, qty, rate" with optional unit and description;
-/// indented or "-" lines under an item are its description lines.
+/// Order No:, …) fill the header; blank lines split the rest into the customer, the other reference and the items. Item lines
+/// are "item name, qty, rate, discount" with optional unit and description, with a blank line before each item; the lines
+/// under an item are its description lines.
 /// </summary>
 public static partial class FormaterText
 {
@@ -182,15 +183,27 @@ public static partial class FormaterText
             ? DateOnly.FromDateTime(d)
             : null;
 
+    /// <summary>What the unlabelled lines of a block (lines between blank lines) are.</summary>
+    private enum Role { None, Party, OtherRef, Items }
+
+    [GeneratedRegex(@"^(?:thanks?|thank\s+you|thx|regards|best\s+regards|warm\s+regards)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex SignOffRegex();
+
+    /// <summary>
+    /// Blank lines split the text into parts: first the customer (its first line is the name; the next lines are the
+    /// address, GSTIN, phone, e-mail), then the other reference, then the items. A part whose lines read as items is items
+    /// at once. Labelled lines (Company:, Order No:, GST: …) may stand anywhere.
+    /// </summary>
     public static FormaterParse Parse(string? text)
     {
         var r = new FormaterParse();
         string? gstin = null, phone = null, email = null;
         List<string>? tc = null;
         var units = new HashSet<string>(Units, StringComparer.OrdinalIgnoreCase);
-        FormaterItem? lastItem = null;
         Field? section = null;
-        var otherRefDone = false;
+        var role = Role.None;
+        bool partyDone = false, otherRefDone = false, itemsStarted = false;
+        FormaterItem? blockItem = null; // the item that started the current part of the items (its next lines are its description)
 
         var lines = (text ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
         for (var i = 0; i < lines.Length; i++)
@@ -200,7 +213,12 @@ public static partial class FormaterText
             var line = raw.Trim();
             if (line.Length == 0)
             {
-                if (section is Field.Tc or Field.Address or Field.Ignored) section = null;
+                // A blank line ends the part.
+                if (role == Role.Party) partyDone = true;
+                if (role == Role.OtherRef) otherRefDone = true;
+                role = itemsStarted ? Role.Items : Role.None;
+                section = null;
+                blockItem = null;
                 continue;
             }
             if (line.StartsWith('#') || line.StartsWith("//", StringComparison.Ordinal)) continue;
@@ -208,13 +226,30 @@ public static partial class FormaterText
             var indented = char.IsWhiteSpace(raw[0]);
             var bullet = line[0] is '-' or '•' or '*' or '>' or '–';
 
+            var unbulleted = bullet ? line.TrimStart('-', '•', '*', '>', '–', ' ') : line;
+
+            // Indented or "-" lines under an item are its description, even when they hold a ":" (unless the line is
+            // clearly an item itself, as in a pasted list).
+            if (role == Role.Items && blockItem is not null && (indented || bullet) &&
+                TryItem(unbulleted, lineNo, units, strict: true, out var notItem) is null && notItem is null)
+            {
+                blockItem.Desc.Add(unbulleted);
+                continue;
+            }
+
             if (TryLabel(line, out var field, out var value))
             {
                 if (value.Length == 0)
                 {
                     section = field;
                     if (field == Field.Tc) tc ??= [];
-                    if (field == Field.Items) lastItem = null;
+                    if (field == Field.Items)
+                    {
+                        section = null;
+                        itemsStarted = true;
+                        role = Role.Items;
+                        blockItem = null;
+                    }
                     continue;
                 }
                 section = null;
@@ -245,46 +280,81 @@ public static partial class FormaterText
                 }
                 continue;
             }
-
-            var item = TryItem(line, lineNo, units, out var itemError);
-            if (item is not null)
-            {
-                if (item.DiscountPercent >= 100) r.Errors.Add(new(lineNo, $"Discount {item.DiscountPercent:0.##}% must be below 100%."));
-                if (item.Qty == 0) r.Errors.Add(new(lineNo, $"Qty is 0 for \"{item.Name}\"."));
-                if (item.Rate == 0) r.Warnings.Add(new(lineNo, $"Rate is 0 for \"{item.Name}\": the Tally rate is used when the item is in Tally."));
-                r.Items.Add(item);
-                lastItem = item;
-                section = null;
-                continue;
-            }
-            if (itemError is not null && !(lastItem is not null && (indented || bullet)))
-            {
-                r.Errors.Add(new(lineNo, itemError));
-                continue;
-            }
             if (section == Field.Tc) { tc!.Add(line); continue; }
             if (section == Field.Ignored) continue;
-            if (section == Field.Address) { AddPartyLine(line, r.Address, ref gstin, ref phone, ref email); continue; }
-            if (lastItem is not null)
+            if (section == Field.Address) { AddPartyLine(unbulleted, r.Address, ref gstin, ref phone, ref email); continue; }
+
+            // In the customer part a "-" line is an address line (the "-" is not printed), never an item.
+            if (bullet && role == Role.Party && unbulleted.Length > 0)
             {
-                lastItem.Desc.Add(bullet ? line.TrimStart('-', '•', '*', '>', '–', ' ') : line);
+                AddPartyLine(unbulleted, r.Address, ref gstin, ref phone, ref email);
                 continue;
             }
-            if (r.BuyerName.Length == 0)
+
+            // A line that is clearly an item ("name, qty, rate") starts the items, wherever it stands.
+            // (A line that reads as an item but has a mistake, such as "Gauge, 10%, five, 12011", is an item too: it is shown as a problem.)
+            var clearItem = role != Role.Items && (TryItem(line, lineNo, units, strict: true, out var looksLikeItem) is not null || looksLikeItem is not null);
+            if (role == Role.None)
             {
-                if (line.Equals("to", StringComparison.OrdinalIgnoreCase) || line.Equals("to,", StringComparison.OrdinalIgnoreCase)) continue;
-                r.BuyerName = line;
+                role = itemsStarted || clearItem ? Role.Items
+                    : !partyDone ? Role.Party
+                    // "Dial Gauge, 2" where the other reference would be: the items (without the other reference).
+                    : !otherRefDone && r.OtherRef.Length == 0 && !(line.Contains(',') && TryItem(line, lineNo, units, strict: false, out _) is not null) ? Role.OtherRef
+                    : Role.Items;
+            }
+            else if (clearItem)
+            {
+                role = Role.Items;
+            }
+            if (role == Role.Items) itemsStarted = true;
+
+            switch (role)
+            {
+                case Role.Party:
+                    if (r.BuyerName.Length == 0)
+                    {
+                        if (line.Equals("to", StringComparison.OrdinalIgnoreCase) || line.Equals("to,", StringComparison.OrdinalIgnoreCase)) continue;
+                        r.BuyerName = unbulleted;
+                    }
+                    else
+                    {
+                        AddPartyLine(unbulleted, r.Address, ref gstin, ref phone, ref email);
+                    }
+                    continue;
+                case Role.OtherRef:
+                    if (LooksLikeContact(line)) AddPartyLine(line, r.Address, ref gstin, ref phone, ref email);
+                    else r.OtherRef = r.OtherRef.Length == 0 ? line : r.OtherRef + " " + line;
+                    continue;
+            }
+
+            // The items part: a blank line before each item; the first line of each part is the item ("name, qty, rate,
+            // discount") and the lines under it are its description, unless a line is clearly an item itself (a pasted list).
+            if (!line.Any(char.IsDigit) && SignOffRegex().IsMatch(line)) continue;
+            string? itemError;
+            FormaterItem? item;
+            if (blockItem is not null)
+            {
+                item = TryItem(unbulleted, lineNo, units, strict: true, out itemError);
+                if (item is null && itemError is null)
+                {
+                    blockItem.Desc.Add(unbulleted);
+                    continue;
+                }
+            }
+            else
+            {
+                item = TryItem(unbulleted, lineNo, units, strict: false, out itemError);
+            }
+            if (item is null)
+            {
+                r.Errors.Add(new(lineNo, itemError ?? $"Could not read this item. Use:  item name, qty, rate, discount   (got \"{line}\")"));
                 continue;
             }
-            // The line after the customer is the other reference (unless it is a GSTIN, phone or e-mail, or one was labelled).
-            if (!otherRefDone && r.OtherRef.Length == 0 && !LooksLikeContact(line))
-            {
-                r.OtherRef = line;
-                otherRefDone = true;
-                continue;
-            }
-            otherRefDone = true;
-            AddPartyLine(line, r.Address, ref gstin, ref phone, ref email);
+            if (item.DiscountPercent >= 100) r.Errors.Add(new(lineNo, $"Discount {item.DiscountPercent:0.##}% must be below 100%."));
+            if (item.Qty == 0) r.Errors.Add(new(lineNo, $"Qty is 0 for \"{item.Name}\"."));
+            if (item.Rate == 0) r.Warnings.Add(new(lineNo, $"Rate not given for \"{item.Name}\": the Tally rate is used when the item is in Tally."));
+            r.Items.Add(item);
+            blockItem = item;
         }
 
         r.Gstin = gstin ?? "";
@@ -292,7 +362,7 @@ public static partial class FormaterText
         r.Email = email ?? "";
         r.TermsAndConditions = tc;
         if (r.BuyerName.Length == 0) r.Errors.Add(new(0, "The customer is missing: type the customer's name on the first line."));
-        if (r.Items.Count == 0) r.Errors.Add(new(0, "No items found. Item lines look like:  Item name, discount, qty, rate"));
+        if (r.Items.Count == 0) r.Errors.Add(new(0, "No items found. After a blank line, type each item as:  item name, qty, rate, discount"));
         return r;
     }
 
@@ -363,71 +433,156 @@ public static partial class FormaterText
         else address.Add(line);
     }
 
-    private static FormaterItem? TryItem(string line, int lineNo, HashSet<string> units, out string? error)
+    /// <summary>
+    /// Reads an item line: "name, qty, rate[, discount]" (the discount is a plain number; "%" may be typed). The older order
+    /// "name, discount%, qty, rate" is still read. Unit and description may follow ("…, Pcs, Make - Insize | 500-196").
+    /// Outside strict mode also "name, qty" (the Tally rate) and "name qty rate [disc%]" with spaces.
+    /// </summary>
+    private static FormaterItem? TryItem(string line, int lineNo, HashSet<string> units, bool strict, out string? error)
     {
         error = null;
         var tabs = line.Contains('\t');
+        if (!tabs && !line.Contains(','))
+            return strict ? null : TrySpacedItem(line, lineNo);
         var fields = (tabs ? line.Split('\t') : line.Split(',')).Select(f => f.Trim()).ToList();
         if (tabs)
         {
             while (fields.Count > 0 && fields[0].Length == 0) fields.RemoveAt(0);
             while (fields.Count > 0 && fields[^1].Length == 0) fields.RemoveAt(fields.Count - 1);
-            if (fields.Count >= 5 && Regex.IsMatch(fields[0], @"^\d{1,3}\.?$")) fields.RemoveAt(0);
+            if (fields.Count >= 4 && Regex.IsMatch(fields[0], @"^\d{1,3}\.?$")) fields.RemoveAt(0);
             for (var k = 1; k < fields.Count; k++)
                 if (Regex.IsMatch(fields[k], @"^[₹\d,.\s%/-]+$|^(rs\.?|inr)", RegexOptions.IgnoreCase)) fields[k] = fields[k].Replace(",", "");
         }
 
-        for (var i = 1; i + 2 < fields.Count; i++)
+        FormaterItem? fallback = null;
+        for (var i = 1; i < fields.Count; i++)
         {
-            var disc = ParseDiscount(fields[i]);
-            var qm = QtyRegex().Match(fields[i + 1]);
-            var rm = RateRegex().Match(fields[i + 2]);
-            if (disc is null || !qm.Success || !rm.Success) continue;
-            var name = LeadingNumberRegex().Replace(string.Join(", ", fields.Take(i)).Trim(), "");
-            if (name.Length == 0) continue;
-
-            // A rate typed with thousand separators: "12,011" or "1,23,456.50".
-            var rateText = rm.Groups["v"].Value;
-            var next = i + 3;
-            if (!tabs && Regex.IsMatch(rateText, @"^\d{1,3}$"))
-            {
-                var run = 0;
-                while (next + run < fields.Count && DigitGroupRegex().IsMatch(fields[next + run])) run++;
-                for (var len = run; len > 0; len--)
-                {
-                    var groups = fields.Skip(next).Take(len).Select(g => g.Replace("/-", "").Trim()).ToList();
-                    if (groups[^1].Split('.')[0].Length != 3 || groups.Take(len - 1).Any(g => g.Contains('.'))) continue;
-                    rateText += string.Concat(groups);
-                    next += len;
-                    break;
-                }
-            }
-
-            var item = new FormaterItem
-            {
-                LineNo = lineNo,
-                Name = name,
-                DiscountPercent = disc.Value,
-                Qty = decimal.Parse(qm.Groups["v"].Value, CultureInfo.InvariantCulture),
-                Rate = decimal.Parse(rateText, CultureInfo.InvariantCulture),
-                Unit = qm.Groups["u"].Success && units.Contains(qm.Groups["u"].Value) ? qm.Groups["u"].Value : "",
-            };
-            var extras = fields.Skip(next).Where(f => f.Length > 0).ToList();
-            if (extras.Count > 0 && units.Contains(extras[0]))
-            {
-                if (item.Unit.Length == 0) item.Unit = extras[0];
-                extras.RemoveAt(0);
-            }
-            if (item.Unit.Length == 0) item.Unit = DefaultUnit;
-            if (extras.Count > 0)
-                item.Desc.AddRange(string.Join(", ", extras).Split('|').Select(d => d.Trim()).Where(d => d.Length > 0));
-            return item;
+            // A "%" in the field after the name: the older order (name, discount%, qty, rate).
+            var oldOrder = fields[i].Contains('%');
+            var item = oldOrder ? OldOrderItem(fields, i, tabs, lineNo, units) : NewOrderItem(fields, i, tabs, lineNo, units, strict);
+            if (item is not null && Fine(item)) return item;
+            if (!oldOrder && OldOrderItem(fields, i, tabs, lineNo, units) is { } old && Fine(old)) return old;
+            fallback ??= item;
         }
+        if (fallback is not null) return fallback;
 
         var numeric = fields.Skip(1).Count(f => f.Length > 0 && Regex.IsMatch(f, @"\d") &&
                                                 Regex.IsMatch(f, @"^[₹\d.,%\s/-]+$|^(rs\.?|inr)", RegexOptions.IgnoreCase));
-        if (fields.Count >= 3 && numeric >= 2) error = $"Could not read this item. Use:  item name, discount, qty, rate   (got \"{line}\")";
+        // In the items part a line with a plain number in it is a broken item, not a description ("Range 0-150, 0.01mm" is one).
+        if ((fields.Count >= 3 && numeric >= 2) || (!strict && fields.Skip(1).Any(f => Regex.IsMatch(f, @"^\d+(?:\.\d+)?$")))) error = $"Could not read this item. Use:  item name, qty, rate, discount   (got \"{line}\")";
         return null;
+
+        static bool Fine(FormaterItem it) => it.Qty > 0 && it.DiscountPercent < 100;
+    }
+
+    private static string ItemName(List<string> fields, int count) =>
+        LeadingNumberRegex().Replace(string.Join(", ", fields.Take(count)).Trim(), "");
+
+    /// <summary>"name, qty, rate[, discount][, unit][, description]" with the qty at <paramref name="i"/>.</summary>
+    private static FormaterItem? NewOrderItem(List<string> fields, int i, bool tabs, int lineNo, HashSet<string> units, bool strict)
+    {
+        var qm = QtyRegex().Match(fields[i]);
+        var name = ItemName(fields, i);
+        if (!qm.Success || name.Length == 0) return null;
+        var unit = qm.Groups["u"].Success && units.Contains(qm.Groups["u"].Value) ? qm.Groups["u"].Value : "";
+        if (qm.Groups["u"].Success && unit.Length == 0) return null;
+
+        if (i + 1 >= fields.Count)
+        {
+            // "name, qty": the rate comes from Tally. Only a whole number of pieces ("Range 0-150mm, 0.01mm" is a description).
+            if (strict || fields.Count != 2 || qm.Groups["v"].Value.Contains('.') || unit.ToLowerInvariant() is "mm" or "cm" or "m" or "ft") return null;
+            return new FormaterItem
+            {
+                LineNo = lineNo, Name = name, Qty = decimal.Parse(qm.Groups["v"].Value, CultureInfo.InvariantCulture),
+                Unit = unit.Length > 0 ? unit : DefaultUnit,
+            };
+        }
+        var rm = RateRegex().Match(fields[i + 1]);
+        if (!rm.Success) return null;
+        var (rateText, next) = JoinThousands(fields, rm.Groups["v"].Value, i + 2, tabs);
+
+        var item = new FormaterItem
+        {
+            LineNo = lineNo, Name = name, Unit = unit,
+            Qty = decimal.Parse(qm.Groups["v"].Value, CultureInfo.InvariantCulture),
+            Rate = decimal.Parse(rateText, CultureInfo.InvariantCulture),
+        };
+        var extras = fields.Skip(next).ToList();
+        // The discount: the field right after the rate, a plain number ("5" or "5%"); empty or "-" is no discount.
+        if (extras.Count > 0 && ParseDiscount(extras[0]) is { } disc)
+        {
+            item.DiscountPercent = disc;
+            extras.RemoveAt(0);
+        }
+        AddUnitAndDescription(item, extras.Where(f => f.Length > 0).ToList(), units);
+        return item;
+    }
+
+    /// <summary>The older order "name, discount, qty, rate[, unit][, description]" with the discount at <paramref name="i"/>.</summary>
+    private static FormaterItem? OldOrderItem(List<string> fields, int i, bool tabs, int lineNo, HashSet<string> units)
+    {
+        if (i + 2 >= fields.Count) return null;
+        var disc = ParseDiscount(fields[i]);
+        var qm = QtyRegex().Match(fields[i + 1]);
+        var rm = RateRegex().Match(fields[i + 2]);
+        var name = ItemName(fields, i);
+        if (disc is null || !qm.Success || !rm.Success || name.Length == 0) return null;
+        var (rateText, next) = JoinThousands(fields, rm.Groups["v"].Value, i + 3, tabs);
+        var item = new FormaterItem
+        {
+            LineNo = lineNo, Name = name, DiscountPercent = disc.Value,
+            Qty = decimal.Parse(qm.Groups["v"].Value, CultureInfo.InvariantCulture),
+            Rate = decimal.Parse(rateText, CultureInfo.InvariantCulture),
+            Unit = qm.Groups["u"].Success && units.Contains(qm.Groups["u"].Value) ? qm.Groups["u"].Value : "",
+        };
+        AddUnitAndDescription(item, fields.Skip(next).Where(f => f.Length > 0).ToList(), units);
+        return item;
+    }
+
+    /// <summary>A rate typed with thousand separators: "12,011" or "1,23,456.50" (the commas also split the fields).</summary>
+    private static (string Rate, int Next) JoinThousands(List<string> fields, string rateText, int next, bool tabs)
+    {
+        if (tabs || !Regex.IsMatch(rateText, @"^\d{1,3}$")) return (rateText, next);
+        var run = 0;
+        while (next + run < fields.Count && DigitGroupRegex().IsMatch(fields[next + run])) run++;
+        for (var len = run; len > 0; len--)
+        {
+            var groups = fields.Skip(next).Take(len).Select(g => g.Replace("/-", "").Trim()).ToList();
+            if (groups[^1].Split('.')[0].Length != 3 || groups.Take(len - 1).Any(g => g.Contains('.'))) continue;
+            return (rateText + string.Concat(groups), next + len);
+        }
+        return (rateText, next);
+    }
+
+    private static void AddUnitAndDescription(FormaterItem item, List<string> extras, HashSet<string> units)
+    {
+        if (extras.Count > 0 && units.Contains(extras[0]))
+        {
+            if (item.Unit.Length == 0) item.Unit = extras[0];
+            extras.RemoveAt(0);
+        }
+        if (item.Unit.Length == 0) item.Unit = DefaultUnit;
+        if (extras.Count > 0)
+            item.Desc.AddRange(string.Join(", ", extras).Split('|').Select(d => d.Trim()).Where(d => d.Length > 0));
+    }
+
+    [GeneratedRegex(@"^(?<name>.*?\S)\s+(?<q>\d+(?:\.\d+)?)\s+(?:rs\.?\s*|₹\s*)?(?<r>\d+(?:\.\d+)?)(?:\s*/-)?(?:\s+(?<d>\d+(?:\.\d+)?)\s*%)?$", RegexOptions.IgnoreCase)]
+    private static partial Regex SpacedItemRegex();
+
+    /// <summary>"530-104 5 3250" or "530-104 5 3250 5%": the last two numbers are the qty and the rate.</summary>
+    private static FormaterItem? TrySpacedItem(string line, int lineNo)
+    {
+        var m = SpacedItemRegex().Match(line);
+        if (!m.Success) return null;
+        var qty = decimal.Parse(m.Groups["q"].Value, CultureInfo.InvariantCulture);
+        var name = LeadingNumberRegex().Replace(m.Groups["name"].Value.Trim(), "");
+        if (qty <= 0 || name.Length == 0) return null;
+        return new FormaterItem
+        {
+            LineNo = lineNo, Name = name, Qty = qty, Unit = DefaultUnit,
+            Rate = decimal.Parse(m.Groups["r"].Value, CultureInfo.InvariantCulture),
+            DiscountPercent = m.Groups["d"].Success ? decimal.Parse(m.Groups["d"].Value, CultureInfo.InvariantCulture) : 0,
+        };
     }
 
     private static decimal? ParseDiscount(string field)

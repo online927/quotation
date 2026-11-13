@@ -109,9 +109,9 @@
             <TextBlock Classes="h2" Text="Quotation text" Margin="0" VerticalAlignment="Center" />
           </StackPanel>
           <TextBlock DockPanel.Dock="Bottom" Classes="muted" FontSize="11" TextWrapping="Wrap" Margin="14,6,14,12"
-                     Text="First line: the customer. Second line: the other reference (the next lines may be the address, GSTIN, phone, e-mail). Then the items: name or part no., discount, qty, rate (unit and description optional; indented lines are the item's description)." />
+                     Text="Leave a blank line between the parts: the customer (first line the name; address lines start with &quot;-&quot;; then GSTIN, phone, e-mail), then the other reference, then each item. An item's first line is: item name, qty, rate, discount (discount optional); the lines under it are its description." />
           <TextBox Name="FormaterTextBox" Classes="formatertext" Text="{Binding Text}" Margin="14,0,14,0"
-                   Watermark="BuyersHub&#10;Your enquiry dated 10-Nov-2026&#10;36AAZFB2304B1ZQ&#10;&#10;Vernier Hook Depth Gauge, 10%, 5, 12011&#10;  Make - Insize" />
+                   Watermark="Sample Company Pvt Ltd&#10;- Plot 1, Industrial Area&#10;- Hyderabad, Telangana 500001&#10;36ABCDE1234F1Z5&#10;&#10;Your enquiry dated 10-Nov-2026&#10;&#10;Vernier Hook Depth Gauge, 5, 12011, 10&#10;Make - Insize&#10;&#10;Dial Gauge 0-10mm, 2, 2450" />
         </DockPanel>
       </Border>
 
@@ -172,7 +172,7 @@
                   <TextBlock Classes="th" Grid.Column="8" Text="Amount" HorizontalAlignment="Right" />
                 </Grid>
               </Border>
-              <TextBlock Classes="muted" FontSize="12" Margin="14,12" Text="No items yet. Item lines look like:  Item name, discount, qty, rate" IsVisible="{Binding !HasLines}" />
+              <TextBlock Classes="muted" FontSize="12" Margin="14,12" Text="No items yet. After a blank line, type each item as:  item name, qty, rate, discount" IsVisible="{Binding !HasLines}" />
               <ItemsControl Name="LinesList" ItemsSource="{Binding Lines}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:FormaterLineViewModel">

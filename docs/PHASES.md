@@ -726,3 +726,18 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    - Preview (F11) makes the PDF without saving or using a number; "Open in editor" opens it on the quotation screen.
    - Terms and T&C are not typed here: they come from Settings → Company as on any new quotation.
    - Same look as the quotation page in every theme (its styles are shared: Styles/DocumentStyles.axaml).
+
+### Round 27
+
+1. Formater: blank lines now decide the parts of the text. Part 1 is the customer (its first line is the name; the next
+   lines are the address, GSTIN, phone, e-mail); part 2 is the other reference; part 3 is the items. A part whose lines
+   read as items is items at once (so the other reference may be left out, and items typed without a blank line are
+   still items, never address lines).
+2. Formater item lines are "item name, qty, rate, discount": the discount is optional and is a plain number ("%" may be
+   typed). Also read: "name, qty" (the Tally rate is used), "530-104 5 3250 10%" with spaces, rates with commas
+   ("12,011"), and the older order "name, 10%, qty, rate".
+3. A blank line before each item: the item's first line is "name, qty, rate, discount" and the lines under it (no
+   indenting needed) are its description. A line under an item that is clearly an item itself (a pasted list) is still
+   read as a new item.
+4. In the customer part, address lines may start with "-" (or "*"): each is one address line and the "-" is not printed.
+   After the first blank line a "-" no longer means address.

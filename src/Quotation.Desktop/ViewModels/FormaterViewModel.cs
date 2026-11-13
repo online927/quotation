@@ -110,14 +110,19 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
     public string TotalQuantityText => Totals is null ? "" : $"{IndianFormat.Quantity(Totals.TotalQuantity)} {Totals.TotalQuantityUnit}".Trim();
 
     public const string Example = """
-        Sonepar India
+        Sample Company Pvt Ltd
+        - Plot 1, Industrial Area
+        - Pune, Maharashtra 411001
+
         Your enquiry dated 10-Nov-2026
 
-        187-901-10, 0%, 2, 15600
-          Make - Mitutoyo
-        530-104, 5%, 5, 3250
-        Digital Caliper 150mm Special, 0%, 2, 3450
-          Make - Insize
+        187-901-10, 2, 15600
+        Make - Mitutoyo
+
+        530-104, 5, 3250, 5
+
+        Digital Caliper 150mm Special, 2, 3450
+        Make - Insize
         """;
 
     private async Task InitializeAsync()

@@ -64,13 +64,16 @@ public class Round26UiTests
 
     private const string Text = """
         Sonepar India Private
+
         R
 
-        187-901-10, 0%, 2, 15600
-          Make - Mitutoyo
-        530-104, 5%, 5, 3250
-        Digital Caliper 150mm Special, 0%, 2, 3450
-          Make - Insize
+        187-901-10, 2, 15600
+        Make - Mitutoyo
+
+        530-104, 5, 3250, 5
+
+        Digital Caliper 150mm Special, 2, 3450
+        Make - Insize
         """;
 
     private static async Task<FormaterViewModel> OpenFormaterAsync(Ctx ctx, string text)
@@ -110,7 +113,7 @@ public class Round26UiTests
         Assert.Equal(18m, vm.Lines[2].GstRate);
         Assert.True(vm.CanApprove);
         Assert.Empty(vm.Problems);
-        Assert.Equal("R", vm.OtherRefText); // the second line
+        Assert.Equal("R", vm.OtherRefText); // the part after the first blank line
         await Shot(ctx.Window, "r26-formater");
         // Every theme draws it (the shared quotation-page styles).
         foreach (var theme in AppTheme.All.Where(t => t != AppTheme.System))
@@ -147,30 +150,35 @@ public class Round26UiTests
         using var ctx = await SetupAsync();
         var vm = await OpenFormaterAsync(ctx, """
             BuyersHub
-            Your enquiry dated 10-Nov-2026
-            Plot 27 , PRT Colony , Karmanghat
-            Hyderabad Telangana 500079
+            - Plot 27 , PRT Colony , Karmanghat
+            - Hyderabad Telangana 500079
             36AAZFB2304B1ZQ
 
-            Vernier Hook Depth Gauge, 10%, 5, 12011
-            Dial Gauge, 10%, five, 12011
+            Your enquiry dated 10-Nov-2026
+
+            Vernier Hook Depth Gauge, 5, 12011, 10
+            Make - Insize
+
+            Dial Gauge, 2, 12O11, 10
             """);
         Assert.True(vm.CustomerIsTyped);
         Assert.Equal("Your enquiry dated 10-Nov-2026", vm.OtherRefText);
         Assert.DoesNotContain("enquiry", vm.CustomerDetails);
+        Assert.StartsWith("Plot 27", vm.CustomerDetails); // the "-" marks an address line and is not printed
         Assert.True(vm.CustomerDetails.Contains("Telangana (36)"), vm.CustomerDetails + " | " + vm.GstNote);
         Assert.StartsWith("IGST", vm.GstNote);
         Assert.Single(vm.Lines);
-        Assert.NotEmpty(vm.Problems); // "five" is not a quantity
+        Assert.NotEmpty(vm.Problems); // "12O11" (a letter O) is not a rate
         Assert.False(vm.CanApprove);
         await Shot(ctx.Window, "r26-typed-customer");
 
-        vm.Text = vm.Text.Replace("Dial Gauge, 10%, five, 12011", "");
+        vm.Text = vm.Text.Replace("Dial Gauge, 2, 12O11, 10", "");
         await vm.RefreshAsync(CancellationToken.None);
         Assert.True(vm.CanApprove);
         var q = vm.ToQuotation();
         Assert.Null(q.CustomerId);
         Assert.Equal("36", q.Buyer.StateCode);
+        Assert.Equal("Plot 27 , PRT Colony , Karmanghat" + Environment.NewLine + "Hyderabad Telangana 500079", q.Buyer.Address);
         Assert.Equal(QuotationSource.Formater, q.Source);
     }
 }

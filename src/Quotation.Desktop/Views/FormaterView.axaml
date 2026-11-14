@@ -9,6 +9,7 @@
     <KeyBinding Gesture="Ctrl+E" Command="{Binding ApproveCommand}" />
     <KeyBinding Gesture="Ctrl+Enter" Command="{Binding ApproveCommand}" />
     <KeyBinding Gesture="F11" Command="{Binding PreviewCommand}" />
+    <KeyBinding Gesture="Ctrl+P" Command="{Binding PrintCommand}" />
   </UserControl.KeyBindings>
   <UserControl.Styles>
     <StyleInclude Source="/Styles/DocumentStyles.axaml" />
@@ -37,6 +38,12 @@
     </Style>
     <Style Selector="Border.chip.typed TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource OrangeBrush}" />
+    </Style>
+    <Style Selector="Border.chip.remembered">
+      <Setter Property="Background" Value="#245B3CC4" />
+    </Style>
+    <Style Selector="Border.chip.remembered TextBlock">
+      <Setter Property="Foreground" Value="#7A5BD6" />
     </Style>
     <Style Selector="Border.chip TextBlock">
       <Setter Property="FontSize" Value="10.5" />
@@ -69,8 +76,11 @@
         <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
         <ItemsControl Name="ProblemList" ItemsSource="{Binding Problems}" IsVisible="{Binding HasProblems}">
           <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="x:String">
-              <TextBlock Text="{Binding StringFormat='• {0}'}" Foreground="{DynamicResource BadBrush}" FontSize="12" TextWrapping="Wrap" />
+            <DataTemplate x:DataType="vm:FormaterProblem">
+              <WrapPanel>
+                <TextBlock Text="{Binding StringFormat='• {0}'}" Foreground="{DynamicResource BadBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+                <Button Classes="link" FontSize="12" Margin="8,0,0,0" Content="{Binding GoToText}" IsVisible="{Binding HasLine}" Click="OnGoToLineClick" />
+              </WrapPanel>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
@@ -110,8 +120,34 @@
           </StackPanel>
           <TextBlock DockPanel.Dock="Bottom" Classes="muted" FontSize="11" TextWrapping="Wrap" Margin="14,6,14,12"
                      Text="Leave a blank line between the parts: the customer (first line the name; address lines start with &quot;-&quot;; then GSTIN, phone, e-mail), then the other reference, then each item. An item's first line is: item name, qty, rate, discount (discount optional); the lines under it are its description." />
-          <TextBox Name="FormaterTextBox" Classes="formatertext" Text="{Binding Text}" Margin="14,0,14,0"
-                   Watermark="Sample Company Pvt Ltd&#10;- Plot 1, Industrial Area&#10;- Hyderabad, Telangana 500001&#10;36ABCDE1234F1Z5&#10;&#10;Your enquiry dated 10-Nov-2026&#10;&#10;Vernier Hook Depth Gauge, 5, 12011, 10&#10;Make - Insize&#10;&#10;Dial Gauge 0-10mm, 2, 2450" />
+          <!-- Packing & forwarding: its own box (Alt+P), an amount in rupees -->
+          <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" Margin="14,10,14,0">
+            <TextBlock Text="P&amp;F" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <NumericUpDown Name="FormaterPackingBox" Value="{Binding PackingForwarding}" Minimum="0" FormatString="0.00" Width="130"
+                           ShowButtonSpinner="False" HorizontalContentAlignment="Right">
+              <NumericUpDown.InnerLeftContent>
+                <TextBlock Text="₹" VerticalAlignment="Center" Margin="9,0,0,0" Foreground="{DynamicResource MutedBrush}" />
+              </NumericUpDown.InnerLeftContent>
+            </NumericUpDown>
+          </StackPanel>
+          <!-- What was taken out of a pasted WhatsApp / e-mail text -->
+          <Border Name="PasteNoteBar" DockPanel.Dock="Top" IsVisible="{Binding HasPasteNote}" Margin="14,0,14,8" Padding="10,7"
+                  CornerRadius="8" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+              <TextBlock Text="{Binding PasteNote}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+              <Button Name="UndoPasteButton" Grid.Column="1" Classes="link" FontSize="12" Content="Undo" Margin="8,0,0,0" Command="{Binding UndoPasteCleanCommand}" />
+              <Button Grid.Column="2" Classes="link" FontSize="12" Content="✕" Margin="10,0,0,0" Command="{Binding ClosePasteNoteCommand}" ToolTip.Tip="Close" />
+            </Grid>
+          </Border>
+          <!-- Line numbers at the left; lines with a problem marked red -->
+          <Grid ColumnDefinitions="36,*" Margin="14,0,14,0">
+            <Border CornerRadius="6,0,0,6" Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1,1,0,1">
+              <Canvas Name="LineGutter" ClipToBounds="True" />
+            </Border>
+            <TextBox Grid.Column="1" Name="FormaterTextBox" Classes="formatertext" Text="{Binding Text}"
+                     Watermark="Sample Company Pvt Ltd&#10;- Plot 1, Industrial Area&#10;- Hyderabad, Telangana 500001&#10;36ABCDE1234F1Z5&#10;&#10;Your enquiry dated 10-Nov-2026&#10;&#10;Vernier Hook Depth Gauge, 5, 12011, 10&#10;Make - Insize&#10;&#10;Dial Gauge 0-10mm, 2, 2450" />
+            <Canvas Grid.Column="1" Name="LineMarks" ClipToBounds="True" IsHitTestVisible="False" />
+          </Grid>
         </DockPanel>
       </Border>
 
@@ -133,9 +169,13 @@
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Name="CustomerNameText" Text="{Binding CustomerName}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis" />
                     <Border Classes="chip tally" IsVisible="{Binding CustomerIsTally}"><TextBlock Text="Tally ✓" /></Border>
+                    <Border Classes="chip remembered" IsVisible="{Binding CustomerIsRemembered}"><TextBlock Text="Remembered" /></Border>
                     <Border Classes="chip typed" IsVisible="{Binding CustomerIsTyped}"><TextBlock Text="Typed (not in Tally)" /></Border>
-                    <Button Classes="link" FontSize="11" Content="Keep as typed" Command="{Binding KeepCustomerTypedCommand}" IsVisible="{Binding CustomerIsTally}" />
+                    <Button Classes="link" FontSize="11" Content="Keep as typed" Command="{Binding KeepCustomerTypedCommand}" IsVisible="{Binding CanKeepCustomerTyped}" />
+                    <Button Name="ForgetCustomerButton" Classes="link" FontSize="11" Content="Forget" Command="{Binding ForgetCustomerCommand}" IsVisible="{Binding CustomerIsRemembered}"
+                            ToolTip.Tip="Do not match this typing to this ledger any more" />
                   </StackPanel>
+                  <TextBlock Text="{Binding CustomerRememberedText}" FontSize="11" Foreground="{DynamicResource MutedBrush}" IsVisible="{Binding CustomerIsRemembered}" />
                   <TextBlock Text="{Binding CustomerDetails}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
                   <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasCustomerSuggestion}">
                     <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" Text="{Binding CustomerSuggestion, StringFormat='Tally has: {0}'}" />
@@ -185,9 +225,13 @@
                           <TextBlock Classes="td" Text="{Binding Description}" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
                           <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
                             <Border Classes="chip tally" IsVisible="{Binding IsTally}"><TextBlock Text="Tally ✓" /></Border>
+                            <Border Classes="chip remembered" IsVisible="{Binding IsRemembered}"><TextBlock Text="Remembered" /></Border>
+                            <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Text="{Binding RememberedText}" IsVisible="{Binding IsRemembered}" />
                             <Border Classes="chip typed" IsVisible="{Binding IsTyped}"><TextBlock Text="Typed (not in Tally)" /></Border>
-                            <Button Classes="link" FontSize="11" Content="Keep as typed" IsVisible="{Binding IsTally}"
+                            <Button Classes="link" FontSize="11" Content="Keep as typed" IsVisible="{Binding CanKeepTyped}"
                                     Command="{Binding $parent[UserControl].((vm:FormaterViewModel)DataContext).KeepItemTypedCommand}" CommandParameter="{Binding}" />
+                            <Button Classes="link" FontSize="11" Content="Forget" IsVisible="{Binding IsRemembered}" ToolTip.Tip="Do not match this typing to this item any more"
+                                    Command="{Binding $parent[UserControl].((vm:FormaterViewModel)DataContext).ForgetItemCommand}" CommandParameter="{Binding}" />
                             <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Text="{Binding SuggestionText}"
                                        IsVisible="{Binding HasSuggestion}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
                             <Button Classes="small" Content="Use" IsVisible="{Binding HasSuggestion}"
@@ -234,6 +278,10 @@
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Text="Subtotal" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" VerticalAlignment="Center" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasPacking}">
+                  <TextBlock Text="P&amp;F" />
+                  <TextBlock Name="PackingTotalText" Grid.Column="1" Text="{Binding PackingText}" />
                 </Grid>
                 <TextBlock Text="{Binding TaxText}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
                            IsVisible="{Binding TaxText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />

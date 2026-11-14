@@ -111,7 +111,7 @@ public class Round15UiTests
         await EditorWithTwoLinesAsync(ctx);
         var leaving = ctx.Shell.LogoutCommand.ExecuteAsync(null);
         await UiHelpers.WaitUntil(() => ctx.Shell.PendingDialog is not null);
-        Assert.Equal("Leaving already, bro?", ctx.Shell.PendingDialog!.Title);
+        Assert.Equal("Are you logging out, bro?", ctx.Shell.PendingDialog!.Title);
         Assert.Equal("Yes", ctx.Shell.PendingDialog.PrimaryText);
         Assert.Equal("No", ctx.Shell.PendingDialog.SecondaryText);
         ctx.Shell.AnswerDialogCommand.Execute(false);

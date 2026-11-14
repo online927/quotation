@@ -1315,6 +1315,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             var dto = await _session.Api.ApproveQuotationAsync(Id!.Value, overrideStale, Revision);
             Load(dto);
+            if (_settings.Quotation.Greetings) _navigator.Toast("Alhamdulillah  الحمد لله", $"{dto.Number} approved.");
             if (dto.HasPdf)
             {
                 InfoMessage = $"{dto.Number} approved and PDF generated.";
@@ -1467,12 +1468,38 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         await RunAsync(OpenPdfCoreAsync);
     }
 
-    /// <summary>Ctrl+P: Save as PDF for users; Open PDF for the administrator (who does not save PDFs).</summary>
+    /// <summary>
+    /// Ctrl+P: straight to the default printer, no questions. Approved and unchanged: its PDF; a draft (or changed since
+    /// approval): what is on the screen, marked DRAFT, without saving anything.
+    /// </summary>
     [RelayCommand]
     private async Task PrintShortcutAsync()
     {
-        if (IsAdmin) { if (HasPdf) await OpenPdfAsync(); }
-        else if (CanAct && CanSaveAsPdf) await SaveAsPdfAsync();
+        if (Id is null && Lines.Count == 0) return;
+        await RunAsync(async () =>
+        {
+            byte[] pdf;
+            string name;
+            if (IsFinal && Id is { } id && !HasUnsavedChanges)
+            {
+                pdf = await _session.Api.QuotationPdfAsync(id);
+                name = PdfFileName();
+            }
+            else
+            {
+                pdf = await _session.Api.PreviewUnsavedPdfAsync(BuildRequest());
+                name = "DRAFT " + (Number ?? "quotation");
+            }
+            try
+            {
+                var printer = await Task.Run(() => _session.Documents.Print(pdf, name));
+                _navigator.Toast($"Sent to printer {printer}.");
+            }
+            catch (Exception ex) when (ex is not ApiException)
+            {
+                ErrorMessage = "Could not print: " + ex.Message;
+            }
+        });
     }
 
     /// <summary>Saves pending changes and opens a DRAFT-watermarked preview of the current quotation.</summary>
@@ -1529,11 +1556,13 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         if (Id is null)
         {
-            // Nothing saved yet: throw the entry away (and the copy kept for a crash) and go back without asking.
+            // Nothing saved yet: stay on this page. Nothing typed: nothing to do; otherwise it starts again blank
+            // (no number is used; the copy kept for a crash is thrown away).
+            if (!IsDirty && Lines.Count == 0 && EntryProduct is null && string.IsNullOrWhiteSpace(ProductSearchText)) return;
             ClearEntry();
             IsDirty = false;
             DropRecoveryCopy();
-            _navigator.GoBack();
+            _navigator.StartOver(IsProforma);
             return;
         }
         Load(await _session.Api.CancelQuotationAsync(Id.Value));

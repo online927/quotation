@@ -23,6 +23,7 @@
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="QRCoder" />
+    <PackageReference Include="bblanchon.PDFium.Win32" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Quotation.Desktop.Tests" />

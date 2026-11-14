@@ -154,4 +154,27 @@ public class FormaterTextTests
         Assert.Equal(2, t.Items.Count);
         Assert.Equal(["Make - Mitutoyo"], t.Items[0].Desc);
     }
+
+    [Fact]
+    public void Pasted_whatsapp_text_loses_times_names_and_greetings_but_keeps_the_quotation()
+    {
+        var clean = FormaterText.CleanPasted("""
+            [11/11, 10:15 am] Ravi: Assalamu Alaikum
+            [11/11, 10:15 am] Ravi: Good morning sir
+            11/11/26, 10:16 am - Ravi: Sonepar India
+            - Chakan, Pune
+
+
+            530-104, 5, 3250
+            Dear Sir,
+            Please quote at the earliest
+            Thanks & regards
+            """);
+        Assert.Equal("Sonepar India\n- Chakan, Pune\n\n530-104, 5, 3250", clean.Text);
+        Assert.Equal(3, clean.Prefixes);
+        Assert.Equal(5, clean.Lines);
+        Assert.Equal("3 WhatsApp times and names and 5 greeting lines", clean.Describe());
+        // A line with a number is never a greeting; nothing to clean: nothing removed.
+        Assert.Equal(0, FormaterText.CleanPasted("Thanks for order 4471\n530-104, 5, 3250").Removed);
+    }
 }

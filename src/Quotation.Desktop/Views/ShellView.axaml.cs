@@ -96,6 +96,19 @@ public partial class ShellView : UserControl
 
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
+        if (e.Key == Key.X && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift) && Vm is { } game)
+        {
+            game.OpenXoCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+        if (Vm is { XoGame: not null } playing)
+        {
+            // While the game is open, Esc closes it; other keys do not reach the page behind.
+            if (e.Key == Key.Escape) playing.CloseXoCommand.Execute(null);
+            if (e.Key is not (Key.Tab or Key.Space or Key.Enter)) e.Handled = true;
+            return;
+        }
         if (Vm is { PendingDialog: { } dialog })
         {
             // Enter = the main answer (unless a button has the focus), Esc = cancel; nothing reaches the page behind.

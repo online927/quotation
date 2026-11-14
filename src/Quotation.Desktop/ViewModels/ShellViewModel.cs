@@ -155,15 +155,24 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     private static readonly Avalonia.Media.Geometry SunIcon = Avalonia.Media.Geometry.Parse(
         "M12,7.5 A4.5,4.5 0 1 1 11.99,7.5 Z M12,1.5 V4 M12,20 V22.5 M4.6,4.6 L6.3,6.3 M17.7,17.7 L19.4,19.4 M1.5,12 H4 M20,12 H22.5 M4.6,19.4 L6.3,17.7 M17.7,6.3 L19.4,4.6");
 
-    /// <summary>The top-bar button shows the moon in light mode (switch to dark) and the sun in dark mode.</summary>
+    /// <summary>The top-bar button shows the moon on light screens and the sun on dark ones.</summary>
     public Avalonia.Media.Geometry ThemeIcon => ThemeService.IsDark ? SunIcon : MoonIcon;
-    public string ThemeTip => ThemeService.IsDark ? "Light mode" : "Dark mode";
+    public string ThemeTip => "Next theme: " + ThemeNames.Of(NextTheme(ThemeService.Current));
 
-    /// <summary>Switches between light and dark for this user (saved with their login, so it follows them to any PC).</summary>
+    /// <summary>The theme after <paramref name="current"/> in the order of the theme list ("Same as Windows" is skipped).</summary>
+    public static string NextTheme(string? current)
+    {
+        var cycle = AppTheme.All.Where(t => t != AppTheme.System).ToList();
+        var i = Math.Max(0, cycle.IndexOf(current ?? AppTheme.Light)); // Same as Windows counts as Light
+        return cycle[(i + 1) % cycle.Count];
+    }
+
+    /// <summary>Each click: the next theme, for this user (saved with their login, so it follows them to any PC).</summary>
     [RelayCommand]
     private async Task ToggleThemeAsync()
     {
-        var theme = ThemeService.IsDark ? AppTheme.Light : AppTheme.Dark;
+        var theme = NextTheme(ThemeService.Current);
+        Toast("Theme: " + ThemeNames.Of(theme), 2);
         try
         {
             await _session.SetThemeAsync(theme);
@@ -173,6 +182,8 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
             // The screens have switched; the choice is saved again the next time.
         }
     }
+
+    private void OnColoursChanged() => OnThemeChanged(null, EventArgs.Empty);
 
     /// <summary>The screens changed light/dark (this button, My Settings, or Windows when following Windows).</summary>
     private void OnThemeChanged(object? sender, EventArgs e)
@@ -192,6 +203,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         UserInitials = user is null ? "" : string.Concat(user.DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
         if (user is not null) session.ApplyAppearance(user);
         if (Avalonia.Application.Current is { } app) app.ActualThemeVariantChanged += OnThemeChanged;
+        ThemeService.ColoursChanged += OnColoursChanged;
 
         BuildMenu();
         session.SettingsChanged += OnSettingsChanged;
@@ -286,6 +298,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         try
         {
             await _session.GetSettingsAsync();
+            GreetAfterSignIn();
         }
         catch (Exception)
         {
@@ -422,6 +435,14 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this,
             new RecoverySnapshot(_session.Api.CurrentUser?.Username ?? "", DateTime.Now, quotation)) { ApproveWhenLoaded = approve });
 
+    public void StartOver(bool proforma)
+    {
+        var item = NavItems.FirstOrDefault(n => n.Key == (proforma ? "newproforma" : "new"));
+        if (item is null || _current is null || PendingPrompt is not null) return;
+        Release(_current);
+        Show(new PageEntry(item.Key, item.Factory()), returned: false);
+    }
+
     public void NewQuotation()
     {
         if (_session.MakesDocuments) Navigate("new");
@@ -549,6 +570,46 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     // ================================================================= messages in the corner
 
     public ObservableCollection<ToastItem> Toasts { get; } = [];
+
+    /// <summary>A corner message with a bold green first line (Greetings: "Alhamdulillah").</summary>
+    public void Toast(string title, string message) => Show(new ToastItem(message) { Title = title }, 6);
+
+    // ================================================================= greetings (administrator switch)
+
+    /// <summary>The hidden XO game (Ctrl+Alt+Shift+X); null when closed. The score lasts while the app is open.</summary>
+    [ObservableProperty] private XoGameViewModel? _xoGame;
+    private XoGameViewModel? _xoKept;
+
+    [RelayCommand]
+    private void OpenXo() => XoGame ??= _xoKept ??= new XoGameViewModel();
+
+    [RelayCommand]
+    private void CloseXo() => XoGame = null;
+
+    /// <summary>The greeting in the middle of the window (null = none).</summary>
+    [ObservableProperty] private GreetingCard? _greeting;
+
+    private bool GreetingsOn => _session.Settings?.Quotation.Greetings == true;
+    private string FirstName => UserDisplay.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
+
+    /// <summary>Shows a greeting for a moment; it goes by itself and never blocks a click.</summary>
+    public async Task GreetAsync(GreetingCard card, int milliseconds)
+    {
+        Greeting = card;
+        await Task.Delay(milliseconds);
+        if (Greeting == card) Greeting = null;
+    }
+
+    /// <summary>After signing in: "Assalamu Alaikum" (when Greetings are on).</summary>
+    private void GreetAfterSignIn()
+    {
+        if (!GreetingsOn || _greeted) return;
+        _greeted = true;
+        _ = GreetAsync(new GreetingCard("السلام عليكم", $"Assalamu Alaikum, {FirstName}".TrimEnd(',', ' '),
+            DateTime.Today.ToString("dddd, d MMMM yyyy")), 2000);
+    }
+
+    private bool _greeted;
 
     /// <summary>Shows a short message in the bottom-right corner for a few seconds.</summary>
     public void Toast(string message, int seconds = 5)
@@ -808,7 +869,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         if (!_cts.IsCancellationRequested)
         {
             if (PendingPrompt is not null || PendingDialog is not null) return;
-            if (!await ConfirmAsync("Leaving already, bro?", "", "Yes", "No")) return;
+            if (!await ConfirmAsync("Are you logging out, bro?", "", "Yes", "No")) return;
             KeepWorkForNextTime(); // unsaved work opens again at the next sign-in
         }
         Dispose();
@@ -876,6 +937,8 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         if (PendingPrompt is not null || PendingDialog is not null) return false; // already asking something
         if (!await ConfirmAsync("Bro, are you trying to close?", "", "Yes", "No")) return false;
         KeepWorkForNextTime();
+        // Greetings on: "JazakAllah Khair" for a second, then the window closes.
+        if (GreetingsOn) await GreetAsync(new GreetingCard("جزاك الله خيرا", "JazakAllah Khair", $"See you next time, {FirstName}".TrimEnd(',', ' ')), 1000);
         return true;
     }
 
@@ -891,6 +954,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         _session.SettingsChanged -= OnSettingsChanged;
         _session.BackgroundPictureChanged -= OnBackgroundPictureChanged;
         if (Avalonia.Application.Current is { } app) app.ActualThemeVariantChanged -= OnThemeChanged;
+        ThemeService.ColoursChanged -= OnColoursChanged;
         PendingPrompt?.Choose(LeaveChoice.Cancel);
         PendingDialog?.Choose(false);
     }

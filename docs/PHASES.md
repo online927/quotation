@@ -741,3 +741,26 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    read as a new item.
 4. In the customer part, address lines may start with "-" (or "*"): each is one address line and the "-" is not printed.
    After the first blank line a "-" no longer means address.
+5. Formater page:
+   - Line numbers at the left of the text; a line with a problem is marked red (red number, bar and band), and each problem
+     has "Go to line N", which selects that line.
+   - P&F has its own box under the text (an amount in rupees; Alt+P goes there); it is in the totals, the PDF and the
+     quotation.
+   - A pasted WhatsApp / e-mail text is cleaned: "[11/11, 10:15 am] Ravi:" times and names and lines that are only a greeting
+     ("Hi sir", "Good morning", "Thanks", "Regards") are taken out; a note says what, with Undo.
+   - "Use" on a Tally customer / item is remembered on the server (new table FormaterMatches, this app's database only;
+     Tally is never changed): the same typing (any case and spacing) is matched to it next time on every PC, with a purple
+     "Remembered" tag and "Forget".
+6. Quotation screen: Cancel on a quotation not yet saved stays on the page (it starts again blank; with nothing typed it
+   does nothing). Enter on a highlighted button presses it (Enter in P&F highlights Approve, Enter again approves).
+   Alt+P puts the cursor in Packing & Forwarding.
+7. Ctrl+P (quotation screen and Formater) prints straight to the Windows default printer, with no print window and no PDF
+   viewer: an approved, unchanged quotation prints its PDF; a draft prints the DRAFT preview without saving. PDFium
+   (Apache-2.0, bblanchon.PDFium.Win32) draws the pages on the printer.
+8. The theme button in the top bar goes through all themes in order (Same as Windows skipped); a message names the theme.
+   New themes with drawn scenery: Ocean (sun, gulls, waves) and Midnight Stars (dark: moon, stars, hills and pines).
+9. Greetings (Settings, administrator switch, off at first, for everyone): "السلام عليكم / Assalamu Alaikum" after signing
+   in, "Alhamdulillah الحمد لله" when a quotation is approved, "جزاك الله خيرا / JazakAllah Khair" for a second after Yes
+   on closing the app.
+10. Ctrl+Alt+Shift+X opens a hidden XO game (you against the computer, score, New game); Esc closes it.
+11. Log out asks "Are you logging out, bro?".

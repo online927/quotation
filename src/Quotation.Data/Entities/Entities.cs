@@ -370,3 +370,19 @@ public class AiRequest
     public DateTime? UpdatedUtc { get; set; }
     public string? UpdatedBy { get; set; }
 }
+
+/// <summary>
+/// Formater page: a name typed for a customer or item, and the Tally ledger / item the user chose for it ("Use"), so the same
+/// typing is matched the same way next time on every PC. Only this app's database; Tally is never changed.
+/// </summary>
+public class FormaterMatch
+{
+    public int Id { get; set; }
+    /// <summary>"Customer" or "Product".</summary>
+    public string Kind { get; set; } = "";
+    /// <summary>The typed name, lower case with single spaces.</summary>
+    public string Typed { get; set; } = "";
+    public int TallyId { get; set; }
+    public string CreatedBy { get; set; } = "";
+    public DateTime CreatedUtc { get; set; }
+}

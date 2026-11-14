@@ -124,7 +124,7 @@
           <Button Name="PreviewButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="4" Command="{Binding PreviewCommand}" HotKey="F11" ToolTip.Tip="Preview the PDF (F11)">
             <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Preview" /></StackPanel>
           </Button>
-          <Button Name="OpenPdfButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="3" Command="{Binding OpenPdfCommand}" IsVisible="{Binding ShowOpenPdf}" ToolTip.Tip="Open the PDF (Ctrl+P)">
+          <Button Name="OpenPdfButton" Classes="bar tile" ctl:ActionBar.CollapseOrder="3" Command="{Binding OpenPdfCommand}" IsVisible="{Binding ShowOpenPdf}" ToolTip.Tip="Open the PDF">
             <StackPanel Orientation="Horizontal" Spacing="7"><Path Classes="bi" Data="M14,4 L20,4 L20,10 M20,4 L11,13 M18,14 L18,19 C18,19.6 17.6,20 17,20 L5,20 C4.4,20 4,19.6 4,19 L4,7 C4,6.4 4.4,6 5,6 L10,6" Stroke="{DynamicResource TextBrush}" /><TextBlock Classes="lbl" Text="Open PDF" /></StackPanel>
           </Button>
           <Button Classes="bar tile whatsapp" Name="WhatsAppButton" ctl:ActionBar.CollapseOrder="5" Command="{Binding WhatsAppCommand}" IsVisible="{Binding ShowWhatsApp}"

@@ -20,8 +20,7 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
     /// <summary>Index in <see cref="ThemeChoices"/> (Default Light, Default Dark, Same as Windows, then the colour themes).</summary>
     [ObservableProperty] private int _themeIndex;
 
-    public IReadOnlyList<string> ThemeChoices { get; } =
-        ["Default Light", "Default Dark", "Same as Windows", "Sunset", "Graphite", "Frost", "Glass (Blue)", "Glass (Black)", "Glass (Green)", "Glass (Maroon)", "Parchment", "Forest & Gold", "Hero Light", "Neon Night"];
+    public IReadOnlyList<string> ThemeChoices { get; } = ThemeNames.All.Select(t => t.Name).ToList();
 
     /// <summary>0 Normal, 1 Large.</summary>
     [ObservableProperty] private int _textSizeIndex;
@@ -41,8 +40,7 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
     /// <summary>The layout of the PDFs this user makes (saved with the login).</summary>
     [ObservableProperty] private string _pdfLayout = Core.Domain.PdfLayouts.Tally;
     public IReadOnlyList<string> PdfLayoutChoices { get; } = [Core.Domain.PdfLayouts.Tally, Core.Domain.PdfLayouts.Zoho];
-    private static readonly string[] Themes =
-        [AppTheme.Light, AppTheme.Dark, AppTheme.System, AppTheme.Sunset, AppTheme.Graphite, AppTheme.Frost, AppTheme.GlassBlue, AppTheme.GlassBlack, AppTheme.GlassGreen, AppTheme.GlassMaroon, AppTheme.Parchment, AppTheme.ForestGold, AppTheme.HeroLight, AppTheme.NeonNight];
+    private static readonly string[] Themes = ThemeNames.All.Select(t => t.Theme).ToArray();
 
     // Background picture (this PC)
     public bool HasBackgroundPicture => _session.BackgroundPicturePath is not null;

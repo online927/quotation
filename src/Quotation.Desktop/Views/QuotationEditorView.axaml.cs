@@ -61,6 +61,13 @@ public partial class QuotationEditorView : UserControl
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Source is not Control source) return;
+        if (e.Key == Key.P && e.KeyModifiers == KeyModifiers.Alt)
+        {
+            // Alt+P: straight to Packing & Forwarding, its amount selected to type over.
+            FocusPacking();
+            e.Handled = true;
+            return;
+        }
         var picker = source.FindAncestorOfType<SearchPicker>(includeSelf: true);
 
         if (e.Key == Key.Escape && Vm is { IsPasteOpen: true } pasting)
@@ -113,6 +120,8 @@ public partial class QuotationEditorView : UserControl
             }
             // Let other multi-line boxes (remarks, terms …) handle Enter themselves.
             if (source is TextBox { AcceptsReturn: true }) return;
+            // A button with the cursor on it (Approve after Enter in P&F, Save as PDF …): Enter presses it.
+            if (source.FindAncestorOfType<Button>(includeSelf: true) is not null) return;
             owner = source.FindAncestorOfType<NumericUpDown>(includeSelf: true) as Control ?? source;
         }
 
@@ -143,6 +152,19 @@ public partial class QuotationEditorView : UserControl
         {
             c.Focus();
             e.Handled = true;
+        }
+    }
+
+    /// <summary>Alt+P: the cursor in the Packing &amp; Forwarding box with its amount selected (when it can be changed).</summary>
+    public void FocusPacking()
+    {
+        if (!PackingBox.IsEffectivelyEnabled || !PackingBox.IsEffectivelyVisible) return;
+        PackingBox.BringIntoView();
+        PackingBox.Focus(NavigationMethod.Tab);
+        if (PackingBox.GetVisualDescendants().OfType<TextBox>().FirstOrDefault() is { } box)
+        {
+            box.Focus(NavigationMethod.Tab);
+            box.SelectAll();
         }
     }
 

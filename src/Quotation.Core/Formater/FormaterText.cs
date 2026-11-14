@@ -23,6 +23,21 @@ public sealed class FormaterItem
 
 public enum FormaterGst { Auto, Igst, CgstSgst, None }
 
+/// <summary>A pasted text with WhatsApp times and names and greeting lines taken out, and how many of each.</summary>
+public sealed record FormaterPaste(string Text, int Prefixes, int Lines)
+{
+    public int Removed => Prefixes + Lines;
+
+    /// <summary>"3 WhatsApp times and names and 2 greeting lines".</summary>
+    public string Describe()
+    {
+        var parts = new List<string>();
+        if (Prefixes > 0) parts.Add(Prefixes == 1 ? "1 WhatsApp time and name" : $"{Prefixes} WhatsApp times and names");
+        if (Lines > 0) parts.Add(Lines == 1 ? "1 greeting line" : $"{Lines} greeting lines");
+        return string.Join(" and ", parts);
+    }
+}
+
 /// <summary>What was read from the text of the Formater page.</summary>
 public sealed class FormaterParse
 {
@@ -592,5 +607,51 @@ public static partial class FormaterText
             f.Equals("no", StringComparison.OrdinalIgnoreCase) || f.Equals("none", StringComparison.OrdinalIgnoreCase)) return 0m;
         var m = DiscountRegex().Match(f);
         return m.Success ? decimal.Parse(m.Groups["v"].Value, CultureInfo.InvariantCulture) : null;
+    }
+
+    // ---------------------------------------------------------------- pasted text
+
+    // "[11/11, 10:15 am] Ravi: …" (WhatsApp copy) and "11/11/26, 10:15 am - Ravi: …" (WhatsApp export)
+    [GeneratedRegex(@"^\s*(?:\[[^\]]{3,40}\]\s*[^:\n]{1,40}:\s*|\d{1,2}/\d{1,2}/\d{2,4},?\s+\d{1,2}:\d{2}(?:\s*[ap]\.?\s?m\.?)?\s+-\s+[^:\n]{1,40}:\s*)",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex WhatsAppPrefixRegex();
+
+    // Lines that are only a greeting or a closing (never when they hold a number).
+    [GeneratedRegex(@"^(?:hi|hello|hey|hii+|dear\b.*|good\s+(?:morning|afternoon|evening|day)|greetings|thanks?\b.*|thank\s+you\b.*|thx|tq|ty|" +
+                    @"(?:best|warm|kind|with)?\s*regards\b.*|yours\s+(?:truly|faithfully|sincerely)|sir|madam|ma'?am|noted|ok|okay|" +
+                    @"(?:please|pls|plz|kindly)\s+(?:quote|send|share|find|give|provide)\b.*|need\s+(?:a\s+)?(?:quotation|quote|rates?|price)\b.*|" +
+                    @"assalamu?\s*-?\s*alaikum\b.*|salaam?|<media omitted>|this message was deleted|image omitted)" +
+                    @"(?:[\s,]+(?:sir|madam|ma'?am|all|team|bro|bhai|ji|sahab|saab))*[\s,.!:;-]*$", RegexOptions.IgnoreCase)]
+    private static partial Regex GreetingLineRegex();
+
+    /// <summary>
+    /// A pasted text made ready for the Formater page: WhatsApp times and names at the start of lines and lines that are only a
+    /// greeting ("Hi sir", "Good morning", "Thanks", "Regards") are taken out; more than one blank line in a row becomes one.
+    /// </summary>
+    public static FormaterPaste CleanPasted(string? text)
+    {
+        var lines = (text ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        var kept = new List<string>();
+        int prefixes = 0, removed = 0;
+        foreach (var raw in lines)
+        {
+            var line = raw;
+            var m = WhatsAppPrefixRegex().Match(line);
+            if (m.Success)
+            {
+                line = line[m.Length..];
+                prefixes++;
+            }
+            var t = line.Trim();
+            if (t.Length > 0 && !t.Any(char.IsDigit) && GreetingLineRegex().IsMatch(t))
+            {
+                removed++;
+                continue;
+            }
+            if (t.Length == 0 && kept.Count > 0 && kept[^1].Trim().Length == 0) continue; // one blank line is enough
+            kept.Add(line.TrimEnd());
+        }
+        while (kept.Count > 0 && kept[0].Trim().Length == 0 && removed + prefixes > 0) kept.RemoveAt(0);
+        return new FormaterPaste(string.Join("\n", kept), prefixes, removed);
     }
 }

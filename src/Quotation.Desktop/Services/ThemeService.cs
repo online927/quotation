@@ -12,6 +12,9 @@ namespace Quotation.Desktop.Services;
 public static class ThemeService
 {
     private static string? _theme;
+
+    /// <summary>The theme now on the screens (null before the first one is applied).</summary>
+    public static string? Current => _theme;
     private static bool _reduceMotion;
 
     public static void Apply(string? theme)

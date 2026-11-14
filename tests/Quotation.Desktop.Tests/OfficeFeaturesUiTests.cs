@@ -126,7 +126,13 @@ public class OfficeFeaturesUiTests
             Assert.True(ThemeService.IsDark);
             Assert.Equal(AppTheme.Dark, (await ctx.Session.Api.MeAsync()).Theme);
             Assert.Equal(AppTheme.Dark, ctx.Session.Config.Theme); // the login screen on this PC follows it
-            Assert.Equal("Light mode", ctx.Shell.ThemeTip);
+            // Round 27: each click is the next theme in the list (Same as Windows skipped), back to Light after the last.
+            Assert.Equal("Next theme: Sunset", ctx.Shell.ThemeTip);
+            await ctx.Shell.ToggleThemeCommand.ExecuteAsync(null);
+            Assert.Equal(AppTheme.Sunset, (await ctx.Session.Api.MeAsync()).Theme);
+            Assert.Equal(AppTheme.Light, ShellViewModel.NextTheme(AppTheme.Midnight));
+            Assert.Equal(AppTheme.Dark, ShellViewModel.NextTheme(AppTheme.System));
+            await ctx.Session.SetThemeAsync(AppTheme.Dark);
 
             ctx.Shell.Navigate("mysettings");
             var mine = Assert.IsType<MySettingsViewModel>(ctx.Shell.CurrentPage);

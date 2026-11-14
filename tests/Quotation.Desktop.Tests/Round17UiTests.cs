@@ -57,6 +57,15 @@ public class Round17UiTests
 
         await editor.CancelQuotationCommand.ExecuteAsync(null);
         Assert.False(File.Exists(copy)); // nothing comes back at the next start
+
+        // Round 27: it stays on the page, which starts again blank; Cancel on a blank one does nothing.
+        await UiHelpers.WaitUntil(() => shell.CurrentPage is QuotationEditorViewModel e && e != editor);
+        var blank = (QuotationEditorViewModel)shell.CurrentPage!;
+        Assert.Empty(blank.Lines);
+        Assert.True(shell.NavItems.Single(n => n.Key == "new").IsSelected);
+        await blank.CancelQuotationCommand.ExecuteAsync(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Same(blank, shell.CurrentPage);
         shell.Dispose();
         window.Close();
     }

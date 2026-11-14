@@ -120,6 +120,12 @@ public sealed class QuotationSettings
 
     /// <summary>WhatsApp button on approved quotations and proforma invoices (administrator switch; off by default).</summary>
     public bool WhatsAppButton { get; set; }
+
+    /// <summary>
+    /// Greetings for everyone (administrator switch; off by default): "Assalamu Alaikum" after signing in, "Alhamdulillah" when
+    /// a quotation is approved, "JazakAllah Khair" when the app is closed.
+    /// </summary>
+    public bool Greetings { get; set; }
     /// <summary>The message typed into WhatsApp. {number} = the quotation number, {customer} = the customer.</summary>
     public string WhatsAppMessage { get; set; } = "Dear Sir, please find our quotation {number} attached.";
     /// <summary>The message of the WhatsApp button in the To Follow Up list ({number}, {date}, {customer}).</summary>

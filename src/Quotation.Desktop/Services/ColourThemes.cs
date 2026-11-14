@@ -102,6 +102,34 @@ public static class ColourThemes
                 ["PageArtFarBrush"] = "#1AEFE3C2", ["PageArtNearBrush"] = "#3D4C7A3A", ["SidebarArtBrush"] = "#1FD4AF37",
                 ["PictureScrimBrush"] = "#990E1A12",
             }),
+        // Ocean: sky to sand, a deep sea-blue menu, teal buttons and coral highlights; a sun, gulls and waves.
+        [AppTheme.Ocean] = new("#E6F5F8→#D2EDF2→#F4E8D2", "#0E7C86", "#DDF2F3", "#C6E9EB", false,
+            new()
+            {
+                ["SidebarBrush"] = "#08344A→#0C5A6E", ["SidebarBorderBrush"] = "#08344A", ["SidebarTextBrush"] = "#FFFFFF",
+                ["SidebarMutedBrush"] = "#A9D6DE", ["SidebarHoverBrush"] = "#1FFFFFFF", ["SidebarSelectedBrush"] = "#F07A5A",
+                ["SidebarSelectedTextBrush"] = "#FFFFFF", ["TopBarBrush"] = "#F7FCFC", ["CardBrush"] = "#FFFFFF", ["PopupBrush"] = "#FFFFFF",
+                ["HairlineBrush"] = "#D3E8EA", ["PanelBorderBrush"] = "#C2E0E3", ["SubtleFillBrush"] = "#F2FAFA", ["FillBrush"] = "#E3F2F3",
+                ["MutedBrush"] = "#4A6670", ["TextBrush"] = "#0D2A33", ["ListHoverBrush"] = "#EEF8F8",
+                ["ActionBrush"] = "#0E7C86", ["PrimaryHoverBrush"] = "#13919C", ["PrimaryPressedBrush"] = "#0A626A", ["PrimaryDisabledBrush"] = "#B6DADD",
+                ["SaveBrush"] = "#1F8A70", ["SaveHoverBrush"] = "#26A083",
+                ["SunArtBrush"] = "#3DF07A5A", ["SkyArtBrush"] = "#4D0C5A6E", ["FarArtBrush"] = "#3D0E7C86", ["NearArtBrush"] = "#5C0C5A6E",
+                ["SideArtBrush"] = "#26FFFFFF", ["PictureScrimBrush"] = "#B3E6F5F8",
+            }),
+        // Midnight Stars: a starry navy night, gold highlights; a crescent moon, stars, hills and a row of pines.
+        [AppTheme.Midnight] = new("#070B1F→#0D1433→#18214A", "#F2C14E", "#2B2818", "#3A3420", true,
+            new()
+            {
+                ["CardBrush"] = "#121A3A", ["PopupBrush"] = "#141C3E", ["TopBarBrush"] = "#0B1129",
+                ["SidebarBrush"] = "#04071A→#0A1030", ["SidebarBorderBrush"] = "#04071A", ["SidebarSelectedBrush"] = "#F2C14E",
+                ["SidebarSelectedTextBrush"] = "#0B1129", ["SidebarTextBrush"] = "#E8ECFF", ["SidebarMutedBrush"] = "#9AA6D6",
+                ["SidebarHoverBrush"] = "#1FFFFFFF", ["HairlineBrush"] = "#25305E", ["PanelBorderBrush"] = "#2E3A6E",
+                ["SubtleFillBrush"] = "#18214A", ["FillBrush"] = "#1E2958", ["MutedBrush"] = "#AEB8E0", ["ListHoverBrush"] = "#1A2450",
+                ["TextBrush"] = "#EEF1FF", ["ActionBrush"] = "#3D5BD9", ["PrimaryHoverBrush"] = "#5470E6",
+                ["PrimaryPressedBrush"] = "#2F48B5", ["PrimaryDisabledBrush"] = "#2A3466", ["SaveBrush"] = "#2FA57A", ["SaveHoverBrush"] = "#39B98A",
+                ["SkyArtBrush"] = "#8CFFFFFF", ["SunArtBrush"] = "#C7F6E7B6", ["FarArtBrush"] = "#1F9AA6D6", ["NearArtBrush"] = "#D903061A",
+                ["SideArtBrush"] = "#4DFFFFFF", ["PictureScrimBrush"] = "#99070B1F",
+            }),
     };
 
     private static Dictionary<string, string> GlassBrushes(Glass g) => g.Dark
@@ -143,6 +171,7 @@ public static class ColourThemes
         {
             foreach (var (key, colour) in GlassBrushes(glass)) app.Resources[key] = BrushOf(colour);
             foreach (var (key, colour) in glass.Extra ?? []) app.Resources[key] = BrushOf(colour);
+            foreach (var (key, geometry) in Controls.ThemeScenery.For(theme)) app.Resources[key] = geometry;
             SetShape(app, "CardRadius", new CornerRadius(22));
             SetShape(app, "CardBottomRadius", new CornerRadius(0, 0, 22, 22));
             SetShape(app, "ButtonRadius", new CornerRadius(18));
@@ -205,7 +234,7 @@ public static class ColourThemes
         "AccentBrush", "AccentSoftBrush", "SidebarBrush", "SidebarBorderBrush", "SidebarHoverBrush", "SidebarSelectedBrush", "PageBrush",
         "ListSelectedBrush", "ListSelectedHoverBrush", "ListSelectedBarBrush", "ListHoverBrush", "TextControlBorderBrushFocused",
         "LinkHoverBrush", "TileHoverBorderBrush",
-    ]).Concat(GlassThemes.Values.SelectMany(g => g.Extra?.Keys ?? Enumerable.Empty<string>())).Distinct().ToArray();
+    ]).Concat(GlassThemes.Values.SelectMany(g => g.Extra?.Keys ?? Enumerable.Empty<string>())).Concat(Controls.ThemeScenery.Keys).Distinct().ToArray();
 
     // Shapes (corners) live at the top of the app resources: remember the standard values to put them back.
     private static readonly string[] ShapeKeys = ["CardRadius", "CardBottomRadius", "ButtonRadius", "ControlCornerRadius", "InputPadding", "SpinnerEndRadius"];

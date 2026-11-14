@@ -421,6 +421,38 @@ namespace Quotation.Data.Migrations
                     b.ToTable("EmailMessages");
                 });
 
+            modelBuilder.Entity("Quotation.Data.Entities.FormaterMatch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TallyId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Typed")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Kind", "Typed")
+                        .IsUnique();
+
+                    b.ToTable("FormaterMatches");
+                });
+
             modelBuilder.Entity("Quotation.Data.Entities.NumberSeries", b =>
                 {
                     b.Property<int>("Id")

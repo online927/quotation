@@ -297,6 +297,10 @@
                              Text="Follow-up message (WhatsApp button in the To Follow Up list, when Won / Lost is on; {date} = the quotation date):" />
                   <TextBox Name="WhatsAppFollowUpBox" Text="{Binding Settings.Quotation.WhatsAppFollowUpMessage}" />
                 </StackPanel>
+                <TextBlock Classes="h2" Text="Greetings" Margin="0,8,0,0" />
+                <ToggleSwitch Name="GreetingsSwitch" IsChecked="{Binding Settings.Quotation.Greetings}"
+                              OnContent="On, for everyone: Assalamu Alaikum after signing in, Alhamdulillah when a quotation is approved, JazakAllah Khair when closing the app"
+                              OffContent="Off" />
               </StackPanel>
             </Border>
           </Grid>

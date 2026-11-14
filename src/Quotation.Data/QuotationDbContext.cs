@@ -19,6 +19,7 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
     public DbSet<SettingEntry> Settings => Set<SettingEntry>();
     public DbSet<AuditEntry> AuditLog => Set<AuditEntry>();
     public DbSet<AiRequest> AiRequests => Set<AiRequest>();
+    public DbSet<FormaterMatch> FormaterMatches => Set<FormaterMatch>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -125,5 +126,7 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
             e.HasIndex(x => x.CreatedUtc);
             e.HasIndex(x => x.EmailMessageId);
         });
+
+        b.Entity<FormaterMatch>(e => e.HasIndex(x => new { x.Kind, x.Typed }).IsUnique());
     }
 }

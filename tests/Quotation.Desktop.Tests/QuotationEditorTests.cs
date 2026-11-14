@@ -31,6 +31,14 @@ internal sealed class RecordingLauncher(ClientConfig config) : DocumentLauncher(
         return fileName;
     }
 
+    /// <summary>Documents sent to the printer (Ctrl+P), with their PDF bytes.</summary>
+    public List<(string Name, byte[] Pdf)> Printed { get; } = [];
+    public override string Print(byte[] pdf, string documentName)
+    {
+        Printed.Add((documentName, pdf));
+        return "Test Printer";
+    }
+
     /// <summary>(pdf, phone, message) of each WhatsApp share.</summary>
     public List<(string Pdf, string? Phone, string Message)> WhatsApp { get; } = [];
     public override bool ShareOnWhatsApp(string pdfPath, string? phone, string message)

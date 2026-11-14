@@ -21,6 +21,11 @@ public sealed partial class FormaterLineViewModel : ObservableObject
     public ProductSummaryDto? Suggestion { get; init; }
     public required decimal GstRate { get; init; }
     public required decimal Amount { get; init; }
+    /// <summary>Matched because this typing was matched to this Tally item before ("Use"), on any PC.</summary>
+    public bool IsRemembered { get; init; }
+    public string RememberedText => IsRemembered ? $"typed \"{Typed.Name}\"" : "";
+    /// <summary>"Keep as typed" for a match the app made itself; a remembered one has "Forget" instead.</summary>
+    public bool CanKeepTyped => IsTally && !IsRemembered;
     public bool IsEven => No % 2 == 0;
 
     public bool IsTally => Product is not null;
@@ -43,6 +48,14 @@ public sealed partial class FormaterLineViewModel : ObservableObject
     public string SuggestionText => Suggestion is null ? "" : "Tally has: " + Suggestion.Name;
 }
 
+/// <summary>A problem in the text, with the line it is on (0 when it is not on one line).</summary>
+public sealed record FormaterProblem(int Line, string Text)
+{
+    public bool HasLine => Line > 0;
+    public string GoToText => $"Go to line {Line}";
+    public override string ToString() => Line > 0 ? $"Line {Line}: {Text}" : Text;
+}
+
 /// <summary>
 /// The Formater page: a quotation typed or pasted as text (the way of the separate Formater app). The customer and items
 /// are matched to the Tally lists where they clearly are the same (read only; Tally is never changed); anything else is
@@ -53,6 +66,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
 {
     /// <summary>The text is kept while the app is open, so going to another page and back does not lose it.</summary>
     private static string _keptText = "";
+    private static decimal? _keptPacking;
 
     private readonly AppSession _session;
     private readonly INavigator _navigator;
@@ -62,9 +76,14 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
     /// <summary>The user's own choice for a typed name: a Tally id, or -1 to keep it as typed.</summary>
     private readonly Dictionary<string, int> _customerChoice = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, int> _productChoice = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Tally ledgers / items chosen for typed names before (on any PC), by kind and typed name.</summary>
+    private readonly Dictionary<(string Kind, string Typed), FormaterMatchDto> _remembered = [];
     private CancellationTokenSource? _refreshCts;
     private FormaterParse? _parse;
     private CustomerSummaryDto? _customer;
+    /// <summary>The text as it was before the last paste was cleaned, and the text the paste would have given (for Undo).</summary>
+    private (string Before, string Raw)? _pasteUndo;
+    private bool _settingText;
 
     public static TimeSpan RefreshDelay { get; set; } = TimeSpan.FromMilliseconds(350);
 
@@ -73,6 +92,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         _session = session;
         _navigator = navigator;
         _text = _keptText;
+        _packingForwarding = _keptPacking;
         _ = InitializeAsync();
     }
 
@@ -91,15 +111,27 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
     [ObservableProperty] private string _otherRefText = "";
     [ObservableProperty] private string _gstNote = "";
     [ObservableProperty] private CalcResult? _totals;
+    [ObservableProperty] private bool _customerIsRemembered;
+    /// <summary>Packing &amp; forwarding in rupees (its own box, not in the text); empty = none.</summary>
+    [ObservableProperty] private decimal? _packingForwarding;
+    /// <summary>What was taken out of the pasted text (WhatsApp times and names, greetings); empty when nothing.</summary>
+    [ObservableProperty] private string _pasteNote = "";
 
     public ObservableCollection<FormaterLineViewModel> Lines { get; } = [];
-    public ObservableCollection<string> Problems { get; } = [];
+    public ObservableCollection<FormaterProblem> Problems { get; } = [];
+    /// <summary>The lines of the text that have a problem (marked red next to the text).</summary>
+    public IReadOnlyList<int> ProblemLines => Problems.Where(p => p.Line > 0).Select(p => p.Line).Distinct().ToList();
     public ObservableCollection<string> Notes { get; } = [];
 
     public bool HasLines => Lines.Count > 0;
     public bool HasProblems => Problems.Count > 0;
     public bool HasNotes => Notes.Count > 0;
     public bool CustomerIsTyped => HasCustomer && !CustomerIsTally;
+    public bool CanKeepCustomerTyped => CustomerIsTally && !CustomerIsRemembered;
+    public string CustomerRememberedText => _parse is null ? "" : $"You typed \"{_parse.BuyerName}\"; this ledger was chosen for it before.";
+    public bool HasPasteNote => PasteNote.Length > 0;
+    public bool HasPacking => Totals is { PackingForwarding: > 0 };
+    public string PackingText => IndianFormat.Amount(Totals?.PackingForwarding ?? 0);
     public bool HasCustomerSuggestion => CustomerSuggestion.Length > 0;
     public bool CanApprove => _parse is { IsValid: true } && Lines.Count > 0 && !IsRefreshing && _session.MakesDocuments;
     public string SubtotalText => IndianFormat.Amount(Totals?.Subtotal ?? 0);
@@ -137,15 +169,43 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         {
             ErrorMessage = ex.Message;
         }
+        try
+        {
+            foreach (var m in await _session.Api.FormaterMatchesAsync()) _remembered[(m.Kind, m.Typed)] = m;
+        }
+        catch (ApiException)
+        {
+            // An older server: nothing remembered yet.
+        }
         await RefreshAsync(CancellationToken.None);
     }
 
     partial void OnTextChanged(string value)
     {
         _keptText = value;
+        if (!_settingText && _pasteUndo is not null)
+        {
+            // Typed on after a cleaned paste: the note (and its Undo) goes.
+            _pasteUndo = null;
+            PasteNote = "";
+        }
         _refreshCts?.Cancel();
         var cts = _refreshCts = new CancellationTokenSource();
         _ = DelayedRefreshAsync(cts.Token);
+    }
+
+    partial void OnPackingForwardingChanged(decimal? value)
+    {
+        _keptPacking = value is > 0 ? value : null;
+        if (_parse is not null) _ = RefreshAsync(CancellationToken.None);
+    }
+
+    partial void OnPasteNoteChanged(string value) => OnPropertyChanged(nameof(HasPasteNote));
+
+    partial void OnCustomerIsRememberedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanKeepCustomerTyped));
+        OnPropertyChanged(nameof(CustomerRememberedText));
     }
 
     private async Task DelayedRefreshAsync(CancellationToken ct)
@@ -168,20 +228,23 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
             var parse = FormaterText.Parse(Text);
             CustomerSummaryDto? customer = null;
             CustomerSummaryDto? customerSuggestion = null;
+            var customerRemembered = false;
             if (parse.BuyerName.Length > 0)
             {
                 var hits = await CustomerHitsAsync(parse.BuyerName, ct);
-                (customer, customerSuggestion) = Decide(parse.BuyerName, hits, h => h.Customer.Id, h => h.Match, h => h.Score, _customerChoice,
-                    h => h.Customer);
+                (customer, customerSuggestion, customerRemembered) = Decide(parse.BuyerName, hits, h => h.Customer.Id, h => h.Match, h => h.Score,
+                    _customerChoice, Remembered(FormaterMatchDto.Customer, parse.BuyerName), h => h.Customer);
             }
-            var lines = new List<(FormaterItem Item, ProductSummaryDto? Product, ProductSummaryDto? Suggestion)>();
+            var lines = new List<(FormaterItem Item, ProductSummaryDto? Product, ProductSummaryDto? Suggestion, bool Remembered)>();
             foreach (var item in parse.Items)
             {
                 var hits = (await ProductHitsAsync(item.Name, ct)).Where(h => !h.Product.Hidden).ToList();
-                var (p, s) = Decide(item.Name, hits, h => h.Product.Id, h => h.Match, h => h.Score, _productChoice, h => h.Product);
-                lines.Add((item, p, s));
+                var (p, s, r) = Decide(item.Name, hits, h => h.Product.Id, h => h.Match, h => h.Score, _productChoice,
+                    Remembered(FormaterMatchDto.Product, item.Name), h => h.Product);
+                lines.Add((item, p, s, r));
             }
             ct.ThrowIfCancellationRequested();
+            CustomerIsRemembered = customerRemembered;
             Show(parse, customer, customerSuggestion, lines);
         }
         catch (OperationCanceledException) { throw; }
@@ -196,10 +259,16 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         }
     }
 
+    private int? Remembered(string kind, string typed) =>
+        _remembered.TryGetValue((kind, FormaterMatchDto.Normalize(typed)), out var m) ? m.TallyId : null;
+
     private async Task<List<CustomerSearchHitDto>> CustomerHitsAsync(string name, CancellationToken ct)
     {
         if (_customerHits.TryGetValue(name, out var hits)) return hits;
         hits = await _session.Api.SearchCustomersAsync(name, 6, ct);
+        // A ledger chosen for this name before, but not among the closest matches: found by its own name.
+        if (_remembered.TryGetValue((FormaterMatchDto.Customer, FormaterMatchDto.Normalize(name)), out var m) && hits.All(h => h.Customer.Id != m.TallyId))
+            hits.AddRange((await _session.Api.SearchCustomersAsync(m.TallyName, 6, ct)).Where(h => h.Customer.Id == m.TallyId));
         return _customerHits[name] = hits;
     }
 
@@ -207,35 +276,39 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
     {
         if (_productHits.TryGetValue(name, out var hits)) return hits;
         hits = await _session.Api.SearchProductsAsync(name, 6, ct);
+        if (_remembered.TryGetValue((FormaterMatchDto.Product, FormaterMatchDto.Normalize(name)), out var m) && hits.All(h => h.Product.Id != m.TallyId))
+            hits.AddRange((await _session.Api.SearchProductsAsync(m.TallyName, 6, ct)).Where(h => h.Product.Id == m.TallyId));
         return _productHits[name] = hits;
     }
 
     /// <summary>
     /// Taken from Tally only when the search makes it clear (an exact name or part number, a single match of every word, or a
-    /// decisive lead); otherwise kept as typed, with the closest Tally entry offered. The user's own choice wins.
+    /// decisive lead); otherwise kept as typed, with the closest Tally entry offered. The user's own choice wins, then the
+    /// entry chosen for the same typing before (remembered on the server).
     /// </summary>
-    private static (TItem? Chosen, TItem? Suggestion) Decide<THit, TItem>(string typed, List<THit> hits, Func<THit, int> id,
-        Func<THit, SearchMatchDto> match, Func<THit, double> score, Dictionary<string, int> choices, Func<THit, TItem> item)
+    private static (TItem? Chosen, TItem? Suggestion, bool Remembered) Decide<THit, TItem>(string typed, List<THit> hits, Func<THit, int> id,
+        Func<THit, SearchMatchDto> match, Func<THit, double> score, Dictionary<string, int> choices, int? remembered, Func<THit, TItem> item)
         where TItem : class
     {
         if (choices.TryGetValue(typed, out var chosen))
         {
-            if (chosen < 0) return (null, hits.Count > 0 ? item(hits[0]) : null);
+            if (chosen < 0) return (null, hits.Count > 0 ? item(hits[0]) : null, false);
             var pick = hits.FirstOrDefault(h => id(h) == chosen);
-            if (pick is not null) return (item(pick), null);
+            if (pick is not null) return (item(pick), null, chosen == remembered);
         }
-        if (hits.Count == 0) return (null, null);
+        if (remembered is { } r && hits.FirstOrDefault(h => id(h) == r) is { } known) return (item(known), null, true);
+        if (hits.Count == 0) return (null, null, false);
         var exact = hits.Where(h => match(h).ExactName || match(h).ExactIdentifier).ToList();
-        if (exact.Count == 1) return (item(exact[0]), null);
+        if (exact.Count == 1) return (item(exact[0]), null, false);
         var complete = hits.Where(h => match(h).AllTermsMatched && !match(h).UsedFuzzy).OrderByDescending(score).ToList();
-        if (exact.Count == 0 && complete.Count == 1) return (item(complete[0]), null);
+        if (exact.Count == 0 && complete.Count == 1) return (item(complete[0]), null, false);
         if (exact.Count == 0 && complete.Count > 1 && score(complete[0]) >= 1.6 * Math.Max(0.01, score(complete[1])))
-            return (item(complete[0]), null);
-        return (null, item((exact.Count > 0 ? exact : complete.Count > 0 ? complete : hits)[0]));
+            return (item(complete[0]), null, false);
+        return (null, item((exact.Count > 0 ? exact : complete.Count > 0 ? complete : hits)[0]), false);
     }
 
     private void Show(FormaterParse parse, CustomerSummaryDto? customer, CustomerSummaryDto? suggestion,
-        List<(FormaterItem Item, ProductSummaryDto? Product, ProductSummaryDto? Suggestion)> lines)
+        List<(FormaterItem Item, ProductSummaryDto? Product, ProductSummaryDto? Suggestion, bool Remembered)> lines)
     {
         _parse = parse;
         _customer = customer;
@@ -267,19 +340,19 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         // Items
         Lines.Clear();
         var no = 0;
-        foreach (var (item, product, s) in lines)
+        foreach (var (item, product, s, remembered) in lines)
         {
             var rate = item.Rate > 0 ? item.Rate : product?.Rate ?? 0;
             Lines.Add(new FormaterLineViewModel
             {
-                No = ++no, Typed = item, Product = product, Suggestion = s,
+                No = ++no, Typed = item, Product = product, Suggestion = s, IsRemembered = remembered && product is not null,
                 GstRate = withoutGst ? 0 : product?.GstRate ?? typedRate,
                 Amount = QuotationCalculator.LineAmount(item.Qty, rate, item.DiscountPercent),
             });
         }
         Totals = Lines.Count == 0 ? null : QuotationCalculator.Calculate(new CalcInput(
             Lines.Select(l => new CalcLine(l.Typed.Qty, l.Rate, l.Typed.DiscountPercent, l.GstRate, l.Unit)).ToList(),
-            0, null, TaxPresentation.ComputeTax, _settings.Quotation.RoundOffTotal, interState, withoutGst));
+            PackingForwarding ?? 0, null, TaxPresentation.ComputeTax, _settings.Quotation.RoundOffTotal, interState, withoutGst));
 
         // GST and anything worth knowing
         GstNote = withoutGst ? "Without GST (set in the text)"
@@ -301,14 +374,16 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
             Notes.Add("Terms and T&C lines are not used here: the terms come from Settings → Company (change them on the quotation screen).");
         foreach (var w in parse.Warnings) Notes.Add(w.ToString());
         Problems.Clear();
-        foreach (var e in parse.Errors) Problems.Add(e.ToString());
+        foreach (var e in parse.Errors) Problems.Add(new FormaterProblem(e.Line, e.Text));
         if (Text.Trim().Length == 0) Problems.Clear();
+        OnPropertyChanged(nameof(ProblemLines));
 
         OnPropertyChanged(nameof(HasLines));
         OnPropertyChanged(nameof(HasProblems));
         OnPropertyChanged(nameof(HasNotes));
         OnPropertyChanged(nameof(CustomerIsTyped));
         OnPropertyChanged(nameof(HasCustomerSuggestion));
+        OnPropertyChanged(nameof(CustomerRememberedText));
         OnPropertyChanged(nameof(CanApprove));
     }
 
@@ -319,17 +394,55 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         OnPropertyChanged(nameof(RoundOffText));
         OnPropertyChanged(nameof(GrandTotalText));
         OnPropertyChanged(nameof(TotalQuantityText));
+        OnPropertyChanged(nameof(HasPacking));
+        OnPropertyChanged(nameof(PackingText));
     }
 
     // ---------------------------------------------------------------- the user's choices
 
     [RelayCommand]
-    private Task UseCustomerSuggestionAsync()
+    private async Task UseCustomerSuggestionAsync()
     {
-        if (_parse is null || !_customerHits.TryGetValue(_parse.BuyerName, out var hits) || hits.Count == 0) return Task.CompletedTask;
+        if (_parse is null || !_customerHits.TryGetValue(_parse.BuyerName, out var hits) || hits.Count == 0) return;
         var s = hits.FirstOrDefault(h => h.Customer.Name == CustomerSuggestion) ?? hits[0];
         _customerChoice[_parse.BuyerName] = s.Customer.Id;
-        return RefreshAsync(CancellationToken.None);
+        await RememberAsync(FormaterMatchDto.Customer, _parse.BuyerName, s.Customer.Id, s.Customer.Name);
+        await RefreshAsync(CancellationToken.None);
+    }
+
+    /// <summary>Remembers the choice on the server, so the same typing is matched the same way next time, on every PC.</summary>
+    private async Task RememberAsync(string kind, string typed, int tallyId, string tallyName)
+    {
+        var match = new FormaterMatchDto(kind, FormaterMatchDto.Normalize(typed), tallyId, tallyName);
+        _remembered[(kind, match.Typed)] = match;
+        try { await _session.Api.RememberFormaterMatchAsync(match); }
+        catch (ApiException) { /* remembered on this PC until the app closes */ }
+    }
+
+    private async Task ForgetAsync(string kind, string typed)
+    {
+        _remembered.Remove((kind, FormaterMatchDto.Normalize(typed)));
+        try { await _session.Api.ForgetFormaterMatchAsync(kind, typed); }
+        catch (ApiException ex) { ErrorMessage = ex.Message; }
+    }
+
+    /// <summary>"Forget" on a remembered customer: no longer matched by this typing (shown as typed now).</summary>
+    [RelayCommand]
+    private async Task ForgetCustomerAsync()
+    {
+        if (_parse is null) return;
+        await ForgetAsync(FormaterMatchDto.Customer, _parse.BuyerName);
+        _customerChoice[_parse.BuyerName] = -1;
+        await RefreshAsync(CancellationToken.None);
+    }
+
+    [RelayCommand]
+    private async Task ForgetItemAsync(FormaterLineViewModel? line)
+    {
+        if (line is null) return;
+        await ForgetAsync(FormaterMatchDto.Product, line.Typed.Name);
+        _productChoice[line.Typed.Name] = -1;
+        await RefreshAsync(CancellationToken.None);
     }
 
     [RelayCommand]
@@ -341,11 +454,12 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
     }
 
     [RelayCommand]
-    private Task UseItemSuggestionAsync(FormaterLineViewModel? line)
+    private async Task UseItemSuggestionAsync(FormaterLineViewModel? line)
     {
-        if (line?.Suggestion is null) return Task.CompletedTask;
+        if (line?.Suggestion is null) return;
         _productChoice[line.Typed.Name] = line.Suggestion.Id;
-        return RefreshAsync(CancellationToken.None);
+        await RememberAsync(FormaterMatchDto.Product, line.Typed.Name, line.Suggestion.Id, line.Suggestion.Name);
+        await RefreshAsync(CancellationToken.None);
     }
 
     [RelayCommand]
@@ -388,6 +502,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
             TermsAndConditions = string.Join(Environment.NewLine, _settings.Company.TermsAndConditions),
             PreparedBy = preparedBy, VerifiedBy = _settings.Company.DefaultVerifiedBy,
             WithoutGst = p.GstMode == FormaterGst.None,
+            PackingForwarding = PackingForwarding is > 0 and var pf ? pf : 0,
             Lines = Lines.Select(l => new QuotationLineDto
             {
                 LineNo = l.No, ProductId = l.Product?.Id, ItemName = l.ItemName, PartNumber = l.PartNumber, Description = l.Description,
@@ -406,7 +521,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
             ConsigneeSameAsBuyer = true, BuyersReference = q.BuyersReference, BuyersReferenceDate = q.BuyersReferenceDate,
             OtherReferences = q.OtherReferences, PaymentTerms = q.PaymentTerms, TermsOfDelivery = q.TermsOfDelivery,
             TermsAndConditions = q.TermsAndConditions, PreparedBy = q.PreparedBy, VerifiedBy = q.VerifiedBy, WithoutGst = q.WithoutGst,
-            FromFormater = true, Lines = q.Lines,
+            PackingForwarding = q.PackingForwarding, FromFormater = true, Lines = q.Lines,
         };
     }
 
@@ -435,8 +550,76 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         _session.Documents.SaveAndOpen(bytes, "Preview-Formater.pdf");
     });
 
+    /// <summary>Ctrl+P: the preview (DRAFT) straight to the default printer; nothing is saved and no number is used.</summary>
     [RelayCommand]
-    private void Clear() => Text = "";
+    private Task PrintAsync() => RunAsync(async () =>
+    {
+        if (_parse is not { IsValid: true }) return;
+        var pdf = await _session.Api.PreviewUnsavedPdfAsync(ToRequest());
+        try
+        {
+            var printer = await Task.Run(() => _session.Documents.Print(pdf, "DRAFT Formater"));
+            _navigator.Toast($"Sent to printer {printer}.");
+        }
+        catch (Exception ex) when (ex is not ApiException)
+        {
+            ErrorMessage = "Could not print: " + ex.Message;
+        }
+    });
+
+    [RelayCommand]
+    private void Clear()
+    {
+        Text = "";
+        PackingForwarding = null;
+    }
+
+    /// <summary>
+    /// A paste into the text box: WhatsApp times and names and greeting lines are taken out (a note says what, with Undo).
+    /// <paramref name="start"/>/<paramref name="length"/> is the selection the paste replaces. Returns the caret position after it.
+    /// </summary>
+    public int Paste(string pasted, int start, int length)
+    {
+        var current = Text ?? "";
+        start = Math.Clamp(start, 0, current.Length);
+        length = Math.Clamp(length, 0, current.Length - start);
+        var clean = FormaterText.CleanPasted(pasted);
+        var cleaned = clean.Text.Replace("\n", Environment.NewLine);
+        var raw = current[..start] + pasted + current[(start + length)..];
+        _settingText = true;
+        try { Text = current[..start] + cleaned + current[(start + length)..]; }
+        finally { _settingText = false; }
+        if (clean.Removed > 0)
+        {
+            _pasteUndo = (current, raw);
+            PasteNote = "Cleaned the pasted text: removed " + clean.Describe() + ".";
+        }
+        else
+        {
+            _pasteUndo = null;
+            PasteNote = "";
+        }
+        return start + cleaned.Length;
+    }
+
+    /// <summary>Undo on the paste note: the text as it was pasted, nothing taken out.</summary>
+    [RelayCommand]
+    private void UndoPasteClean()
+    {
+        if (_pasteUndo is not { } u) return;
+        _settingText = true;
+        try { Text = u.Raw; }
+        finally { _settingText = false; }
+        _pasteUndo = null;
+        PasteNote = "";
+    }
+
+    [RelayCommand]
+    private void ClosePasteNote()
+    {
+        _pasteUndo = null;
+        PasteNote = "";
+    }
 
     [RelayCommand]
     private void InsertExample() => Text = Example.Replace("\n", Environment.NewLine);

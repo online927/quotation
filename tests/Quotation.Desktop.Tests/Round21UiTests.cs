@@ -131,6 +131,10 @@ public class Round21UiTests
         Assert.True(view.FindControl<Button>("ApproveButton")!.IsFocused);
         Assert.Equal(QuotationStatus.Draft, vm.Status); // not approved: Enter again does that
         await Shot(ctx.Window, "r21-pnf-enter-approve");
+
+        // Enter again on the highlighted Approve button approves.
+        ctx.Window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        await UiHelpers.WaitUntil(() => vm.Status == QuotationStatus.Generated, 30000);
     }
 
     [AvaloniaFact]

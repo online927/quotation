@@ -26,6 +26,9 @@ public class DocumentLauncher(ClientConfig config)
         return path;
     }
 
+    /// <summary>Ctrl+P: prints the PDF straight to the Windows default printer (no print window); returns the printer's name.</summary>
+    public virtual string Print(byte[] pdf, string documentName) => DirectPrinter.Print(pdf, documentName);
+
     /// <summary>Saves (replacing an earlier copy of the same document) without opening it.</summary>
     public virtual string Save(byte[] pdf, string fileName, string? folder = null) => SaveAndOpen(pdf, fileName, open: false, folder);
 

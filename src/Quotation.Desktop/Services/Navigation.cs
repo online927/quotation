@@ -20,6 +20,10 @@ public interface INavigator
     void Toast(string message, string actionText, Action action, int seconds = 8) { }
     /// <summary>Opens an unsaved quotation (made on the Formater page) on the quotation screen; approves it when asked.</summary>
     void OpenUnsavedQuotation(Quotation.Contracts.QuotationDto quotation, bool approve) { }
+    /// <summary>Puts a blank new quotation (or proforma) in place of the current page, staying on it (no history step).</summary>
+    void StartOver(bool proforma) { }
+    /// <summary>A corner message with a bold green first line.</summary>
+    void Toast(string title, string message) { }
 }
 
 /// <summary>A question shown over the app window (Yes/No, or with an input box).</summary>
@@ -61,12 +65,18 @@ public interface IUnsavedChangesPage
 public sealed partial class ToastItem(string text, string? actionText = null, Action? action = null) : ObservableObject
 {
     public string Text { get; } = text;
+    /// <summary>A bold green first line (e.g. "Alhamdulillah" when Greetings are on); null for none.</summary>
+    public string? Title { get; init; }
+    public bool HasTitle => Title is not null;
     public string? ActionText { get; } = actionText;
     public bool HasAction => ActionText is not null;
     public Action? Action { get; } = action;
     /// <summary>Fading out (the corner list removes it a moment later).</summary>
     [ObservableProperty] private bool _isLeaving;
 }
+
+/// <summary>A greeting shown in the middle of the window for a moment (Greetings switch in Settings).</summary>
+public sealed record GreetingCard(string Arabic, string English, string Line);
 
 /// <summary>A page that refreshes its data when the user comes back to it (filters and search are kept).</summary>
 public interface IReturnablePage

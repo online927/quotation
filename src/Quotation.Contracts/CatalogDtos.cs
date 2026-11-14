@@ -87,3 +87,13 @@ public sealed record CustomerDetailDto(
     IReadOnlyList<AddressDto> ShipToAddresses,
     bool IsDeleted,
     DateTime LastSyncedUtc);
+
+/// <summary>Formater page: a typed customer or item name and the Tally ledger / item chosen for it ("Use"), for every PC.</summary>
+public sealed record FormaterMatchDto(string Kind, string Typed, int TallyId, string TallyName = "")
+{
+    public const string Customer = "Customer", Product = "Product";
+
+    /// <summary>The key a typed name is remembered by: lower case, single spaces.</summary>
+    public static string Normalize(string typed) =>
+        string.Join(' ', typed.Trim().ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+}

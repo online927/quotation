@@ -277,6 +277,16 @@ public partial class QuotationApiClient
         GetAsync<List<CustomerSearchHitDto>>($"api/customers/search?limit={limit}{Q("q", query)}", ct);
 
     public Task<CustomerDetailDto> CustomerAsync(int id, CancellationToken ct = default) => GetAsync<CustomerDetailDto>($"api/customers/{id}", ct);
+
+    /// <summary>Formater page: the Tally ledgers / items chosen for typed names (remembered for every PC).</summary>
+    public Task<List<FormaterMatchDto>> FormaterMatchesAsync(CancellationToken ct = default) =>
+        GetAsync<List<FormaterMatchDto>>("api/formater/matches", ct);
+
+    public Task<FormaterMatchDto> RememberFormaterMatchAsync(FormaterMatchDto match, CancellationToken ct = default) =>
+        SendAsync<FormaterMatchDto>(HttpMethod.Put, "api/formater/matches", match, ct);
+
+    public Task ForgetFormaterMatchAsync(string kind, string typed, CancellationToken ct = default) =>
+        SendAsync(HttpMethod.Delete, $"api/formater/matches?x=1{Q("kind", kind)}{Q("typed", typed)}", null, ct);
 }
 
 public partial class QuotationApiClient

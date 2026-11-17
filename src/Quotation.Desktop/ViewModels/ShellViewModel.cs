@@ -581,7 +581,11 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     private XoGameViewModel? _xoKept;
 
     [RelayCommand]
-    private void OpenXo() => XoGame ??= _xoKept ??= new XoGameViewModel();
+    private void OpenXo()
+    {
+        // Only when the administrator has switched the game on (Settings).
+        if (_session.Settings?.Quotation.XoGame == true) XoGame ??= _xoKept ??= new XoGameViewModel();
+    }
 
     [RelayCommand]
     private void CloseXo() => XoGame = null;

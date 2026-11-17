@@ -207,7 +207,7 @@ public class Round16UiTests
         using var ctx = await SetupAsync();
         try
         {
-            foreach (var theme in new[] { AppTheme.GlassBlue, AppTheme.GlassBlack, AppTheme.Frost })
+            foreach (var theme in new[] { AppTheme.GlassBlue, AppTheme.GlassGreen, AppTheme.Midnight })
             {
                 ThemeService.Apply(theme);
                 var popup = ctx.Window.FindResource("PopupBrush") as Avalonia.Media.ISolidColorBrush;

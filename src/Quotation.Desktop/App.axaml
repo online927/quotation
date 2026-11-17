@@ -29,7 +29,7 @@
     <Thickness x:Key="CardPadding">18</Thickness>
     <x:Double x:Key="SectionSpacing">10</x:Double>
     <x:Double x:Key="InputMinHeight">28</x:Double>
-    <!-- Room inside typing boxes; rounder themes (Glass, Frost) need more at the sides so the cursor clears the corner -->
+    <!-- Room inside typing boxes; rounder themes (Glass …) need more at the sides so the cursor clears the corner -->
     <Thickness x:Key="InputPadding">4,2</Thickness>
     <!-- The right-hand corners of a number box's last button (follows ControlCornerRadius) -->
     <CornerRadius x:Key="SpinnerEndRadius">0,6,6,0</CornerRadius>

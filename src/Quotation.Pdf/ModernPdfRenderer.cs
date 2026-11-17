@@ -111,25 +111,21 @@ public sealed class ModernPdfRenderer
             pages[^1].Add(row);
             used += row.Height;
         }
-        // The last page also needs the totals, terms and sign-off: carry rows over until they fit.
+        // The last page also needs the totals, terms and sign-off. When its rows leave no room for them, only the last item
+        // moves on to a new last page: the page before stays as full as any continued page (not left half empty).
         while (Start(pages.Count - 1) + pages[^1].Sum(r => r.Height) > lastLimit && pages[^1].Count > 0)
         {
-            var carry = new List<Row>();
             var last = pages[^1];
-            while (last.Count > 0 && Start(pages.Count - 1) + last.Sum(r => r.Height) > lastLimit)
+            if (last.Count == 1)
             {
-                carry.Insert(0, last[^1]);
-                last.RemoveAt(last.Count - 1);
-            }
-            if (last.Count == 0)
-            {
-                // Not even one row fits with the totals: the rows stay, the totals go on a page of their own.
-                last.AddRange(carry);
+                // Not even one row fits with the totals: the row stays, the totals go on a page of their own.
                 pages.Add([]);
                 break;
             }
+            var carry = new List<Row> { last[^1] };
+            last.RemoveAt(last.Count - 1);
             pages.Add(carry);
-            if (carry.Count == 1 && Start(pages.Count - 1) + carry[0].Height > lastLimit) break;
+            if (Start(pages.Count - 1) + carry[0].Height > lastLimit) break;
         }
         return new PageLayout(pages, headTop, totals, bottom, bottomTop);
     }

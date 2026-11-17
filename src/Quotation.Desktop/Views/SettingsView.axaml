@@ -298,9 +298,9 @@
                   <TextBox Name="WhatsAppFollowUpBox" Text="{Binding Settings.Quotation.WhatsAppFollowUpMessage}" />
                 </StackPanel>
                 <TextBlock Classes="h2" Text="Greetings" Margin="0,8,0,0" />
-                <ToggleSwitch Name="GreetingsSwitch" IsChecked="{Binding Settings.Quotation.Greetings}"
-                              OnContent="On, for everyone: Assalamu Alaikum after signing in, Alhamdulillah when a quotation is approved, JazakAllah Khair when closing the app"
-                              OffContent="Off" />
+                <ToggleSwitch Name="GreetingsSwitch" IsChecked="{Binding Settings.Quotation.Greetings}" OnContent="On" OffContent="Off" />
+                <TextBlock Classes="h2" Text="XO game" Margin="0,8,0,0" />
+                <ToggleSwitch Name="XoGameSwitch" IsChecked="{Binding Settings.Quotation.XoGame}" OnContent="On" OffContent="Off" />
               </StackPanel>
             </Border>
           </Grid>

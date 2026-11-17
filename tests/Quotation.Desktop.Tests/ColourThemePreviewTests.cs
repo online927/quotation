@@ -49,7 +49,7 @@ public class ColourThemePreviewTests
         editor.IsDirty = false;
         shell.Navigate("dashboard");
         await Task.Delay(800);
-        foreach (var glass in new[] { "GlassBlue", "GlassBlack", "GlassGreen", "GlassMaroon" })
+        foreach (var glass in new[] { "GlassBlue", "GlassGreen", "GlassMaroon" })
         {
             ThemeService.Apply(glass);
             await Task.Delay(300);

@@ -30,11 +30,13 @@ public partial class QuotationEditorView : UserControl
         // Edit on a line: the cursor goes to its Quantity box (never stays on the line's buttons).
         DataContextChanged += (_, _) =>
         {
-            if (Vm is { } vm)
-                vm.PropertyChanged += (_, e) =>
-                {
-                    if (e.PropertyName == nameof(QuotationEditorViewModel.EditingLine) && vm.EditingLine is not null) FocusLater(QtyBox);
-                };
+            if (Vm is not { } vm) return;
+            vm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(QuotationEditorViewModel.EditingLine) && vm.EditingLine is not null) FocusLater(QtyBox);
+            };
+            // After a line is saved: a new line (Product), or with the gear on the next line in the chosen box.
+            vm.FocusEntry += OnFocusEntry;
         };
         // A list pasted into the Product box opens the pasted-list box; a single line is typed in as usual.
         ProductBox.InputBox.AddHandler(TextBox.PastingFromClipboardEvent, OnProductPasting, RoutingStrategies.Bubble);
@@ -112,9 +114,9 @@ public partial class QuotationEditorView : UserControl
         {
             if (source == DescriptionBox)
             {
-                // Last field of the line: Enter adds the line (Shift+Enter is a new line in the description).
-                Vm?.CommitEntryCommand.Execute(null);
-                FocusLater(ProductBox);
+                // Last field of the line: Enter adds the line (Shift+Enter is a new line in the description); with the gear
+                // on, a changed line opens the next one.
+                Vm?.SaveLineCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
@@ -141,6 +143,14 @@ public partial class QuotationEditorView : UserControl
             return;
         }
         if (owner is NumericUpDown n && n.Text is { } text && decimal.TryParse(text, out var value)) n.Value = value;
+        // Gear on one column: Enter in that box saves the line and opens the next line in the same box.
+        if (Vm is { EditingLine: not null } stepping && StepBox(stepping.StepMode) is { } column &&
+            (owner == column || (column == ProductBox && owner == ProductBox.InputBox && stepping.EntryProduct is not null)))
+        {
+            stepping.SaveLineCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
         if (owner == PackingBox && FocusApprove())
         {
             e.Handled = true;
@@ -154,6 +164,42 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
         }
     }
+
+    /// <summary>The box of a gear column ("Rate" → the Rate box); null for Off and the whole line.</summary>
+    private Control? StepBox(string mode) => mode switch
+    {
+        "Name" => ProductBox,
+        "Description" => DescriptionBox,
+        "Quantity" => QtyBox,
+        "Rate" => RateBox,
+        "Discount" => DiscountBox,
+        _ => null,
+    };
+
+    /// <summary>After a line is saved: the cursor in the box the gear asks for (the whole line: Quantity), or a new line.</summary>
+    private void OnFocusEntry(string box)
+    {
+        Control target = box == "Product" ? ProductBox : StepBox(box) ?? QtyBox;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            if (target == ProductBox)
+            {
+                ProductBox.InputBox.Focus();
+                return;
+            }
+            target.BringIntoView();
+            var input = target as TextBox ?? target.GetVisualDescendants().OfType<TextBox>().FirstOrDefault();
+            if (input is null)
+            {
+                target.Focus();
+                return;
+            }
+            input.Focus(NavigationMethod.Tab);
+            input.SelectAll();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private void OnStepModeClick(object? sender, RoutedEventArgs e) => StepGearButton.Flyout?.Hide();
 
     /// <summary>Alt+P: the cursor in the Packing &amp; Forwarding box with its amount selected (when it can be changed).</summary>
     public void FocusPacking()

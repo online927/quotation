@@ -213,18 +213,17 @@ public sealed class QuotationPdfRenderer
             used += row.Height;
         }
 
-        // The last page also needs room for the summary rows, totals and footer: move rows forward if needed.
+        // The last page also needs room for the summary rows, totals and footer. When its rows leave no room for them, only
+        // the last item moves on to a new last page: the page before stays as full as any continued page (the first page is
+        // not left half empty).
         while (pages[^1].Sum(r => r.Height) > capacityLast)
         {
             var last = pages[^1];
-            var carry = new List<RowBlock>();
-            while (last.Count > 0 && last.Sum(r => r.Height) > capacityLast)
-            {
-                carry.Insert(0, last[^1]);
-                last.RemoveAt(last.Count - 1);
-            }
+            if (last.Count <= 1) break; // one item taller than the room left: cannot improve further
+            var carry = new List<RowBlock> { last[^1] };
+            last.RemoveAt(last.Count - 1);
             // Keep continuation segments of one item together with the start of that item when possible.
-            while (last.Count > 0 && carry.Count > 0 && carry[0].IsContinuation)
+            while (last.Count > 0 && carry[0].IsContinuation)
             {
                 carry.Insert(0, last[^1]);
                 last.RemoveAt(last.Count - 1);

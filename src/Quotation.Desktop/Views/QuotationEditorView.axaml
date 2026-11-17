@@ -12,6 +12,14 @@
   </UserControl.KeyBindings>
   <UserControl.Styles>
     <StyleInclude Source="/Styles/DocumentStyles.axaml" />
+    <!-- The gear next to Items turns blue while it is on -->
+    <Style Selector="Button.round.on /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Button.round.on Path">
+      <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
+    </Style>
   </UserControl.Styles>
 
   <Panel>
@@ -36,8 +44,11 @@
       </StackPanel>
       <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6">
         <TextBlock Classes="fl" Text="Dated" VerticalAlignment="Center" Margin="0" />
+        <!-- The date box only where it can be changed (the administrator, before approval); otherwise plain, like the number -->
         <CalendarDatePicker Name="DateBox" SelectedDate="{Binding Date}" CustomDateFormatString="dd-MMM-yyyy" SelectedDateFormat="Custom" Width="140"
-                            IsEnabled="{Binding CanChangeDate}" ToolTip.Tip="Only administrators can change the date" ToolTip.ShowOnDisabled="True" />
+                            IsVisible="{Binding CanChangeDate}" />
+        <TextBlock Name="DateText" Text="{Binding Date, StringFormat='{}{0:dd-MMM-yyyy}'}" FontWeight="Bold" VerticalAlignment="Center"
+                   IsVisible="{Binding !CanChangeDate}" />
       </StackPanel>
     </Grid>
 
@@ -334,10 +345,40 @@
         <!-- Items -->
         <Border Classes="card" Padding="0">
           <StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="10" Margin="14,12,14,8">
-              <Path Classes="si" Data="M12,2 L21,7 L21,17 L12,22 L3,17 L3,7 Z M3,7 L12,12 L21,7 M12,12 L12,22" />
-              <TextBlock Classes="h2" Text="Items" Margin="0" VerticalAlignment="Center" />
-            </StackPanel>
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto" Margin="14,12,14,8">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Path Classes="si" Data="M12,2 L21,7 L21,17 L12,22 L3,17 L3,7 Z M3,7 L12,12 L21,7 M12,12 L12,22" />
+                <TextBlock Classes="h2" Text="Items" Margin="0" VerticalAlignment="Center" />
+              </StackPanel>
+              <!-- "Going down: Rate · line 2 of 3" while the gear walks the lines -->
+              <Border Name="StepInfoTag" Grid.Column="1" Margin="12,0,0,0" Padding="8,2" CornerRadius="6" VerticalAlignment="Center"
+                      Background="{DynamicResource AccentSoftBrush}" IsVisible="{Binding HasStepInfo}">
+                <TextBlock Text="{Binding StepInfo}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
+              </Border>
+              <!-- Gear: after a line is changed, Enter goes on to the next line (the whole line, or one column top to bottom) -->
+              <Button Name="StepGearButton" Grid.Column="3" Classes="round" Classes.on="{Binding StepModeOn}" Width="30" Height="30" Padding="0"
+                      ToolTip.Tip="After changing a line, go on to the next one">
+                <Path Data="M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z M12,2.5 L13.6,2.5 L14.1,5 C14.8,5.2 15.4,5.5 16,5.9 L18.2,4.6 L19.4,5.8 L18.1,8 C18.5,8.6 18.8,9.2 19,9.9 L21.5,10.4 L21.5,12 L21.5,13.6 L19,14.1 C18.8,14.8 18.5,15.4 18.1,16 L19.4,18.2 L18.2,19.4 L16,18.1 C15.4,18.5 14.8,18.8 14.1,19 L13.6,21.5 L12,21.5 L10.4,21.5 L9.9,19 C9.2,18.8 8.6,18.5 8,18.1 L5.8,19.4 L4.6,18.2 L5.9,16 C5.5,15.4 5.2,14.8 5,14.1 L2.5,13.6 L2.5,12 L2.5,10.4 L5,9.9 C5.2,9.2 5.5,8.6 5.9,8 L4.6,5.8 L5.8,4.6 L8,5.9 C8.6,5.5 9.2,5.2 9.9,5 L10.4,2.5 Z"
+                      Stroke="{DynamicResource TextBrush}" StrokeThickness="1.4" Width="16" Height="16" Stretch="Uniform" />
+                <Button.Flyout>
+                  <Flyout Placement="BottomEdgeAlignedRight">
+                    <StackPanel Name="StepMenu" Spacing="2" Width="260" Margin="4">
+                      <TextBlock Text="After changing a line, go on to" FontWeight="Bold" FontSize="14" />
+                      <TextBlock Text="Enter saves the line and opens the next one" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6" />
+                      <ItemsControl ItemsSource="{Binding StepModes}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:LineStepOption">
+                            <RadioButton GroupName="StepMode" Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=OneWay}" Margin="0,1"
+                                         Command="{Binding $parent[ItemsControl].((vm:QuotationEditorViewModel)DataContext).ChooseStepModeCommand}"
+                                         CommandParameter="{Binding Key}" Click="OnStepModeClick" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </Flyout>
+                </Button.Flyout>
+              </Button>
+            </Grid>
             <Border Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,1" Padding="12,9">
               <Grid ColumnDefinitions="50,*,80,50,0,70,90,44,54,100,110">
                 <TextBlock Classes="th" Text="Sl" Margin="20,0,0,0" />
@@ -440,7 +481,7 @@
                     <NumericUpDown Name="DiscountBox" Value="{Binding EntryDiscount}" Minimum="0" Maximum="99.99" FormatString="0.##" />
                   </StackPanel>
                   <StackPanel Grid.Column="10" Orientation="Horizontal" VerticalAlignment="Bottom" Spacing="4">
-                    <Button Classes="primary" Content="{Binding EntryButtonText}" Command="{Binding CommitEntryCommand}" ToolTip.Tip="Enter" />
+                    <Button Classes="primary" Content="{Binding EntryButtonText}" Command="{Binding SaveLineCommand}" ToolTip.Tip="Enter" />
                     <Button Content="Clear" Command="{Binding CancelEntryCommand}" />
                   </StackPanel>
                 </Grid>

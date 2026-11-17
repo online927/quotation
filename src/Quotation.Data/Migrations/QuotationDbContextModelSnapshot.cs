@@ -729,6 +729,9 @@ namespace Quotation.Data.Migrations
                     b.Property<string>("PdfError")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PdfLayout")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("PdfPath")
                         .HasColumnType("TEXT");
 

@@ -764,3 +764,21 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    on closing the app.
 10. Ctrl+Alt+Shift+X opens a hidden XO game (you against the computer, score, New game); Esc closes it.
 11. Log out asks "Are you logging out, bro?".
+
+### Round 28
+
+1. Formater page: a "PDF Tally | Zoho" switch in the button bar (at first the user's own layout from My Settings); the layout
+   chosen is kept with the quotation (Quotations.PdfLayout) for Preview, Approve and the PDF later. Formater quotations made
+   before keep the Zoho layout.
+2. Ctrl+P on the quotation lists (Today's Quotations, Drafts, Quotation History …) prints the clicked quotation straight to
+   the printer (approved: its PDF; otherwise DRAFT); with none clicked: "Click a quotation first."
+3. Settings: the Greetings switch shows only On / Off; new administrator switch "XO game" (On / Off, off at first): when off,
+   Ctrl+Alt+Shift+X does nothing.
+4. Quotation screen: where the date cannot be changed it reads like the quotation number ("Dated 14-Nov-2026", no grey box).
+5. Themes removed: Neon Night and Glass (Black) (their users get Default Dark), Sunset and Frost (Default Light).
+6. PDFs (Tally and Zoho layouts): when the items go on to a second page, the first page is filled; only the items that do
+   not fit go on with the totals (before, the first page was cut to the room the last page needs, leaving it a quarter empty).
+7. Quotation screen: a gear next to Items: after changing a line, Enter goes on to the next line, either the whole line
+   (cursor in Quantity) or one column top to bottom (Item name, Description, Quantity, Rate or Discount); "Going down: Rate ·
+   line 2 of 3" shows meanwhile. Off at first; remembered on the PC.
+

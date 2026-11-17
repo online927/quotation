@@ -16,6 +16,11 @@ public sealed class ClientConfig
     public string CompanyName { get; set; } = "";
     /// <summary>The side menu is folded to icons on this PC.</summary>
     public bool SidebarCollapsed { get; set; }
+    /// <summary>
+    /// Quotation screen, gear next to Items: after a line is changed, Enter goes on to the next line: "Off", "Line" (the whole
+    /// line), or one column top to bottom ("Name", "Description", "Quantity", "Rate", "Discount").
+    /// </summary>
+    public string LineStepMode { get; set; } = "Off";
     /// <summary>A picture behind the pages on this PC (a copy kept next to this file); empty = none.</summary>
     public string BackgroundPicture { get; set; } = "";
 

@@ -151,6 +151,8 @@ public class QuotationHeader
     public bool RoundOffTotal { get; set; }
     /// <summary>"Without GST" quotation: 0 % on all lines and P&amp;F, no tax lines.</summary>
     public bool WithoutGst { get; set; }
+    /// <summary>The PDF layout chosen for this quotation (Formater page: Tally or Zoho); null = the user's own layout.</summary>
+    public string? PdfLayout { get; set; }
 
     public decimal PackingForwarding { get; set; }
     public decimal? PackingForwardingPercent { get; set; }
@@ -291,7 +293,7 @@ public class AppUser
     public bool MustChangePassword { get; set; }
     /// <summary>"Without GST" for the next quotation this user saves (switches itself off afterwards).</summary>
     public bool WithoutGstNext { get; set; }
-    /// <summary>Light, Dark, System (follows Windows) or a colour theme (Sunset, Graphite …): the user's screens, on every PC.</summary>
+    /// <summary>Light, Dark, System (follows Windows) or a colour theme (Graphite, Ocean …): the user's screens, on every PC.</summary>
     public string Theme { get; set; } = "Light";
     /// <summary>Tally or Zoho: the layout of the PDFs this user makes; null = the default in Settings.</summary>
     public string? PdfLayout { get; set; }

@@ -231,6 +231,31 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
     });
 
     /// <summary>
+    /// Ctrl+P on the list: the clicked quotation straight to the default printer, no questions. Approved: its PDF; not
+    /// approved: the DRAFT preview.
+    /// </summary>
+    [RelayCommand]
+    private Task PrintSelectedAsync() => RunAsync(async () =>
+    {
+        if (Selected is not { } row)
+        {
+            InfoMessage = "Click a quotation first.";
+            return;
+        }
+        var bytes = row.IsFinal ? await _session.Api.QuotationPdfAsync(row.Id) : await _session.Api.PreviewPdfAsync(row.Id);
+        var name = (row.IsFinal ? "" : "DRAFT ") + row.Number + " " + row.Customer;
+        try
+        {
+            var printer = await Task.Run(() => _session.Documents.Print(bytes, name));
+            _navigator.Toast($"Sent to printer {printer}.");
+        }
+        catch (Exception ex) when (ex is not Quotation.ApiClient.ApiException)
+        {
+            ErrorMessage = "Could not print: " + ex.Message;
+        }
+    });
+
+    /// <summary>
     /// Follow-up on WhatsApp: the quotation's PDF is saved and copied, and WhatsApp opens in the customer's chat with the
     /// follow-up message typed (Settings → Quotation). The user presses Ctrl+V, then Enter.
     /// </summary>

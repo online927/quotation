@@ -49,4 +49,15 @@ public class Round27Tests : QuotationTestBase
         var settings = await ravi.SettingsAsync();
         await Assert.ThrowsAsync<ApiException>(() => ravi.SaveSettingsAsync(settings)); // only the administrator changes it
     }
+
+    [Fact]
+    public void Removed_themes_become_default_light_or_dark()
+    {
+        foreach (var gone in new[] { "Sunset", "Frost", "NeonNight", "GlassBlack" }) Assert.DoesNotContain(gone, AppTheme.All);
+        Assert.Equal(AppTheme.Dark, AppTheme.Normalize("NeonNight"));
+        Assert.Equal(AppTheme.Dark, AppTheme.Normalize("GlassBlack"));
+        Assert.Equal(AppTheme.Light, AppTheme.Normalize("Sunset"));
+        Assert.Equal(AppTheme.Light, AppTheme.Normalize("Frost"));
+        Assert.Equal(AppTheme.Ocean, AppTheme.Normalize(AppTheme.Ocean));
+    }
 }

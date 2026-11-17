@@ -67,6 +67,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
     /// <summary>The text is kept while the app is open, so going to another page and back does not lose it.</summary>
     private static string _keptText = "";
     private static decimal? _keptPacking;
+    private static string? _keptLayout;
 
     private readonly AppSession _session;
     private readonly INavigator _navigator;
@@ -93,6 +94,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         _navigator = navigator;
         _text = _keptText;
         _packingForwarding = _keptPacking;
+        _pdfLayout = _keptLayout ?? (PdfLayouts.IsValid(session.Api.CurrentUser?.PdfLayout) ? session.Api.CurrentUser!.PdfLayout! : PdfLayouts.Tally);
         _ = InitializeAsync();
     }
 
@@ -116,6 +118,26 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
     [ObservableProperty] private decimal? _packingForwarding;
     /// <summary>What was taken out of the pasted text (WhatsApp times and names, greetings); empty when nothing.</summary>
     [ObservableProperty] private string _pasteNote = "";
+    /// <summary>The PDF layout of this quotation (Tally or Zoho); at first the user's own (My Settings).</summary>
+    [ObservableProperty] private string _pdfLayout;
+    public bool IsTallyLayout => PdfLayout == PdfLayouts.Tally;
+    public bool IsZohoLayout => PdfLayout == PdfLayouts.Zoho;
+
+    [RelayCommand]
+    private void SetLayout(string? layout)
+    {
+        if (PdfLayouts.IsValid(layout)) PdfLayout = layout!;
+        // A click on the one already chosen must not leave it looking unchosen.
+        OnPropertyChanged(nameof(IsTallyLayout));
+        OnPropertyChanged(nameof(IsZohoLayout));
+    }
+
+    partial void OnPdfLayoutChanged(string value)
+    {
+        _keptLayout = value;
+        OnPropertyChanged(nameof(IsTallyLayout));
+        OnPropertyChanged(nameof(IsZohoLayout));
+    }
 
     public ObservableCollection<FormaterLineViewModel> Lines { get; } = [];
     public ObservableCollection<FormaterProblem> Problems { get; } = [];
@@ -503,6 +525,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
             PreparedBy = preparedBy, VerifiedBy = _settings.Company.DefaultVerifiedBy,
             WithoutGst = p.GstMode == FormaterGst.None,
             PackingForwarding = PackingForwarding is > 0 and var pf ? pf : 0,
+            PdfLayout = PdfLayout,
             Lines = Lines.Select(l => new QuotationLineDto
             {
                 LineNo = l.No, ProductId = l.Product?.Id, ItemName = l.ItemName, PartNumber = l.PartNumber, Description = l.Description,
@@ -521,7 +544,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
             ConsigneeSameAsBuyer = true, BuyersReference = q.BuyersReference, BuyersReferenceDate = q.BuyersReferenceDate,
             OtherReferences = q.OtherReferences, PaymentTerms = q.PaymentTerms, TermsOfDelivery = q.TermsOfDelivery,
             TermsAndConditions = q.TermsAndConditions, PreparedBy = q.PreparedBy, VerifiedBy = q.VerifiedBy, WithoutGst = q.WithoutGst,
-            PackingForwarding = q.PackingForwarding, FromFormater = true, Lines = q.Lines,
+            PackingForwarding = q.PackingForwarding, PdfLayout = q.PdfLayout, FromFormater = true, Lines = q.Lines,
         };
     }
 

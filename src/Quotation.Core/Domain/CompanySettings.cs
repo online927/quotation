@@ -126,6 +126,9 @@ public sealed class QuotationSettings
     /// a quotation is approved, "JazakAllah Khair" when the app is closed.
     /// </summary>
     public bool Greetings { get; set; }
+
+    /// <summary>The hidden XO game (Ctrl+Alt+Shift+X) for everyone (administrator switch; off by default).</summary>
+    public bool XoGame { get; set; }
     /// <summary>The message typed into WhatsApp. {number} = the quotation number, {customer} = the customer.</summary>
     public string WhatsAppMessage { get; set; } = "Dear Sir, please find our quotation {number} attached.";
     /// <summary>The message of the WhatsApp button in the To Follow Up list ({number}, {date}, {customer}).</summary>

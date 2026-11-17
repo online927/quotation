@@ -4,6 +4,10 @@
              xmlns:vm="using:Quotation.Desktop.ViewModels"
              x:Class="Quotation.Desktop.Views.QuotationListView"
              x:DataType="vm:QuotationListViewModel">
+  <UserControl.KeyBindings>
+    <!-- Ctrl+P: the clicked quotation straight to the printer -->
+    <KeyBinding Gesture="Ctrl+P" Command="{Binding PrintSelectedCommand}" />
+  </UserControl.KeyBindings>
   <UserControl.Styles>
     <Style Selector="TextBlock.won"><Setter Property="Foreground" Value="{DynamicResource GreenBrush}" /></Style>
     <Style Selector="TextBlock.lost"><Setter Property="Foreground" Value="{DynamicResource BadBrush}" /></Style>

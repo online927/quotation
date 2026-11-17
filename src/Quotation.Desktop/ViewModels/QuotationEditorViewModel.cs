@@ -23,11 +23,15 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     private readonly AppSession _session;
     private readonly INavigator _navigator;
     private AllSettingsDto _settings = new();
+    /// <summary>The PDF layout chosen for this quotation (Formater page); null = the user's own.</summary>
+    private string? _pdfLayout;
     private bool _loading;
 
     public QuotationEditorViewModel(AppSession session, INavigator navigator, Guid? id = null, DocumentType docType = DocumentType.Quotation)
     {
         _session = session;
+        _stepMode = session.Config.LineStepMode is { Length: > 0 } m && StepModes.Any(o => o.Key == m) ? m : "Off";
+        foreach (var o in StepModes) o.IsSelected = o.Key == _stepMode;
         _navigator = navigator;
         _docType = docType;
         Lines.CollectionChanged += (_, _) => RecalculateTotals();
@@ -465,6 +469,72 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [ObservableProperty] private string _entryDueOn = "";
     [ObservableProperty] private QuotationLineViewModel? _editingLine;
 
+    // ---------------------------------------------------------------- gear next to Items: line by line / column by column
+
+    /// <summary>The choices of the gear next to Items (Off at first; remembered on this PC).</summary>
+    public IReadOnlyList<LineStepOption> StepModes { get; } =
+    [
+        new("Off", "Off (as now)"), new("Line", "The whole next line"), new("Name", "Item name"), new("Description", "Description"),
+        new("Quantity", "Quantity"), new("Rate", "Rate"), new("Discount", "Discount"),
+    ];
+
+    [ObservableProperty] private string _stepMode = "Off";
+    public bool StepModeOn => StepMode != "Off";
+    /// <summary>"Going down: Rate · line 2 of 3" while a line is open in a step mode.</summary>
+    public string StepInfo => StepModeOn && EditingLine is { } l
+        ? $"Going down: {(StepMode == "Line" ? "line by line" : StepModes.First(m => m.Key == StepMode).Name)} · line {l.LineNo} of {Lines.Count}"
+        : "";
+    public bool HasStepInfo => StepInfo.Length > 0;
+
+    /// <summary>After a line is saved: the box the cursor goes to ("Product" for a new line; a column or "Quantity" for the next line).</summary>
+    public event Action<string>? FocusEntry;
+
+    [RelayCommand]
+    private void ChooseStepMode(string? mode)
+    {
+        if (mode is null || StepModes.All(m => m.Key != mode)) return;
+        StepMode = mode;
+    }
+
+    partial void OnStepModeChanged(string value)
+    {
+        foreach (var m in StepModes) m.IsSelected = m.Key == value;
+        OnPropertyChanged(nameof(StepModeOn));
+        OnPropertyChanged(nameof(StepInfo));
+        OnPropertyChanged(nameof(HasStepInfo));
+        if (_session.Config.LineStepMode == value) return;
+        _session.Config.LineStepMode = value;
+        try { _session.Config.Save(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* only this PC's choice */ }
+    }
+
+    partial void OnEditingLineChanged(QuotationLineViewModel? value)
+    {
+        OnPropertyChanged(nameof(EntryButtonText));
+        OnPropertyChanged(nameof(StepInfo));
+        OnPropertyChanged(nameof(HasStepInfo));
+    }
+
+    /// <summary>
+    /// Saves the line being entered (Enter, or the Add / Update line button). With the gear on, a changed line opens the next
+    /// line at once (the whole line, or only the chosen column); after the last line it is back to a new empty line.
+    /// </summary>
+    [RelayCommand]
+    private void SaveLine()
+    {
+        var editing = EditingLine;
+        var index = editing is null ? -1 : Lines.IndexOf(editing);
+        CommitEntry();
+        if (ErrorMessage is not null) return; // not saved: stays as it is
+        if (editing is not null && StepModeOn && index >= 0 && index + 1 < Lines.Count)
+        {
+            EditLine(Lines[index + 1]);
+            FocusEntry?.Invoke(StepMode == "Line" ? "Quantity" : StepMode);
+            return;
+        }
+        FocusEntry?.Invoke("Product");
+    }
+
     public Func<string?, CancellationToken, Task<IEnumerable<object>>> ProductPopulator { get; }
     public Func<string?, CancellationToken, Task<IEnumerable<object>>> CustomerPopulator { get; }
 
@@ -664,6 +734,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         NumberText = q.Number ?? "(assigned on save)";
         Status = q.Status;
         Source = q.Source;
+        _pdfLayout = q.PdfLayout;
         Revision = q.Revision;
         Date = q.Date.ToDateTime(TimeOnly.MinValue);
         CustomerId = q.CustomerId;
@@ -798,7 +869,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     }
 
     partial void OnSourceChanged(QuotationSource value) => OnPropertyChanged(nameof(ShowSource));
-    partial void OnEditingLineChanged(QuotationLineViewModel? value) => OnPropertyChanged(nameof(EntryButtonText));
     partial void OnDateChanged(DateTime? value)
     {
         if (!_loading) _ = RefreshNumberPreviewAsync();
@@ -1234,6 +1304,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         VerifiedBy = VerifiedBy,
         WithoutGst = WithoutGst,
         FromFormater = Source == QuotationSource.Formater,
+        PdfLayout = _pdfLayout,
         Lines = Lines.Select(l => l.ToDto()).ToList(),
     };
 
@@ -1586,4 +1657,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             AuditTrail.Add($"{Formatting.LocalDateTime(a.AtUtc)}  {a.Action}  by {a.User} ({a.Machine})  {a.Details}".TrimEnd());
         }
     });
+}
+
+/// <summary>One choice of the gear next to Items.</summary>
+public sealed partial class LineStepOption(string key, string name) : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
+{
+    public string Key { get; } = key;
+    public string Name { get; } = name;
+    [CommunityToolkit.Mvvm.ComponentModel.ObservableProperty] private bool _isSelected;
 }

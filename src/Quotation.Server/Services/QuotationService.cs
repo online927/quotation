@@ -465,8 +465,15 @@ public sealed class QuotationService(
         return PdfLayouts.IsValid(own) ? own! : PdfLayouts.IsValid(settings.Quotation.DefaultPdfLayout) ? settings.Quotation.DefaultPdfLayout : PdfLayouts.Tally;
     }
 
+    /// <summary>
+    /// The layout fixed on the quotation itself: the one chosen on the Formater page; Formater quotations made before the
+    /// choice existed stay in the Zoho layout. Null: the user's own layout.
+    /// </summary>
+    private static string? FixedLayout(QuotationHeader q) =>
+        PdfLayouts.IsValid(q.PdfLayout) ? q.PdfLayout : q.Source == QuotationSource.Formater ? PdfLayouts.Zoho : null;
+
     private byte[] RenderAs(string layout, QuotationHeader q, Quotation.Pdf.PrintStamp? stamp, byte[]? seal = null) =>
-        layout == PdfLayouts.Zoho || q.Source == QuotationSource.Formater // Formater quotations always print in the Zoho layout
+        (FixedLayout(q) ?? layout) == PdfLayouts.Zoho
             ? renderer.RenderModern(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q))
             : renderer.Render(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q));
 
@@ -475,7 +482,7 @@ public sealed class QuotationService(
     {
         var q = await LoadAsync(id, ct);
         var stamp = user is null ? null : Stamp(user);
-        var zoho = q.Source == QuotationSource.Formater || (user is not null && await LayoutOfAsync(user, ct) == PdfLayouts.Zoho);
+        var zoho = (FixedLayout(q) ?? (user is not null ? await LayoutOfAsync(user, ct) : PdfLayouts.Tally)) == PdfLayouts.Zoho;
         if (q.Status is QuotationStatus.Generated or QuotationStatus.Approved)
         {
             return zoho
@@ -608,7 +615,7 @@ public sealed class QuotationService(
         };
         await ApplyAsync(q, r, isNew: true, ct, remember: false);
         var provisional = (await numbering.PreviewAsync(db, fy.GetActive().Year, ct, q.DocType)).Number + " (provisional)";
-        var zoho = q.Source == QuotationSource.Formater || await LayoutOfAsync(user, ct) == PdfLayouts.Zoho;
+        var zoho = (FixedLayout(q) ?? await LayoutOfAsync(user, ct)) == PdfLayouts.Zoho;
         return zoho
             ? pdf.RenderModernPreview(q, settings.Company, settings.Quotation, provisional, Stamp(user), MasterOf(q))
             : pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional, Stamp(user), MasterOf(q));
@@ -617,6 +624,7 @@ public sealed class QuotationService(
     private async Task ApplyAsync(QuotationHeader q, SaveQuotationRequest r, bool isNew, CancellationToken ct, bool remember = true)
     {
         q.Date = r.Date == default ? fy.Today() : r.Date;
+        q.PdfLayout = PdfLayouts.IsValid(r.PdfLayout) ? r.PdfLayout : null;
         q.BuyersReference = Trim(r.BuyersReference, 200);
         q.BuyersReferenceDate = r.BuyersReferenceDate;
         q.DispatchedThrough = Trim(r.DispatchedThrough, 200);
@@ -905,6 +913,7 @@ public sealed class QuotationService(
         PreparedBy = q.PreparedBy,
         VerifiedBy = q.VerifiedBy,
         WithoutGst = q.WithoutGst,
+        PdfLayout = q.PdfLayout,
         Lines = q.Lines.OrderBy(l => l.LineNo).Select(ToDto).ToList(),
     };
 
@@ -951,6 +960,7 @@ public sealed class QuotationService(
             PreparedBy = q.PreparedBy,
             VerifiedBy = q.VerifiedBy,
             WithoutGst = q.WithoutGst,
+            PdfLayout = q.PdfLayout,
             Lines = request.Lines,
             Subtotal = q.Subtotal,
             Taxes = calc.Taxes.Select(t => new TaxLineDto(t.Name, t.RatePercent, t.TaxableValue, t.Amount)).ToList(),

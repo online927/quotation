@@ -221,7 +221,18 @@ public class Round27UiTests
     public async Task Ctrl_alt_shift_x_opens_the_xo_game_and_esc_closes_it()
     {
         using var ctx = await SetupAsync();
-        ctx.Window.KeyPressQwerty(PhysicalKey.X, RawInputModifiers.Control | RawInputModifiers.Alt | RawInputModifiers.Shift);
+        var keys = RawInputModifiers.Control | RawInputModifiers.Alt | RawInputModifiers.Shift;
+        // Off at first (administrator switch in Settings): the keys do nothing.
+        ctx.Window.KeyPressQwerty(PhysicalKey.X, keys);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Null(ctx.Shell.XoGame);
+        var admin = await ctx.Server.LoginAsAdminAsync();
+        var all = await admin.SettingsAsync();
+        all.Quotation.XoGame = true;
+        await admin.SaveSettingsAsync(all);
+        await ctx.Session.GetSettingsAsync(refresh: true);
+
+        ctx.Window.KeyPressQwerty(PhysicalKey.X, keys);
         Dispatcher.UIThread.RunJobs();
         var game = Assert.IsType<XoGameViewModel>(ctx.Shell.XoGame);
         game.Skill = 1; // plays its best: never loses

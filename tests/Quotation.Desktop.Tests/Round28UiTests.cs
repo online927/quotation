@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Rectangle = Avalonia.Controls.Shapes.Rectangle;
 using Avalonia.Headless;
@@ -204,5 +205,36 @@ public class Round28UiTests
         Assert.Equal(PdfLayouts.Zoho, vm.ToQuotation().PdfLayout);
         await Shot(ctx.Window, "r28-formater-layout");
         vm.SetLayoutCommand.Execute(PdfLayouts.Tally);
+    }
+
+    [AvaloniaFact]
+    public async Task The_gear_menu_is_used_with_the_mouse_and_enter_goes_down_the_column()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await ThreeLinesAsync(ctx);
+        Dispatcher.UIThread.RunJobs();
+        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        var gear = view.FindControl<Button>("StepGearButton")!;
+        gear.BringIntoView();
+        Dispatcher.UIThread.RunJobs();
+        var at = gear.TranslatePoint(new Point(15, 15), ctx.Window)!.Value;
+        ctx.Window.MouseDown(at, Avalonia.Input.MouseButton.Left);
+        ctx.Window.MouseUp(at, Avalonia.Input.MouseButton.Left);
+        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return gear.Flyout is Avalonia.Controls.Primitives.FlyoutBase { IsOpen: true }; });
+        var overlay = Avalonia.Controls.Primitives.OverlayLayer.GetOverlayLayer(ctx.Window)!;
+        var rate = overlay.GetVisualDescendants().OfType<RadioButton>().Single(r => (r.Content as string) == "Rate");
+        var rp = rate.TranslatePoint(new Point(8, 8), ctx.Window)!.Value;
+        ctx.Window.MouseDown(rp, Avalonia.Input.MouseButton.Left);
+        ctx.Window.MouseUp(rp, Avalonia.Input.MouseButton.Left);
+        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return gear.Flyout is Avalonia.Controls.Primitives.FlyoutBase { IsOpen: false }; });
+        Assert.Equal("Rate", editor.StepMode); // the click's choice is kept (the menu closed after it)
+
+        // Edit on line 1: the cursor goes straight to Rate; Enter there saves and opens line 2 in Rate.
+        editor.EditLineCommand.Execute(editor.Lines[0]);
+        TextBox RateInput() => view.FindControl<NumericUpDown>("RateBox")!.GetVisualDescendants().OfType<TextBox>().First();
+        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return RateInput().IsFocused; });
+        ctx.Window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return editor.EditingLine == editor.Lines[1] && RateInput().IsFocused; });
+        editor.ChooseStepModeCommand.Execute("Off");
     }
 }

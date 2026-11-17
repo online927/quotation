@@ -33,7 +33,10 @@ public partial class QuotationEditorView : UserControl
             if (Vm is not { } vm) return;
             vm.PropertyChanged += (_, e) =>
             {
-                if (e.PropertyName == nameof(QuotationEditorViewModel.EditingLine) && vm.EditingLine is not null) FocusLater(QtyBox);
+                if (e.PropertyName != nameof(QuotationEditorViewModel.EditingLine) || vm.EditingLine is null) return;
+                // With the gear on one column, the cursor goes straight to that column's box.
+                if (StepBox(vm.StepMode) is not null) OnFocusEntry(vm.StepMode);
+                else FocusLater(QtyBox);
             };
             // After a line is saved: a new line (Product), or with the gear on the next line in the chosen box.
             vm.FocusEntry += OnFocusEntry;
@@ -199,7 +202,9 @@ public partial class QuotationEditorView : UserControl
         }, Avalonia.Threading.DispatcherPriority.Background);
     }
 
-    private void OnStepModeClick(object? sender, RoutedEventArgs e) => StepGearButton.Flyout?.Hide();
+    // Closed only after the click has made its choice (closing it at once took the choice away with the menu).
+    private void OnStepModeClick(object? sender, RoutedEventArgs e) =>
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => StepGearButton.Flyout?.Hide(), Avalonia.Threading.DispatcherPriority.Background);
 
     /// <summary>Alt+P: the cursor in the Packing &amp; Forwarding box with its amount selected (when it can be changed).</summary>
     public void FocusPacking()

@@ -368,7 +368,7 @@
                       <ItemsControl ItemsSource="{Binding StepModes}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:LineStepOption">
-                            <RadioButton GroupName="StepMode" Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=OneWay}" Margin="0,1"
+                            <RadioButton GroupName="StepMode" Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" Margin="0,1"
                                          Command="{Binding $parent[ItemsControl].((vm:QuotationEditorViewModel)DataContext).ChooseStepModeCommand}"
                                          CommandParameter="{Binding Key}" Click="OnStepModeClick" />
                           </DataTemplate>

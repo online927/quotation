@@ -33,7 +33,10 @@ src/Quotation.AI           AI provider abstraction, Claude provider, quotation a
 src/Quotation.Gmail        Gmail OAuth (installed app) and read-only mailbox client
 src/Quotation.Server       Central Quotation Server (ASP.NET Core, Windows Service)
 src/Quotation.ApiClient    Typed HTTP client for the server
-src/Quotation.Desktop      Desktop application (Avalonia)
+src/Quotation.Desktop      Desktop application (Avalonia): Windows, and a Mac build (installer/publish-mac.sh)
+src/Quotation.UiShared     Colour themes, theme drawings, button symbols shared by the PC and phone apps
+src/Quotation.Mobile       Phone app screens (Avalonia): dashboard, quotations, products, customers, new from a message
+src/Quotation.Mobile.Android  Android app (APK) around the phone screens — built in CI only (needs the Android tools)
 tools/Tally.Simulator      Simulated TallyPrime (20k items) for development, demos and tests
 installer/                 Publish scripts and Inno Setup installers (server + client)
 tests/                     Unit, integration, headless UI and end-to-end tests

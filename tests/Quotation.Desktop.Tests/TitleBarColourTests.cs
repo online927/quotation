@@ -14,7 +14,8 @@ public class TitleBarColourTests
         try
         {
             ThemeService.Apply(AppTheme.GlassMaroon);
-            Assert.Equal(Color.Parse("#F9ECEF"), ThemeService.TitleBarColours().Caption);
+            Assert.Equal(Color.Parse("#5E1024"), ThemeService.TitleBarColours().Caption); // Maroon Frame: the maroon top bar
+            Assert.Equal(Colors.White, ThemeService.TitleBarColours().Text);
             ThemeService.Apply(AppTheme.Parchment);
             Assert.Equal(Color.Parse("#F6ECD4"), ThemeService.TitleBarColours().Caption);
             Assert.Equal(Color.Parse("#2A2114"), ThemeService.TitleBarColours().Text);

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:installLocation="auto">
+  <!-- Only the office network: the app talks to the Quotation Server (plain http on the office Wi-Fi) -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <application android:label="Quotations" android:icon="@drawable/icon" android:usesCleartextTraffic="true">
+    <!-- PDFs in the app's cache are handed to WhatsApp, Gmail, the PDF viewer … through this -->
+    <provider android:name="androidx.core.content.FileProvider" android:authorities="com.tsquotation.phone.fileprovider"
+              android:exported="false" android:grantUriPermissions="true">
+      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+    </provider>
+  </application>
+  <!-- Android 11+: the apps this app may look for (WhatsApp, a PDF viewer, the dialler, e-mail) -->
+  <queries>
+    <package android:name="com.whatsapp" />
+    <package android:name="com.whatsapp.w4b" />
+    <intent>
+      <action android:name="android.intent.action.VIEW" />
+      <data android:mimeType="application/pdf" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.SEND" />
+      <data android:mimeType="application/pdf" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.DIAL" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.SENDTO" />
+      <data android:scheme="mailto" />
+    </intent>
+  </queries>
+</manifest>

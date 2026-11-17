@@ -43,6 +43,10 @@ public sealed partial class CustomersViewModel : ViewModelBase
         if (value is not null) _ = RunAsync(async () => Detail = await _session.Api.CustomerAsync(value.Customer.Id));
     }
 
+    /// <summary>F5: the list again from the server.</summary>
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private Task Refresh() => SearchAsync(Query);
+
     internal async Task SearchAsync(string query, CancellationToken ct = default)
     {
         try

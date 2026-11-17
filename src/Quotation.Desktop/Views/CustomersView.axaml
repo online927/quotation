@@ -5,6 +5,9 @@
              xmlns:c="using:Quotation.Contracts"
              x:Class="Quotation.Desktop.Views.CustomersView"
              x:DataType="vm:CustomersViewModel">
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="F5" Command="{Binding RefreshCommand}" />
+  </UserControl.KeyBindings>
   <Grid Margin="24,12,24,20" ColumnDefinitions="3*,12,2*" RowDefinitions="Auto,Auto,*">
     <ctl:PageTitle Text="Customers" Icon="customers" Grid.ColumnSpan="3" Margin="0,0,0,10" />
     <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,0,8">
@@ -31,7 +34,7 @@
 
     <Border Grid.Row="1" Grid.RowSpan="2" Grid.Column="2" Classes="card" IsVisible="{Binding Detail, Converter={x:Static ObjectConverters.IsNotNull}}">
       <ScrollViewer>
-        <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+        <Grid Classes="details" ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="9" ColumnSpacing="12">
           <TextBlock Grid.ColumnSpan="2" Classes="h2" Text="{Binding Detail.Name, FallbackValue=''}" TextWrapping="Wrap" Margin="0,0,0,8" />
           <TextBlock Grid.Row="1" Classes="label" Text="Mailing name" />
           <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Detail.MailingName, FallbackValue=''}" TextWrapping="Wrap" />
@@ -46,10 +49,12 @@
           <TextBlock Grid.Row="4" Classes="label" Text="Pincode" />
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Detail.Pincode, FallbackValue=''}" />
           <TextBlock Grid.Row="5" Classes="label" Text="GSTIN/UIN" />
-          <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-            <TextBlock Text="{Binding Detail.Gstin, FallbackValue=''}" />
-            <TextBlock Text="(checksum invalid)" Foreground="{DynamicResource WarnBrush}" IsVisible="{Binding !Detail.GstinValid, FallbackValue=False}" />
-          </StackPanel>
+          <WrapPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal">
+            <TextBlock Text="{Binding Detail.Gstin, FallbackValue=''}" Margin="0,0,8,0" VerticalAlignment="Center" />
+            <Border Classes="chip warn" IsVisible="{Binding !Detail.GstinValid, FallbackValue=False}">
+              <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="Checksum wrong" /></StackPanel>
+            </Border>
+          </WrapPanel>
           <TextBlock Grid.Row="6" Classes="label" Text="Registration" />
           <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Detail.GstRegistrationType, FallbackValue=''}" />
           <TextBlock Grid.Row="7" Classes="label" Text="PAN" />

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Screen parts shared by the PC app and the phone app: colour themes and their drawings, button symbols, badge letters. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Quotation.Contracts\Quotation.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Quotation.Desktop" />
+    <InternalsVisibleTo Include="Quotation.Desktop.Tests" />
+    <InternalsVisibleTo Include="Quotation.Mobile" />
+    <InternalsVisibleTo Include="Quotation.Mobile.Tests" /> <InternalsVisibleTo Include="TSQuotationPhone" />
+  </ItemGroup>
+</Project>

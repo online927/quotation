@@ -21,8 +21,7 @@
     <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,10">
       <StackPanel Spacing="6">
         <TextBlock Classes="h2" Text="Ask the AI to prepare a quotation" />
-        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                   Text="Example: Create quotation for Sonepar for 5 universal bevel protractors. The AI only prepares a draft: products and customers are matched against Tally, and you review and approve before any PDF is produced." />
+        <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Example: Create quotation for Sonepar for 5 universal bevel protractors." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Example: Create quotation for Sonepar for 5 universal bevel protractors. The AI only prepares a draft: products and customers are matched against Tally, and you review and approve before any PDF is produced."><Path Classes="infoicon" /></Border></StackPanel>
         <TextBlock Foreground="{DynamicResource WarnBrush}" Text="{Binding AiState}" IsVisible="{Binding AiState, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <Grid ColumnDefinitions="*,8,Auto">
           <TextBox Name="RequestBox" Text="{Binding RequestText}" AcceptsReturn="True" TextWrapping="Wrap" Height="54"
@@ -31,7 +30,7 @@
               <KeyBinding Gesture="Ctrl+Enter" Command="{Binding AnalyzeCommand}" />
             </TextBox.KeyBindings>
           </TextBox>
-          <Button Grid.Column="2" Classes="primary" VerticalAlignment="Top" Content="Analyse" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
+          <Button ctl:ButtonIcon.Kind="sparkle" Grid.Column="2" Classes="primary" VerticalAlignment="Top" Content="Analyse" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
         </Grid>
         <TextBlock Foreground="{DynamicResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
@@ -107,9 +106,9 @@
 
                 <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
                 <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
-                  <Button Classes="primary" Content="Create Draft" Command="{Binding CreateDraftCommand}" IsVisible="{Binding CanDecide}" IsEnabled="{Binding CanCreateDraft}" />
-                  <Button Classes="primary" Content="Open Draft" Command="{Binding OpenDraftCommand}" IsVisible="{Binding HasDraft}" />
-                  <Button Content="Dismiss" Command="{Binding DismissCommand}" IsVisible="{Binding !HasDraft}" />
+                  <Button ctl:ButtonIcon.Kind="fileplus" Classes="primary" Content="Create Draft" Command="{Binding CreateDraftCommand}" IsVisible="{Binding CanDecide}" IsEnabled="{Binding CanCreateDraft}" />
+                  <Button ctl:ButtonIcon.Kind="open" Classes="primary" Content="Open Draft" Command="{Binding OpenDraftCommand}" IsVisible="{Binding HasDraft}" />
+                  <Button ctl:ButtonIcon.Kind="x" Content="Dismiss" Command="{Binding DismissCommand}" IsVisible="{Binding !HasDraft}" />
                 </StackPanel>
               </StackPanel>
             </Border>

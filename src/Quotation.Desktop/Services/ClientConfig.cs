@@ -21,6 +21,12 @@ public sealed class ClientConfig
     /// line), or one column top to bottom ("Name", "Description", "Quantity", "Rate", "Discount").
     /// </summary>
     public string LineStepMode { get; set; } = "Off";
+
+    /// <summary>Gear: after changing a line, go to the line above instead of below.</summary>
+    public bool LineStepUp { get; set; }
+
+    /// <summary>Gear: hide the HSN/SAC and GST columns of the item list on this PC's screen (the PDF keeps them).</summary>
+    public bool HideHsnGst { get; set; }
     /// <summary>A picture behind the pages on this PC (a copy kept next to this file); empty = none.</summary>
     public string BackgroundPicture { get; set; } = "";
 

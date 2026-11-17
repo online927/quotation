@@ -130,7 +130,8 @@ public class OfficeFeaturesUiTests
             Assert.Equal("Next theme: Graphite", ctx.Shell.ThemeTip);
             await ctx.Shell.ToggleThemeCommand.ExecuteAsync(null);
             Assert.Equal(AppTheme.Graphite, (await ctx.Session.Api.MeAsync()).Theme);
-            Assert.Equal(AppTheme.Light, ShellViewModel.NextTheme(AppTheme.Midnight));
+            Assert.Equal(AppTheme.MaroonMahal, ShellViewModel.NextTheme(AppTheme.Midnight));
+            Assert.Equal(AppTheme.Light, ShellViewModel.NextTheme(AppTheme.MaroonMahal));
             Assert.Equal(AppTheme.Dark, ShellViewModel.NextTheme(AppTheme.System));
             await ctx.Session.SetThemeAsync(AppTheme.Dark);
 

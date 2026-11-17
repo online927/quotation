@@ -81,7 +81,7 @@ public sealed class SearchPicker : UserControl
         // Items never take focus, so the typing caret stays in the text box while the list is used.
         _list.Styles.Add(new Style(x => x.OfType<ListBoxItem>())
         {
-            Setters = { new Setter(FocusableProperty, false), new Setter(ListBoxItem.PaddingProperty, new Thickness(8, 3)) },
+            Setters = { new Setter(FocusableProperty, false), new Setter(ListBoxItem.PaddingProperty, new Thickness(10, 5)) },
         });
         _list.AddHandler(PointerReleasedEvent, OnListPointerReleased, RoutingStrategies.Bubble, handledEventsToo: true);
 
@@ -92,14 +92,15 @@ public sealed class SearchPicker : UserControl
         {
             Classes = { "dropdown" },
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(3),
-            BoxShadow = BoxShadows.Parse("0 4 14 0 #33000000"),
+            CornerRadius = new CornerRadius(14),
+            Padding = new Thickness(2, 4),
+            BoxShadow = BoxShadows.Parse("0 14 36 0 #2E0F172A"),
             Child = new Panel { Children = { _list, _noMatch } },
         };
 
         // Light or dark, following the user's choice.
         _dropDown.Bind(Border.BackgroundProperty, _dropDown.GetResourceObservable("PopupBrush"));
-        _dropDown.Bind(Border.BorderBrushProperty, _dropDown.GetResourceObservable("PopupBorderBrush"));
+        _dropDown.Bind(Border.BorderBrushProperty, _dropDown.GetResourceObservable("HairlineBrush"));
 
         _popup = new Popup
         {

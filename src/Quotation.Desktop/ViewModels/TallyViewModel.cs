@@ -31,7 +31,8 @@ public sealed partial class TallyViewModel : ViewModelBase
 
     public bool IsAdmin => _session.IsAdmin;
     public string LastSyncText => Formatting.LocalDateTime(Status?.LastSuccessfulSyncUtc) ?? "Never";
-    public string ConnectionText => Status?.TallyConnected == true ? "CONNECTED" : "DISCONNECTED";
+    public string ConnectionText => Status?.TallyConnected == true ? "Connected" : "Disconnected";
+    public bool IsConnected => Status?.TallyConnected == true;
     public string LastCheckedText => Formatting.LocalDateTime(Status?.TallyLastCheckedUtc) ?? "–";
 
     partial void OnSyncStateChanged(SyncStateDto? value) => OnPropertyChanged(nameof(SyncRunning));
@@ -40,6 +41,7 @@ public sealed partial class TallyViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(LastSyncText));
         OnPropertyChanged(nameof(ConnectionText));
+        OnPropertyChanged(nameof(IsConnected));
         OnPropertyChanged(nameof(LastCheckedText));
     }
 

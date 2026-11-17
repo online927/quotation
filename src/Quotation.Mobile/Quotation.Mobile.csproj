@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The phone app's screens (Avalonia). The Android app (Quotation.Mobile.Android) only starts them. -->
+  <PropertyGroup>
+    <RootNamespace>Quotation.Mobile</RootNamespace>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Quotation.Core\Quotation.Core.csproj" />
+    <ProjectReference Include="..\Quotation.ApiClient\Quotation.ApiClient.csproj" />
+    <ProjectReference Include="..\Quotation.UiShared\Quotation.UiShared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Quotation.Mobile.Tests" />
+    <InternalsVisibleTo Include="TSQuotationPhone" />
+  </ItemGroup>
+</Project>

@@ -20,15 +20,7 @@ public sealed partial class LoginViewModel : ViewModelBase
     public string CompanyName => string.IsNullOrWhiteSpace(_session.Config.CompanyName) ? "Quotations" : _session.Config.CompanyName.Trim();
 
     /// <summary>The first letters of the first two words of the company name ("T.SAIFUDDIN &amp; CO." → "TS").</summary>
-    public string CompanyInitials
-    {
-        get
-        {
-            var words = System.Text.RegularExpressions.Regex.Matches(CompanyName, "[A-Za-z0-9]+").Select(m => m.Value).ToList();
-            var letters = string.Concat(words.Take(2).Select(w => char.ToUpperInvariant(w[0])));
-            return letters.Length > 0 ? letters : "Q";
-        }
-    }
+    public string CompanyInitials => Services.CompanyLetters.Of(CompanyName == "Quotations" ? "" : CompanyName);
 
     /// <summary>The time of day (replaced in tests).</summary>
     public static Func<DateTime> Now { get; set; } = () => DateTime.Now;

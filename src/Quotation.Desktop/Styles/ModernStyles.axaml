@@ -1,0 +1,542 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    The modern look (round 29). Included last in App.axaml, so these win over the older styles.
+    Colours come from the theme resources, so every colour theme keeps its own colours.
+  -->
+
+  <!-- ===== Buttons: no outlines; soft grey fill, blue main action that lifts under the mouse, soft red delete ===== -->
+  <Style Selector="Button, ToggleButton, RepeatButton">
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button">
+    <Setter Property="Padding" Value="14,6" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.save:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource PrimaryGlow}" />
+  </Style>
+  <!-- A main button that cannot be used yet: calm grey, not a washed-out colour -->
+  <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.save:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource DisabledFillBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+  </Style>
+  <Style Selector="Button.primary:disabled Path, Button.save:disabled Path">
+    <Setter Property="Stroke" Value="{DynamicResource DisabledTextBrush}" />
+  </Style>
+  <Style Selector="Button.danger /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.danger:disabled /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.proforma /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.proforma:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.proforma /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ProformaHoverBrush}" />
+  </Style>
+  <!-- Round buttons (back / forward, gear, theme): a soft round fill, no outline -->
+  <Style Selector="Button.round /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.round:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}" />
+  </Style>
+  <Style Selector="Button.round:disabled">
+    <Setter Property="Opacity" Value="0.45" />
+  </Style>
+  <Style Selector="Button.round:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
+  </Style>
+  <!-- Link-like and menu buttons stay without a fill -->
+  <Style Selector="Button.link /template/ ContentPresenter#PART_ContentPresenter, Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <!-- ===== Typing boxes: soft fill; while typing white with a thin accent ring ===== -->
+  <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BoxShadow" Value="{DynamicResource InputRing}" />
+  </Style>
+  <!-- (the box inside a number box or search picker shows no second ring) -->
+  <Style Selector="NumericUpDown TextBox:focus /template/ Border#PART_BorderElement, AutoCompleteBox TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BoxShadow" Value="0 0 0 0 Transparent" />
+  </Style>
+  <Style Selector="NumericUpDown:focus-within /template/ ButtonSpinner">
+    <Setter Property="Background" Value="{DynamicResource TextControlBackgroundFocused}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushFocused}" />
+  </Style>
+  <Style Selector="NumericUpDown:focus-within /template/ ButtonSpinner /template/ Border#border">
+    <Setter Property="BoxShadow" Value="{DynamicResource InputRing}" />
+  </Style>
+  <Style Selector="NumericUpDown TextBox">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="NumericUpDown TextBox /template/ Border#PART_BorderElement, NumericUpDown TextBox:focus /template/ Border#PART_BorderElement, NumericUpDown TextBox:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="RepeatButton.spin">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="2" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="RepeatButton.spin /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="7" />
+  </Style>
+  <Style Selector="RepeatButton.spin:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
+  </Style>
+  <Style Selector="RepeatButton.spin:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackgroundPressed}" />
+  </Style>
+
+  <!-- ===== Drop-down lists: the open list floats as a rounded card with a soft shadow ===== -->
+  <Style Selector="ComboBox /template/ Border#PopupBorder">
+    <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="0,4" />
+    <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
+    <Setter Property="Margin" Value="0,4,0,0" />
+  </Style>
+
+  <!-- ===== Calendar (date boxes): a drawn calendar symbol; round days, the chosen one filled ===== -->
+  <Style Selector="CalendarDatePicker /template/ Button#PART_Button">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="Transparent" Width="30" Height="26" CornerRadius="7" Cursor="Hand">
+          <Path Data="M3,5 L21,5 L21,21 L3,21 Z M8,3 L8,7 M16,3 L16,7 M3,10 L21,10" Stroke="{DynamicResource TextBrush}"
+                StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Width="15" Height="15" Stretch="Uniform"
+                HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="Calendar">
+    <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="14" />
+  </Style>
+  <Style Selector="CalendarDayButton">
+    <Setter Property="MinWidth" Value="34" />
+    <Setter Property="MinHeight" Value="34" />
+    <Setter Property="Margin" Value="2" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="CalendarDayButton /template/ Border#Root, CalendarDayButton /template/ Border#Border">
+    <Setter Property="CornerRadius" Value="17" />
+  </Style>
+  <Style Selector="CalendarButton /template/ Border#Root, CalendarButton /template/ Border#Border">
+    <Setter Property="CornerRadius" Value="12" />
+  </Style>
+  <Style Selector="CalendarDayButton:selected">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="CalendarDayButton:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ListHoverBrush}" />
+  </Style>
+  <!-- The app's own small calendar (Ref. dated): round days -->
+  <Style Selector="Border.calcard">
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="12" />
+    <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
+  </Style>
+  <Style Selector="Button.calday">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="CornerRadius" Value="16" />
+  </Style>
+  <Style Selector="Button.calnav">
+    <Setter Property="CornerRadius" Value="13" />
+  </Style>
+  <Style Selector="Button.calnav /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
+  </Style>
+
+  <!-- ===== Lists (search lists, Customers, Products, tables): no lines, a soft rounded highlight, no hard bar ===== -->
+  <Style Selector="ListBoxItem">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Margin" Value="4,1" />
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+  <Style Selector="ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter,
+                   ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+  </Style>
+  <Style Selector="ListBox">
+    <Setter Property="Padding" Value="0,4" />
+  </Style>
+  <!-- Table headings: a rounded strip -->
+  <Style Selector="Border.tablehead">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Border.tablehead TextBlock">
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="ListBox.table">
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+  </Style>
+
+  <!-- Details panels (Customers, Products): labels in normal text, values bold, nothing cut off -->
+  <Style Selector="Grid.details TextBlock.label">
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    <Setter Property="Opacity" Value="0.75" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+  </Style>
+  <Style Selector="Grid.details > TextBlock:not(.label):not(.h2)">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <!-- Settings cards: label above its box -->
+  <Style Selector="StackPanel.fld">
+    <Setter Property="Spacing" Value="5" />
+  </Style>
+  <Style Selector="TextBlock.flabel">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <!-- The eye in the password box -->
+  <Style Selector="ToggleButton.eye">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="8,4" />
+    <Setter Property="Margin" Value="0,0,6,0" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="ToggleButton.eye /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+  <Style Selector="ToggleButton.eye:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
+  </Style>
+  <Style Selector="ToggleButton.eye:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+  </Style>
+
+  <!-- ===== Switches and tick boxes ===== -->
+  <Style Selector="CheckBox">
+    <Setter Property="CornerRadius" Value="5" />
+  </Style>
+
+  <!-- ===== Pill tabs (Diagnostics, Users): like the Tally | Zoho switch ===== -->
+  <Style Selector="TabControl.pills /template/ ItemsPresenter#PART_ItemsPresenter">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="TabControl.pills TabItem">
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="Margin" Value="2" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="TabControl.pills TabItem /template/ Border#PART_SelectedPipe">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="TabControl.pills TabItem:selected">
+    <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+  </Style>
+  <Style Selector="TabControl.pills TabItem:selected /template/ Border#PART_LayoutRoot">
+    <Setter Property="BoxShadow" Value="0 1 4 0 #24000000" />
+  </Style>
+  <Style Selector="TabControl.pills TabItem /template/ Border#PART_LayoutRoot">
+    <Setter Property="CornerRadius" Value="9" />
+  </Style>
+  <Style Selector="Border.pillbar">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
+    <Setter Property="CornerRadius" Value="11" />
+    <Setter Property="Padding" Value="3" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+
+  <!-- Pill choice made of radio buttons (Payment note): RadioButton.seg inside a Border.pillbar -->
+  <Style Selector="RadioButton.seg">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="seg" Background="Transparent" CornerRadius="9" Padding="14,6" Cursor="Hand">
+          <ContentPresenter Content="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+  </Style>
+  <Style Selector="RadioButton.seg:checked">
+    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+  </Style>
+  <Style Selector="RadioButton.seg:checked /template/ Border#seg">
+    <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+    <Setter Property="BoxShadow" Value="0 1 4 0 #24000000" />
+  </Style>
+  <Style Selector="RadioButton.seg:pointerover:not(:checked) /template/ Border#seg">
+    <Setter Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}" />
+  </Style>
+
+  <!-- ===== Question boxes: rounded card, a symbol in a soft circle, bold title, wide equal buttons ===== -->
+  <Style Selector="Border.question">
+    <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+    <Setter Property="CornerRadius" Value="20" />
+    <Setter Property="Padding" Value="26,24,26,20" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="BoxShadow" Value="0 24 60 0 #470F172A" />
+  </Style>
+  <Style Selector="Border.qicon">
+    <Setter Property="Width" Value="52" />
+    <Setter Property="Height" Value="52" />
+    <Setter Property="CornerRadius" Value="26" />
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Path.qsym">
+    <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="StrokeThickness" Value="1.9" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+    <Setter Property="Width" Value="24" />
+    <Setter Property="Height" Value="24" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.qtitle">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="TextAlignment" Value="Center" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.qtext">
+    <Setter Property="TextAlignment" Value="Center" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="Button.wide">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="Padding" Value="10,10" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+
+  <!-- ===== Gear menu rows: a name and a switch; the row that is on is light blue ===== -->
+  <Style Selector="Border.steprow">
+    <Setter Property="Padding" Value="10,6" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Border.steprow:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ListHoverBrush}" />
+  </Style>
+  <Style Selector="Border.steprow.on">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+  </Style>
+  <Style Selector="Border.steprow.on TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Border.menusep">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Margin" Value="8,5" />
+    <Setter Property="Background" Value="{DynamicResource HairlineBrush}" />
+  </Style>
+  <!-- A switch without words (the row says what it is) -->
+  <Style Selector="ToggleSwitch.bare">
+    <Setter Property="OnContent" Value="" />
+    <Setter Property="OffContent" Value="" />
+    <Setter Property="MinWidth" Value="0" />
+  </Style>
+  <Style Selector="ToggleSwitch.bare /template/ ContentPresenter#PART_OnContentPresenter, ToggleSwitch.bare /template/ ContentPresenter#PART_OffContentPresenter">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="TextBlock.h1, TextBlock.h2">
+    <Setter Property="Foreground" Value="{DynamicResource HeadingBrush}" />
+  </Style>
+
+  <!-- ===== Theme extras (Maroon): bar on the chosen menu item, strips on the Dashboard number boxes, top-bar buttons ===== -->
+  <Style Selector="Button.nav.selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource SidebarSelectedShadow}" />
+  </Style>
+  <Style Selector="Button.tile.strip1 /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="BoxShadow" Value="{DynamicResource TileStrip1}" /></Style>
+  <Style Selector="Button.tile.strip2 /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="BoxShadow" Value="{DynamicResource TileStrip2}" /></Style>
+  <Style Selector="Button.tile.strip3 /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="BoxShadow" Value="{DynamicResource TileStrip3}" /></Style>
+  <Style Selector="Button.tile.strip4 /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="BoxShadow" Value="{DynamicResource TileStrip4}" /></Style>
+  <Style Selector="Button.round.onbar /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource TopBarFieldBrush}" />
+  </Style>
+
+  <!-- ===== F1 shortcuts card ===== -->
+  <Style Selector="TextBlock.kshead">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Margin" Value="0,8,0,2" />
+  </Style>
+  <Style Selector="Grid.ksrow">
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector="Border.keycap">
+    <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1,1,1,2.5" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="Padding" Value="7,2" />
+    <Setter Property="MinWidth" Value="24" />
+    <Setter Property="Margin" Value="0,2,4,2" />
+  </Style>
+  <Style Selector="Border.keycap TextBlock">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.kssep">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Margin" Value="0,0,4,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- ===== Hover hints: rounded, dark, easy to read ===== -->
+  <Style Selector="ToolTip">
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="FontSize" Value="12.5" />
+  </Style>
+
+  <!-- ===== Small menus (your name, gear, Connected): rounded floating cards with rounded rows ===== -->
+  <Style Selector="MenuFlyoutPresenter, FlyoutPresenter">
+    <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="16" />
+  </Style>
+  <Style Selector="MenuFlyoutPresenter">
+    <Setter Property="Padding" Value="6" />
+  </Style>
+  <Style Selector="MenuItem">
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="10,8" />
+  </Style>
+  <Style Selector="MenuItem /template/ Border#PART_LayoutRoot">
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+  <Style Selector="MenuItem.danger">
+    <Setter Property="Foreground" Value="{DynamicResource BadBrush}" />
+  </Style>
+  <Style Selector="Path.menuicon">
+    <Setter Property="Stroke" Value="{DynamicResource TextBrush}" />
+    <Setter Property="StrokeThickness" Value="1.8" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Stretch" Value="Uniform" />
+  </Style>
+  <Style Selector="Path.menuicon.bad">
+    <Setter Property="Stroke" Value="{DynamicResource BadBrush}" />
+  </Style>
+  <Style Selector="MenuItem.menuhead">
+    <Setter Property="Padding" Value="8,6,8,8" />
+  </Style>
+  <!-- Log out in the top bar: a round light-red button -->
+  <Style Selector="Button.round.logout /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+  </Style>
+  <Style Selector="Button.round.logout:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}" />
+  </Style>
+
+  <!-- ===== Scroll bars: a thin rounded bar, no arrows; wider under the mouse ===== -->
+  <Style Selector="ScrollBar /template/ RepeatButton#PART_LineUpButton, ScrollBar /template/ RepeatButton#PART_LineDownButton">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="ScrollBar /template/ Thumb">
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  <Style Selector="ScrollBar /template/ Border#ThumbBorder, ScrollBar /template/ Border#VerticalPanningThumb, ScrollBar /template/ Border#HorizontalPanningThumb">
+    <Setter Property="CornerRadius" Value="3" />
+  </Style>
+
+  <!-- ===== Information: a small ⓘ that shows the full explanation on hover ===== -->
+  <Style Selector="Border.info">
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Help" />
+  </Style>
+  <Style Selector="StackPanel.help > TextBlock">
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="Path.infoicon">
+    <Setter Property="Data" Value="M12,3 A9,9 0 1 1 11.99,3 Z M12,11 L12,17 M12,7.5 L12,7.6" />
+    <Setter Property="Stroke" Value="{DynamicResource InfoIconBrush}" />
+    <Setter Property="StrokeThickness" Value="2" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <!-- Status chips with a dot (green fine, red not working, amber not set up) -->
+  <Style Selector="Border.chip">
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="9,3" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="{DynamicResource FillBrush}" />
+  </Style>
+  <Style Selector="Border.chip TextBlock">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="Border.chip Ellipse">
+    <Setter Property="Width" Value="7" />
+    <Setter Property="Height" Value="7" />
+    <Setter Property="Fill" Value="{DynamicResource MutedBrush}" />
+    <Setter Property="Margin" Value="0,0,6,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.chip.ok"><Setter Property="Background" Value="{DynamicResource PillOkBrush}" /></Style>
+  <Style Selector="Border.chip.ok TextBlock"><Setter Property="Foreground" Value="{DynamicResource GreenBrush}" /></Style>
+  <Style Selector="Border.chip.ok Ellipse"><Setter Property="Fill" Value="{DynamicResource GreenBrush}" /></Style>
+  <Style Selector="Border.chip.bad"><Setter Property="Background" Value="{DynamicResource PillBadBrush}" /></Style>
+  <Style Selector="Border.chip.bad TextBlock"><Setter Property="Foreground" Value="{DynamicResource BadBrush}" /></Style>
+  <Style Selector="Border.chip.bad Ellipse"><Setter Property="Fill" Value="{DynamicResource BadBrush}" /></Style>
+  <Style Selector="Border.chip.warn"><Setter Property="Background" Value="{DynamicResource PillPendingBrush}" /></Style>
+  <Style Selector="Border.chip.warn TextBlock"><Setter Property="Foreground" Value="{DynamicResource OrangeBrush}" /></Style>
+  <Style Selector="Border.chip.warn Ellipse"><Setter Property="Fill" Value="{DynamicResource OrangeBrush}" /></Style>
+</Styles>

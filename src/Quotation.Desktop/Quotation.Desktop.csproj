@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Quotation.Core\Quotation.Core.csproj" />
     <ProjectReference Include="..\Quotation.ApiClient\Quotation.ApiClient.csproj" />
+    <ProjectReference Include="..\Quotation.UiShared\Quotation.UiShared.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" />

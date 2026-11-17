@@ -27,7 +27,8 @@ public class DocumentLauncher(ClientConfig config)
     }
 
     /// <summary>Ctrl+P: prints the PDF straight to the Windows default printer (no print window); returns the printer's name.</summary>
-    public virtual string Print(byte[] pdf, string documentName) => DirectPrinter.Print(pdf, documentName);
+    public virtual string Print(byte[] pdf, string documentName) =>
+        MacSupport.IsMac ? MacSupport.Print(pdf, documentName) : DirectPrinter.Print(pdf, documentName);
 
     /// <summary>Saves (replacing an earlier copy of the same document) without opening it.</summary>
     public virtual string Save(byte[] pdf, string fileName, string? folder = null) => SaveAndOpen(pdf, fileName, open: false, folder);
@@ -38,6 +39,7 @@ public class DocumentLauncher(ClientConfig config)
         try
         {
             if (OperatingSystem.IsWindows()) Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
+            else if (MacSupport.IsMac) MacSupport.ShowInFinder(path);
             else Process.Start(new ProcessStartInfo(Path.GetDirectoryName(path)!) { UseShellExecute = true });
         }
         catch (Exception)
@@ -74,6 +76,7 @@ public class DocumentLauncher(ClientConfig config)
                 { CreateNoWindow = true, UseShellExecute = false });
                 clip?.WaitForExit(5000);
             }
+            else if (MacSupport.IsMac) MacSupport.CopyFileToClipboard(pdfPath);
             var url = "whatsapp://send?" + (phone is { Length: > 0 } p ? "phone=" + p + "&" : "") + "text=" + Uri.EscapeDataString(message);
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             return true;

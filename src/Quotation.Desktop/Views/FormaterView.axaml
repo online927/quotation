@@ -154,8 +154,7 @@
             <Path Classes="si" Data="M4,5 H20 M4,9.5 H14 M4,14 H20 M4,18.5 H11" />
             <TextBlock Classes="h2" Text="Quotation text" Margin="0" VerticalAlignment="Center" />
           </StackPanel>
-          <TextBlock DockPanel.Dock="Bottom" Classes="muted" FontSize="11" TextWrapping="Wrap" Margin="14,6,14,12"
-                     Text="Leave a blank line between the parts: the customer (first line the name; address lines start with &quot;-&quot;; then GSTIN, phone, e-mail), then the other reference, then each item. An item's first line is: item name, qty, rate, discount (discount optional); the lines under it are its description." />
+          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" Margin="14,6,14,12"><TextBlock Text="A blank line between the parts: customer, other reference, then each item." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Leave a blank line between the parts: the customer (first line the name; address lines start with &quot;-&quot;; then GSTIN, phone, e-mail), then the other reference, then each item. An item's first line is: item name, qty, rate, discount (discount optional); the lines under it are its description."><Path Classes="infoicon" /></Border></StackPanel>
           <!-- Packing & forwarding: its own box (Alt+P), an amount in rupees -->
           <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" Margin="14,10,14,0">
             <TextBlock Text="P&amp;F" FontWeight="SemiBold" VerticalAlignment="Center" />
@@ -177,7 +176,8 @@
           </Border>
           <!-- Line numbers at the left; lines with a problem marked red -->
           <Grid ColumnDefinitions="36,*" Margin="14,0,14,0">
-            <Border CornerRadius="6,0,0,6" Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1,1,0,1">
+            <!-- Plain line numbers beside the text (no box around them) -->
+            <Border Name="LineGutterBorder" Background="Transparent" BorderThickness="0" Margin="0,0,4,0">
               <Canvas Name="LineGutter" ClipToBounds="True" />
             </Border>
             <TextBox Grid.Column="1" Name="FormaterTextBox" Classes="formatertext" Text="{Binding Text}"
@@ -215,7 +215,7 @@
                   <TextBlock Text="{Binding CustomerDetails}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
                   <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasCustomerSuggestion}">
                     <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" Text="{Binding CustomerSuggestion, StringFormat='Tally has: {0}'}" />
-                    <Button Name="UseCustomerSuggestionButton" Classes="small" Content="Use" Command="{Binding UseCustomerSuggestionCommand}" />
+                    <Button ctl:ButtonIcon.Kind="check" Name="UseCustomerSuggestionButton" Classes="small" Content="Use" Command="{Binding UseCustomerSuggestionCommand}" />
                   </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="2" Margin="14,0,0,0" MinWidth="150">
@@ -270,7 +270,7 @@
                                     Command="{Binding $parent[UserControl].((vm:FormaterViewModel)DataContext).ForgetItemCommand}" CommandParameter="{Binding}" />
                             <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Text="{Binding SuggestionText}"
                                        IsVisible="{Binding HasSuggestion}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
-                            <Button Classes="small" Content="Use" IsVisible="{Binding HasSuggestion}"
+                            <Button ctl:ButtonIcon.Kind="check" Classes="small" Content="Use" IsVisible="{Binding HasSuggestion}"
                                     Command="{Binding $parent[UserControl].((vm:FormaterViewModel)DataContext).UseItemSuggestionCommand}" CommandParameter="{Binding}" />
                           </StackPanel>
                         </StackPanel>

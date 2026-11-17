@@ -73,6 +73,19 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
             return;
         }
+        // Alt+C: the Customer box; Alt+I: the Product box to add an item.
+        if (e.KeyModifiers == KeyModifiers.Alt && e.Key is Key.C or Key.I)
+        {
+            var box = e.Key == Key.C ? CustomerBox : ProductBox;
+            if (box.IsEffectivelyEnabled && box.IsEffectivelyVisible)
+            {
+                box.BringIntoView();
+                box.InputBox.Focus(NavigationMethod.Tab);
+                box.InputBox.SelectAll();
+            }
+            e.Handled = true;
+            return;
+        }
         var picker = source.FindAncestorOfType<SearchPicker>(includeSelf: true);
 
         if (e.Key == Key.Escape && Vm is { IsPasteOpen: true } pasting)

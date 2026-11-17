@@ -32,7 +32,8 @@ public sealed partial class GmailViewModel : ViewModelBase
         _ = LoadAsync();
     }
 
-    public string ConnectionText => Status is null ? "" : Status.Connected ? $"CONNECTED — {Status.Account}" : "NOT CONNECTED";
+    public string ConnectionText => Status is null ? "" : Status.Connected ? $"Connected — {Status.Account}" : "Not connected";
+    public bool IsConnected => Status?.Connected == true;
     public string CountsText => Status is null || Status.Counts.Count == 0 ? "No e-mails processed yet." :
         string.Join("   ", Status.Counts.Select(kv => $"{kv.Key}: {kv.Value}"));
     public string LastPollText => Formatting.LocalDateTime(Status?.LastPollUtc) ?? "never";
@@ -40,6 +41,7 @@ public sealed partial class GmailViewModel : ViewModelBase
     partial void OnStatusChanged(GmailStatusDto? value)
     {
         OnPropertyChanged(nameof(ConnectionText));
+        OnPropertyChanged(nameof(IsConnected));
         OnPropertyChanged(nameof(CountsText));
         OnPropertyChanged(nameof(LastPollText));
     }

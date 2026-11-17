@@ -59,9 +59,26 @@ public partial class FormaterView : UserControl
     /// <summary>Alt+P: the cursor in the P&amp;F box with its amount selected.</summary>
     private void OnKeyDownTunnel(object? sender, KeyEventArgs e)
     {
+        if (e.Key == Key.G && e.KeyModifiers == Services.MacSupport.Command)
+        {
+            GoToNextProblem();
+            e.Handled = true;
+            return;
+        }
         if (e.Key != Key.P || e.KeyModifiers != KeyModifiers.Alt) return;
         FocusPacking();
         e.Handled = true;
+    }
+
+    /// <summary>Ctrl+G: the next red (problem) line after the cursor; after the last one, back to the first.</summary>
+    public void GoToNextProblem()
+    {
+        var lines = (_vm?.ProblemLines ?? []).Where(n => n > 0).Distinct().OrderBy(n => n).ToList();
+        if (lines.Count == 0) return;
+        var text = FormaterTextBox.Text ?? "";
+        var caret = Math.Clamp(Math.Max(FormaterTextBox.SelectionEnd, FormaterTextBox.CaretIndex), 0, text.Length);
+        var current = 1 + text.Take(caret).Count(c => c == '\n');
+        GoToLine(lines.FirstOrDefault(n => n > current, lines[0]));
     }
 
     public void FocusPacking()

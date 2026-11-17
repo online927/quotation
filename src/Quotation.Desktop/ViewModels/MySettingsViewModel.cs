@@ -158,8 +158,16 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         _ = RunAsync(() => _session.SetDisplayAsync(spacing: value == 1 ? AppDisplay.Compact : AppDisplay.Comfortable));
     }
 
+    /// <summary>The Animations switch reads the right way round: On = animations on (it is "reduce animations" inside).</summary>
+    public bool AnimationsOn
+    {
+        get => !ReduceMotion;
+        set => ReduceMotion = !value;
+    }
+
     partial void OnReduceMotionChanged(bool value)
     {
+        OnPropertyChanged(nameof(AnimationsOn));
         if (_loading) return;
         _ = RunAsync(() => _session.SetDisplayAsync(reduceMotion: value));
     }

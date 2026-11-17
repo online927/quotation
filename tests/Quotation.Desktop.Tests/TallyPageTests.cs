@@ -18,11 +18,11 @@ public class TallyPageTests
         window.Show();
 
         await UiHelpers.WaitUntil(() => vm.Status is not null);
-        Assert.Equal("DISCONNECTED", vm.ConnectionText);
+        Assert.Equal("Disconnected", vm.ConnectionText);
 
         await vm.TestConnectionCommand.ExecuteAsync(null);
         Assert.True(vm.TestResult!.Success);
-        Assert.Equal("CONNECTED", vm.ConnectionText);
+        Assert.Equal("Connected", vm.ConnectionText);
         Assert.Equal("2026-27", vm.Status!.ActiveFinancialYear);
         Assert.NotNull(window.FindDescendantOfType<TallyView>());
 
@@ -40,6 +40,6 @@ public class TallyPageTests
         server.Tally.Online = false;
         await vm.TestConnectionCommand.ExecuteAsync(null);
         Assert.False(vm.TestResult!.Success);
-        Assert.Equal("DISCONNECTED", vm.ConnectionText);
+        Assert.Equal("Disconnected", vm.ConnectionText);
     }
 }

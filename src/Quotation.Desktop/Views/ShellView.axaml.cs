@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Quotation.Desktop.Services;
@@ -15,13 +16,47 @@ namespace Quotation.Desktop.Views;
 /// </summary>
 public partial class ShellView : UserControl
 {
+    private ShellViewModel? _subscribed;
+
+    /// <summary>The chosen page in the side menu is always in view (on a small screen it hid under "Hide menu").</summary>
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        if (_subscribed is not null) _subscribed.PropertyChanged -= OnShellChanged;
+        _subscribed = DataContext as ShellViewModel;
+        if (_subscribed is not null) _subscribed.PropertyChanged += OnShellChanged;
+    }
+
+    private void OnShellChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(ShellViewModel.CurrentPage)) return;
+        Dispatcher.UIThread.Post(ShowChosenPage, DispatcherPriority.Loaded);
+    }
+
+    public void ShowChosenPage()
+    {
+        var chosen = NavScroller.GetVisualDescendants().OfType<Button>().FirstOrDefault(b => b.Classes.Contains("nav") && b.Classes.Contains("selected"));
+        chosen?.BringIntoView();
+    }
+
     public ShellView()
     {
         InitializeComponent();
+        if (MacSupport.IsMac)
+        {
+            // The shortcuts card shows the Mac keys.
+            foreach (var t in ShortcutsPanel.GetLogicalDescendants().OfType<TextBlock>())
+                t.Text = t.Text switch { "Ctrl" => "⌘", "Alt" => "⌥", _ => t.Text };
+        }
         KeyBindings.Add(new KeyBinding
         {
             Gesture = KeyGesture.Parse("Ctrl+F"),
             Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() => GlobalSearchBox.Focus()),
+        });
+        KeyBindings.Add(new KeyBinding
+        {
+            Gesture = KeyGesture.Parse("F1"),
+            Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() => Vm?.ToggleShortcutsCommand.Execute(null)),
         });
         AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
         // Top search: a typed number shows its quotation(s) below the box; ↑ / ↓ pick one, Enter opens it, Esc closes the list.
@@ -100,6 +135,16 @@ public partial class ShellView : UserControl
         {
             game.OpenXoCommand.Execute(null);
             e.Handled = true;
+            return;
+        }
+        if (Vm is { ShowShortcuts: true } help)
+        {
+            // The shortcuts card: Esc or F1 closes it.
+            if (e.Key is Key.Escape or Key.F1)
+            {
+                help.ShowShortcuts = false;
+                e.Handled = true;
+            }
             return;
         }
         if (Vm is { XoGame: not null } playing)

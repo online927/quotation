@@ -55,16 +55,16 @@
       <Border DockPanel.Dock="Top" Background="{DynamicResource TopBarBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,0,0,1" Padding="16,9">
         <Grid ColumnDefinitions="246,*,Auto">
           <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-            <Border Width="30" Height="30" CornerRadius="8" Background="{DynamicResource AccentBrush}">
-              <TextBlock Text="TS" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Border Width="30" Height="30" CornerRadius="8" Background="{DynamicResource BadgeBrush}">
+              <TextBlock Name="CompanyBadge" Text="{Binding CompanyInitials}" Foreground="{DynamicResource BadgeTextBrush}" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <StackPanel VerticalAlignment="Center">
-              <TextBlock Text="Quotations" FontWeight="SemiBold" FontSize="15" />
-              <TextBlock Text="{Binding Status.TallyCompany, FallbackValue=''}" FontSize="11" Classes="muted" TextTrimming="CharacterEllipsis" MaxWidth="160" />
+              <TextBlock Text="Quotations" FontWeight="SemiBold" FontSize="15" Foreground="{DynamicResource TopBarTextBrush}" />
+              <TextBlock Text="{Binding Status.TallyCompany, FallbackValue=''}" FontSize="11" Foreground="{DynamicResource TopBarMutedBrush}" TextTrimming="CharacterEllipsis" MaxWidth="160" />
             </StackPanel>
           </StackPanel>
           <TextBox Grid.Column="1" Name="GlobalSearchBox" Text="{Binding GlobalSearch}" MaxWidth="520" HorizontalAlignment="Stretch" Margin="16,0"
-                   CornerRadius="999" Padding="16,6" Background="{DynamicResource FillBrush}" BorderThickness="0"
+                   CornerRadius="999" Padding="16,6" Background="{DynamicResource TopBarFieldBrush}" Foreground="{DynamicResource TopBarTextBrush}" BorderThickness="0"
                    Watermark="Search quotations"
                    ToolTip.Tip="Search quotations by number, customer, GSTIN, product, reference or date (Ctrl+F)">
             <TextBox.KeyBindings>
@@ -112,7 +112,8 @@
                 <Button Name="SearchAllButton" Classes="numbermatch" Focusable="False" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                         Padding="10,8" Command="{Binding SearchAllCommand}">
                   <Grid ColumnDefinitions="Auto,*,Auto">
-                    <TextBlock Text="⌕" FontSize="20" Classes="muted" Margin="2,-4,12,0" VerticalAlignment="Center" />
+                    <Path Data="M11,4 A7,7 0 1 1 10.99,4 Z M20,20 L16,16" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.8"
+                          StrokeLineCap="Round" Width="16" Height="16" Stretch="Uniform" Margin="2,0,12,0" VerticalAlignment="Center" />
                     <TextBlock Grid.Column="1" Text="{Binding SearchAllText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                     <TextBlock Grid.Column="2" Text="customer, GSTIN, part no. …" Classes="muted" FontSize="11" VerticalAlignment="Center" />
                   </Grid>
@@ -123,47 +124,79 @@
           <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
             <!-- Status: green / orange / red dot; details when pointing at it or clicking -->
             <Button Name="StatusChip" Classes="link" Padding="8,4" Margin="0,0,4,0" ToolTip.Tip="{Binding HealthDetails}">
-              <Border Background="{DynamicResource FillBrush}" CornerRadius="999" Padding="10,4">
+              <Border Background="{DynamicResource TopBarFieldBrush}" CornerRadius="999" Padding="10,4">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <Ellipse Width="9" Height="9" Fill="{DynamicResource OkBrush}" IsVisible="{Binding HealthOk}" VerticalAlignment="Center" />
                   <Ellipse Width="9" Height="9" Fill="{DynamicResource WarnBrush}" IsVisible="{Binding HealthWarn}" VerticalAlignment="Center" />
                   <Ellipse Classes="pulse" Width="9" Height="9" Fill="{DynamicResource BadBrush}" IsVisible="{Binding HealthBad}" VerticalAlignment="Center" />
-                  <TextBlock Name="StatusLabel" Text="{Binding HealthLabel}" FontSize="12" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" />
+                  <TextBlock Name="StatusLabel" Text="{Binding HealthLabel}" FontSize="12" Foreground="{DynamicResource TopBarTextBrush}" VerticalAlignment="Center" />
                 </StackPanel>
               </Border>
               <Button.Flyout>
                 <Flyout Placement="BottomEdgeAlignedRight">
-                  <TextBlock Name="StatusDetails" Text="{Binding HealthDetails}" FontSize="12" LineHeight="20" />
+                  <StackPanel Spacing="6" Margin="4,2" MaxWidth="340">
+                    <TextBlock Text="Connection" FontWeight="Bold" FontSize="14" />
+                    <TextBlock Name="StatusDetails" Text="{Binding HealthDetails}" FontSize="12.5" LineHeight="21" TextWrapping="Wrap" />
+                  </StackPanel>
                 </Flyout>
               </Button.Flyout>
             </Button>
             <!-- Light / dark mode for this user -->
-            <Button Name="ThemeButton" Classes="round" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{Binding ThemeTip}">
-              <Path Data="{Binding ThemeIcon}" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="16" Height="16" Stretch="Uniform"
+            <Button Name="ThemeButton" Classes="round onbar" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{Binding ThemeTip}">
+              <Path Data="{Binding ThemeIcon}" Stroke="{DynamicResource TopBarTextBrush}" StrokeThickness="1.6" Width="16" Height="16" Stretch="Uniform"
                     StrokeLineCap="Round" StrokeJoin="Round" />
             </Button>
             <!-- Click the name: change my password, my settings, log out -->
             <Button Name="UserMenuButton" Classes="link" Padding="4,2" ToolTip.Tip="My account">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource FillBrush}">
-                  <TextBlock Text="{Binding UserInitials}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextBrush}"
+                <Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource TopBarFieldBrush}">
+                  <TextBlock Text="{Binding UserInitials}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TopBarTextBrush}"
                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
                 <StackPanel VerticalAlignment="Center">
-                  <TextBlock Text="{Binding UserDisplay}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextBrush}" />
-                  <TextBlock Text="{Binding UserRole, StringFormat='{}{0}  ▾'}" FontSize="11" Classes="muted" />
+                  <TextBlock Text="{Binding UserDisplay}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TopBarTextBrush}" />
+                  <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="{Binding UserRole}" FontSize="11" Foreground="{DynamicResource TopBarMutedBrush}" />
+                    <Path Data="M6,9 L12,15 L18,9" Stroke="{DynamicResource TopBarMutedBrush}" StrokeThickness="2" StrokeLineCap="Round"
+                          StrokeJoin="Round" Width="8" Height="5" Stretch="Uniform" VerticalAlignment="Center" />
+                  </StackPanel>
                 </StackPanel>
               </StackPanel>
               <Button.Flyout>
                 <MenuFlyout Placement="BottomEdgeAlignedRight">
-                  <MenuItem Header="Change my password" Command="{Binding ChangeMyPasswordCommand}" />
-                  <MenuItem Header="My Settings" Command="{Binding NavigateCommand}" CommandParameter="mysettings" />
+                  <MenuItem Name="UserMenuHeader" Classes="menuhead" IsHitTestVisible="False" Focusable="False">
+                    <MenuItem.Header>
+                      <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="36" Height="36" CornerRadius="18" Background="{DynamicResource AccentSoftBrush}">
+                          <TextBlock Text="{Binding UserInitials}" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                          <TextBlock Text="{Binding UserDisplay}" FontWeight="Bold" />
+                          <Border Classes="chip"><TextBlock Text="{Binding UserRole}" FontSize="11" /></Border>
+                        </StackPanel>
+                      </StackPanel>
+                    </MenuItem.Header>
+                  </MenuItem>
                   <Separator />
-                  <MenuItem Header="Log out" Command="{Binding LogoutCommand}" />
+                  <MenuItem Header="Change my password" Command="{Binding ChangeMyPasswordCommand}">
+                    <MenuItem.Icon><Path Classes="menuicon" Data="M7.5,11 A3.5,3.5 0 1 0 7.51,11 Z M10,12.5 L19,3.5 M16,6.5 L19,9.5 M13.5,9 L15.5,11" /></MenuItem.Icon>
+                  </MenuItem>
+                  <MenuItem Header="My Settings" Command="{Binding NavigateCommand}" CommandParameter="mysettings">
+                    <MenuItem.Icon><Path Classes="menuicon" Data="M12,4 A4,4 0 1 0 12.01,4 Z M4,21 C5,17 8.5,15 12,15 C15.5,15 19,17 20,21" /></MenuItem.Icon>
+                  </MenuItem>
+                  <Separator />
+                  <MenuItem Classes="danger" Header="Log out" Command="{Binding LogoutCommand}">
+                    <MenuItem.Icon><Path Classes="menuicon bad" Data="M15,4 L18,4 A2,2 0 0 1 20,6 L20,18 A2,2 0 0 1 18,20 L15,20 M10,8 L6,12 L10,16 M6,12 L16,12" /></MenuItem.Icon>
+                  </MenuItem>
                 </MenuFlyout>
               </Button.Flyout>
             </Button>
-            <Button Classes="link" Content="Log out" Command="{Binding LogoutCommand}" />
+            <!-- Log out: a small round light-red button (it still asks first) -->
+            <Button Name="LogoutButton" Classes="round logout" Command="{Binding LogoutCommand}" ToolTip.Tip="Log out">
+              <Path Data="M15,4 L18,4 A2,2 0 0 1 20,6 L20,18 A2,2 0 0 1 18,20 L15,20 M10,8 L6,12 L10,16 M6,12 L16,12" Stroke="{DynamicResource BadBrush}"
+                    StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="16" Height="16" Stretch="Uniform" />
+            </Button>
           </StackPanel>
         </Grid>
       </Border>
@@ -211,7 +244,7 @@
             </StackPanel>
           </Panel>
         </Button>
-        <ScrollViewer>
+        <ScrollViewer Name="NavScroller">
           <ItemsControl ItemsSource="{Binding NavItems}" Margin="10,10">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:NavItem">
@@ -369,8 +402,8 @@
           </ItemsControl>
           <TextBlock Name="XoStatus" Text="{Binding Status}" FontWeight="SemiBold" FontSize="15" HorizontalAlignment="Center" />
           <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-            <Button Classes="primary" Content="New game" Command="{Binding NewGameCommand}" />
-            <Button Content="Reset score" Command="{Binding ResetScoreCommand}" />
+            <Button ctl:ButtonIcon.Kind="play" Classes="primary" Content="New game" Command="{Binding NewGameCommand}" />
+            <Button ctl:ButtonIcon.Kind="restore" Content="Reset score" Command="{Binding ResetScoreCommand}" />
           </StackPanel>
         </StackPanel>
       </Border>
@@ -389,44 +422,68 @@
       </Border>
     </Border>
 
-    <!-- Unsaved changes: Save / Don't Save / Cancel -->
-    <Border Name="PromptPanel" Background="#40000000" IsVisible="{Binding PendingPrompt, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <Border Classes="card" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000"
-              Background="{DynamicResource PopupBrush}">
+
+    <!-- F1: every keyboard shortcut on one card (Esc or F1 closes it) -->
+    <Border Name="ShortcutsPanel" Background="#59141C2D" IsVisible="{Binding ShowShortcuts}">
+      <Border Classes="question" Width="1060" Padding="24,20">
         <StackPanel Spacing="14">
-          <TextBlock Text="{Binding PendingPrompt.Heading, FallbackValue='Unsaved changes'}" FontSize="17" FontWeight="SemiBold" />
-          <TextBlock Text="{Binding PendingPrompt.Message, FallbackValue=''}" TextWrapping="Wrap" />
-          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                     Text="Enter = Save · N = Don't Save · Esc = Cancel (stay on this page)" />
-          <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,6,0,0">
-            <Button Name="PromptDontSave" Content="Don't Save" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.DontSave}" />
-            <Button Grid.Column="2" Name="PromptCancel" Content="Cancel" Margin="0,0,8,0" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.Cancel}" />
-            <Button Grid.Column="3" Name="PromptSave" Classes="primary" Content="Save" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.Save}" />
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Border Classes="qicon" Width="44" Height="44" CornerRadius="22" Margin="0,0,12,0">
+              <Path Classes="qsym" Data="M2.5,6 L21.5,6 L21.5,18 L2.5,18 Z M6,10 L6.01,10 M9.5,10 L9.51,10 M13,10 L13.01,10 M16.5,10 L16.51,10 M6,14 L6.01,14 M18,14 L18.01,14 M9,14 L15,14" />
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+              <TextBlock Text="Keyboard shortcuts" FontSize="19" FontWeight="Bold" />
+              <TextBlock Text="Press F1 any time · Esc closes this" />
+            </StackPanel>
+            <Button Grid.Column="2" Name="CloseShortcutsButton" Classes="round" Command="{Binding ToggleShortcutsCommand}" ToolTip.Tip="Close (Esc)">
+              <Path Data="M6,6 L18,18 M18,6 L6,18" Stroke="{DynamicResource TextBrush}" StrokeThickness="2" StrokeLineCap="Round" Width="12" Height="12" Stretch="Uniform" />
+            </Button>
+          </Grid>
+          <Grid ColumnDefinitions="*,24,*,24,*"><StackPanel Grid.Column="0" Spacing="2"><TextBlock Classes="kshead" Text="Anywhere" /><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="F1" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="This list of shortcuts" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="F" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Search quotations" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Alt" /></Border><Border Classes="keycap"><TextBlock Text="←" /></Border><TextBlock Classes="kssep" Text="/" /><Border Classes="keycap"><TextBlock Text="Alt" /></Border><Border Classes="keycap"><TextBlock Text="→" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Back / forward" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Esc" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Go back, or close" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="F5" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Refresh the page" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><TextBlock Classes="kshead" Text="Lists: Today's, History, Drafts" /><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="↓" /></Border><TextBlock Classes="kssep" Text="then" /><Border Classes="keycap"><TextBlock Text="Enter" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Open a quotation" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="P" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Print the chosen quotation" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid></StackPanel><StackPanel Grid.Column="2" Spacing="2"><TextBlock Classes="kshead" Text="Quotation screen" /><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Alt" /></Border><Border Classes="keycap"><TextBlock Text="C" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Customer box" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Alt" /></Border><Border Classes="keycap"><TextBlock Text="I" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Add an item (Product box)" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Enter" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Save the line" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Alt" /></Border><Border Classes="keycap"><TextBlock Text="P" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="P&amp;F box" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="S" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Save" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="Enter" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Approve" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="Shift" /></Border><Border Classes="keycap"><TextBlock Text="S" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Save as PDF" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="O" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Open PDF" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="W" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="WhatsApp" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="F11" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Preview" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="P" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Print" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid></StackPanel><StackPanel Grid.Column="4" Spacing="2"><TextBlock Classes="kshead" Text="Formater" /><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="G" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Next red problem line" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="E" /></Border><TextBlock Classes="kssep" Text="/" /><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="Enter" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Approve" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Alt" /></Border><Border Classes="keycap"><TextBlock Text="P" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="P&amp;F box" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="F11" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Preview" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="P" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Print" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><TextBlock Classes="kshead" Text="Tally Connection" /><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="F9" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Sync changes" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Ctrl" /></Border><Border Classes="keycap"><TextBlock Text="T" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Test connection" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><TextBlock Classes="kshead" Text="Questions" /><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Enter" /></Border><TextBlock Classes="kssep" Text="/" /><Border Classes="keycap"><TextBlock Text="Y" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Yes / Save" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="N" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Don't save" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid><Grid ColumnDefinitions="150,*" Classes="ksrow"><WrapPanel VerticalAlignment="Center"><Border Classes="keycap"><TextBlock Text="Esc" /></Border></WrapPanel><TextBlock Grid.Column="1" Text="Cancel" VerticalAlignment="Center" TextWrapping="Wrap" /></Grid></StackPanel></Grid>
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <!-- Unsaved changes: Save / Don't Save / Cancel (modern question box: round corners, a symbol, wide buttons) -->
+    <Border Name="PromptPanel" Background="#59141C2D" IsVisible="{Binding PendingPrompt, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Border Classes="question" Width="420">
+        <StackPanel Spacing="12">
+          <Border Classes="qicon">
+            <Path Data="M6,3 L14,3 L19,8 L19,21 L6,21 Z M14,3 L14,8 L19,8 M9,13 L16,13 M9,17 L13,17" Classes="qsym" />
+          </Border>
+          <TextBlock Classes="qtitle" Text="{Binding PendingPrompt.Heading, FallbackValue='Unsaved changes'}" />
+          <TextBlock Classes="qtext" Text="{Binding PendingPrompt.Message, FallbackValue=''}" />
+          <Grid ColumnDefinitions="*,8,*,8,*" Margin="0,8,0,0">
+            <Button Name="PromptDontSave" Classes="wide" Content="Don't Save" ToolTip.Tip="N" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.DontSave}" />
+            <Button Grid.Column="2" Name="PromptCancel" Classes="wide" Content="Cancel" ToolTip.Tip="Esc: stay on this page" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.Cancel}" />
+            <Button Grid.Column="4" Name="PromptSave" Classes="primary wide" Content="Save" ToolTip.Tip="Enter" Command="{Binding AnswerPromptCommand}" CommandParameter="{x:Static svc:LeaveChoice.Save}" />
           </Grid>
         </StackPanel>
       </Border>
     </Border>
 
-    <!-- Yes/No questions and inputs (delete, restore, seal PIN …) -->
-    <Border Name="DialogPanel" Background="#40000000" IsVisible="{Binding PendingDialog, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <Border Classes="card" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24" BoxShadow="0 12 40 0 #33000000"
-              Background="{DynamicResource PopupBrush}">
-        <StackPanel Spacing="14">
-          <TextBlock Text="{Binding PendingDialog.Title, FallbackValue=''}" FontSize="17" FontWeight="SemiBold" />
-          <TextBlock Text="{Binding PendingDialog.Message, FallbackValue=''}" TextWrapping="Wrap"
+    <!-- Yes/No questions and inputs (delete, restore, seal PIN, log out …) -->
+    <Border Name="DialogPanel" Background="#59141C2D" IsVisible="{Binding PendingDialog, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Border Classes="question" Width="420">
+        <StackPanel Spacing="12">
+          <Border Classes="qicon">
+            <Path Data="M12,3 A9,9 0 1 1 11.99,3 Z M9.5,9.5 A2.5,2.5 0 1 1 13,11.8 C12.3,12.2 12,12.7 12,13.5 M12,17 L12,17.1" Classes="qsym" />
+          </Border>
+          <TextBlock Classes="qtitle" Text="{Binding PendingDialog.Title, FallbackValue=''}" />
+          <TextBlock Classes="qtext" Text="{Binding PendingDialog.Message, FallbackValue=''}"
                      IsVisible="{Binding PendingDialog.Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}, FallbackValue=False}" />
           <StackPanel Spacing="4" IsVisible="{Binding PendingDialog.HasInput, FallbackValue=False}">
             <TextBlock Classes="label" Text="{Binding PendingDialog.InputLabel, FallbackValue=''}" />
             <TextBox Name="DialogInput" Text="{Binding PendingDialog.Input, FallbackValue=''}" PasswordChar="{Binding PendingDialog.SecretChar}" MaxLength="40" />
           </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,6,0,0">
-            <Button Name="DialogSecondary" Content="{Binding PendingDialog.SecondaryText, FallbackValue=''}" Command="{Binding AnswerDialogCommand}">
+          <Grid ColumnDefinitions="*,10,*" Margin="0,8,0,0">
+            <Button Name="DialogSecondary" Classes="wide" Content="{Binding PendingDialog.SecondaryText, FallbackValue=''}" Command="{Binding AnswerDialogCommand}">
               <Button.CommandParameter><x:Boolean>False</x:Boolean></Button.CommandParameter>
             </Button>
-            <Button Name="DialogPrimary" Classes="primary" Content="{Binding PendingDialog.PrimaryText, FallbackValue=''}" Command="{Binding AnswerDialogCommand}">
+            <Button Grid.Column="2" Name="DialogPrimary" Classes="primary wide" Content="{Binding PendingDialog.PrimaryText, FallbackValue=''}" Command="{Binding AnswerDialogCommand}">
               <Button.CommandParameter><x:Boolean>True</x:Boolean></Button.CommandParameter>
             </Button>
-          </StackPanel>
+          </Grid>
         </StackPanel>
       </Border>
     </Border>

@@ -14,13 +14,18 @@
             <TextBlock Text="Refresh" />
           </StackPanel>
         </Button>
-        <Button Content="Check now" Command="{Binding PollCommand}" />
-        <Button Classes="primary" Content="Open AI Inbox" Command="{Binding OpenInboxCommand}" />
+        <Button ctl:ButtonIcon.Kind="mailcheck" Content="Check now" Command="{Binding PollCommand}" />
+        <Button ctl:ButtonIcon.Kind="sparkle" Classes="primary" Content="Open AI Inbox" Command="{Binding OpenInboxCommand}" />
       </StackPanel>
     </Grid>
     <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,10">
       <StackPanel Spacing="4">
-        <TextBlock FontWeight="Bold" Text="{Binding ConnectionText}" />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <TextBlock FontWeight="Bold" FontSize="15" Text="Gmail" VerticalAlignment="Center" />
+          <Border Name="GmailChip" Classes="chip" Classes.ok="{Binding IsConnected}" Classes.bad="{Binding !IsConnected}">
+            <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding ConnectionText}" /></StackPanel>
+          </Border>
+        </StackPanel>
         <TextBlock FontSize="12" Text="{Binding Status.Query, StringFormat='Monitored Gmail search: {0}', FallbackValue=''}" />
         <TextBlock FontSize="12" Text="{Binding LastPollText, StringFormat='Last checked: {0}'}" />
         <TextBlock FontSize="12" Text="{Binding CountsText}" />
@@ -28,11 +33,15 @@
         <TextBlock Foreground="{DynamicResource AccentBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0" IsVisible="{Binding IsAdmin}">
-          <Button Classes="primary" Content="Connect Gmail (Google sign-in)" Command="{Binding ConnectCommand}" />
-          <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          <Button ctl:ButtonIcon.Kind="link" Classes="primary" Content="Connect Gmail (Google sign-in)" Command="{Binding ConnectCommand}" />
+          <Button ctl:ButtonIcon.Kind="unlink" Content="Disconnect" Command="{Binding DisconnectCommand}" />
         </StackPanel>
-        <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                   Text="Sign-in happens on Google's page; this application never sees your Gmail password. Access is read-only; the token is stored encrypted on the Quotation Server. Enable polling and set the search query in Settings → Gmail." />
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock FontSize="12" Text="Read-only Google sign-in; your Gmail password is never seen." VerticalAlignment="Center" />
+          <Border Classes="info" ToolTip.Tip="Sign-in happens on Google's page; this application never sees your Gmail password. Access is read-only; the token is stored encrypted on the Quotation Server. Enable polling and set the search query in Settings → Gmail.">
+            <Path Classes="infoicon" />
+          </Border>
+        </StackPanel>
       </StackPanel>
     </Border>
     <Border DockPanel.Dock="Top" Classes="tablehead">
@@ -44,6 +53,7 @@
         <TextBlock Grid.Column="4" FontWeight="SemiBold" Text="Result" />
       </Grid>
     </Border>
+    <Panel>
     <ListBox Classes="table" ItemsSource="{Binding Messages}">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="vm:EmailRow">
@@ -57,5 +67,14 @@
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
+    <!-- Nothing yet: a message instead of a big empty box -->
+    <StackPanel Name="GmailEmpty" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !Messages.Count}">
+      <Border Width="52" Height="52" CornerRadius="26" Background="{DynamicResource AccentSoftBrush}" HorizontalAlignment="Center">
+        <Path Data="M3,5 L21,5 L21,19 L3,19 Z M3.5,6.5 L12,13 L20.5,6.5" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.8"
+              StrokeLineCap="Round" StrokeJoin="Round" Width="24" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <TextBlock Text="No e-mails yet" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" />
+    </StackPanel>
+    </Panel>
   </DockPanel>
 </UserControl>

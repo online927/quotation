@@ -14,6 +14,7 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        Services.ThemeService.MotionFactory = () => new Styles.MotionStyles();
         Services.ThemeService.Initialise();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

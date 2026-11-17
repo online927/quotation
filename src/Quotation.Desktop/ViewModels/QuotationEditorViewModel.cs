@@ -32,6 +32,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         _session = session;
         _stepMode = session.Config.LineStepMode is { Length: > 0 } m && StepModes.Any(o => o.Key == m) ? m : "Off";
         foreach (var o in StepModes) o.IsSelected = o.Key == _stepMode;
+        _stepUp = session.Config.LineStepUp;
+        _hideHsnGst = session.Config.HideHsnGst;
         _navigator = navigator;
         _docType = docType;
         Lines.CollectionChanged += (_, _) => RecalculateTotals();
@@ -474,7 +476,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// <summary>The choices of the gear next to Items (Off at first; remembered on this PC).</summary>
     public IReadOnlyList<LineStepOption> StepModes { get; } =
     [
-        new("Off", "Off (as now)"), new("Line", "The whole next line"), new("Name", "Item name"), new("Description", "Description"),
+        new("Line", "Next line"), new("Name", "Item name"), new("Description", "Description"),
         new("Quantity", "Quantity"), new("Rate", "Rate"), new("Discount", "Discount"),
     ];
 
@@ -482,18 +484,73 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool StepModeOn => StepMode != "Off";
     /// <summary>"Going down: Rate · line 2 of 3" while a line is open in a step mode.</summary>
     public string StepInfo => StepModeOn && EditingLine is { } l
-        ? $"Going down: {(StepMode == "Line" ? "line by line" : StepModes.First(m => m.Key == StepMode).Name)} · line {l.LineNo} of {Lines.Count}"
+        ? $"Going {(StepUp ? "up" : "down")}: {(StepMode == "Line" ? "line by line" : StepModes.First(m => m.Key == StepMode).Name)} · line {l.LineNo} of {Lines.Count}"
         : "";
+
+    /// <summary>Gear: go to the line above instead of below (remembered on this PC).</summary>
+    [ObservableProperty] private bool _stepUp;
+
+    partial void OnStepUpChanged(bool value)
+    {
+        OnPropertyChanged(nameof(StepInfo));
+        if (_session.Config.LineStepUp == value) return;
+        _session.Config.LineStepUp = value;
+        SaveConfig();
+    }
+
+    /// <summary>Gear: the HSN/SAC and GST columns are hidden on this PC's screen (the PDF keeps them).</summary>
+    [ObservableProperty] private bool _hideHsnGst;
+    public bool ShowHsnGst => !HideHsnGst;
+
+    partial void OnHideHsnGstChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowHsnGst));
+        if (_session.Config.HideHsnGst == value) return;
+        _session.Config.HideHsnGst = value;
+        SaveConfig();
+    }
+
+    private void SaveConfig()
+    {
+        try { _session.Config.Save(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* only this PC's choice */ }
+    }
+
+    /// <summary>Gear: the % typed for "Same discount on all lines".</summary>
+    [ObservableProperty] private string _allLinesDiscountText = "";
+
+    /// <summary>Gear: puts the same discount on every line at once (0 clears all discounts).</summary>
+    [RelayCommand]
+    private void ApplyDiscountToAll()
+    {
+        if (!CanEditContent || Lines.Count == 0) return;
+        var text = (AllLinesDiscountText ?? "").Trim().TrimEnd('%').Trim();
+        if (!decimal.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var percent)
+            || percent < 0 || percent > 100)
+        {
+            _navigator.Toast("Type a discount from 0 to 100 %.");
+            return;
+        }
+        foreach (var line in Lines) line.DiscountPercent = percent;
+        RecalculateTotals();
+        IsDirty = true;
+        _navigator.Toast(percent == 0
+            ? "Discount cleared on all lines."
+            : $"{percent:0.##} % discount put on {(Lines.Count == 1 ? "the line" : $"all {Lines.Count} lines")}.");
+    }
     public bool HasStepInfo => StepInfo.Length > 0;
 
     /// <summary>After a line is saved: the box the cursor goes to ("Product" for a new line; a column or "Quantity" for the next line).</summary>
     public event Action<string>? FocusEntry;
 
+    /// <summary>A switch in the gear: on → that mode; switching the one that is on off → Off (as before the gear).</summary>
     [RelayCommand]
     private void ChooseStepMode(string? mode)
     {
-        if (mode is null || StepModes.All(m => m.Key != mode)) return;
-        StepMode = mode;
+        if (mode is null) return;
+        if (mode == "Off" || mode == StepMode) StepMode = "Off";
+        else if (StepModes.Any(m => m.Key == mode)) StepMode = mode;
+        foreach (var m in StepModes) m.IsSelected = m.Key == StepMode;
     }
 
     partial void OnStepModeChanged(string value)
@@ -504,8 +561,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(HasStepInfo));
         if (_session.Config.LineStepMode == value) return;
         _session.Config.LineStepMode = value;
-        try { _session.Config.Save(); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* only this PC's choice */ }
+        SaveConfig();
     }
 
     partial void OnEditingLineChanged(QuotationLineViewModel? value)
@@ -526,9 +582,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         var index = editing is null ? -1 : Lines.IndexOf(editing);
         CommitEntry();
         if (ErrorMessage is not null) return; // not saved: stays as it is
-        if (editing is not null && StepModeOn && index >= 0 && index + 1 < Lines.Count)
+        var next = StepUp ? index - 1 : index + 1;
+        if (editing is not null && StepModeOn && index >= 0 && next >= 0 && next < Lines.Count)
         {
-            EditLine(Lines[index + 1]);
+            EditLine(Lines[next]);
             FocusEntry?.Invoke(StepMode == "Line" ? "Quantity" : StepMode);
             return;
         }

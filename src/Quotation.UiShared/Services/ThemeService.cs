@@ -64,7 +64,8 @@ public static class ThemeService
         var baseColour = dark ? Color.FromRgb(0x1C, 0x1C, 0x1E) : Colors.White;
         var page = Over(Get("PageBrush", baseColour), baseColour);
         var caption = Over(Get("TopBarBrush", page), page);
-        var text = Over(Get("TextBrush", dark ? Colors.White : Color.FromRgb(0x1D, 0x1D, 0x1F)), caption);
+        var plainText = Get("TextBrush", dark ? Colors.White : Color.FromRgb(0x1D, 0x1D, 0x1F));
+        var text = Over(Get("TopBarTextBrush", plainText), caption); // a coloured top bar (Maroon) has its own text colour
         var border = Over(Get("HairlineBrush", caption), caption);
         return (caption, text, border);
     }
@@ -98,15 +99,19 @@ public static class ThemeService
 
     public static bool AnimationsOn => !_reduceMotion;
 
-    private static Styles.MotionStyles? _motion;
+    /// <summary>Makes the animation styles of the app (each app has its own set); none means no animations.</summary>
+    public static Func<Avalonia.Styling.IStyle>? MotionFactory { get; set; }
+
+    private static Avalonia.Styling.IStyle? _motion;
     private static Application? _motionApp;
 
     /// <summary>Animations are a set of styles added to (or removed from) the app.</summary>
     private static void SetMotion(Application app, bool on)
     {
+        if (MotionFactory is null) return;
         if (_motion is null || _motionApp != app)
         {
-            _motion = new Styles.MotionStyles();
+            _motion = MotionFactory();
             _motionApp = app;
         }
         var present = app.Styles.Contains(_motion);
@@ -127,5 +132,9 @@ public static class ThemeService
         // Keyboard focus: a soft halo in the theme's accent colour that follows the button's round corners.
         var accent = app.TryGetResource("AccentBrush", app.ActualThemeVariant, out var a) && a is ISolidColorBrush b ? b.Color : Color.Parse("#0A66D9");
         app.Resources["FocusRing"] = BoxShadows.Parse($"0 0 0 4 #99{accent.R:X2}{accent.G:X2}{accent.B:X2}");
+        // Typing boxes: a thin soft ring in the accent colour (with the 1 px accent edge it reads as one clean outline).
+        app.Resources["InputRing"] = BoxShadows.Parse($"0 0 0 3 #2E{accent.R:X2}{accent.G:X2}{accent.B:X2}");
+        // Main (blue) buttons lift a little under the mouse; none with "Reduce animations".
+        app.Resources["PrimaryGlow"] = BoxShadows.Parse(_reduceMotion ? "0 0 0 0 #00000000" : $"0 4 12 0 #59{accent.R:X2}{accent.G:X2}{accent.B:X2}");
     }
 }

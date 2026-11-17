@@ -67,8 +67,7 @@
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
       <ctl:PageTitle Text="Settings" Icon="settings" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-        <Button Content="Reload" Command="{Binding LoadCommand}" />
-        <Button Classes="primary" Content="Save (Ctrl+S)" Command="{Binding SaveCommand}" HotKey="Ctrl+S" IsEnabled="{Binding IsAdmin}" />
+        <Button ctl:ButtonIcon.Kind="save" Classes="primary" Content="Save (Ctrl+S)" Command="{Binding SaveCommand}" HotKey="Ctrl+S" IsEnabled="{Binding IsAdmin}" />
       </StackPanel>
     </Grid>
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
@@ -80,74 +79,48 @@
     <TabControl Classes="sidetabs" TabStripPlacement="Left" IsEnabled="{Binding Settings, Converter={x:Static ObjectConverters.IsNotNull}}">
       <TabItem Header="Company">
         <ScrollViewer>
-          <Grid Classes="form" ColumnDefinitions="200,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-            <TextBlock Grid.Row="0" Text="Company name" />
-            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Company.CompanyName}" />
-            <TextBlock Grid.Row="1" Text="Address (one line per row)" VerticalAlignment="Top" />
-            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AddressLines}" AcceptsReturn="True" Height="70" />
-            <TextBlock Grid.Row="2" Text="Mobile" />
-            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Company.Mobile}" />
-            <TextBlock Grid.Row="3" Text="Phone" />
-            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Settings.Company.Phone}" />
-            <TextBlock Grid.Row="4" Text="GSTIN/UIN" />
-            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Company.Gstin}" />
-            <TextBlock Grid.Row="5" Text="State name / code" />
-            <Grid Grid.Row="5" Grid.Column="1" ColumnDefinitions="*,8,90">
-              <TextBox Text="{Binding Settings.Company.StateName}" />
-              <TextBox Grid.Column="2" Text="{Binding Settings.Company.StateCode}" />
-            </Grid>
-            <TextBlock Grid.Row="6" Text="E-mail" />
-            <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Settings.Company.Email}" />
-            <TextBlock Grid.Row="7" Text="Company's PAN" />
-            <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Settings.Company.Pan}" />
-            <TextBlock Grid.Row="8" Text="MSME number" />
-            <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding Settings.Company.MsmeNumber}" />
-            <TextBlock Grid.Row="9" Text="IEC" />
-            <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding Settings.Company.Iec}" />
-            <TextBlock Grid.Row="10" Text="Bank: account holder" />
-            <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding Settings.Company.BankAccountHolder}" />
-            <TextBlock Grid.Row="11" Text="Bank name" />
-            <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding Settings.Company.BankName}" />
-            <TextBlock Grid.Row="12" Text="Account number" />
-            <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding Settings.Company.BankAccountNumber}" />
-            <TextBlock Grid.Row="13" Text="Branch &amp; IFSC" />
-            <Grid Grid.Row="13" Grid.Column="1" ColumnDefinitions="*,8,160">
-              <TextBox Text="{Binding Settings.Company.BankBranch}" Watermark="Branch" />
-              <TextBox Grid.Column="2" Text="{Binding Settings.Company.BankIfsc}" Watermark="IFSC" />
-            </Grid>
-            <TextBlock Grid.Row="14" Text="Logo file (on server)" />
-            <TextBox Grid.Row="14" Grid.Column="1" Text="{Binding Settings.Company.LogoPath}" Watermark="C:\ProgramData\TSQuotation\logo.png (optional)" />
-            <TextBlock Grid.Row="15" Text="Authorised signatory label" />
-            <TextBox Grid.Row="15" Grid.Column="1" Text="{Binding Settings.Company.AuthorisedSignatoryLabel}" />
-            <TextBlock Grid.Row="16" Text="Default prepared by" />
-            <TextBox Grid.Row="16" Grid.Column="1" Text="{Binding Settings.Company.DefaultPreparedBy}" />
-            <TextBlock Grid.Row="17" Text="Default verified by" />
-            <TextBox Grid.Row="17" Grid.Column="1" Text="{Binding Settings.Company.DefaultVerifiedBy}" />
-            <TextBlock Grid.Row="18" Text="Quotation validity (days)" />
-            <NumericUpDown Grid.Row="18" Grid.Column="1" Value="{Binding Settings.Company.QuotationValidityDays}" Minimum="0" Maximum="365" FormatString="0" Width="140" HorizontalAlignment="Left" />
-            <TextBlock Grid.Row="19" Text="Validity text" />
-            <TextBox Grid.Row="19" Grid.Column="1" Text="{Binding Settings.Company.ValidityText}" />
-            <TextBlock Grid.Row="20" Text="Declaration" VerticalAlignment="Top" />
-            <TextBox Grid.Row="20" Grid.Column="1" Text="{Binding Settings.Company.Declaration}" AcceptsReturn="True" TextWrapping="Wrap" Height="60" />
-            <TextBlock Grid.Row="21" Text="Terms &amp; conditions (one per line)" VerticalAlignment="Top" />
-            <TextBox Grid.Row="21" Grid.Column="1" Text="{Binding Terms}" AcceptsReturn="True" Height="90" />
-            <TextBlock Grid.Row="22" Text="Default payment terms" />
-            <TextBox Grid.Row="22" Grid.Column="1" Text="{Binding Settings.Company.DefaultPaymentTerms}" />
-            <TextBlock Grid.Row="23" Text="Footer text" />
-            <TextBox Grid.Row="23" Grid.Column="1" Text="{Binding Settings.Company.FooterText}" />
-            <TextBlock Grid.Row="24" Text="Jurisdiction" />
-            <TextBox Grid.Row="24" Grid.Column="1" Text="{Binding Settings.Company.Jurisdiction}" Watermark="SUBJECT TO BANGALORE JURISDICTION" />
-            <TextBlock Grid.Row="25" Text="Proforma declaration" VerticalAlignment="Top" />
-            <TextBox Grid.Row="25" Grid.Column="1" Text="{Binding Settings.Company.ProformaDeclaration}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
-            <TextBlock Grid.Row="26" Text="Proforma footer text" />
-            <TextBox Grid.Row="26" Grid.Column="1" Text="{Binding Settings.Company.ProformaFooterText}" />
+          <!-- Company settings in small cards: labels above the boxes, two or three boxes side by side, nothing cut off -->
+          <StackPanel Spacing="12" Margin="4,8" MaxWidth="920" HorizontalAlignment="Left">
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Company" />
+                <StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Company name" /><TextBox Text="{Binding Settings.Company.CompanyName}" /></StackPanel>
+                <StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Address (one line per row)" /><TextBox Text="{Binding AddressLines}" AcceptsReturn="True" Height="70" /></StackPanel>
+                <Grid ColumnDefinitions="*,12,*,12,90"><StackPanel Classes="fld"><TextBlock Classes="flabel" Text="GSTIN/UIN" /><TextBox Text="{Binding Settings.Company.Gstin}" /></StackPanel><StackPanel Classes="fld" Grid.Column="2"><TextBlock Classes="flabel" Text="State name" /><TextBox Text="{Binding Settings.Company.StateName}" /></StackPanel><StackPanel Classes="fld" Grid.Column="4"><TextBlock Classes="flabel" Text="State code" /><TextBox Text="{Binding Settings.Company.StateCode}" /></StackPanel></Grid>
+                <Grid ColumnDefinitions="*,12,*,12,*"><StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Company's PAN" /><TextBox Text="{Binding Settings.Company.Pan}" /></StackPanel><StackPanel Classes="fld" Grid.Column="2"><TextBlock Classes="flabel" Text="MSME number" /><TextBox Text="{Binding Settings.Company.MsmeNumber}" /></StackPanel><StackPanel Classes="fld" Grid.Column="4"><TextBlock Classes="flabel" Text="IEC" /><TextBox Text="{Binding Settings.Company.Iec}" /></StackPanel></Grid>
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Contact" />
+                <Grid ColumnDefinitions="*,12,*,12,*"><StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Mobile" /><TextBox Text="{Binding Settings.Company.Mobile}" /></StackPanel><StackPanel Classes="fld" Grid.Column="2"><TextBlock Classes="flabel" Text="Phone" /><TextBox Text="{Binding Settings.Company.Phone}" /></StackPanel><StackPanel Classes="fld" Grid.Column="4"><TextBlock Classes="flabel" Text="E-mail" /><TextBox Text="{Binding Settings.Company.Email}" /></StackPanel></Grid>
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Bank" />
+                <Grid ColumnDefinitions="*,12,*"><StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Account holder" /><TextBox Text="{Binding Settings.Company.BankAccountHolder}" /></StackPanel><StackPanel Classes="fld" Grid.Column="2"><TextBlock Classes="flabel" Text="Bank name" /><TextBox Text="{Binding Settings.Company.BankName}" /></StackPanel></Grid>
+                <Grid ColumnDefinitions="*,12,*,12,160"><StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Account number" /><TextBox Text="{Binding Settings.Company.BankAccountNumber}" /></StackPanel><StackPanel Classes="fld" Grid.Column="2"><TextBlock Classes="flabel" Text="Branch" /><TextBox Text="{Binding Settings.Company.BankBranch}" /></StackPanel><StackPanel Classes="fld" Grid.Column="4"><TextBlock Classes="flabel" Text="IFSC" /><TextBox Text="{Binding Settings.Company.BankIfsc}" /></StackPanel></Grid>
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Printing" />
+                <StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Logo file (on server)" /><TextBox Text="{Binding Settings.Company.LogoPath}" Watermark="C:\ProgramData\TSQuotation\logo.png (optional)" /></StackPanel>
+                <Grid ColumnDefinitions="*,12,*,12,*"><StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Authorised signatory label" /><TextBox Text="{Binding Settings.Company.AuthorisedSignatoryLabel}" /></StackPanel><StackPanel Classes="fld" Grid.Column="2"><TextBlock Classes="flabel" Text="Default prepared by" /><TextBox Text="{Binding Settings.Company.DefaultPreparedBy}" /></StackPanel><StackPanel Classes="fld" Grid.Column="4"><TextBlock Classes="flabel" Text="Default verified by" /><TextBox Text="{Binding Settings.Company.DefaultVerifiedBy}" /></StackPanel></Grid>
+                <Grid ColumnDefinitions="170,12,*"><StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Quotation validity (days)" /><NumericUpDown Value="{Binding Settings.Company.QuotationValidityDays}" Minimum="0" Maximum="365" FormatString="0" /></StackPanel><StackPanel Classes="fld" Grid.Column="2"><TextBlock Classes="flabel" Text="Validity text" /><TextBox Text="{Binding Settings.Company.ValidityText}" /></StackPanel></Grid>
+                <StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Declaration" /><TextBox Text="{Binding Settings.Company.Declaration}" AcceptsReturn="True" TextWrapping="Wrap" Height="60" /></StackPanel>
+                <StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Terms &amp; conditions (one per line)" /><TextBox Text="{Binding Terms}" AcceptsReturn="True" Height="90" /></StackPanel>
+                <Grid ColumnDefinitions="*,12,*,12,*"><StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Default payment terms" /><TextBox Text="{Binding Settings.Company.DefaultPaymentTerms}" /></StackPanel><StackPanel Classes="fld" Grid.Column="2"><TextBlock Classes="flabel" Text="Footer text" /><TextBox Text="{Binding Settings.Company.FooterText}" /></StackPanel><StackPanel Classes="fld" Grid.Column="4"><TextBlock Classes="flabel" Text="Jurisdiction" /><TextBox Text="{Binding Settings.Company.Jurisdiction}" Watermark="SUBJECT TO BANGALORE JURISDICTION" /></StackPanel></Grid>
+                <StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Proforma declaration" /><TextBox Text="{Binding Settings.Company.ProformaDeclaration}" AcceptsReturn="True" TextWrapping="Wrap" Height="44" /></StackPanel>
+                <StackPanel Classes="fld"><TextBlock Classes="flabel" Text="Proforma footer text" /><TextBox Text="{Binding Settings.Company.ProformaFooterText}" /></StackPanel>
+              </StackPanel>
+            </Border>
             <!-- Pay by UPI QR code on quotations (administrators) -->
-            <Border Grid.Row="27" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
+            <Border Classes="card" IsVisible="{Binding IsAdmin}">
               <StackPanel Spacing="8">
                 <TextBlock Classes="h2" Text="Pay by UPI QR code (quotations)" />
-                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                           Text="A QR code on quotations (not proforma invoices): in the Tally layout in the right half of 'Terms of Delivery', in the Zoho layout at the bottom right. Only 'Pay by UPI' and the UPI ID are printed. Scanning it opens the customer's UPI app with your UPI ID, company name, the quotation total and the note below filled in." />
+                <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="A QR code on quotations (not proforma invoices)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="A QR code on quotations (not proforma invoices): in the Tally layout in the right half of 'Terms of Delivery', in the Zoho layout at the bottom right. Only 'Pay by UPI' and the UPI ID are printed. Scanning it opens the customer's UPI app with your UPI ID, company name, the quotation total and the note below filled in."><Path Classes="infoicon" /></Border></StackPanel>
                 <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
                   <TextBlock Text="UPI ID" VerticalAlignment="Center" />
                   <TextBox Name="UpiIdBox" Grid.Column="1" Text="{Binding Settings.Company.UpiId}" Watermark="e.g. tsaifuddin@okhdfcbank" Width="300" HorizontalAlignment="Left" />
@@ -156,17 +129,18 @@
                                 OnContent="On (when a UPI ID is set)" OffContent="Off" />
                   <TextBlock Grid.Row="2" Text="Payment note" VerticalAlignment="Top" Margin="0,5,0,0" />
                   <StackPanel Grid.Row="2" Grid.Column="1" Spacing="4">
-                    <StackPanel Orientation="Horizontal" Spacing="18">
-                      <RadioButton Name="UpiNoteQuotationRadio" GroupName="UpiNote" Content="Quotation number" IsChecked="{Binding UpiNoteQuotation}" />
-                      <RadioButton Name="UpiNoteOrderRadio" GroupName="UpiNote" Content="Order number" IsChecked="{Binding UpiNoteOrder}" />
-                      <RadioButton Name="UpiNoteBothRadio" GroupName="UpiNote" Content="Both" IsChecked="{Binding UpiNoteBoth}" />
+                    <Border Classes="pillbar">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                      <RadioButton Name="UpiNoteQuotationRadio" Classes="seg" GroupName="UpiNote" Content="Quotation number" IsChecked="{Binding UpiNoteQuotation}" />
+                      <RadioButton Name="UpiNoteOrderRadio" Classes="seg" GroupName="UpiNote" Content="Order number" IsChecked="{Binding UpiNoteOrder}" />
+                      <RadioButton Name="UpiNoteBothRadio" Classes="seg" GroupName="UpiNote" Content="Both" IsChecked="{Binding UpiNoteBoth}" />
                     </StackPanel>
-                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                               Text="e.g. TSQ2627-142 PO/4471. The order number is the quotation's 'Buyer's Ref./Order No.'; when it is empty, the quotation number is used. The customer can still change the note before paying." />
+                    </Border>
+                    <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="e.g. TSQ2627-142 PO/4471." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="e.g. TSQ2627-142 PO/4471. The order number is the quotation's 'Buyer's Ref./Order No.'; when it is empty, the quotation number is used. The customer can still change the note before paying."><Path Classes="infoicon" /></Border></StackPanel>
                   </StackPanel>
                   <TextBlock Grid.Row="3" Text="Check with your phone" VerticalAlignment="Center" />
                   <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="10">
-                    <Button Name="TestQrButton" Classes="primary" Content="Test QR (₹1)" Command="{Binding ShowTestQrCommand}" />
+                    <Button ctl:ButtonIcon.Kind="qr" Name="TestQrButton" Classes="primary" Content="Test QR (₹1)" Command="{Binding ShowTestQrCommand}" />
                     <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="Uses what is typed above, before Save." />
                   </StackPanel>
                 </Grid>
@@ -174,7 +148,7 @@
                            Text="Press Save (top right), then Preview or Open PDF on a quotation to see it." />
               </StackPanel>
             </Border>
-          </Grid>
+          </StackPanel>
         </ScrollViewer>
       </TabItem>
 
@@ -185,7 +159,7 @@
             <TextBlock Grid.Row="0" Text="Quotation number pattern" />
             <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
               <TextBox Text="{Binding Settings.Quotation.NumberPattern}" />
-              <Button Grid.Column="1" Margin="6,0,0,0" Content="Preview" Command="{Binding RefreshExampleCommand}" />
+              <Button ctl:ButtonIcon.Kind="eye" Grid.Column="1" Margin="6,0,0,0" Content="Preview" Command="{Binding RefreshExampleCommand}" />
             </Grid>
             <TextBlock Grid.Row="1" Text="Example" />
             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ExampleNumber}" FontWeight="SemiBold" />
@@ -235,7 +209,7 @@
             <TextBlock Grid.Row="19" Text="Heading on quotation PDF" />
             <StackPanel Grid.Row="19" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
               <TextBox Text="{Binding Settings.Quotation.QuotationHeading}" Watermark="QUOTATION" Width="300" />
-              <Button Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
+              <Button ctl:ButtonIcon.Kind="eye" Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
             </StackPanel>
             <TextBlock Grid.Row="20" Text="Heading on proforma invoice PDF" />
             <StackPanel Grid.Row="20" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
@@ -254,7 +228,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock VerticalAlignment="Center" Text="{Binding Series.FinancialYear, StringFormat='FY {0}:', FallbackValue=''}" />
                   <NumericUpDown Value="{Binding NewNextSequence}" Minimum="1" FormatString="0" Width="140" />
-                  <Button Content="Set next number" Command="{Binding SetNextNumberCommand}" />
+                  <Button ctl:ButtonIcon.Kind="hash" Content="Set next number" Command="{Binding SetNextNumberCommand}" />
                   <TextBlock VerticalAlignment="Center" Text="{Binding Series.NextNumberPreview, StringFormat='Next: {0}', FallbackValue=''}" FontWeight="SemiBold" />
                 </StackPanel>
                 <TextBlock Classes="h2" Text="Next proforma invoice number" Margin="0,10,0,0" />
@@ -263,7 +237,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock VerticalAlignment="Center" Text="{Binding ProformaSeries.FinancialYear, StringFormat='FY {0}:', FallbackValue=''}" />
                   <NumericUpDown Value="{Binding NewNextProformaSequence}" Minimum="1" FormatString="0" Width="140" />
-                  <Button Content="Set next number" Command="{Binding SetNextProformaNumberCommand}" />
+                  <Button ctl:ButtonIcon.Kind="hash" Content="Set next number" Command="{Binding SetNextProformaNumberCommand}" />
                   <TextBlock VerticalAlignment="Center" Text="{Binding ProformaSeries.NextNumberPreview, StringFormat='Next: {0}', FallbackValue=''}" FontWeight="SemiBold" />
                 </StackPanel>
               </StackPanel>
@@ -290,11 +264,9 @@
                 <ToggleSwitch Name="WhatsAppSwitch" IsChecked="{Binding Settings.Quotation.WhatsAppButton}"
                               OnContent="On: approved quotations and proforma invoices get a WhatsApp button" OffContent="Off" />
                 <StackPanel Spacing="4" IsVisible="{Binding Settings.Quotation.WhatsAppButton}">
-                  <TextBlock FontSize="12" Classes="muted" TextWrapping="Wrap"
-                             Text="Message typed into WhatsApp ({number} = the number, {customer} = the customer). WhatsApp Desktop must be installed on the PC." />
+                  <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Message typed into WhatsApp ({number} = the number, {customer} = the customer)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Message typed into WhatsApp ({number} = the number, {customer} = the customer). WhatsApp Desktop must be installed on the PC."><Path Classes="infoicon" /></Border></StackPanel>
                   <TextBox Text="{Binding Settings.Quotation.WhatsAppMessage}" />
-                  <TextBlock FontSize="12" Classes="muted" TextWrapping="Wrap" Margin="0,4,0,0"
-                             Text="Follow-up message (WhatsApp button in the To Follow Up list, when Won / Lost is on; {date} = the quotation date):" />
+                  <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" Margin="0,4,0,0"><TextBlock Text="Follow-up message (WhatsApp button in the To Follow Up list)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Follow-up message (WhatsApp button in the To Follow Up list, when Won / Lost is on; {date} = the quotation date):"><Path Classes="infoicon" /></Border></StackPanel>
                   <TextBox Name="WhatsAppFollowUpBox" Text="{Binding Settings.Quotation.WhatsAppFollowUpMessage}" />
                 </StackPanel>
                 <TextBlock Classes="h2" Text="Greetings" Margin="0,8,0,0" />
@@ -314,8 +286,7 @@
             <Border Classes="card">
               <StackPanel Spacing="8">
                 <TextBlock Classes="h2" Text="Backups" />
-                <TextBlock FontSize="12" Classes="muted" TextWrapping="Wrap"
-                           Text="The database is backed up on the server PC (C:\ProgramData\TSQuotation\backups, kept 30 days). Set a second folder so a copy is also kept somewhere else: a USB drive (E:\TSQ-Backups), another PC's shared folder (\\PC2\Backups) or a OneDrive / Google Drive folder that syncs to the cloud. The folder is as seen from the server PC." />
+                <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="The database is backed up on the server PC (C:\ProgramData\TSQuotation\backups, kept 30 days)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="The database is backed up on the server PC (C:\ProgramData\TSQuotation\backups, kept 30 days). Set a second folder so a copy is also kept somewhere else: a USB drive (E:\TSQ-Backups), another PC's shared folder (\\PC2\Backups) or a OneDrive / Google Drive folder that syncs to the cloud. The folder is as seen from the server PC."><Path Classes="infoicon" /></Border></StackPanel>
                 <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto" RowSpacing="8">
                   <TextBlock Text="Back up every (hours)" VerticalAlignment="Center" />
                   <NumericUpDown Grid.Column="1" Value="{Binding Settings.Backup.EveryHours}" Minimum="1" Maximum="24" FormatString="0" Width="120" HorizontalAlignment="Left" />
@@ -327,8 +298,7 @@
             <Border Classes="card">
               <StackPanel Spacing="8">
                 <TextBlock Classes="h2" Text="Client updates" />
-                <TextBlock FontSize="12" Classes="muted" TextWrapping="Wrap"
-                           Text="The server setup brings the matching client. When a PC opens the app with an older version it offers 'Update now' (downloaded from this server, not the internet)." />
+                <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="The server setup brings the matching client." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="The server setup brings the matching client. When a PC opens the app with an older version it offers 'Update now' (downloaded from this server, not the internet)."><Path Classes="infoicon" /></Border></StackPanel>
                 <ToggleSwitch Name="ClientsMustUpdateSwitch" IsChecked="{Binding Settings.Backup.ClientsMustUpdate}"
                               OnContent="Clients must update (no 'Later')" OffContent="Clients may update later" />
               </StackPanel>
@@ -341,8 +311,7 @@
       <TabItem Header="Party Details">
         <ScrollViewer>
           <StackPanel Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" Spacing="8">
-            <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="How Buyer (Bill to) and Consignee (Ship to) are printed on every PDF, like Tally's print configuration &#x2018;Party Details&#x2019;. PDFs already made change only when they are regenerated." />
+            <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="How Buyer (Bill to) and Consignee (Ship to) are printed on every PDF, like Tally&#x27;s print …" TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="How Buyer (Bill to) and Consignee (Ship to) are printed on every PDF, like Tally's print configuration &#x2018;Party Details&#x2019;. PDFs already made change only when they are regenerated."><Path Classes="infoicon" /></Border></StackPanel>
             <Grid Classes="form" ColumnDefinitions="320,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Text="Show Contact (phone)" />
               <CheckBox Grid.Row="0" Grid.Column="1" Name="ShowContactBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" Content="Contact : 98…" />
@@ -373,7 +342,7 @@
                         Content="Half the width of the box (the address wraps; name, GSTIN, state and contact use the full width)" />
             </Grid>
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
+              <Button ctl:ButtonIcon.Kind="eye" Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
               <TextBlock Classes="muted" VerticalAlignment="Center" Text="Latest quotation with these options (also before Save)" />
             </StackPanel>
           </StackPanel>
@@ -409,8 +378,7 @@
               <CheckBox IsChecked="{Binding Settings.Tally.UseLastRate}" Content="Fill the rate the item was last quoted at in this app (any customer)" />
               <CheckBox IsChecked="{Binding Settings.Tally.ReadLastRatesFromTally}" IsEnabled="{Binding Settings.Tally.UseLastRate}"
                         Content="Also read last rates from Tally's Sales and Quotation vouchers (heavier syncs)" />
-              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                         Text="Off (recommended): only quotations approved in this app are remembered and Tally is not asked for vouchers. Takes effect at the next sync." />
+              <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Off (recommended): only quotations approved in this app are remembered and Tally is not asked for vouchers." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Off (recommended): only quotations approved in this app are remembered and Tally is not asked for vouchers. Takes effect at the next sync."><Path Classes="infoicon" /></Border></StackPanel>
             </StackPanel>
             <TextBlock Grid.Row="11" Text="Voucher types for last rate (one per line)" VerticalAlignment="Top" />
             <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding LastRateVoucherTypes}" AcceptsReturn="True" Height="60"
@@ -420,8 +388,7 @@
             <TextBlock Grid.Row="13" Text="'Do not use' marks in item description" VerticalAlignment="Top" />
             <StackPanel Grid.Row="13" Grid.Column="1">
               <TextBox Text="{Binding HiddenMarkers}" AcceptsReturn="True" Height="50" Watermark="DNU" />
-              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                         Text="One per line. Items whose Tally description is this word (or starts with it, e.g. 'DNU - use 187-901') are not offered when making quotations." />
+              <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="One per line. Items whose Tally description is this word (or starts with it, e.g. &#x27;DNU - use …" TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="One per line. Items whose Tally description is this word (or starts with it, e.g. 'DNU - use 187-901') are not offered when making quotations."><Path Classes="infoicon" /></Border></StackPanel>
             </StackPanel>
           </Grid>
         </ScrollViewer>
@@ -473,7 +440,7 @@
             <StackPanel Spacing="8">
               <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Classes="h2" Text="Users" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Name="StartAddUserButton" Classes="primary" Content="+ Add" Command="{Binding StartAddUserCommand}" />
+                <Button ctl:ButtonIcon.Kind="plus" Grid.Column="1" Name="StartAddUserButton" Classes="primary" Content="Add" Command="{Binding StartAddUserCommand}" />
               </Grid>
               <TextBox Name="UserSearchBox" Text="{Binding UserFilter}" Watermark="Search users" />
               <ListBox Name="UserList" Classes="people" ItemsSource="{Binding FilteredUsers}" SelectedItem="{Binding SelectedUser}" Background="Transparent">
@@ -517,11 +484,10 @@
                   <StackPanel Grid.Row="2" VerticalAlignment="Center"><TextBlock Text="First password" /><TextBlock Classes="muted" FontSize="11" Text="at least 4 characters" /></StackPanel>
                   <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding NewUserPassword}" PasswordChar="●" />
                 </Grid>
-                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                           Text="New users are Standard users: they make quotations and do not change Settings. They choose their own password at their first sign-in." />
+                <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="New users are Standard users: they make quotations and do not change Settings." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="New users are Standard users: they make quotations and do not change Settings. They choose their own password at their first sign-in."><Path Classes="infoicon" /></Border></StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <Button Name="AddUserButton" Classes="primary" Content="Add user" Command="{Binding AddUserCommand}" />
-                  <Button Content="Cancel" Command="{Binding CancelEditUserCommand}" />
+                  <Button ctl:ButtonIcon.Kind="userplus" Name="AddUserButton" Classes="primary" Content="Add user" Command="{Binding AddUserCommand}" />
+                  <Button ctl:ButtonIcon.Kind="x" Content="Cancel" Command="{Binding CancelEditUserCommand}" />
                 </StackPanel>
               </StackPanel>
 
@@ -540,9 +506,9 @@
                       <Border Classes="tag seal" IsVisible="{Binding EditingUserCanHaveSeal}"><TextBlock Text="{Binding EditingUser, Converter={x:Static vm:SettingsViewModel.SealTag}}" /></Border>
                     </StackPanel>
                   </StackPanel>
-                  <Button Grid.Column="3" Name="SaveUserButton" Classes="primary" Content="Save user" Command="{Binding SaveUserCommand}" VerticalAlignment="Center" />
+                  <Button ctl:ButtonIcon.Kind="save" Grid.Column="3" Name="SaveUserButton" Classes="primary" Content="Save user" Command="{Binding SaveUserCommand}" VerticalAlignment="Center" />
                 </Grid>
-                <TabControl Name="UserTabs" Classes="usertabs">
+                <TabControl Name="UserTabs" Classes="usertabs pills">
                   <TabItem Header="Account">
                     <StackPanel Spacing="10" Margin="0,12,0,0">
                       <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" MaxWidth="560">
@@ -559,8 +525,7 @@
                   </TabItem>
                   <TabItem Header="Seal" Name="UserSealTab" IsVisible="{Binding EditingUserCanHaveSeal}">
       <StackPanel Name="UserSealSection" Spacing="10" Margin="0,12,0,0">
-                      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                                 Text="This user's own seal: a picture (PNG with a transparent background looks best) and a 4-digit PIN. With both set, they get the Seal switch next to Save as PDF and seal with their PIN. Five wrong PINs block the seal for 15 minutes." />
+                      <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="This user&#x27;s own seal: a picture (PNG with a transparent background looks best) and a 4-digit PIN." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="This user's own seal: a picture (PNG with a transparent background looks best) and a 4-digit PIN. With both set, they get the Seal switch next to Save as PDF and seal with their PIN. Five wrong PINs block the seal for 15 minutes."><Path Classes="infoicon" /></Border></StackPanel>
                       <Grid ColumnDefinitions="Auto,16,*">
                         <Border Width="170" Height="104" CornerRadius="10" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1" Background="White">
                           <Panel>
@@ -570,8 +535,8 @@
                         </Border>
                         <StackPanel Grid.Column="2" Spacing="8">
                           <WrapPanel ItemSpacing="8" LineSpacing="8">
-                            <Button Name="UploadUserSealButton" Content="Choose picture…" Click="OnChooseUserSeal" />
-                            <Button Content="Preview on a page" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}" />
+                            <Button ctl:ButtonIcon.Kind="image" Name="UploadUserSealButton" Content="Choose picture…" Click="OnChooseUserSeal" />
+                            <Button ctl:ButtonIcon.Kind="eye" Content="Preview on a page" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}" />
                           </WrapPanel>
                           <TextBlock Text="New seal PIN (4 digits, saved with Save user)" FontSize="12" />
                           <TextBox Name="UserSealPinBox" Text="{Binding NewUserSealPin}" PasswordChar="●" MaxLength="4" Width="110" HorizontalAlignment="Left" Watermark="••••" />
@@ -588,18 +553,16 @@
                         <StackPanel Spacing="3"><TextBlock FontSize="12" Text="Move up" />
                           <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-200" Maximum="300" Increment="5" FormatString="0" Width="120" /></StackPanel>
                       </WrapPanel>
-                      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                                 Text="Points (72 = 1 inch); a minus number moves it left / down. 'Preview on a page' shows these numbers straight away; Save user keeps them." />
-                      <Button Content="Remove seal" Classes="danger" Command="{Binding RemoveUserSealCommand}" IsVisible="{Binding UserHasAnySeal}" HorizontalAlignment="Left" />
+                      <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Points (72 = 1 inch); a minus number moves it left / down." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Points (72 = 1 inch); a minus number moves it left / down. 'Preview on a page' shows these numbers straight away; Save user keeps them."><Path Classes="infoicon" /></Border></StackPanel>
+                      <Button ctl:ButtonIcon.Kind="trash" Content="Remove seal" Classes="danger" Command="{Binding RemoveUserSealCommand}" IsVisible="{Binding UserHasAnySeal}" HorizontalAlignment="Left" />
                     </StackPanel>
                   </TabItem>
                   <TabItem Header="Password" Name="UserPasswordTab">
                     <StackPanel Spacing="10" Margin="0,12,0,0" MaxWidth="640" HorizontalAlignment="Left">
-                      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                                 Text="Give the user a temporary password: they must choose a new one at their next sign-in, and any PC still signed in as them is signed out." />
+                      <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Give the user a temporary password." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Give the user a temporary password: they must choose a new one at their next sign-in, and any PC still signed in as them is signed out."><Path Classes="infoicon" /></Border></StackPanel>
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBox Width="240" Text="{Binding ResetPassword}" PasswordChar="●" Watermark="Temporary password (min. 4)" />
-                        <Button Content="Reset password" Command="{Binding ResetUserPasswordCommand}" />
+                        <Button ctl:ButtonIcon.Kind="key" Content="Reset password" Command="{Binding ResetUserPasswordCommand}" />
                       </StackPanel>
                     </StackPanel>
                   </TabItem>
@@ -646,7 +609,7 @@
           <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource WarnBrush}"
                      Text="If your phone shows a different name, the UPI ID is wrong: correct it before switching the QR on." />
         </Border>
-        <Button Name="TestQrCloseButton" Content="Close" HorizontalAlignment="Right" Command="{Binding CloseTestQrCommand}" />
+        <Button ctl:ButtonIcon.Kind="x" Name="TestQrCloseButton" Content="Close" HorizontalAlignment="Right" Command="{Binding CloseTestQrCommand}" />
       </StackPanel>
     </Border>
   </Border>

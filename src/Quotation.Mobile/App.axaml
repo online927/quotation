@@ -1,0 +1,334 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Quotation.Mobile"
+             x:Class="Quotation.Mobile.App"
+             RequestedThemeVariant="Light">
+  <Application.DataTemplates>
+    <local:ViewLocator />
+  </Application.DataTemplates>
+
+  <!-- The same colours as the PC app (copied from its App.axaml), so every theme looks the same on the phone. -->
+  <Application.Resources>
+    <ResourceDictionary>
+    
+    <FontFamily x:Key="AppFont">fonts:Inter#Inter, $Default</FontFamily>
+
+    <!-- Fluent theme overrides -->
+    <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+    <!-- Shapes a colour theme may change -->
+    <CornerRadius x:Key="CardRadius">10</CornerRadius>
+    <!-- The bottom corners of a card, for a band along its bottom edge (the Total band) -->
+    <CornerRadius x:Key="CardBottomRadius">0,0,10,10</CornerRadius>
+    <CornerRadius x:Key="ButtonRadius">10</CornerRadius>
+    <!-- Typing boxes: a thin ring when typing, not a thick frame -->
+    <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+    <Thickness x:Key="ToolTipBorderThemePadding">10,7</Thickness>
+    <BoxShadows x:Key="CardShadow">0 1 3 0 #0F000000</BoxShadows>
+    <!-- Keyboard focus on a button: a soft accent halo (set per theme by ThemeService) -->
+    <BoxShadows x:Key="FocusRing">0 0 0 3 #730A66D9</BoxShadows>
+    <BoxShadows x:Key="InputRing">0 0 0 3 #2E0A66D9</BoxShadows>
+    <BoxShadows x:Key="PrimaryGlow">0 4 12 0 #590A66D9</BoxShadows>
+    <BoxShadows x:Key="PopupShadow">0 14 36 0 #2E0F172A</BoxShadows>
+    <!-- Theme extras (Maroon): a bar on the chosen menu item, a coloured strip on the Dashboard number boxes -->
+    <BoxShadows x:Key="SidebarSelectedShadow">0 0 0 0 #00000000</BoxShadows>
+    <BoxShadows x:Key="TileStrip1">0 0 0 0 #00000000</BoxShadows>
+    <BoxShadows x:Key="TileStrip2">0 0 0 0 #00000000</BoxShadows>
+    <BoxShadows x:Key="TileStrip3">0 0 0 0 #00000000</BoxShadows>
+    <BoxShadows x:Key="TileStrip4">0 0 0 0 #00000000</BoxShadows>
+    <!-- Spacing a user may make compact (My Settings > Appearance) -->
+    <Thickness x:Key="CardPadding">18</Thickness>
+    <x:Double x:Key="SectionSpacing">10</x:Double>
+    <x:Double x:Key="InputMinHeight">30</x:Double>
+    <!-- Room inside typing boxes; rounder themes (Glass …) need more at the sides so the cursor clears the corner -->
+    <Thickness x:Key="InputPadding">8,3</Thickness>
+    <!-- The right-hand corners of a number box's last button (follows ControlCornerRadius) -->
+    <CornerRadius x:Key="SpinnerEndRadius">0,8,8,0</CornerRadius>
+    <Thickness x:Key="RowPadding">12,6</Thickness>
+    <CornerRadius x:Key="OverlayCornerRadius">12</CornerRadius>
+
+    <!--
+      Colours for light and dark mode (each user chooses in My Settings or with the button in the top bar).
+      Use them with DynamicResource so the screen follows a switch at once.
+    -->
+    <ResourceDictionary.ThemeDictionaries>
+      <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="PageBrush">#F6F8FD</SolidColorBrush>
+          <SolidColorBrush x:Key="CardBrush">#FFFFFF</SolidColorBrush>
+          <!-- Suggestion lists, calendar, corner messages and questions: always solid (the glass themes see-through only the cards) -->
+          <SolidColorBrush x:Key="PopupBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TopBarBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextBrush">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="MutedBrush">#6E6E73</SolidColorBrush>
+          <SolidColorBrush x:Key="HairlineBrush">#E6E9F0</SolidColorBrush>
+          <SolidColorBrush x:Key="PanelBorderBrush">#D2D2D7</SolidColorBrush>
+          <SolidColorBrush x:Key="FillBrush">#EDEDF0</SolidColorBrush>
+          <SolidColorBrush x:Key="SubtleFillBrush">#F5F6FA</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentBrush">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="ActionBrush">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentSoftBrush">#EBF2FE</SolidColorBrush>
+          <SolidColorBrush x:Key="OkBrush">#248A3D</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnBrush">#B25000</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnSoftBrush">#FFF6E5</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnBorderBrush">#F5C26B</SolidColorBrush>
+          <SolidColorBrush x:Key="BadBrush">#D70015</SolidColorBrush>
+          <SolidColorBrush x:Key="EditingRowBrush">#FFF8E1</SolidColorBrush>
+          <SolidColorBrush x:Key="GreenBrush">#248A3D</SolidColorBrush>
+          <SolidColorBrush x:Key="PurpleBrush">#8944AB</SolidColorBrush>
+          <SolidColorBrush x:Key="TealBrush">#0A8A8A</SolidColorBrush>
+          <SolidColorBrush x:Key="OrangeBrush">#C93400</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBrush">#141D30</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarTextBrush">#E8EDF3</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarMutedBrush">#8D9BAD</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarHoverBrush">#22304A</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarSelectedBrush">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarSelectedTextBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBorderBrush">#141D30</SolidColorBrush>
+          <SolidColorBrush x:Key="HeaderBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="NavBrush">#FBFBFD</SolidColorBrush>
+          <SolidColorBrush x:Key="RowLineBrush">#EEF0F5</SolidColorBrush>
+          <SolidColorBrush x:Key="ListHoverBrush">#EEF3FA</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedBrush">#C6DDF8</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedHoverBrush">#B7D3F5</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedBarBrush">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="GroupLineBrush">#D1D1D6</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryHoverBrush">#0077ED</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryPressedBrush">#0062C4</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryDisabledBrush">#A9CDF5</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveBrush">#248A3D</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveHoverBrush">#1F7A35</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveDisabledBrush">#A8D5B3</SolidColorBrush>
+          <SolidColorBrush x:Key="ProformaHoverBrush">#F6EEFA</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerBrush">#FDECEC</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerBorderBrush">#F5B5B5</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerHoverBrush">#FAD9D9</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerHoverBorderBrush">#EE9A9A</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledBrush">#FDF5F5</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledBorderBrush">#F8DADA</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledTextBrush">#E8A3AA</SolidColorBrush>
+          <SolidColorBrush x:Key="LinkHoverBrush">#0062C4</SolidColorBrush>
+          <SolidColorBrush x:Key="TileHoverBorderBrush">#B9D5F7</SolidColorBrush>
+          <SolidColorBrush x:Key="PillOkBrush">#E3F4E8</SolidColorBrush>
+          <SolidColorBrush x:Key="PillPendingBrush">#FFF0E0</SolidColorBrush>
+          <SolidColorBrush x:Key="PillBadBrush">#FDECEC</SolidColorBrush>
+          <SolidColorBrush x:Key="BadSoftBrush">#FFF1F1</SolidColorBrush>
+          <SolidColorBrush x:Key="ZebraBrush">#0A0F2A4A</SolidColorBrush>
+          <SolidColorBrush x:Key="PageArtFarBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="PageArtNearBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarArtBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CityFarBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CityNearBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="RaysBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarCityBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="PictureScrimBrush">#B3F6F8FD</SolidColorBrush>
+          <SolidColorBrush x:Key="BadBorderBrush">#F5B7B7</SolidColorBrush>
+          <SolidColorBrush x:Key="PopupBorderBrush">#9AABBF</SolidColorBrush>
+          <!-- Modern look: buttons and boxes are soft see-through fills without outlines, so they suit every colour theme -->
+          <SolidColorBrush x:Key="ButtonBackground">#141D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundPointerOver">#211D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundPressed">#2E1D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundDisabled">#0D1D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForeground">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundPointerOver">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundPressed">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundDisabled">#7B8494</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushPressed">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushDisabled">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="DisabledFillBrush">#E6E9EE</SolidColorBrush>
+          <SolidColorBrush x:Key="DisabledTextBrush">#7B8494</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackground">#0F1D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundPointerOver">#171D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundFocused">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundDisabled">#081D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushDisabled">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlPlaceholderForeground">#8E8E93</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackground">#0F1D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#171D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackgroundPressed">#1F1D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackgroundFocused">#171D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrushPressed">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrushFocused">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBackground">#0F1D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBackgroundPointerOver">#171D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBackgroundFocused">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBorderBrushPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewOutOfScopeBackground">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewCalendarItemRevealBackground">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewCalendarItemRevealBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewOutOfScopeForeground">#A8B0BD</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchFillOff">#CFD6E0</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver">#C3CBD7</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchFillOffPressed">#B8C1CE</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOff">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchKnobFillOff">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="CheckBoxBorderBrushUnchecked">#B9C1CE</SolidColorBrush>
+          <SolidColorBrush x:Key="ToolTipBackground">#1F2937</SolidColorBrush>
+          <SolidColorBrush x:Key="ToolTipBorderBrush">#1F2937</SolidColorBrush>
+          <SolidColorBrush x:Key="ToolTipForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ScrollBarPanningThumbBackground">#591D3557</SolidColorBrush>
+          <SolidColorBrush x:Key="InfoIconBrush">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="TopBarTextBrush">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="BadgeBrush">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="BadgeTextBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="HeadingBrush">#1D1D1F</SolidColorBrush>
+          <SolidColorBrush x:Key="TopBarMutedBrush">#6E6E73</SolidColorBrush>
+          <SolidColorBrush x:Key="TopBarFieldBrush">#EDEDF0</SolidColorBrush>
+      </ResourceDictionary>
+      <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="PageBrush">#1C1C1E</SolidColorBrush>
+          <SolidColorBrush x:Key="CardBrush">#2C2C2E</SolidColorBrush>
+          <SolidColorBrush x:Key="PopupBrush">#2C2C2E</SolidColorBrush>
+          <SolidColorBrush x:Key="TopBarBrush">#2C2C2E</SolidColorBrush>
+          <SolidColorBrush x:Key="TextBrush">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MutedBrush">#A1A1A6</SolidColorBrush>
+          <SolidColorBrush x:Key="HairlineBrush">#3A3A3C</SolidColorBrush>
+          <SolidColorBrush x:Key="PanelBorderBrush">#48484A</SolidColorBrush>
+          <SolidColorBrush x:Key="FillBrush">#3A3A3C</SolidColorBrush>
+          <SolidColorBrush x:Key="SubtleFillBrush">#262628</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentBrush">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="ActionBrush">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentSoftBrush">#1E3A5F</SolidColorBrush>
+          <SolidColorBrush x:Key="OkBrush">#32D74B</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnBrush">#FF9F0A</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnSoftBrush">#3A2E1A</SolidColorBrush>
+          <SolidColorBrush x:Key="WarnBorderBrush">#8A6A2A</SolidColorBrush>
+          <SolidColorBrush x:Key="BadBrush">#FF453A</SolidColorBrush>
+          <SolidColorBrush x:Key="EditingRowBrush">#3A3420</SolidColorBrush>
+          <SolidColorBrush x:Key="GreenBrush">#32B357</SolidColorBrush>
+          <SolidColorBrush x:Key="PurpleBrush">#C77DEB</SolidColorBrush>
+          <SolidColorBrush x:Key="TealBrush">#40C8E0</SolidColorBrush>
+          <SolidColorBrush x:Key="OrangeBrush">#FF9F0A</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBrush">#141A22</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarTextBrush">#E8EDF3</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarMutedBrush">#8D9BAD</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarHoverBrush">#232C38</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarSelectedBrush">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarSelectedTextBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarBorderBrush">#141A22</SolidColorBrush>
+          <SolidColorBrush x:Key="HeaderBrush">#242426</SolidColorBrush>
+          <SolidColorBrush x:Key="NavBrush">#242426</SolidColorBrush>
+          <SolidColorBrush x:Key="RowLineBrush">#353538</SolidColorBrush>
+          <SolidColorBrush x:Key="ListHoverBrush">#33404F</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedBrush">#2A4D78</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedHoverBrush">#325A8A</SolidColorBrush>
+          <SolidColorBrush x:Key="ListSelectedBarBrush">#4DA3FF</SolidColorBrush>
+          <SolidColorBrush x:Key="GroupLineBrush">#48484A</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryHoverBrush">#409CFF</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryPressedBrush">#0060DF</SolidColorBrush>
+          <SolidColorBrush x:Key="PrimaryDisabledBrush">#1E3F66</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveBrush">#248A3D</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveHoverBrush">#2DA14A</SolidColorBrush>
+          <SolidColorBrush x:Key="SaveDisabledBrush">#1F4A2B</SolidColorBrush>
+          <SolidColorBrush x:Key="ProformaHoverBrush">#3A2A45</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerBrush">#3B1F21</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerBorderBrush">#7A3036</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerHoverBrush">#4A2528</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerHoverBorderBrush">#94404A</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledBrush">#2E2324</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledBorderBrush">#4A3335</SolidColorBrush>
+          <SolidColorBrush x:Key="DangerDisabledTextBrush">#8A5A5E</SolidColorBrush>
+          <SolidColorBrush x:Key="LinkHoverBrush">#64B0FF</SolidColorBrush>
+          <SolidColorBrush x:Key="TileHoverBorderBrush">#3A6EA5</SolidColorBrush>
+          <SolidColorBrush x:Key="PillOkBrush">#1E3A26</SolidColorBrush>
+          <SolidColorBrush x:Key="PillPendingBrush">#3D2B16</SolidColorBrush>
+          <SolidColorBrush x:Key="PillBadBrush">#3B1F21</SolidColorBrush>
+          <SolidColorBrush x:Key="BadSoftBrush">#3A1F21</SolidColorBrush>
+          <SolidColorBrush x:Key="ZebraBrush">#0DFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="PageArtFarBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="PageArtNearBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarArtBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CityFarBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CityNearBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="RaysBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarCityBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="PictureScrimBrush">#99000000</SolidColorBrush>
+          <SolidColorBrush x:Key="BadBorderBrush">#6E2E31</SolidColorBrush>
+          <SolidColorBrush x:Key="PopupBorderBrush">#5A6878</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackground">#1FFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundPointerOver">#2EFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundPressed">#3DFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBackgroundDisabled">#12FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="DisabledFillBrush">#2E2E31</SolidColorBrush>
+          <SolidColorBrush x:Key="DisabledTextBrush">#8E8E93</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForeground">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundPointerOver">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundPressed">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonForegroundDisabled">#8E8E93</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushPressed">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ButtonBorderBrushDisabled">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackground">#14FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundPointerOver">#1FFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundFocused">#1C1C1E</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBackgroundDisabled">#0AFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlBorderBrushDisabled">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="TextControlPlaceholderForeground">#8E8E93</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackground">#14FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#1FFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackgroundPressed">#29FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBackgroundFocused">#1FFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrushPressed">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ComboBoxBorderBrushFocused">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBackground">#14FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBackgroundPointerOver">#1FFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBackgroundFocused">#1C1C1E</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarDatePickerBorderBrushPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewOutOfScopeBackground">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewCalendarItemRevealBackground">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewCalendarItemRevealBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewBorderBrush">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="CalendarViewOutOfScopeForeground">#6C6C70</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchFillOff">#48484A</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver">#545456</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchFillOffPressed">#5E5E61</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOff">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed">Transparent</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchKnobFillOff">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="ToolTipBackground">#3A3A3C</SolidColorBrush>
+          <SolidColorBrush x:Key="ToolTipBorderBrush">#3A3A3C</SolidColorBrush>
+          <SolidColorBrush x:Key="ToolTipForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="ScrollBarPanningThumbBackground">#66FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="InfoIconBrush">#64B0FF</SolidColorBrush>
+          <SolidColorBrush x:Key="TopBarTextBrush">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="BadgeBrush">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="BadgeTextBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="HeadingBrush">#F2F2F7</SolidColorBrush>
+          <SolidColorBrush x:Key="TopBarMutedBrush">#A1A1A6</SolidColorBrush>
+          <SolidColorBrush x:Key="TopBarFieldBrush">#3A3A3C</SolidColorBrush>
+      </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+    </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme >
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#0071E3" RegionColor="#F5F5F7" BaseHigh="#1D1D1F" ErrorText="#D70015" />
+        <ColorPaletteResources x:Key="Dark" Accent="#0A84FF" RegionColor="#1C1C1E" BaseHigh="#F2F2F7" ErrorText="#FF453A" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://Quotation.Mobile/PhoneStyles.axaml" />
+  </Application.Styles>
+</Application>

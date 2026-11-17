@@ -33,12 +33,17 @@ public static class ColourThemes
     {
         [AppTheme.GlassBlue] = new("#6F9FE6→#A4C4F0→#D6E5F9", "#0A5FD0", "#DCE9FB", "#C7DCF8", false),
         [AppTheme.GlassGreen] = new("#6DBF97→#A5D9BD→#D8EFE2", "#0E7A4F", "#DBF1E6", "#C4E6D3", false),
-        [AppTheme.GlassMaroon] = new("#F2DCE0→#D9A1AD→#A84D61", "#8E1B2E", "#F6E1E5", "#EDC9D0", false,
+        // Maroon (B1 "Maroon Frame"): the top bar joins the maroon menu; a calm blush page with two soft rose curves.
+        [AppTheme.GlassMaroon] = new("#F6E1E5", "#8E1B2E", "#F6E1E5", "#EDC9D0", false,
             new()
             {
                 ["SidebarBrush"] = "#5E1024→#8E2238", ["SidebarBorderBrush"] = "#5E1024", ["SidebarTextBrush"] = "#FFFFFF",
                 ["SidebarMutedBrush"] = "#E8BCC5", ["SidebarHoverBrush"] = "#1FFFFFFF", ["SidebarSelectedBrush"] = "#33FFFFFF",
-                ["SidebarSelectedTextBrush"] = "#FFFFFF", ["TopBarBrush"] = "#F9ECEF",
+                ["SidebarSelectedTextBrush"] = "#FFFFFF", ["TopBarBrush"] = "#5E1024→#8E2238",
+                ["TopBarTextBrush"] = "#FFFFFF", ["TopBarMutedBrush"] = "#E8BCC5", ["TopBarFieldBrush"] = "#29FFFFFF",
+                ["BadgeBrush"] = "#FFFFFF", ["BadgeTextBrush"] = "#8E1B2E", ["HeadingBrush"] = "#5E1024",
+                ["SkyArtBrush"] = "#CCEDC9D0", ["FarArtBrush"] = "#B3EDC9D0", ["NearArtBrush"] = "#00000000",
+                ["SunArtBrush"] = "#00000000", ["SideArtBrush"] = "#00000000",
                 // Solid boxes with a soft maroon shade (the text boxes inside stay white)
                 ["CardBrush"] = "#FAEDEF", ["PopupBrush"] = "#FFFFFF", ["HairlineBrush"] = "#E8C7CE", ["SubtleFillBrush"] = "#F5E1E5",
                 ["FillBrush"] = "#EFD6DB", ["ListHoverBrush"] = "#F5E1E5",
@@ -114,6 +119,22 @@ public static class ColourThemes
                 ["SkyArtBrush"] = "#8CFFFFFF", ["SunArtBrush"] = "#C7F6E7B6", ["FarArtBrush"] = "#1F9AA6D6", ["NearArtBrush"] = "#D903061A",
                 ["SideArtBrush"] = "#4DFFFFFF", ["PictureScrimBrush"] = "#99070B1F",
             }),
+        // Maroon Mahal: a dark royal maroon night; blush highlights, glowing glass boxes, a mandala, flags and a canopy.
+        [AppTheme.MaroonMahal] = new("#22050C→#3A0A16→#5E1024", "#F2A7B6", "#4A1424", "#5A1A2C", true,
+            new()
+            {
+                ["CardBrush"] = "#14FFFFFF", ["PopupBrush"] = "#2A0A14", ["TopBarBrush"] = "#5E1024→#8E2238",
+                ["TopBarTextBrush"] = "#FFFFFF", ["TopBarMutedBrush"] = "#E8BCC5", ["TopBarFieldBrush"] = "#29FFFFFF",
+                ["SidebarBrush"] = "#5E1024→#8E2238", ["SidebarBorderBrush"] = "#5E1024", ["SidebarSelectedBrush"] = "#F2DCE0",
+                ["SidebarSelectedTextBrush"] = "#5E1024", ["SidebarTextBrush"] = "#FFFFFF", ["SidebarMutedBrush"] = "#D9A1AD",
+                ["SidebarHoverBrush"] = "#1FFFFFFF", ["HairlineBrush"] = "#40D9A1AD", ["PanelBorderBrush"] = "#73D9A1AD",
+                ["SubtleFillBrush"] = "#14FFFFFF", ["FillBrush"] = "#1FFFFFFF", ["MutedBrush"] = "#E8BCC5", ["ListHoverBrush"] = "#1FFFFFFF",
+                ["TextBrush"] = "#FFF5F7", ["HeadingBrush"] = "#FFFFFF", ["BadgeBrush"] = "#F2DCE0", ["BadgeTextBrush"] = "#5E1024",
+                ["ActionBrush"] = "#C2416A", ["PrimaryHoverBrush"] = "#D24F79", ["PrimaryPressedBrush"] = "#A8355A", ["PrimaryDisabledBrush"] = "#4A2030",
+                ["SaveBrush"] = "#2FA57A", ["SaveHoverBrush"] = "#39B98A",
+                ["SkyArtBrush"] = "#38D9A1AD", ["SunArtBrush"] = "#00000000", ["FarArtBrush"] = "#00000000", ["NearArtBrush"] = "#00000000",
+                ["SideArtBrush"] = "#40F2DCE0", ["PictureScrimBrush"] = "#9922050C",
+            }),
     };
 
     private static Dictionary<string, string> GlassBrushes(Glass g) => g.Dark
@@ -124,7 +145,7 @@ public static class ColourThemes
             ["SidebarTextBrush"] = "#F2F2F7", ["SidebarMutedBrush"] = "#A1A1AA", ["SidebarSelectedTextBrush"] = "#FFFFFF",
             ["AccentBrush"] = g.Accent, ["AccentSoftBrush"] = g.AccentSoft, ["ActionBrush"] = "#0A84FF", ["PrimaryHoverBrush"] = "#3D9BFF",
             ["SaveBrush"] = "#30B350", ["SaveHoverBrush"] = "#3EC25E", ["HairlineBrush"] = "#33FFFFFF", ["PanelBorderBrush"] = "#40FFFFFF",
-            ["SubtleFillBrush"] = "#14FFFFFF", ["FillBrush"] = "#1FFFFFFF", ["MutedBrush"] = "#A9A9B2",
+            ["SubtleFillBrush"] = "#14FFFFFF", ["FillBrush"] = "#1FFFFFFF", ["TopBarFieldBrush"] = "#1FFFFFFF", ["MutedBrush"] = "#A9A9B2",
             ["ListSelectedBrush"] = g.Selected, ["ListSelectedHoverBrush"] = g.Selected, ["ListSelectedBarBrush"] = g.Accent, ["ListHoverBrush"] = "#14FFFFFF",
             ["TextControlBorderBrushFocused"] = g.Accent, ["LinkHoverBrush"] = g.Accent, ["TileHoverBorderBrush"] = "#66FFFFFF",
         }
@@ -135,7 +156,7 @@ public static class ColourThemes
             ["SidebarTextBrush"] = "#1C1C1E", ["SidebarMutedBrush"] = "#3C3C48", ["SidebarSelectedTextBrush"] = g.Accent,
             ["AccentBrush"] = g.Accent, ["AccentSoftBrush"] = g.AccentSoft, ["ActionBrush"] = "#007AFF", ["PrimaryHoverBrush"] = "#1A88FF",
             ["SaveBrush"] = "#34C759", ["SaveHoverBrush"] = "#48D06A", ["HairlineBrush"] = "#CCFFFFFF", ["PanelBorderBrush"] = "#B3FFFFFF",
-            ["SubtleFillBrush"] = "#80FFFFFF", ["FillBrush"] = "#99FFFFFF", ["MutedBrush"] = "#4A4A55",
+            ["SubtleFillBrush"] = "#80FFFFFF", ["FillBrush"] = "#99FFFFFF", ["TopBarFieldBrush"] = "#99FFFFFF", ["MutedBrush"] = "#4A4A55",
             ["ListSelectedBrush"] = g.Selected, ["ListSelectedHoverBrush"] = g.Selected, ["ListSelectedBarBrush"] = g.Accent, ["ListHoverBrush"] = "#66FFFFFF",
             ["TextControlBorderBrushFocused"] = g.Accent, ["LinkHoverBrush"] = g.Accent, ["TileHoverBorderBrush"] = "#FFFFFF",
         };
@@ -154,7 +175,23 @@ public static class ColourThemes
         if (theme is not null && GlassThemes.TryGetValue(theme, out var glass))
         {
             foreach (var (key, colour) in GlassBrushes(glass)) app.Resources[key] = BrushOf(colour);
-            foreach (var (key, colour) in glass.Extra ?? []) app.Resources[key] = BrushOf(colour);
+            var extra = glass.Extra ?? [];
+            foreach (var (key, colour) in extra) app.Resources[key] = BrushOf(colour);
+            // The top bar follows the theme's own text and field colours unless the theme gives its own.
+            void Follow(string key, string from) { if (!extra.ContainsKey(key) && extra.TryGetValue(from, out var c)) app.Resources[key] = BrushOf(c); }
+            Follow("TopBarFieldBrush", "FillBrush");
+            Follow("TopBarTextBrush", "TextBrush");
+            Follow("TopBarMutedBrush", "MutedBrush");
+            Follow("HeadingBrush", "TextBrush");
+            if (!extra.ContainsKey("BadgeBrush")) app.Resources["BadgeBrush"] = BrushOf(glass.Accent);
+            if (theme == AppTheme.GlassMaroon)
+            {
+                SetShape(app, "SidebarSelectedShadow", BoxShadows.Parse("inset 3 0 0 0 #F6E1E5"));
+                SetShape(app, "TileStrip1", BoxShadows.Parse("inset 4 0 0 0 #8E1B2E"));
+                SetShape(app, "TileStrip2", BoxShadows.Parse("inset 4 0 0 0 #1C1C1E"));
+                SetShape(app, "TileStrip3", BoxShadows.Parse("inset 4 0 0 0 #C93400"));
+                SetShape(app, "TileStrip4", BoxShadows.Parse("inset 4 0 0 0 #8944AB"));
+            }
             foreach (var (key, geometry) in Controls.ThemeScenery.For(theme)) app.Resources[key] = geometry;
             SetShape(app, "CardRadius", new CornerRadius(22));
             SetShape(app, "CardBottomRadius", new CornerRadius(0, 0, 22, 22));
@@ -162,12 +199,13 @@ public static class ColourThemes
             SetShape(app, "ControlCornerRadius", new CornerRadius(12));
             SetShape(app, "InputPadding", new Thickness(11, 2)); // the cursor clears the round corner
             SetShape(app, "SpinnerEndRadius", new CornerRadius(0, 12, 12, 0));
-            GlowShadow = GlassShadow;
+            GlowShadow = theme == AppTheme.MaroonMahal ? "0 0 24 0 #66A84D61" : GlassShadow;
             return;
         }
         if (theme is null || !Palettes.TryGetValue(theme, out var p)) return;
         void Set(string key, string colour) => app.Resources[key] = BrushOf(colour);
         Set("AccentBrush", p.Accent);
+        Set("BadgeBrush", p.Accent);
         Set("AccentSoftBrush", p.AccentSoft);
         Set("SidebarBrush", p.Sidebar);
         Set("SidebarBorderBrush", p.Sidebar.Split('→')[^1]);
@@ -204,11 +242,13 @@ public static class ColourThemes
     [
         "AccentBrush", "AccentSoftBrush", "SidebarBrush", "SidebarBorderBrush", "SidebarHoverBrush", "SidebarSelectedBrush", "PageBrush",
         "ListSelectedBrush", "ListSelectedHoverBrush", "ListSelectedBarBrush", "ListHoverBrush", "TextControlBorderBrushFocused",
-        "LinkHoverBrush", "TileHoverBorderBrush",
+        "LinkHoverBrush", "TileHoverBorderBrush", "TopBarFieldBrush", "TopBarTextBrush", "TopBarMutedBrush", "BadgeBrush", "BadgeTextBrush",
+        "HeadingBrush",
     ]).Concat(GlassThemes.Values.SelectMany(g => g.Extra?.Keys ?? Enumerable.Empty<string>())).Concat(Controls.ThemeScenery.Keys).Distinct().ToArray();
 
     // Shapes (corners) live at the top of the app resources: remember the standard values to put them back.
-    private static readonly string[] ShapeKeys = ["CardRadius", "CardBottomRadius", "ButtonRadius", "ControlCornerRadius", "InputPadding", "SpinnerEndRadius"];
+    private static readonly string[] ShapeKeys = ["CardRadius", "CardBottomRadius", "ButtonRadius", "ControlCornerRadius", "InputPadding", "SpinnerEndRadius",
+        "SidebarSelectedShadow", "TileStrip1", "TileStrip2", "TileStrip3", "TileStrip4"];
     private static readonly Dictionary<string, object?> Standard = [];
 
     private static void SetShape(Application app, string key, object value)

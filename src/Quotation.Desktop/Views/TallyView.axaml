@@ -15,7 +15,7 @@
               <TextBlock Text="Refresh" />
             </StackPanel>
           </Button>
-          <Button Classes="primary" Content="Test connection (Ctrl+T)" Command="{Binding TestConnectionCommand}" HotKey="Ctrl+T" />
+          <Button ctl:ButtonIcon.Kind="plug" Classes="primary" Content="Test connection (Ctrl+T)" Command="{Binding TestConnectionCommand}" HotKey="Ctrl+T" />
         </StackPanel>
       </Grid>
       <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
@@ -30,7 +30,9 @@
           <TextBlock Classes="label" Text="Tally address" />
           <TextBlock Grid.Column="1" Text="{Binding TallyUrl}" />
           <TextBlock Grid.Row="1" Classes="label" Text="Tally connection" />
-          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ConnectionText}" FontWeight="Bold" />
+          <Border Grid.Row="1" Grid.Column="1" Name="TallyChip" Classes="chip" Classes.ok="{Binding IsConnected}" Classes.bad="{Binding !IsConnected}">
+            <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding ConnectionText}" /></StackPanel>
+          </Border>
           <TextBlock Grid.Row="2" Classes="label" Text="Company" />
           <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Status.TallyCompany, FallbackValue='–', TargetNullValue='–'}" />
           <TextBlock Grid.Row="3" Classes="label" Text="Active financial year" />
@@ -69,16 +71,14 @@
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Classes="h2" Text="Synchronization" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-              <Button Content="Sync changes (F9)" HotKey="F9" Command="{Binding IncrementalSyncCommand}" IsEnabled="{Binding !SyncRunning}" />
-              <Button Content="Full sync" Command="{Binding FullSyncCommand}" IsEnabled="{Binding !SyncRunning}" />
-              <Button Content="Read last rates" Command="{Binding ReadLastRatesCommand}" IsEnabled="{Binding !SyncRunning}" />
-              <Button Content="Stop" Command="{Binding StopLastRatesCommand}" IsVisible="{Binding SyncRunning}" />
+              <Button ctl:ButtonIcon.Kind="sync" Content="Sync changes (F9)" HotKey="F9" Command="{Binding IncrementalSyncCommand}" IsEnabled="{Binding !SyncRunning}" />
+              <Button ctl:ButtonIcon.Kind="db" Content="Full sync" Command="{Binding FullSyncCommand}" IsEnabled="{Binding !SyncRunning}" />
+              <Button ctl:ButtonIcon.Kind="tag" Content="Read last rates" Command="{Binding ReadLastRatesCommand}" IsEnabled="{Binding !SyncRunning}" />
+              <Button ctl:ButtonIcon.Kind="stop" Content="Stop" Command="{Binding StopLastRatesCommand}" IsVisible="{Binding SyncRunning}" />
             </StackPanel>
           </Grid>
-          <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Changes are synchronized automatically every few minutes and a full sync runs nightly. Use 'Sync changes' after editing items or prices in Tally." />
-          <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Read last rates: only when 'Also read last rates from Tally' is switched on in Settings → Tally (off by default; the app then remembers the rates of its own approved quotations). It reads the rate each item was last quoted or sold at from Tally's Sales and Quotation vouchers (read-only). Started here it takes a few minutes and TallyPrime may respond a little slower meanwhile; Stop ends it at once." />
+          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Changes are synchronized automatically every few minutes and a full sync runs nightly." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Changes are synchronized automatically every few minutes and a full sync runs nightly. Use 'Sync changes' after editing items or prices in Tally."><Path Classes="infoicon" /></Border></StackPanel>
+          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Read last rates: only when &#x27;Also read last rates from Tally&#x27; is switched on in Settings → …" TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Read last rates: only when 'Also read last rates from Tally' is switched on in Settings → Tally (off by default; the app then remembers the rates of its own approved quotations). It reads the rate each item was last quoted or sold at from Tally's Sales and Quotation vouchers (read-only). Started here it takes a few minutes and TallyPrime may respond a little slower meanwhile; Stop ends it at once."><Path Classes="infoicon" /></Border></StackPanel>
           <TextBlock Text="{Binding InfoMessage}" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
           <ItemsControl ItemsSource="{Binding Runs}">
             <ItemsControl.ItemTemplate>
@@ -105,7 +105,7 @@
           <Grid ColumnDefinitions="140,8,*,8,Auto">
             <ComboBox ItemsSource="{Binding SampleTypes}" SelectedItem="{Binding SampleType}" HorizontalAlignment="Stretch" />
             <TextBox Grid.Column="2" Text="{Binding SampleName}" Watermark="Exact name as in Tally" />
-            <Button Grid.Column="4" Content="Fetch" Command="{Binding LoadSampleCommand}" />
+            <Button ctl:ButtonIcon.Kind="download" Grid.Column="4" Content="Fetch" Command="{Binding LoadSampleCommand}" />
           </Grid>
           <TextBox Text="{Binding SampleXml}" IsReadOnly="True" FontFamily="Consolas,Menlo,monospace" FontSize="11" Height="220" AcceptsReturn="True"
                    IsVisible="{Binding SampleXml, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />

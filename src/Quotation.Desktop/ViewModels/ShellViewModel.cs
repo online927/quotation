@@ -151,6 +151,15 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public string UserRole { get; }
     public string UserInitials { get; }
 
+    /// <summary>F1: the card with every keyboard shortcut.</summary>
+    [ObservableProperty] private bool _showShortcuts;
+
+    [RelayCommand]
+    private void ToggleShortcuts() => ShowShortcuts = !ShowShortcuts;
+
+    /// <summary>The badge in the top-left corner: the letters of the company name (Settings → Company), as on the sign-in screen.</summary>
+    public string CompanyInitials => Services.CompanyLetters.Of(_session.Settings?.Company.CompanyName is { Length: > 0 } n ? n : _session.Config.CompanyName);
+
     private static readonly Avalonia.Media.Geometry MoonIcon = Avalonia.Media.Geometry.Parse("M20,14.5 A8.5,8.5 0 1 1 9.5,4 A6.5,6.5 0 0 0 20,14.5 Z");
     private static readonly Avalonia.Media.Geometry SunIcon = Avalonia.Media.Geometry.Parse(
         "M12,7.5 A4.5,4.5 0 1 1 11.99,7.5 Z M12,1.5 V4 M12,20 V22.5 M4.6,4.6 L6.3,6.3 M17.7,17.7 L19.4,19.4 M1.5,12 H4 M20,12 H22.5 M4.6,19.4 L6.3,17.7 M17.7,6.3 L19.4,4.6");
@@ -308,8 +317,13 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
 
     private void OnSettingsChanged(object? sender, EventArgs e)
     {
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess()) BuildMenu();
-        else Avalonia.Threading.Dispatcher.UIThread.Post(BuildMenu);
+        void Refresh()
+        {
+            BuildMenu();
+            OnPropertyChanged(nameof(CompanyInitials));
+        }
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess()) Refresh();
+        else Avalonia.Threading.Dispatcher.UIThread.Post(Refresh);
     }
 
     // ================================================================= automatic client updates (A2)
@@ -332,6 +346,12 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         try { update = await _session.Api.ClientUpdateAsync(_cts.Token); }
         catch { return; } // older server or no connection: try again next sign-in
         if (!Version.TryParse(update.Version, out var offered) || Normal(offered) <= Normal(CurrentVersion)) return;
+        if (Services.MacSupport.IsMac)
+        {
+            // The server carries the Windows installer; the Mac app is downloaded from the same place as before.
+            Toast($"New version {Normal(offered)} is available: download the Mac app from the same place as before.", 10);
+            return;
+        }
         try
         {
             while (PendingPrompt is not null || PendingDialog is not null) await Task.Delay(500, _cts.Token);

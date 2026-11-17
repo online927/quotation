@@ -11,7 +11,7 @@ public static class ThemeNames
         (AppTheme.Graphite, "Graphite"), (AppTheme.GlassBlue, "Glass (Blue)"), (AppTheme.GlassGreen, "Glass (Green)"),
         (AppTheme.GlassMaroon, "Glass (Maroon)"), (AppTheme.Parchment, "Parchment"), (AppTheme.ForestGold, "Forest & Gold"),
         (AppTheme.HeroLight, "Hero Light"), (AppTheme.Ocean, "Ocean"),
-        (AppTheme.Midnight, "Midnight Stars"),
+        (AppTheme.Midnight, "Midnight Stars"), (AppTheme.MaroonMahal, "Maroon Mahal"),
     ];
 
     public static string Of(string? theme) => All.FirstOrDefault(t => t.Theme == theme).Name ?? theme ?? "";

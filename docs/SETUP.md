@@ -94,6 +94,26 @@ voucher, company setting or anything else in Tally.
    quotations but does not make, change or approve them. (Only if nobody else can make quotations: set
    `"AdministratorsMakeDocuments": true` in the `Server` section of the server's `appsettings.json` and restart it.)
 
+
+### 4a. On a Mac
+
+CI → **Run workflow** with **Build the Mac app** ticked makes `TSQuotation-Mac-AppleSilicon-x.y.z.dmg` (M1/M2/M3/M4) and
+`TSQuotation-Mac-Intel-x.y.z.dmg`. Open the .dmg and drag **Quotations** to Applications. The first time, right-click
+the app → **Open** → **Open** (it is not from the App Store). It connects to the same Quotation Server; Ctrl shortcuts
+are ⌘ on the Mac, and Ctrl+P prints to the Mac's default printer. A newer version is announced at sign-in; download it
+the same way.
+
+### 4b. On an Android phone
+
+CI → **Run workflow** with **Build the phone app** ticked makes `TSQuotation-Phone-x.y.z.apk`. Copy it to the phone and
+open it (allow **Install unknown apps** for the Files app or browser when Android asks). The phone must be on the office
+Wi-Fi: type the server's address once (e.g. `192.168.1.10`; `:5080` is added) and sign in with the same username and
+password as on the PC. The phone shows the dashboard, today's / past quotations and drafts, product rates and customer
+details (Call, WhatsApp, E-mail), shares a quotation's PDF to WhatsApp or Gmail, approves drafts, and makes a quotation
+from a pasted WhatsApp or e-mail enquiry. It never talks to Tally. Without a fixed signing key (repository secrets
+`ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD`, key alias `tsquotation`), uninstall the old app before
+installing a newer APK.
+
 ---
 
 ## 5. Connect to Tally and run the initial synchronization

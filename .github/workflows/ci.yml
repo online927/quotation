@@ -3,6 +3,18 @@ name: CI
 on:
   push:
   pull_request:
+  # Actions → CI → Run workflow: the Windows installers always; tick Mac and/or Phone to build those too (they use more
+  # build minutes, so they are built only when asked).
+  workflow_dispatch:
+    inputs:
+      mac:
+        description: "Build the Mac app (.dmg for Apple Silicon and Intel)"
+        type: boolean
+        default: true
+      android:
+        description: "Build the phone app (Android .apk)"
+        type: boolean
+        default: true
 
 jobs:
   test:
@@ -43,3 +55,63 @@ jobs:
         with:
           name: windows-installers
           path: publish/installers/
+
+  mac:
+    runs-on: macos-latest
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && inputs.mac
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build the Mac app (.dmg)
+        run: ./installer/publish-mac.sh "0.9.${{ github.run_number }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-app
+          path: publish/mac-app/
+
+
+  android:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && inputs.android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install the .NET Android tools
+        run: dotnet workload install android
+      - name: Android SDK parts the app needs
+        run: >
+          dotnet build src/Quotation.Mobile.Android/Quotation.Mobile.Android.csproj -t:InstallAndroidDependencies -f net10.0-android
+          -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AcceptAndroidSDKLicenses=True
+      - name: Build the phone app (.apk)
+        env:
+          # Optional: a fixed signing key (repository secrets), so a new APK installs over the old one. Without it the
+          # APK is signed with a new test key each time (uninstall the old app before installing a new one).
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          SIGN=""
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/phone.keystore"
+            SIGN="-p:AndroidKeyStore=true -p:AndroidSigningKeyStore=$RUNNER_TEMP/phone.keystore -p:AndroidSigningKeyAlias=tsquotation -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD -p:AndroidSigningKeyPass=env:KEYSTORE_PASSWORD"
+          fi
+          dotnet publish src/Quotation.Mobile.Android/Quotation.Mobile.Android.csproj -c Release -f net10.0-android \
+            -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" \
+            -p:ApplicationVersion=${{ github.run_number }} -p:ApplicationDisplayVersion=0.9.${{ github.run_number }} \
+            -p:Version=0.9.${{ github.run_number }} $SIGN -o publish/android
+          mkdir -p publish/android-app
+          cp publish/android/*-Signed.apk "publish/android-app/TSQuotation-Phone-0.9.${{ github.run_number }}.apk"
+          ls -la publish/android-app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-app
+          path: publish/android-app/

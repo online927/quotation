@@ -254,14 +254,14 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
             if (parse.BuyerName.Length > 0)
             {
                 var hits = await CustomerHitsAsync(parse.BuyerName, ct);
-                (customer, customerSuggestion, customerRemembered) = Decide(parse.BuyerName, hits, h => h.Customer.Id, h => h.Match, h => h.Score,
+                (customer, customerSuggestion, customerRemembered) = FormaterMatching.Decide(parse.BuyerName, hits, h => h.Customer.Id, h => h.Match, h => h.Score,
                     _customerChoice, Remembered(FormaterMatchDto.Customer, parse.BuyerName), h => h.Customer);
             }
             var lines = new List<(FormaterItem Item, ProductSummaryDto? Product, ProductSummaryDto? Suggestion, bool Remembered)>();
             foreach (var item in parse.Items)
             {
                 var hits = (await ProductHitsAsync(item.Name, ct)).Where(h => !h.Product.Hidden).ToList();
-                var (p, s, r) = Decide(item.Name, hits, h => h.Product.Id, h => h.Match, h => h.Score, _productChoice,
+                var (p, s, r) = FormaterMatching.Decide(item.Name, hits, h => h.Product.Id, h => h.Match, h => h.Score, _productChoice,
                     Remembered(FormaterMatchDto.Product, item.Name), h => h.Product);
                 lines.Add((item, p, s, r));
             }
@@ -301,32 +301,6 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         if (_remembered.TryGetValue((FormaterMatchDto.Product, FormaterMatchDto.Normalize(name)), out var m) && hits.All(h => h.Product.Id != m.TallyId))
             hits.AddRange((await _session.Api.SearchProductsAsync(m.TallyName, 6, ct)).Where(h => h.Product.Id == m.TallyId));
         return _productHits[name] = hits;
-    }
-
-    /// <summary>
-    /// Taken from Tally only when the search makes it clear (an exact name or part number, a single match of every word, or a
-    /// decisive lead); otherwise kept as typed, with the closest Tally entry offered. The user's own choice wins, then the
-    /// entry chosen for the same typing before (remembered on the server).
-    /// </summary>
-    private static (TItem? Chosen, TItem? Suggestion, bool Remembered) Decide<THit, TItem>(string typed, List<THit> hits, Func<THit, int> id,
-        Func<THit, SearchMatchDto> match, Func<THit, double> score, Dictionary<string, int> choices, int? remembered, Func<THit, TItem> item)
-        where TItem : class
-    {
-        if (choices.TryGetValue(typed, out var chosen))
-        {
-            if (chosen < 0) return (null, hits.Count > 0 ? item(hits[0]) : null, false);
-            var pick = hits.FirstOrDefault(h => id(h) == chosen);
-            if (pick is not null) return (item(pick), null, chosen == remembered);
-        }
-        if (remembered is { } r && hits.FirstOrDefault(h => id(h) == r) is { } known) return (item(known), null, true);
-        if (hits.Count == 0) return (null, null, false);
-        var exact = hits.Where(h => match(h).ExactName || match(h).ExactIdentifier).ToList();
-        if (exact.Count == 1) return (item(exact[0]), null, false);
-        var complete = hits.Where(h => match(h).AllTermsMatched && !match(h).UsedFuzzy).OrderByDescending(score).ToList();
-        if (exact.Count == 0 && complete.Count == 1) return (item(complete[0]), null, false);
-        if (exact.Count == 0 && complete.Count > 1 && score(complete[0]) >= 1.6 * Math.Max(0.01, score(complete[1])))
-            return (item(complete[0]), null, false);
-        return (null, item((exact.Count > 0 ? exact : complete.Count > 0 ? complete : hits)[0]), false);
     }
 
     private void Show(FormaterParse parse, CustomerSummaryDto? customer, CustomerSummaryDto? suggestion,

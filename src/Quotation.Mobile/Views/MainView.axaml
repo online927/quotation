@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Mobile.ViewModels"
+             xmlns:m="using:Quotation.Mobile"
+             x:Class="Quotation.Mobile.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             Background="{DynamicResource PageBrush}">
+  <Panel>
+    <!-- The theme's drawing behind the pages (Ocean waves, Midnight stars, Maroon curves …) -->
+    <Panel Name="ThemeScene" IsHitTestVisible="False">
+      <Path Data="{DynamicResource SkyArt}" Fill="{DynamicResource SkyArtBrush}" Stretch="Fill" Height="380" VerticalAlignment="Top" />
+      <Path Data="{DynamicResource SunArt}" Fill="{DynamicResource SunArtBrush}" Stretch="Uniform" Width="90" Height="90"
+            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,24,28,0" />
+      <Panel Height="130" VerticalAlignment="Bottom" Margin="0,0,0,64">
+        <Path Data="{DynamicResource FarArt}" Fill="{DynamicResource FarArtBrush}" Stretch="Fill" />
+        <Path Data="{DynamicResource NearArt}" Fill="{DynamicResource NearArtBrush}" Stretch="Fill" />
+      </Panel>
+    </Panel>
+
+    <!-- Signed out: the sign-in screen -->
+    <ContentControl Name="LoginHost" Content="{Binding Login}" IsVisible="{Binding !IsSignedIn}" />
+
+    <!-- Signed in: the page, and the bottom menu -->
+    <DockPanel IsVisible="{Binding IsSignedIn}">
+      <Border DockPanel.Dock="Bottom" Classes="bottomnav">
+        <UniformGrid Name="BottomMenu" Columns="5">
+          <RadioButton Classes="nav" Name="NavHome" Command="{Binding ShowTabCommand}" CommandParameter="home"
+                       IsChecked="{Binding Tab, Mode=OneWay, Converter={x:Static m:PhoneConverters.Is}, ConverterParameter=home}">
+            <StackPanel><Path Data="{x:Static m:PhoneIcons.Home}" /><TextBlock Text="Home" /></StackPanel>
+          </RadioButton>
+          <RadioButton Classes="nav" Name="NavQuotations" Command="{Binding ShowTabCommand}" CommandParameter="quotations"
+                       IsChecked="{Binding Tab, Mode=OneWay, Converter={x:Static m:PhoneConverters.Is}, ConverterParameter=quotations}">
+            <StackPanel><Path Data="{x:Static m:PhoneIcons.List}" /><TextBlock Text="Quotations" /></StackPanel>
+          </RadioButton>
+          <RadioButton Classes="nav" Name="NavProducts" Command="{Binding ShowTabCommand}" CommandParameter="products"
+                       IsChecked="{Binding Tab, Mode=OneWay, Converter={x:Static m:PhoneConverters.Is}, ConverterParameter=products}">
+            <StackPanel><Path Data="{x:Static m:PhoneIcons.Box}" /><TextBlock Text="Products" /></StackPanel>
+          </RadioButton>
+          <RadioButton Classes="nav" Name="NavCustomers" Command="{Binding ShowTabCommand}" CommandParameter="customers"
+                       IsChecked="{Binding Tab, Mode=OneWay, Converter={x:Static m:PhoneConverters.Is}, ConverterParameter=customers}">
+            <StackPanel><Path Data="{x:Static m:PhoneIcons.Users}" /><TextBlock Text="Customers" /></StackPanel>
+          </RadioButton>
+          <RadioButton Classes="nav" Name="NavMore" Command="{Binding ShowTabCommand}" CommandParameter="more"
+                       IsChecked="{Binding Tab, Mode=OneWay, Converter={x:Static m:PhoneConverters.Is}, ConverterParameter=more}">
+            <StackPanel><Path Data="{x:Static m:PhoneIcons.More}" Fill="{Binding $parent[RadioButton].Foreground}" /><TextBlock Text="More" /></StackPanel>
+          </RadioButton>
+        </UniformGrid>
+      </Border>
+      <ContentControl Name="PageHost" Content="{Binding Page}" />
+    </DockPanel>
+  </Panel>
+</UserControl>

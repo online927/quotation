@@ -9,10 +9,10 @@
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
       <ctl:PageTitle Text="Diagnostics" Icon="diagnostics" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-        <Button Content="Backup database now" Command="{Binding BackupCommand}" />
-        <Button Name="ExportButton" Content="Export everything" Command="{Binding ExportCommand}"
+        <Button ctl:ButtonIcon.Kind="db" Content="Backup database now" Command="{Binding BackupCommand}" />
+        <Button ctl:ButtonIcon.Kind="export" Name="ExportButton" Content="Export everything" Command="{Binding ExportCommand}"
                 ToolTip.Tip="One file (.tsq) with the database, PDFs, seal and logo, saved in Documents. Use it to move the server to another PC." />
-        <Button Name="RestoreButton" Content="Restore from backup file…" Click="OnRestoreClick"
+        <Button ctl:ButtonIcon.Kind="upload" Name="RestoreButton" Content="Restore from backup file…" Click="OnRestoreClick"
                 ToolTip.Tip="Replace the server's data with a .tsq export or a .db backup (the current data is backed up first)." />
         <Button HotKey="F5" Command="{Binding LoadCommand}" ToolTip.Tip="Refresh (F5)">
           <StackPanel Orientation="Horizontal" Spacing="7">
@@ -23,7 +23,7 @@
       </StackPanel>
     </Grid>
     <ctl:ErrorBanner DockPanel.Dock="Top" Text="{Binding ErrorMessage}" />
-    <TabControl>
+    <TabControl Classes="pills">
       <TabItem Header="System">
         <Border Classes="card" Margin="0,8" VerticalAlignment="Top">
           <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
@@ -76,7 +76,7 @@
         <DockPanel Margin="0,8">
           <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto" Margin="0,0,0,6">
             <TextBox Text="{Binding AuditFilter}" Watermark="Filter by action, user or details" />
-            <Button Grid.Column="2" Content="Apply" Command="{Binding LoadAuditCommand}" />
+            <Button ctl:ButtonIcon.Kind="check" Grid.Column="2" Content="Apply" Command="{Binding LoadAuditCommand}" />
           </Grid>
           <ListBox ItemsSource="{Binding Audit}">
             <ListBox.ItemTemplate>
@@ -101,8 +101,7 @@
       </TabItem>
       <TabItem Header="Slow requests">
         <DockPanel Margin="0,8">
-          <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,6"
-                     Text="Requests that took longer than 1 second (last 500). Total = on the user's PC, from click to answer; Server = the server's own time. Total slow but Server quick means the network or finding the server PC; Server slow means the server PC was busy." />
+          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6"><TextBlock Text="Requests that took longer than 1 second (last 500)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Requests that took longer than 1 second (last 500). Total = on the user's PC, from click to answer; Server = the server's own time. Total slow but Server quick means the network or finding the server PC; Server slow means the server PC was busy."><Path Classes="infoicon" /></Border></StackPanel>
           <Border DockPanel.Dock="Top" Classes="tablehead">
             <Grid ColumnDefinitions="120,170,150,70,70,150,*">
               <TextBlock Text="When" />

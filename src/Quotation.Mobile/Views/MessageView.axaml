@@ -1,0 +1,97 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Mobile.ViewModels"
+             xmlns:views="using:Quotation.Mobile.Views"
+             xmlns:m="using:Quotation.Mobile"
+             x:Class="Quotation.Mobile.Views.MessageView"
+             x:DataType="vm:MessageViewModel">
+  <DockPanel>
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="12,12,18,8">
+      <Button Name="BackButton" Classes="round" Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).BackCommand}">
+        <Path Classes="icon" Data="{x:Static m:PhoneIcons.Back}" />
+      </Button>
+      <StackPanel Grid.Column="1" Margin="10,0,0,0">
+        <TextBlock Classes="h1" FontSize="21" Text="New from a message" />
+        <TextBlock Classes="muted" Text="Paste a WhatsApp or e-mail enquiry" />
+      </StackPanel>
+    </Grid>
+    <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" IsVisible="{Binding IsBusy}" Height="2" MinHeight="2" Margin="18,0" />
+    <ScrollViewer>
+      <StackPanel Margin="16,6,16,20" Spacing="12">
+        <TextBox Name="MessageBox" Classes="message" Text="{Binding Text}" MinHeight="150" MaxHeight="320"
+                 Watermark="AB Auto Parts&#x0a;- Peenya, Bengaluru&#x0a;&#x0a;Vernier caliper 0-300mm, 2, 3159" />
+        <Grid ColumnDefinitions="Auto,10,*">
+          <Button Name="PasteButton" Click="OnPaste">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Path Classes="icon" Data="{x:Static m:PhoneIcons.Paste}" />
+              <TextBlock Text="Paste" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Button Grid.Column="2" Name="MakeButton" Classes="primary" HorizontalAlignment="Stretch" Command="{Binding MakeCommand}" IsEnabled="{Binding !IsBusy}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Path Classes="icon" Data="{x:Static m:PhoneIcons.File}" />
+              <TextBlock Text="Make quotation" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </Grid>
+        <TextBlock Classes="info" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Name="MessageError" Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <StackPanel Spacing="12" IsVisible="{Binding HasResult}">
+          <ItemsControl Name="ProblemList" ItemsSource="{Binding Problems}" IsVisible="{Binding HasProblems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String"><TextBlock Classes="error" Text="{Binding}" Margin="0,2" /></DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border Classes="card">
+            <StackPanel>
+              <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,4">
+                <Path Classes="icon" Data="{x:Static m:PhoneIcons.Check}" Stroke="{DynamicResource GreenBrush}" Margin="0,0,8,0" IsVisible="{Binding CustomerIsTally}" />
+                <TextBlock Grid.Column="1" Name="MessageCustomer" Text="{Binding CustomerName}" FontWeight="Bold" TextWrapping="Wrap" />
+                <TextBlock Grid.Column="2" Classes="muted" Text="{Binding CustomerState}" Margin="8,0,0,0" />
+              </Grid>
+              <Border Classes="sep" />
+              <ItemsControl Name="MessageLines" ItemsSource="{Binding Lines}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:MessageLine">
+                    <Grid ColumnDefinitions="26,*,Auto" Margin="0,5">
+                      <Path Classes="icon" Data="{x:Static m:PhoneIcons.Check}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15"
+                            VerticalAlignment="Top" Margin="0,2,0,0" IsVisible="{Binding IsTally}" />
+                      <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Classes="muted" FontSize="12" Text="{Binding Detail}" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="2" Text="{Binding AmountText}" FontWeight="SemiBold" Margin="10,0,0,0" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Border Classes="sep" />
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Total" FontWeight="Bold" FontSize="17" />
+                <TextBlock Grid.Column="1" Name="MessageTotal" Text="{Binding GrandTotal}" FontWeight="Bold" FontSize="17" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <ItemsControl ItemsSource="{Binding Notes}" IsVisible="{Binding HasNotes}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String"><TextBlock Classes="muted" Text="{Binding}" TextWrapping="Wrap" Margin="0,2" /></DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Grid ColumnDefinitions="*,10,*">
+            <Button Name="SaveDraftButton" HorizontalAlignment="Stretch" Content="Save draft" Command="{Binding SaveDraftCommand}" IsEnabled="{Binding CanSave}" />
+            <Button Grid.Column="2" Name="ApproveButton" Classes="primary" HorizontalAlignment="Stretch" Command="{Binding ApproveCommand}" IsEnabled="{Binding CanSave}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Path Classes="icon" Data="{x:Static m:PhoneIcons.Check}" />
+                <TextBlock Text="Approve" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+          </Grid>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

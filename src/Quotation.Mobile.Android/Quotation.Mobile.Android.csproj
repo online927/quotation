@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Android phone app (APK). Built only in CI (it needs the Android tools): the screens are in Quotation.Mobile.
+    Not in Quotation.sln, so the Windows / Mac builds do not need the Android tools.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
+    <AssemblyName>TSQuotationPhone</AssemblyName>
+    <RootNamespace>Quotation.PhoneApp</RootNamespace>
+    <ApplicationId>com.tsquotation.phone</ApplicationId>
+    <ApplicationTitle>Quotations</ApplicationTitle>
+    <!-- CI passes the run number: each new APK installs over the old one -->
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.9.0</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <RuntimeIdentifiers>android-arm64;android-arm</RuntimeIdentifiers>
+    <!-- The server's answers are read with System.Text.Json (reflection), as on the PC -->
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <TrimMode>partial</TrimMode>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Quotation.Mobile\Quotation.Mobile.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Android" />
+  </ItemGroup>
+</Project>

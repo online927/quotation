@@ -222,7 +222,9 @@ public class Round28UiTests
         ctx.Window.MouseUp(at, Avalonia.Input.MouseButton.Left);
         await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return gear.Flyout is Avalonia.Controls.Primitives.FlyoutBase { IsOpen: true }; });
         var overlay = Avalonia.Controls.Primitives.OverlayLayer.GetOverlayLayer(ctx.Window)!;
-        var rate = overlay.GetVisualDescendants().OfType<RadioButton>().Single(r => (r.Content as string) == "Rate");
+        // The "Rate" row of the gear: its switch is clicked with the mouse.
+        var rate = overlay.GetVisualDescendants().OfType<ToggleSwitch>()
+            .Single(t => t.Parent is Grid g && g.Children.OfType<TextBlock>().Any(b => b.Text == "Rate"));
         var rp = rate.TranslatePoint(new Point(8, 8), ctx.Window)!.Value;
         ctx.Window.MouseDown(rp, Avalonia.Input.MouseButton.Left);
         ctx.Window.MouseUp(rp, Avalonia.Input.MouseButton.Left);

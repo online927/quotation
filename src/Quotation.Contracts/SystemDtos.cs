@@ -41,11 +41,13 @@ public static class AppTheme
     //  More Maroon was removed in Round 19: its users get Glass (Maroon). Round 27 removed Sunset and Frost (→ Default
     //  Light) and Neon Night and Glass (Black) (→ Default Dark).)
     public const string Graphite = "Graphite", GlassBlue = "GlassBlue", GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon",
-        Parchment = "Parchment", ForestGold = "ForestGold", HeroLight = "HeroLight", Ocean = "Ocean", Midnight = "Midnight";
+        Parchment = "Parchment", ForestGold = "ForestGold", HeroLight = "HeroLight", Ocean = "Ocean", Midnight = "Midnight",
+        MaroonMahal = "MaroonMahal";
     /// <summary>Removed themes (still read from older settings).</summary>
     public const string Sunset = "Sunset", Frost = "Frost", GlassBlack = "GlassBlack", NeonNight = "NeonNight";
 
-    public static readonly string[] All = [Light, Dark, System, Graphite, GlassBlue, GlassGreen, GlassMaroon, Parchment, ForestGold, HeroLight, Ocean, Midnight];
+    public static readonly string[] All = [Light, Dark, System, Graphite, GlassBlue, GlassGreen, GlassMaroon, Parchment, ForestGold, HeroLight, Ocean, Midnight,
+        MaroonMahal];
     public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
     /// <summary>
     /// A saved theme that still exists: More Maroon → Glass (Maroon); Neon Night and Glass (Black) → Default Dark; any other
@@ -59,7 +61,7 @@ public static class AppTheme
         _ => Light,
     };
     /// <summary>Themes drawn on dark screens.</summary>
-    public static bool IsDarkTheme(string? theme) => theme is Dark or ForestGold or Midnight;
+    public static bool IsDarkTheme(string? theme) => theme is Dark or ForestGold or Midnight or MaroonMahal;
 }
 
 /// <summary>Text size and spacing, chosen by each user.</summary>

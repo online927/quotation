@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Quotation.Mobile.ViewModels"
+             xmlns:m="using:Quotation.Mobile"
+             x:Class="Quotation.Mobile.Views.MoreView"
+             x:DataType="vm:MoreViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Classes="h1" Text="More" Margin="18,14,18,8" />
+    <ScrollViewer>
+      <StackPanel Margin="16,4,16,20" Spacing="12">
+        <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <Border Classes="card">
+          <Grid ColumnDefinitions="Auto,*">
+            <Border Classes="badge"><TextBlock Text="{Binding Initial}" /></Border>
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+              <TextBlock Name="UserNameText" Text="{Binding UserName}" FontWeight="Bold" FontSize="16" />
+              <TextBlock Classes="muted" Text="{Binding RoleName}" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Button Name="NewFromMessageButton" Classes="cardbtn" Command="{Binding NewFromMessageCommand}" IsVisible="{Binding MakesDocuments}">
+          <Grid ColumnDefinitions="Auto,*">
+            <Path Classes="icon" Data="{x:Static m:PhoneIcons.Paste}" Stroke="{DynamicResource AccentBrush}" Width="20" Height="20" />
+            <StackPanel Grid.Column="1" Margin="12,0,0,0">
+              <TextBlock Text="New from a message" FontWeight="Bold" />
+              <TextBlock Classes="muted" FontSize="12" Text="Paste a WhatsApp or e-mail enquiry" />
+            </StackPanel>
+          </Grid>
+        </Button>
+
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Path Classes="icon" Data="{x:Static m:PhoneIcons.Palette}" Stroke="{DynamicResource AccentBrush}" />
+              <TextBlock Classes="h2" Text="Theme" VerticalAlignment="Center" />
+            </StackPanel>
+            <ComboBox Name="ThemeBox" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" HorizontalAlignment="Stretch" MinHeight="44" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Path Classes="icon" Data="{x:Static m:PhoneIcons.Server}" Stroke="{DynamicResource MutedBrush}" />
+            <TextBlock Grid.Column="1" Text="Quotation Server" Margin="10,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="{Binding ServerText}" VerticalAlignment="Center" />
+          </Grid>
+        </Border>
+
+        <Button Name="SignOutButton" HorizontalAlignment="Stretch" Command="{Binding SignOutCommand}" Foreground="{DynamicResource BadBrush}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Path Classes="icon" Data="{x:Static m:PhoneIcons.Logout}" />
+            <TextBlock Text="Sign out" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <TextBlock Classes="muted" FontSize="12" Text="{Binding Version}" HorizontalAlignment="Center" />
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

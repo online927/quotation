@@ -51,7 +51,7 @@
       </ItemsControl>
 
       <UniformGrid Columns="4">
-        <Button Classes="tile" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="today">
+        <Button Classes="tile strip1" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="today">
           <StackPanel>
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Classes="eyebrow" Text="TODAY'S QUOTATIONS" VerticalAlignment="Center" />
@@ -63,7 +63,7 @@
             <TextBlock Classes="big" Foreground="{DynamicResource AccentBrush}" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
           </StackPanel>
         </Button>
-        <Button Classes="tile" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
+        <Button Classes="tile strip2" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
           <StackPanel>
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Classes="eyebrow" Text="DRAFTS" VerticalAlignment="Center" />
@@ -75,7 +75,7 @@
             <TextBlock Classes="big" Text="{Binding Data.Drafts, FallbackValue='–'}" />
           </StackPanel>
         </Button>
-        <Button Classes="tile" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
+        <Button Classes="tile strip3" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
           <StackPanel>
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Classes="eyebrow" Text="PENDING REVIEW" VerticalAlignment="Center" />
@@ -87,7 +87,7 @@
             <TextBlock Classes="big" Foreground="{DynamicResource OrangeBrush}" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
           </StackPanel>
         </Button>
-        <Button Classes="tile" HorizontalContentAlignment="Stretch" Command="{Binding GoCommand}" CommandParameter="inbox">
+        <Button Classes="tile strip4" HorizontalContentAlignment="Stretch" Command="{Binding GoCommand}" CommandParameter="inbox">
           <StackPanel>
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Classes="eyebrow" Text="AI INBOX — NEEDS ATTENTION" VerticalAlignment="Center" />
@@ -122,15 +122,17 @@
           </Grid.Styles>
           <TextBlock Classes="h2" Grid.ColumnSpan="2" Text="Connections" Margin="0,0,0,8" />
           <TextBlock Grid.Row="1" Classes="label" Text="Tally" />
-          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TallyText}" FontWeight="SemiBold" />
+          <Border Grid.Row="1" Grid.Column="1" Name="TallyChip" Classes="chip" Classes.ok="{Binding TallyOk}" Classes.bad="{Binding !TallyOk}">
+            <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding TallyText}" /></StackPanel>
+          </Border>
           <TextBlock Grid.Row="2" Classes="label" Text="Tally company" />
           <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Data.Status.TallyCompany, FallbackValue='–', TargetNullValue='–'}" />
           <TextBlock Grid.Row="3" Classes="label" Text="Active financial year" />
           <TextBlock Grid.Row="3" Grid.Column="1">
             <Run Text="{Binding Data.Status.ActiveFinancialYear, FallbackValue='–', Mode=OneWay}" />
-            <Run Text="  (source: " Foreground="{DynamicResource MutedBrush}" />
-            <Run Text="{Binding Data.Status.ActiveFinancialYearSource, FallbackValue='', Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" />
-            <Run Text=")" Foreground="{DynamicResource MutedBrush}" />
+            <Run Text="  (source: " />
+            <Run Text="{Binding Data.Status.ActiveFinancialYearSource, FallbackValue='', Mode=OneWay}" />
+            <Run Text=")" />
           </TextBlock>
           <TextBlock Grid.Row="4" Classes="label" Text="Last sync" />
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastSyncText}" />
@@ -141,9 +143,13 @@
             <Run Text="{Binding Data.Status.CustomerCount, FallbackValue='–', Mode=OneWay}" />
           </TextBlock>
           <TextBlock Grid.Row="6" Classes="label" Text="Gmail" />
-          <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding GmailText}" />
+          <Border Grid.Row="6" Grid.Column="1" Name="GmailChip" Classes="chip" Classes.ok="{Binding GmailOk}" Classes.bad="{Binding !GmailOk}">
+            <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding GmailText}" /></StackPanel>
+          </Border>
           <TextBlock Grid.Row="7" Classes="label" Text="Claude AI" />
-          <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding AiText}" />
+          <Border Grid.Row="7" Grid.Column="1" Name="AiChip" Classes="chip" Classes.ok="{Binding AiOk}" Classes.warn="{Binding !AiOk}">
+            <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding AiText}" /></StackPanel>
+          </Border>
         </Grid>
       </Border>
 

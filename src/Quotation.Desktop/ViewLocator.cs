@@ -21,6 +21,7 @@ public sealed class ViewLocator : IDataTemplate
         var type = Type.GetType(name);
         if (type is null) return new TextBlock { Text = "View not found: " + name };
         var view = (Control)Activator.CreateInstance(type)!;
+        Services.MacSupport.Apply(view); // ⌘ shortcuts on a Mac
         _views.AddOrUpdate(data, view);
         return view;
     }

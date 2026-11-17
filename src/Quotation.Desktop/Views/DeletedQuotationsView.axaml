@@ -47,9 +47,9 @@
             <TextBlock Grid.Column="5" Text="{Binding Deleted}" Margin="12,0,0,0" FontSize="12" />
             <TextBlock Grid.Column="6" Text="{Binding RemovedOn}" FontSize="12" />
             <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
-              <Button Classes="small" Content="Restore"
+              <Button ctl:ButtonIcon.Kind="restore" Classes="small" Content="Restore"
                       Command="{Binding $parent[UserControl].((vm:DeletedQuotationsViewModel)DataContext).RestoreCommand}" CommandParameter="{Binding}" />
-              <Button Classes="small danger" Content="Delete permanently"
+              <Button ctl:ButtonIcon.Kind="trash" Classes="small danger" Content="Delete permanently"
                       Command="{Binding $parent[UserControl].((vm:DeletedQuotationsViewModel)DataContext).PurgeCommand}" CommandParameter="{Binding}" />
             </StackPanel>
           </Grid>

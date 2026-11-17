@@ -16,6 +16,9 @@
     <PackageVersion Include="Avalonia.Desktop" Version="11.3.22" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.22" />
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.22" />
+    <PackageVersion Include="Avalonia.Skia" Version="11.3.22" />
+    <!-- The phone app (Quotation.Mobile.Android, built in CI) -->
+    <PackageVersion Include="Avalonia.Android" Version="11.3.22" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.22" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageVersion Include="PDFsharp" Version="6.2.4" />

@@ -27,7 +27,10 @@ public sealed partial class DashboardViewModel : ViewModelBase, IReturnablePage
 
     public string TallyText => Data?.Status.TallyConnected == true ? "Connected" : "Disconnected";
     public string GmailText => Data?.Status.GmailConnected == true ? "Connected" : "Not connected";
-    public string AiText => Data?.Status.AiConfigured == true ? "Configured" : "Not configured";
+    public string AiText => Data?.Status.AiConfigured == true ? "Set up" : "Not set up";
+    public bool TallyOk => Data?.Status.TallyConnected == true;
+    public bool GmailOk => Data?.Status.GmailConnected == true;
+    public bool AiOk => Data?.Status.AiConfigured == true;
     public string LastSyncText => Formatting.LocalDateTime(Data?.Status.LastSuccessfulSyncUtc) ?? "Never";
 
     partial void OnDataChanged(DashboardDto? value)
@@ -35,6 +38,9 @@ public sealed partial class DashboardViewModel : ViewModelBase, IReturnablePage
         OnPropertyChanged(nameof(TallyText));
         OnPropertyChanged(nameof(GmailText));
         OnPropertyChanged(nameof(AiText));
+        OnPropertyChanged(nameof(TallyOk));
+        OnPropertyChanged(nameof(GmailOk));
+        OnPropertyChanged(nameof(AiOk));
         OnPropertyChanged(nameof(LastSyncText));
         OnPropertyChanged(nameof(ShowFollowUp));
     }

@@ -1,6 +1,8 @@
+using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Unicode;
 using System.Xml;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
@@ -25,12 +27,39 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
 
     public TallyConnectionOptions Options => options;
 
+    static TallyXmlClient() => Encoding.RegisterProvider(CodePagesEncodingProvider.Instance); // Windows-1252 (Tally's ANSI)
+
+    /// <summary>
+    /// Tally addresses that did not accept a Unicode (UTF-16) request; they are asked in UTF-8 as before. Remembered for the
+    /// life of the server, so an older Tally is tried in Unicode only once.
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, bool> NoUnicode = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Forgets which Tally addresses did not accept Unicode (tests).</summary>
+    public static void ResetEncodingMemory() => NoUnicode.Clear();
+
     /// <summary>Posts a request and returns the full response document.</summary>
     public async Task<XDocument> ExportAsync(string requestXml, CancellationToken ct = default)
     {
-        using var response = await SendAsync(requestXml, ct);
+        var unicode = !NoUnicode.ContainsKey(options.Url);
+        try
+        {
+            return await ExportOnceAsync(requestXml, unicode, ct);
+        }
+        catch (TallyException ex) when (unicode && IsEncodingRefusal(ex))
+        {
+            RememberNoUnicode(ex);
+            return await ExportOnceAsync(requestXml, false, ct);
+        }
+    }
+
+    private async Task<XDocument> ExportOnceAsync(string requestXml, bool unicode, CancellationToken ct)
+    {
+        using var response = await SendAsync(requestXml, unicode, ct);
         await using var stream = await response.Content.ReadAsStreamAsync(ct);
-        using var reader = XmlReader.Create(CreateTextReader(stream, response), ReaderSettings);
+        var (text, head) = await CreateTextReaderAsync(stream, response, ct);
+        if (unicode) ThrowIfUnicodeRefused(head);
+        using var reader = XmlReader.Create(text, ReaderSettings);
         XDocument doc;
         try
         {
@@ -38,10 +67,30 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
         }
         catch (XmlException ex)
         {
-            throw new TallyException($"Tally returned an unreadable response: {ex.Message}", ex);
+            throw new TallyUnreadableException($"Tally returned an unreadable response: {ex.Message}", ex);
         }
         ThrowIfError(doc.Root);
         return doc;
+    }
+
+    /// <summary>
+    /// A Unicode request that Tally did not understand: an HTTP error, an unreadable or empty answer. Not a refused
+    /// connection or a timeout (asking again would only load a busy Tally twice), and not an error Tally reported itself.
+    /// </summary>
+    private static bool IsEncodingRefusal(TallyException ex) => ex is TallyUnreadableException or TallyHttpException;
+
+    /// <summary>An older Tally that reads a UTF-16 request as bytes answers "Unknown Request" (or nothing).</summary>
+    private static void ThrowIfUnicodeRefused(string head)
+    {
+        if (head.Trim().Length == 0) throw new TallyUnreadableException("Tally returned an empty response.");
+        if (head.Contains("Unknown Request", StringComparison.OrdinalIgnoreCase))
+            throw new TallyUnreadableException("Tally did not understand the request (Unknown Request).");
+    }
+
+    private void RememberNoUnicode(Exception ex)
+    {
+        NoUnicode[options.Url] = true;
+        logger?.LogWarning("Tally at {Url} did not accept a Unicode request ({Reason}); asking in UTF-8 from now on.", options.Url, ex.Message);
     }
 
     /// <summary>
@@ -51,9 +100,29 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
     public async IAsyncEnumerable<XElement> StreamObjectsAsync(string requestXml, string objectElementName,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        using var response = await SendAsync(requestXml, ct);
-        await using var stream = await response.Content.ReadAsStreamAsync(ct);
-        using var reader = XmlReader.Create(CreateTextReader(stream, response), ReaderSettings);
+        var unicode = !NoUnicode.ContainsKey(options.Url);
+        HttpResponseMessage response;
+        TextReader text;
+        try
+        {
+            response = await SendAsync(requestXml, unicode, ct);
+            string head;
+            (text, head) = await CreateTextReaderAsync(await response.Content.ReadAsStreamAsync(ct), response, ct);
+            if (unicode)
+            {
+                try { ThrowIfUnicodeRefused(head); }
+                catch { response.Dispose(); throw; }
+            }
+        }
+        catch (TallyException ex) when (unicode && IsEncodingRefusal(ex))
+        {
+            RememberNoUnicode(ex);
+            unicode = false;
+            response = await SendAsync(requestXml, false, ct);
+            (text, var _discard) = await CreateTextReaderAsync(await response.Content.ReadAsStreamAsync(ct), response, ct);
+        }
+        using var answer = response;
+        using var reader = XmlReader.Create(text, ReaderSettings);
 
         while (true)
         {
@@ -64,7 +133,7 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
             }
             catch (XmlException ex)
             {
-                throw new TallyException($"Tally returned an unreadable response: {ex.Message}", ex);
+                throw new TallyUnreadableException($"Tally returned an unreadable response: {ex.Message}", ex);
             }
             if (!more) yield break;
             if (reader.NodeType != XmlNodeType.Element) continue;
@@ -96,15 +165,19 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
         }
     }
 
-    private async Task<HttpResponseMessage> PostAsync(string requestXml, CancellationToken ct)
+    /// <summary>
+    /// Posts the request. Unicode: UTF-16 with "charset=utf-16", as Tally documents for Unicode data, so that signs in names
+    /// (°, ₹, ×, ±, µ) come back as they are; Tally then answers in UTF-16 too.
+    /// </summary>
+    private async Task<HttpResponseMessage> PostAsync(string requestXml, bool unicode, CancellationToken ct)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(options.Timeout);
-        using var content = new StringContent(requestXml, new UTF8Encoding(false), "text/xml");
+        using var content = new StringContent(requestXml, unicode ? new UnicodeEncoding(false, false) : new UTF8Encoding(false), "text/xml");
         return await http.PostAsync(options.Url, content, timeout.Token);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(string requestXml, CancellationToken ct)
+    private async Task<HttpResponseMessage> SendAsync(string requestXml, bool unicode, CancellationToken ct)
     {
         // Defence in depth: this application must never write to Tally.
         TallyReadOnlyGuard.EnsureReadOnly(requestXml);
@@ -114,7 +187,7 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
         {
             // Waiting for an earlier request (guard) does not count against the timeout. The whole response is
             // buffered by PostAsync, so the guard is held until Tally has finished answering.
-            response = guard is null ? await PostAsync(requestXml, ct) : await guard.RunAsync(() => PostAsync(requestXml, ct), probe, ct);
+            response = guard is null ? await PostAsync(requestXml, unicode, ct) : await guard.RunAsync(() => PostAsync(requestXml, unicode, ct), probe, ct);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
@@ -133,22 +206,50 @@ public sealed class TallyXmlClient(HttpClient http, TallyConnectionOptions optio
         if (!response.IsSuccessStatusCode)
         {
             response.Dispose();
-            throw new TallyException($"Tally returned HTTP {(int)response.StatusCode}.");
+            throw new TallyHttpException($"Tally returned HTTP {(int)response.StatusCode}.");
         }
         return response;
     }
 
-    private static TextReader CreateTextReader(Stream stream, HttpResponseMessage response)
+    /// <summary>
+    /// Reads Tally's answer in the encoding it really used: a byte-order mark, UTF-16 without a mark (Tally's Unicode
+    /// answer), the header's charset for UTF-16, valid UTF-8, the header's other charset, else Windows-1252 (Tally's ANSI,
+    /// where ° is one byte). The answer is already in memory (PostAsync buffers it).
+    /// </summary>
+    private static async Task<(TextReader Reader, string Head)> CreateTextReaderAsync(Stream stream, HttpResponseMessage response, CancellationToken ct)
     {
-        var charset = response.Content.Headers.ContentType?.CharSet;
-        Encoding encoding = Encoding.UTF8;
-        if (!string.IsNullOrEmpty(charset))
+        MemoryStream buffer;
+        if (stream is MemoryStream ms && ms.TryGetBuffer(out _)) buffer = ms;
+        else
         {
-            try { encoding = Encoding.GetEncoding(charset.Trim('"')); }
-            catch (ArgumentException) { /* unknown charset: keep UTF-8 */ }
+            buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer, ct);
+            buffer.Position = 0;
         }
-        // detectEncodingFromByteOrderMarks handles UTF-16 responses from some Tally versions.
-        return new StreamReader(stream, encoding, detectEncodingFromByteOrderMarks: true);
+        buffer.TryGetBuffer(out var all);
+        var bytes = all.AsSpan((int)buffer.Position);
+        var encoding = DetectEncoding(bytes, response.Content.Headers.ContentType?.CharSet);
+        var head = encoding.GetString(bytes[..Math.Min(bytes.Length, 2048)]);
+        return (new StreamReader(buffer, encoding, detectEncodingFromByteOrderMarks: true), head);
+    }
+
+    public static Encoding DetectEncoding(ReadOnlySpan<byte> bytes, string? charset)
+    {
+        if (bytes.StartsWith((ReadOnlySpan<byte>)[0xFF, 0xFE])) return Encoding.Unicode;
+        if (bytes.StartsWith((ReadOnlySpan<byte>)[0xFE, 0xFF])) return Encoding.BigEndianUnicode;
+        if (bytes.StartsWith((ReadOnlySpan<byte>)[0xEF, 0xBB, 0xBF])) return new UTF8Encoding(false);
+        if (bytes.Length >= 2 && bytes[0] != 0 && bytes[1] == 0) return Encoding.Unicode;
+        if (bytes.Length >= 2 && bytes[0] == 0 && bytes[1] != 0) return Encoding.BigEndianUnicode;
+        Encoding? declared = null;
+        if (!string.IsNullOrWhiteSpace(charset))
+        {
+            try { declared = Encoding.GetEncoding(charset.Trim().Trim('"')); }
+            catch (ArgumentException) { /* unknown charset */ }
+        }
+        if (declared is UnicodeEncoding) return declared;
+        if (Utf8.IsValid(bytes)) return new UTF8Encoding(false);
+        if (declared is not null && declared is not UTF8Encoding) return declared;
+        return Encoding.GetEncoding(1252);
     }
 
     private static void ThrowIfError(XElement? root)

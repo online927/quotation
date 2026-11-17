@@ -8,3 +8,9 @@ public class TallyUnavailableException(string message, Exception? inner = null) 
 
 /// <summary>Tally did not answer in time (it is busy or the request was too heavy).</summary>
 public sealed class TallyTimeoutException(string message, Exception? inner = null) : TallyUnavailableException(message, inner);
+
+/// <summary>Tally answered something that is not readable XML (or nothing at all).</summary>
+public sealed class TallyUnreadableException(string message, Exception? inner = null) : TallyException(message, inner);
+
+/// <summary>Tally answered with an HTTP error status.</summary>
+public sealed class TallyHttpException(string message, Exception? inner = null) : TallyException(message, inner);

@@ -79,8 +79,30 @@ public static class TextNormalizer
                 if (part != t) result.Add(part);
             }
         }
+        // Initials written apart ("A B AUTO", "A.B.", "A&B") are also indexed together ("ab").
+        for (var i = 0; i < baseTokens.Count; i++)
+        {
+            var run = InitialsRun(baseTokens, i);
+            if (run < 2) continue;
+            result.Add(string.Concat(baseTokens.Skip(i).Take(run)));
+            i += run - 1;
+        }
         return result;
     }
+
+    /// <summary>
+    /// How many single letters start at <paramref name="i"/> ("a b auto" → 2 at 0). A letter right after a number is a unit
+    /// ("10 m", "2 x 3"), not an initial.
+    /// </summary>
+    private static int InitialsRun(List<string> tokens, int i)
+    {
+        if (!IsInitial(tokens[i]) || (i > 0 && IsNumber(tokens[i - 1]))) return 0;
+        var j = i;
+        while (j < tokens.Count && IsInitial(tokens[j])) j++;
+        return j - i;
+    }
+
+    private static bool IsInitial(string t) => t.Length == 1 && char.IsLetter(t[0]);
 
     /// <summary>
     /// Tokens for a query: stop words removed, number+unit joined into one token ("10 mm" → "10mm")
@@ -93,6 +115,14 @@ public static class TextNormalizer
         for (var i = 0; i < baseTokens.Count; i++)
         {
             var t = baseTokens[i];
+            // Initials typed apart are one word: "A B auto" = "AB auto" = "A.B. auto" (and "a" is then not a stop word).
+            var run = InitialsRun(baseTokens, i);
+            if (run >= 2)
+            {
+                result.Add(string.Concat(baseTokens.Skip(i).Take(run)));
+                i += run - 1;
+                continue;
+            }
             if (i + 1 < baseTokens.Count && IsNumber(t) && Units.Contains(baseTokens[i + 1]) && baseTokens[i + 1] != "x")
             {
                 result.Add(t + baseTokens[i + 1]);

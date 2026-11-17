@@ -24,9 +24,12 @@ public static class SimulatorHost
 
         app.MapPost("/", async (HttpRequest req) =>
         {
-            using var reader = new StreamReader(req.Body, Encoding.UTF8);
+            // Like TallyPrime: a UTF-16 request (charset=utf-16) is answered in UTF-16, anything else in UTF-8.
+            var unicode = req.ContentType?.Contains("utf-16", StringComparison.OrdinalIgnoreCase) == true;
+            var encoding = unicode ? (Encoding)new UnicodeEncoding(false, false) : new UTF8Encoding(false);
+            using var reader = new StreamReader(req.Body, encoding);
             var xml = engine.Handle(await reader.ReadToEndAsync());
-            return Results.Text(xml, "text/xml", Encoding.UTF8);
+            return Results.Bytes(encoding.GetBytes(xml), unicode ? "text/xml; charset=utf-16" : "text/xml; charset=utf-8");
         });
         app.MapGet("/", () => Results.Text("<RESPONSE>TallyPrime Server is Running</RESPONSE>", "text/xml"));
 

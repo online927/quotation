@@ -144,7 +144,8 @@ public sealed class TestServer : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        // Only this test server's database: clearing every pool would close another test's connection while it opens
+        Quotation.Data.DatabaseInitializer.ClearPool(Path.Combine(DataDirectory, "quotation.db"));
         try { Directory.Delete(DataDirectory, recursive: true); } catch { /* best effort */ }
     }
 }

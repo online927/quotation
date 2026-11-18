@@ -843,5 +843,8 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 11. Update question: no "An administrator asks everyone to update now" sentence.
 12. My Settings → Selected text (this PC): Soft blue (the default; the old solid blue hid the letters), Blue sketch (white
     letters), Yellow highlighter, Theme colour (a see-through tint of the theme's colour).
+13. Server backups and restores close only the copies' own database connections (they closed every open connection of
+    the program, so a request at the moment of a backup could fail once); the tests' servers do the same, which also
+    ends a rare test failure on Windows.
 
-Server update needed (10: the finder and its firewall rule).
+Server update needed (10: the finder and its firewall rule; 13).

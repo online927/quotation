@@ -15,6 +15,25 @@ public static class DatabaseInitializer
         Pooling = true,
     }.ToString();
 
+    /// <summary>A one-off connection (backup copies, a restored file): not kept open in the pool, so the file is closed at once.</summary>
+    public static string BuildUnpooledConnectionString(string databasePath) => new SqliteConnectionStringBuilder
+    {
+        DataSource = databasePath,
+        Mode = SqliteOpenMode.ReadWriteCreate,
+        DefaultTimeout = 30,
+        Pooling = false,
+    }.ToString();
+
+    /// <summary>
+    /// Closes the kept (pooled) connections of this one database file. Never SqliteConnection.ClearAllPools: that closes
+    /// the pools of every database in the program, also a connection another request is opening at that moment.
+    /// </summary>
+    public static void ClearPool(string databasePath)
+    {
+        using var connection = new SqliteConnection(BuildConnectionString(databasePath));
+        SqliteConnection.ClearPool(connection);
+    }
+
     /// <summary>Applies pending migrations and enables WAL so readers never block the writer.</summary>
     public static async Task InitializeAsync(QuotationDbContext db, CancellationToken ct = default)
     {

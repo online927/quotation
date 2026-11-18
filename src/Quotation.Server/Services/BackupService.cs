@@ -44,7 +44,7 @@ public sealed class BackupService(
             await source.OpenAsync(ct);
             try
             {
-                using var destination = new SqliteConnection(DatabaseInitializer.BuildConnectionString(target));
+                using var destination = new SqliteConnection(DatabaseInitializer.BuildUnpooledConnectionString(target));
                 await destination.OpenAsync(ct);
                 source.BackupDatabase(destination);
             }
@@ -53,7 +53,6 @@ public sealed class BackupService(
                 await source.CloseAsync();
             }
         }
-        SqliteConnection.ClearAllPools();
         Prune(Folder);
         log.LogInformation("Database backup written to {Path}", target);
         CopyToSecondFolder(target);
@@ -209,15 +208,15 @@ public sealed class BackupService(
                 {
                     var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
                     var livePath = ((SqliteConnection)db.Database.GetDbConnection()).DataSource;
-                    SqliteConnection.ClearAllPools();
-                    using (var source = new SqliteConnection(DatabaseInitializer.BuildConnectionString(database)))
-                    using (var destination = new SqliteConnection(DatabaseInitializer.BuildConnectionString(livePath)))
+                    DatabaseInitializer.ClearPool(livePath);
+                    using (var source = new SqliteConnection(DatabaseInitializer.BuildUnpooledConnectionString(database)))
+                    using (var destination = new SqliteConnection(DatabaseInitializer.BuildUnpooledConnectionString(livePath)))
                     {
                         await source.OpenAsync(ct);
                         await destination.OpenAsync(ct);
                         source.BackupDatabase(destination);
                     }
-                    SqliteConnection.ClearAllPools();
+                    DatabaseInitializer.ClearPool(livePath);
                     await DatabaseInitializer.InitializeAsync(db, ct);
                 }
 

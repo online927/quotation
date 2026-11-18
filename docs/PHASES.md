@@ -782,3 +782,29 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    (cursor in Quantity) or one column top to bottom (Item name, Description, Quantity, Rate or Discount); "Going down: Rate ·
    line 2 of 3" shows meanwhile. Off at first; remembered on the PC.
 
+
+### Round 29
+
+1. Modern look on every screen (soft borderless buttons with symbols, soft typing boxes, floating lists with a tick, round
+   calendar days, − / + number boxes, pill tabs, status chips, one-line help with ⓘ, small rounded menus), Settings → Company
+   in cards, the Reload button removed, a your-name menu and a round Log out button in the top bar.
+2. Gear menu: switches, "Next line", go up instead of down, the same discount on all lines, hide the HSN and GST columns.
+3. Keys: F1 shows all shortcuts; F5 refreshes every list; Alt+C, Alt+I, Ctrl+Shift+S, Ctrl+O, Ctrl+W, Ctrl+G (Formater).
+4. Themes: Maroon redesigned (Maroon Frame, same colours); new theme Maroon Mahal.
+5. Tally: item names with ° and other special signs are read correctly (Unicode); the search finds "A B auto" and "AB auto".
+6. Mac app (.dmg, Apple Silicon and Intel) and the Android phone app (APK), both connected to the Quotation Server.
+
+### Round 30
+
+1. New theme **Tally**, looking like TallyPrime: a dark blue-green top bar, a light blue page, white boxes with thin lines,
+   square corners and no shadows; the chosen menu item and list row in a yellow bar; menu headings in capitals with one red
+   letter in each item — on the Dashboard (or in the menu) pressing that letter opens the page, like Gateway of Tally.
+   The Dashboard's number boxes have a dark heading strip; a light band shows where you are.
+2. A key bar on the right lists the app's keys (F1, F5, Ctrl+S, Ctrl+Enter, Alt+C …): the ones this page uses in black, the
+   others grey; clicking one works like pressing it.
+3. Quotation screen: "Quotation" (or "Proforma Invoice") in a dark box, like a Tally voucher type; Approve first asks
+   "Approve? Yes or No" (Y / N, or Enter / Esc), like Tally's "Accept?".
+4. The Tally theme is one more theme in the list, on Windows, on the Mac (the key bar shows ⌘ and ⌥) and on the Android
+   phone (More → Theme): there the page headings sit in a dark blue-green bar, boxes are square with thin lines, the number
+   boxes have a dark strip, the chosen tab is yellow, and Approve asks "Approve? Yes or No".
+5. Formater: typing or pasting at the moment the page opens no longer shows the customer and items of the older text.

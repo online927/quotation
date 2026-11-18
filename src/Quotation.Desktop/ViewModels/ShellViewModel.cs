@@ -20,7 +20,43 @@ public sealed partial class NavItem(string key, string title, string shortcut, F
     public string Shortcut { get; } = shortcut;
     public Func<ViewModelBase> Factory { get; } = factory;
     [ObservableProperty] private bool _isSelected;
+
+    /// <summary>Section heading in capitals (Tally theme).</summary>
+    public string SectionCaps => Section.ToUpperInvariant();
+
+    /// <summary>
+    /// Tally theme: the letter that opens this page from the Dashboard (shown in red, like Gateway of Tally), and the title
+    /// around it; '\0' when no letter is free.
+    /// </summary>
+    public char HotKey { get; private set; }
+    public string TitleBefore { get; private set; } = title;
+    public string TitleHot { get; private set; } = "";
+    public string TitleAfter { get; private set; } = "";
+
+    /// <summary>Gives each item its own letter: the first letter of a word that is still free, else any free letter.</summary>
+    public static void AssignHotKeys(IEnumerable<NavItem> items)
+    {
+        var used = new HashSet<char>();
+        foreach (var n in items)
+        {
+            var t = n.Title;
+            var starts = Enumerable.Range(0, t.Length).Where(i => char.IsLetter(t[i]) && (i == 0 || t[i - 1] == ' '));
+            var others = Enumerable.Range(0, t.Length).Where(i => char.IsLetter(t[i]));
+            var at = starts.Concat(others).Where(i => !used.Contains(char.ToUpperInvariant(t[i]))).DefaultIfEmpty(-1).First();
+            if (at < 0)
+            {
+                (n.HotKey, n.TitleBefore, n.TitleHot, n.TitleAfter) = ('\0', t, "", "");
+                continue;
+            }
+            n.HotKey = char.ToUpperInvariant(t[at]);
+            used.Add(n.HotKey);
+            (n.TitleBefore, n.TitleHot, n.TitleAfter) = (t[..at], t[at].ToString(), t[(at + 1)..]);
+        }
+    }
 }
+
+/// <summary>A key in the key bar on the right (Tally theme); greyed when it does nothing on this page.</summary>
+public sealed record KeyBarItem(string Keys, string Label, Avalonia.Input.Key Key, Avalonia.Input.KeyModifiers Modifiers, bool IsOn);
 
 /// <summary>Outline icons of the sidebar (24×24, drawn as lines).</summary>
 public static class NavIcons
@@ -292,6 +328,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         items.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session)));
         if (_session.IsAdmin) items.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session, this, () => _onLogout())));
 
+        NavItem.AssignHotKeys(items);
         if (items.Select(n => n.Key).SequenceEqual(NavItems.Select(n => n.Key))) return;
         NavItems.Clear();
         foreach (var n in items)
@@ -699,6 +736,45 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     {
         if (oldValue is not null) oldValue.PropertyChanged -= OnPagePropertyChanged;
         if (newValue is not null) newValue.PropertyChanged += OnPagePropertyChanged;
+        UpdateKeyBar(newValue);
+    }
+
+    /// <summary>The key bar on the right (Tally theme): the app's shortcuts, the ones this page uses in black, the others grey.</summary>
+    public ObservableCollection<KeyBarItem> KeyBar { get; } = [];
+
+    private void UpdateKeyBar(ViewModelBase? page)
+    {
+        var refresh = page is DashboardViewModel or QuotationListViewModel or CustomersViewModel or ProductsViewModel or GmailViewModel
+            or TallyViewModel or AiInboxViewModel or DeletedQuotationsViewModel or DiagnosticsViewModel;
+        var editor = page is QuotationEditorViewModel;
+        var formater = page is FormaterViewModel;
+        var ctrl = MacSupport.IsMac ? "⌘" : "Ctrl";
+        var alt = MacSupport.IsMac ? "⌥" : "Alt";
+        // Ctrl on Windows, ⌘ on a Mac (the Mac app has every Ctrl shortcut on ⌘ too).
+        var C = MacSupport.Command;
+        const Avalonia.Input.KeyModifiers A = Avalonia.Input.KeyModifiers.Alt, N = Avalonia.Input.KeyModifiers.None,
+            S = Avalonia.Input.KeyModifiers.Shift;
+        KeyBarItem[] keys =
+        [
+            new("F1", "Help / keys", Avalonia.Input.Key.F1, N, true),
+            new("F5", "Refresh", Avalonia.Input.Key.F5, N, refresh),
+            new(ctrl + "+F", "Search", Avalonia.Input.Key.F, C, true),
+            new(alt + "+←", "Back", Avalonia.Input.Key.Left, A, CanGoBack),
+            new(alt + "+→", "Forward", Avalonia.Input.Key.Right, A, CanGoForward),
+            new(ctrl + "+P", "Print", Avalonia.Input.Key.P, C, editor || formater || page is QuotationListViewModel),
+            new(alt + "+C", "Customer", Avalonia.Input.Key.C, A, editor),
+            new(alt + "+I", "Item", Avalonia.Input.Key.I, A, editor),
+            new(alt + "+P", "P&F", Avalonia.Input.Key.P, A, editor || formater),
+            new(ctrl + "+S", "Save", Avalonia.Input.Key.S, C, editor),
+            new(ctrl + "+Enter", "Approve", Avalonia.Input.Key.Enter, C, editor || formater),
+            new("F11", "Preview", Avalonia.Input.Key.F11, N, editor || formater),
+            new(ctrl + "+Shift+S", "Save as PDF", Avalonia.Input.Key.S, C | S, editor),
+            new(ctrl + "+O", "Open PDF", Avalonia.Input.Key.O, C, editor),
+            new(ctrl + "+W", "WhatsApp", Avalonia.Input.Key.W, C, editor),
+            new(ctrl + "+G", "Next problem", Avalonia.Input.Key.G, C, formater),
+        ];
+        KeyBar.Clear();
+        foreach (var k in keys) KeyBar.Add(k);
     }
 
     private void OnPagePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -720,6 +796,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         OnPropertyChanged(nameof(CanGoForward));
         OnPropertyChanged(nameof(BackToolTip));
         OnPropertyChanged(nameof(ForwardToolTip));
+        UpdateKeyBar(CurrentPage);
     }
 
     private string TitleOf(PageEntry entry) =>

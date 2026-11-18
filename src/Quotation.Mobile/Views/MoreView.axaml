@@ -5,7 +5,9 @@
              x:Class="Quotation.Mobile.Views.MoreView"
              x:DataType="vm:MoreViewModel">
   <DockPanel>
-    <TextBlock DockPanel.Dock="Top" Classes="h1" Text="More" Margin="18,14,18,8" />
+    <Border DockPanel.Dock="Top" Classes="pagehead" Padding="18,14,18,8">
+      <TextBlock Classes="h1" Text="More" />
+    </Border>
     <ScrollViewer>
       <StackPanel Margin="16,4,16,20" Spacing="12">
         <TextBlock Classes="error" Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />

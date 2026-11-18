@@ -255,6 +255,53 @@ public class PhoneAppTests
         Assert.False(third.IsSignedIn);
     }
 
+    [AvaloniaFact]
+    public async Task The_tally_theme_looks_like_tally_on_the_phone_and_asks_before_approving()
+    {
+        using var ctx = await PhoneContext.StartAsync();
+        try
+        {
+            await ctx.Main.ShowTabCommand.ExecuteAsync(Tabs.More);
+            var more = (MoreViewModel)ctx.Main.Page!;
+            more.Theme = more.Themes.First(t => t.Key == AppTheme.Tally);
+            await Ui.WaitUntil(() => !more.IsBusy);
+            var main = ctx.Window.GetVisualDescendants().OfType<MainView>().First();
+            Assert.Contains("tally", main.Classes);
+            Assert.True(ColourThemes.IsFlat);
+
+            await ctx.Main.ShowTabCommand.ExecuteAsync(Tabs.Home);
+            await Ui.WaitUntil(() => ctx.Main.Page is HomeViewModel { IsBusy: false });
+            var head = ctx.Window.GetVisualDescendants().OfType<Border>().First(b => b.Classes.Contains("pagehead") && b.IsEffectivelyVisible);
+            Assert.Equal(Avalonia.Media.Color.Parse("#1F4D63"), ((Avalonia.Media.ISolidColorBrush)head.Background!).Color);
+            await ctx.ShotAsync("phone-tally-dashboard");
+
+            // A draft: Approve asks "Approve? Yes or No" first; No keeps the draft, Yes approves it.
+            await ctx.Main.ShowQuotationsAsync(QuotationsViewModel.Drafts);
+            var list = (QuotationsViewModel)ctx.Main.Page!;
+            await Ui.WaitUntil(() => !list.IsBusy && list.Items.Count == 1);
+            await ctx.ShotAsync("phone-tally-quotations");
+            await list.OpenCommand.ExecuteAsync(list.Items[0]);
+            var detail = (QuotationDetailViewModel)ctx.Main.Page!;
+            await Ui.WaitUntil(() => detail.Quotation is not null && !detail.IsBusy);
+            var approving = detail.ApproveCommand.ExecuteAsync(null);
+            await Ui.WaitUntil(() => ctx.Main.Question is { Title: "Approve ?" });
+            await ctx.ShotAsync("phone-tally-approve");
+            ctx.Main.AnswerCommand.Execute("no");
+            await approving;
+            Assert.Equal(QuotationStatus.Draft, detail.Quotation!.Status);
+            Assert.Null(ctx.Main.Question);
+            approving = detail.ApproveCommand.ExecuteAsync(null);
+            await Ui.WaitUntil(() => ctx.Main.Question is not null);
+            ctx.Main.AnswerCommand.Execute("yes");
+            await approving;
+            Assert.Equal(QuotationStatus.Generated, detail.Quotation!.Status);
+        }
+        finally
+        {
+            ThemeService.Apply(AppTheme.Light);
+        }
+    }
+
     [Fact]
     public void Server_addresses_and_whatsapp_numbers_are_tidied()
     {

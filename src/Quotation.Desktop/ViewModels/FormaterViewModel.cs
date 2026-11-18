@@ -247,7 +247,8 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         OnPropertyChanged(nameof(CanApprove));
         try
         {
-            var parse = FormaterText.Parse(Text);
+            var text = Text;
+            var parse = FormaterText.Parse(text);
             CustomerSummaryDto? customer = null;
             CustomerSummaryDto? customerSuggestion = null;
             var customerRemembered = false;
@@ -266,6 +267,9 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
                 lines.Add((item, p, s, r));
             }
             ct.ThrowIfCancellationRequested();
+            // The text changed while the Tally lists were searched: the newer reading shows its own result (an older one
+            // finishing last must not put the old customer and items back).
+            if (text != Text) return;
             CustomerIsRemembered = customerRemembered;
             Show(parse, customer, customerSuggestion, lines);
         }

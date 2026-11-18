@@ -117,7 +117,14 @@ public partial class ShellView : UserControl
         _topLevel = TopLevel.GetTopLevel(this);
         _topLevel?.AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
         _topLevel?.AddHandler(KeyDownEvent, OnKeyDownUnhandled, RoutingStrategies.Bubble);
+        ThemeService.ColoursChanged += OnThemeColoursChanged;
+        OnThemeColoursChanged();
     }
+
+    /// <summary>The Tally theme changes more than colours (Styles/TallyStyles.axaml): its styles look for the "tally" class here.</summary>
+    private void OnThemeColoursChanged() => Classes.Set("tally", IsTallyTheme);
+
+    private static bool IsTallyTheme => ThemeService.Current == Quotation.Contracts.AppTheme.Tally;
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
@@ -125,6 +132,56 @@ public partial class ShellView : UserControl
         _topLevel?.RemoveHandler(KeyDownEvent, OnPreviewKeyDown);
         _topLevel?.RemoveHandler(KeyDownEvent, OnKeyDownUnhandled);
         _topLevel = null;
+        ThemeService.ColoursChanged -= OnThemeColoursChanged;
+    }
+
+    // ===== Tally theme: the key bar and the menu's letters =====
+
+    private void OnKeyBarClick(object? sender, RoutedEventArgs e)
+    {
+        if ((sender as Control)?.DataContext is KeyBarItem key) PressKey(key.Key, key.Modifiers);
+    }
+
+    private void OnEscKeyClick(object? sender, RoutedEventArgs e) => PressKey(Key.Escape, KeyModifiers.None);
+
+    /// <summary>
+    /// A key of the key bar works as if it was pressed: on the box that has the keyboard focus (the key bar never takes it),
+    /// or else on the page. A shortcut of the page or the window runs its command; other keys go to the page as usual.
+    /// </summary>
+    public void PressKey(Key key, KeyModifiers modifiers)
+    {
+        var focused = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() as Control;
+        var target = focused is not null && this.IsVisualAncestorOf(focused) && !KeyBarPanel.IsVisualAncestorOf(focused)
+            ? focused
+            : PageHost.GetVisualDescendants().OfType<UserControl>().FirstOrDefault() as Control ?? this;
+        var args = new KeyEventArgs { RoutedEvent = KeyDownEvent, Key = key, KeyModifiers = modifiers, Source = target };
+        foreach (var element in target.GetSelfAndVisualAncestors().OfType<InputElement>())
+        {
+            foreach (var binding in element.KeyBindings.ToList())
+            {
+                if (binding.Gesture?.Matches(args) != true || binding.Command is not { } command || !command.CanExecute(binding.CommandParameter)) continue;
+                command.Execute(binding.CommandParameter);
+                return;
+            }
+        }
+        target.RaiseEvent(args);
+        if (!args.Handled && key == Key.Escape) Vm?.GoBack();
+    }
+
+    /// <summary>Tally theme: on the Dashboard (or in the menu) a letter opens the page whose letter it is (red in the menu).</summary>
+    private bool OpenByLetter(KeyEventArgs e)
+    {
+        if (!IsTallyTheme || e.KeyModifiers != KeyModifiers.None || e.Key < Key.A || e.Key > Key.Z || Vm is not { } vm) return false;
+        if (vm.PendingDialog is not null || vm.PendingPrompt is not null || vm.ShowShortcuts) return false;
+        var focused = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() as Visual;
+        if (focused is TextBox || focused?.FindAncestorOfType<TextBox>() is not null) return false;
+        var inMenu = focused is not null && Sidebar.IsVisualAncestorOf(focused);
+        if (vm.CurrentPage is not DashboardViewModel && !inMenu) return false;
+        var letter = (char)('A' + (e.Key - Key.A));
+        var item = vm.NavItems.FirstOrDefault(n => n.HotKey == letter);
+        if (item is null) return false;
+        vm.NavigateCommand.Execute(item.Key);
+        return true;
     }
 
     private ShellViewModel? Vm => DataContext as ShellViewModel;
@@ -160,6 +217,9 @@ public partial class ShellView : UserControl
             var onButton = e.Source is Button b && DialogPanel.IsVisualAncestorOf(b);
             if (e.Key == Key.Escape) dialog.Choose(false);
             else if (e.Key == Key.Enter && !onButton) dialog.Choose(true);
+            // A Yes / No question (Tally theme: "Approve? Yes or No"): Y and N answer it.
+            else if (!dialog.HasInput && e.KeyModifiers == KeyModifiers.None && e.Key == Key.Y && dialog.PrimaryText == "Yes") dialog.Choose(true);
+            else if (!dialog.HasInput && e.KeyModifiers == KeyModifiers.None && e.Key == Key.N && dialog.SecondaryText == "No") dialog.Choose(false);
             else if (e.Source is Visual inDialog && DialogPanel.IsVisualAncestorOf(inDialog)) return; // typing in the box, Tab, Space on a button
             e.Handled = true;
             return;
@@ -190,6 +250,11 @@ public partial class ShellView : UserControl
     private void OnKeyDownUnhandled(object? sender, KeyEventArgs e)
     {
         if (e.Handled || Vm is not { } vm) return;
+        if (OpenByLetter(e))
+        {
+            e.Handled = true;
+            return;
+        }
         switch (e.Key, e.KeyModifiers)
         {
             // Esc that no field, list or popup used: go back.

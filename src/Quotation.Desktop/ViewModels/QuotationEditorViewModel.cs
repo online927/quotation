@@ -325,7 +325,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     // ---------------------------------------------------------------- header
     [ObservableProperty] private Guid? _id;
-    [ObservableProperty] private DocumentType _docType;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(DocTypeName))] private DocumentType _docType;
+
+    /// <summary>"Quotation" or "Proforma Invoice" (the Tally theme shows it in a dark box, like a voucher type).</summary>
+    public string DocTypeName => DocType == DocumentType.ProformaInvoice ? "Proforma Invoice" : "Quotation";
     [ObservableProperty] private string? _number;
     [ObservableProperty] private string _numberText = "(assigned on save)";
     [ObservableProperty] private QuotationStatus _status = QuotationStatus.Draft;
@@ -1432,6 +1435,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     private async Task<bool> ApproveCoreAsync(bool overrideStale, bool openPdf)
     {
         if (!CanAct) return false; // Ctrl+Enter on an administrator's screen, or on someone else's document
+        // Tally theme: asked like Tally's "Accept?" (Y = Yes, N = No).
+        if (!overrideStale && ThemeService.Current == AppTheme.Tally
+            && !await _navigator.ConfirmAsync("Approve ?", "Yes or No", "Yes", "No")) return false;
         if (!overrideStale && !await TaxLooksRightAsync()) return false;
         if ((IsDirty || Id is null) && !await SaveAsync()) return false;
         ValidationMessages.Clear();

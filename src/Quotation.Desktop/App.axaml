@@ -821,5 +821,6 @@
 
     <!-- The modern look (soft buttons and boxes, menus, lists, tabs, hints); after the styles above so it wins -->
     <StyleInclude Source="avares://TSQuotation/Styles/ModernStyles.axaml" />
+    <StyleInclude Source="avares://TSQuotation/Styles/TallyStyles.axaml" />
   </Application.Styles>
 </Application>

@@ -222,13 +222,14 @@
   <Style Selector="RadioButton.nav">
     <Setter Property="Template">
       <ControlTemplate>
-        <Border Background="Transparent" Padding="0,4">
+        <Border Background="{TemplateBinding Background}" Padding="0,4">
           <ContentPresenter Content="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" />
         </Border>
       </ControlTemplate>
     </Setter>
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+    <Setter Property="Background" Value="Transparent" />
   </Style>
   <Style Selector="RadioButton.nav:checked">
     <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
@@ -282,5 +283,83 @@
     <Setter Property="Height" Value="1" />
     <Setter Property="Background" Value="{DynamicResource HairlineBrush}" />
     <Setter Property="Margin" Value="0,8" />
+  </Style>
+  <!-- Yes / No question box -->
+  <Style Selector="Border.question">
+    <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Padding" Value="20,18" />
+    <Setter Property="BoxShadow" Value="0 18 44 0 #470F172A" />
+  </Style>
+  <Style Selector="TextBlock.qtitle">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+
+  <!-- ===== The Tally theme (MainView has the class "tally"): like TallyPrime — square boxes with thin lines, dark
+       blue-green heading bars, the chosen tab and list in a yellow bar ===== -->
+  <Style Selector=".tally Border.pagehead">
+    <Setter Property="Background" Value="{DynamicResource TopBarBrush}" />
+    <Setter Property="Margin" Value="0,0,0,10" />
+  </Style>
+  <Style Selector=".tally Border.pagehead TextBlock"><Setter Property="Foreground" Value="{DynamicResource TopBarTextBrush}" /></Style>
+  <Style Selector=".tally Border.pagehead TextBlock.muted"><Setter Property="Foreground" Value="{DynamicResource TopBarMutedBrush}" /></Style>
+  <Style Selector=".tally Border.pagehead Button.round">
+    <Setter Property="Background" Value="#33FFFFFF" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector=".tally Border.pagehead Button.round.primary">
+    <Setter Property="Background" Value="{DynamicResource BadgeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource BadgeTextBrush}" />
+  </Style>
+  <Style Selector=".tally Border.card">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector=".tally Button"><Setter Property="CornerRadius" Value="2" /></Style>
+  <Style Selector=".tally Button.round"><Setter Property="CornerRadius" Value="0" /></Style>
+  <Style Selector=".tally Button.cardbtn">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector=".tally Button.cardbtn.open"><Setter Property="Background" Value="{DynamicResource ListSelectedBrush}" /></Style>
+  <Style Selector=".tally Button.cardbtn.open:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ListSelectedBrush}" />
+  </Style>
+  <Style Selector=".tally TextBox"><Setter Property="CornerRadius" Value="0" /></Style>
+  <Style Selector=".tally Border.chip"><Setter Property="CornerRadius" Value="2" /></Style>
+  <Style Selector=".tally Border.badge"><Setter Property="CornerRadius" Value="0" /></Style>
+  <Style Selector=".tally Border.pillbar"><Setter Property="CornerRadius" Value="0" /></Style>
+  <Style Selector=".tally RadioButton.seg /template/ Border#seg"><Setter Property="CornerRadius" Value="0" /></Style>
+  <Style Selector=".tally RadioButton.seg:checked"><Setter Property="Foreground" Value="{DynamicResource TextBrush}" /></Style>
+  <Style Selector=".tally RadioButton.seg:checked /template/ Border#seg">
+    <Setter Property="Background" Value="{DynamicResource ListSelectedBrush}" />
+    <Setter Property="BoxShadow" Value="0 0 0 0 #00000000" />
+  </Style>
+  <Style Selector=".tally Border.bottomnav">
+    <Setter Property="Background" Value="{DynamicResource KeyBarBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+  </Style>
+  <Style Selector=".tally RadioButton.nav:checked">
+    <Setter Property="Background" Value="{DynamicResource SidebarSelectedBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource SidebarSelectedTextBrush}" />
+  </Style>
+  <!-- Dashboard number boxes: a dark heading strip -->
+  <Style Selector=".tally Button.tile"><Setter Property="Padding" Value="0" /></Style>
+  <Style Selector=".tally Border.tile"><Setter Property="Padding" Value="0" /></Style>
+  <Style Selector=".tally .tile Path.icon"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector=".tally .tile TextBlock.eyebrow">
+    <Setter Property="Background" Value="{DynamicResource TallyHeadBrush}" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="Padding" Value="10,4" />
+  </Style>
+  <Style Selector=".tally .tile TextBlock.big"><Setter Property="Padding" Value="10,0,10,6" /></Style>
+  <Style Selector=".tally Border.question">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TopBarBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
   </Style>
 </Styles>

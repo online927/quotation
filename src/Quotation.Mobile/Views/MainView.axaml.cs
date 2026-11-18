@@ -14,11 +14,18 @@ public partial class MainView : UserControl
     {
         base.OnAttachedToVisualTree(e);
         if (TopLevel.GetTopLevel(this) is { } top) top.BackRequested += OnBackRequested;
+        Quotation.Desktop.Services.ThemeService.ColoursChanged += OnThemeColoursChanged;
+        OnThemeColoursChanged();
     }
+
+    /// <summary>The Tally theme changes more than colours (PhoneStyles.axaml, ".tally"): square boxes, dark heading bars, yellow choices.</summary>
+    private void OnThemeColoursChanged() =>
+        Classes.Set("tally", Quotation.Desktop.Services.ThemeService.Current == Quotation.Contracts.AppTheme.Tally);
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (TopLevel.GetTopLevel(this) is { } top) top.BackRequested -= OnBackRequested;
+        Quotation.Desktop.Services.ThemeService.ColoursChanged -= OnThemeColoursChanged;
         base.OnDetachedFromVisualTree(e);
     }
 

@@ -157,6 +157,7 @@ public sealed partial class MessageViewModel(MainViewModel main) : PageViewModel
     [RelayCommand]
     private Task ApproveAsync() => !CanSave ? Task.CompletedTask : RunAsync(async () =>
     {
+        if (ThemeService.Current == AppTheme.Tally && !await main.AskAsync("Approve ?", "Yes or No")) return; // like Tally's "Accept?"
         var saved = await main.Session.Api.CreateQuotationAsync(ToRequest());
         var approved = await main.Session.Api.ApproveQuotationAsync(saved.Id, revision: saved.Revision);
         Reset();

@@ -48,5 +48,21 @@
       </Border>
       <ContentControl Name="PageHost" Content="{Binding Page}" />
     </DockPanel>
+
+    <!-- A Yes / No question over the page (the Tally theme: "Approve? Yes or No") -->
+    <Panel Name="QuestionPanel" IsVisible="{Binding Question, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Border Background="#66000000" />
+      <Border Classes="question" Width="290" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="qtitle" Text="{Binding Question.Title, FallbackValue=''}" />
+          <TextBlock Classes="muted" Text="{Binding Question.Message, FallbackValue=''}" HorizontalAlignment="Center" />
+          <Grid ColumnDefinitions="*,10,*" Margin="0,8,0,0">
+            <Button Name="QuestionNo" Content="No" HorizontalAlignment="Stretch" Command="{Binding AnswerCommand}" CommandParameter="no" />
+            <Button Grid.Column="2" Name="QuestionYes" Classes="primary" Content="Yes" HorizontalAlignment="Stretch"
+                    Command="{Binding AnswerCommand}" CommandParameter="yes" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </Panel>
   </Panel>
 </UserControl>

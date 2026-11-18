@@ -31,6 +31,20 @@ public sealed partial class MainViewModel : ObservableObject
 
     public bool CanGoBack => _stack.Count > 0;
 
+    /// <summary>A Yes / No question over the page (the Tally theme asks "Approve? Yes or No").</summary>
+    [ObservableProperty] private PhoneQuestion? _question;
+
+    public async Task<bool> AskAsync(string title, string message)
+    {
+        var q = new PhoneQuestion(title, message);
+        Question = q;
+        try { return await q.Answer; }
+        finally { if (Question == q) Question = null; }
+    }
+
+    [RelayCommand]
+    private void Answer(string? yes) => Question?.Choose(yes == "yes");
+
     /// <summary>Opening the app: straight in with the saved sign-in while it is valid.</summary>
     public async Task StartAsync()
     {
@@ -113,6 +127,15 @@ public sealed partial class MainViewModel : ObservableObject
         Login.Password = "";
         Login.Refresh();
     }
+}
+
+public sealed class PhoneQuestion(string title, string message)
+{
+    private readonly TaskCompletionSource<bool> _answer = new();
+    public string Title { get; } = title;
+    public string Message { get; } = message;
+    public Task<bool> Answer => _answer.Task;
+    public void Choose(bool yes) => _answer.TrySetResult(yes);
 }
 
 public static class Tabs

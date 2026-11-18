@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Quotation.Contracts;
+using Quotation.Desktop.Services;
 using Quotation.Core.Calculation;
 using Quotation.Core.Domain;
 
@@ -77,6 +78,7 @@ public sealed partial class QuotationDetailViewModel(MainViewModel main, Guid id
     [RelayCommand]
     private Task ApproveAsync() => !CanApprove ? Task.CompletedTask : RunAsync(async () =>
     {
+        if (ThemeService.Current == AppTheme.Tally && !await main.AskAsync("Approve ?", "Yes or No")) return; // like Tally's "Accept?"
         var approved = await main.Session.Api.ApproveQuotationAsync(Quotation!.Id, revision: Quotation.Revision);
         Show(approved);
         InfoMessage = $"Approved as {approved.Number}.";

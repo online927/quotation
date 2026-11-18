@@ -128,13 +128,14 @@ public static class ThemeService
     /// <summary>Glow shadows of a theme, unless animations are reduced (then the standard small shadow).</summary>
     private static void ApplyShadow(Application app)
     {
-        app.Resources["CardShadow"] = BoxShadows.Parse(ColourThemes.GlowShadow is { } glow && !_reduceMotion ? glow : "0 1 3 0 #0F000000");
+        app.Resources["CardShadow"] = BoxShadows.Parse(ColourThemes.IsFlat ? ColourThemes.NoShadow
+            : ColourThemes.GlowShadow is { } glow && !_reduceMotion ? glow : "0 1 3 0 #0F000000");
         // Keyboard focus: a soft halo in the theme's accent colour that follows the button's round corners.
         var accent = app.TryGetResource("AccentBrush", app.ActualThemeVariant, out var a) && a is ISolidColorBrush b ? b.Color : Color.Parse("#0A66D9");
         app.Resources["FocusRing"] = BoxShadows.Parse($"0 0 0 4 #99{accent.R:X2}{accent.G:X2}{accent.B:X2}");
         // Typing boxes: a thin soft ring in the accent colour (with the 1 px accent edge it reads as one clean outline).
         app.Resources["InputRing"] = BoxShadows.Parse($"0 0 0 3 #2E{accent.R:X2}{accent.G:X2}{accent.B:X2}");
         // Main (blue) buttons lift a little under the mouse; none with "Reduce animations".
-        app.Resources["PrimaryGlow"] = BoxShadows.Parse(_reduceMotion ? "0 0 0 0 #00000000" : $"0 4 12 0 #59{accent.R:X2}{accent.G:X2}{accent.B:X2}");
+        app.Resources["PrimaryGlow"] = BoxShadows.Parse(_reduceMotion || ColourThemes.IsFlat ? "0 0 0 0 #00000000" : $"0 4 12 0 #59{accent.R:X2}{accent.G:X2}{accent.B:X2}");
     }
 }

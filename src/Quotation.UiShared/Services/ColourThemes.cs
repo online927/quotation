@@ -135,6 +135,24 @@ public static class ColourThemes
                 ["SkyArtBrush"] = "#38D9A1AD", ["SunArtBrush"] = "#00000000", ["FarArtBrush"] = "#00000000", ["NearArtBrush"] = "#00000000",
                 ["SideArtBrush"] = "#40F2DCE0", ["PictureScrimBrush"] = "#9922050C",
             }),
+        // Tally: like TallyPrime — a dark blue-green top bar, a light blue page, white boxes with thin lines, square corners and no
+        // shadows; the chosen item in a yellow bar, the menu's shortcut letters in red, a key bar on the right.
+        [AppTheme.Tally] = new("#E4EEF3", "#1F5F7D", "#DCEAF1", "#F9C74F", false,
+            new()
+            {
+                ["CardBrush"] = "#FFFFFF", ["PopupBrush"] = "#FFFFFF", ["TopBarBrush"] = "#1F4D63", ["TopBarTextBrush"] = "#FFFFFF",
+                ["TopBarMutedBrush"] = "#BFD6E1", ["TopBarFieldBrush"] = "#33FFFFFF",
+                ["SidebarBrush"] = "#FFFFFF", ["SidebarBorderBrush"] = "#9CBCCB", ["SidebarTextBrush"] = "#13324A", ["SidebarMutedBrush"] = "#5E7480",
+                ["SidebarHoverBrush"] = "#EAF2F6", ["SidebarSelectedBrush"] = "#F9C74F", ["SidebarSelectedTextBrush"] = "#1B2A33",
+                ["HairlineBrush"] = "#C9DCE5", ["PanelBorderBrush"] = "#9CBCCB", ["SubtleFillBrush"] = "#F3F8FA", ["FillBrush"] = "#E8F0F4",
+                ["MutedBrush"] = "#5E7480", ["TextBrush"] = "#1B2A33", ["HeadingBrush"] = "#1F5F7D", ["ListHoverBrush"] = "#EEF5F8",
+                ["ListSelectedBarBrush"] = "#E0A800", ["BadgeBrush"] = "#F9C74F", ["BadgeTextBrush"] = "#1B2A33",
+                ["ActionBrush"] = "#1F4D63", ["PrimaryHoverBrush"] = "#2A6684", ["PrimaryPressedBrush"] = "#173B4C", ["PrimaryDisabledBrush"] = "#B7CAD3",
+                ["SaveBrush"] = "#2E7D32", ["SaveHoverBrush"] = "#388E3C", ["EditingRowBrush"] = "#FBE3A0",
+                // Only the Tally theme uses these (Styles/TallyStyles.axaml)
+                ["NavHotKeyBrush"] = "#C0392B", ["TallyBandBrush"] = "#CFE2EB", ["KeyBarBrush"] = "#D6E5EC", ["KeyBarLineBrush"] = "#B8CFDA",
+                ["TallyHeadBrush"] = "#2A6684",
+            }),
     };
 
     private static Dictionary<string, string> GlassBrushes(Glass g) => g.Dark
@@ -193,6 +211,19 @@ public static class ColourThemes
                 SetShape(app, "TileStrip4", BoxShadows.Parse("inset 4 0 0 0 #8944AB"));
             }
             foreach (var (key, geometry) in Controls.ThemeScenery.For(theme)) app.Resources[key] = geometry;
+            if (theme == AppTheme.Tally)
+            {
+                // Square corners, thin lines, no shadows (as in Tally).
+                SetShape(app, "CardRadius", new CornerRadius(0));
+                SetShape(app, "CardBottomRadius", new CornerRadius(0));
+                SetShape(app, "ButtonRadius", new CornerRadius(2));
+                SetShape(app, "ControlCornerRadius", new CornerRadius(0));
+                SetShape(app, "OverlayCornerRadius", new CornerRadius(0));
+                SetShape(app, "SpinnerEndRadius", new CornerRadius(0));
+                SetShape(app, "PopupShadow", BoxShadows.Parse("0 2 6 0 #261F4D63"));
+                GlowShadow = NoShadow;
+                return;
+            }
             SetShape(app, "CardRadius", new CornerRadius(22));
             SetShape(app, "CardBottomRadius", new CornerRadius(0, 0, 22, 22));
             SetShape(app, "ButtonRadius", new CornerRadius(18));
@@ -224,6 +255,12 @@ public static class ColourThemes
     /// <summary>The glow around cards of the current theme (null = the standard small shadow). Off with "Reduce animations".</summary>
     public static string? GlowShadow { get; private set; }
 
+    /// <summary>No shadow at all (the Tally theme: flat boxes with thin lines).</summary>
+    public const string NoShadow = "0 0 0 0 #00000000";
+
+    /// <summary>A flat theme (Tally): no shadows and no glow on the main buttons.</summary>
+    public static bool IsFlat => GlowShadow == NoShadow;
+
     /// <summary>"#RRGGBB" / "#AARRGGBB", or a gradient "#A→#B(→#C)".</summary>
     public static IBrush BrushOf(string colour)
     {
@@ -248,7 +285,7 @@ public static class ColourThemes
 
     // Shapes (corners) live at the top of the app resources: remember the standard values to put them back.
     private static readonly string[] ShapeKeys = ["CardRadius", "CardBottomRadius", "ButtonRadius", "ControlCornerRadius", "InputPadding", "SpinnerEndRadius",
-        "SidebarSelectedShadow", "TileStrip1", "TileStrip2", "TileStrip3", "TileStrip4"];
+        "SidebarSelectedShadow", "TileStrip1", "TileStrip2", "TileStrip3", "TileStrip4", "OverlayCornerRadius", "PopupShadow"];
     private static readonly Dictionary<string, object?> Standard = [];
 
     private static void SetShape(Application app, string key, object value)

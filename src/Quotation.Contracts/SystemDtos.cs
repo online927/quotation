@@ -42,12 +42,12 @@ public static class AppTheme
     //  Light) and Neon Night and Glass (Black) (→ Default Dark).)
     public const string Graphite = "Graphite", GlassBlue = "GlassBlue", GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon",
         Parchment = "Parchment", ForestGold = "ForestGold", HeroLight = "HeroLight", Ocean = "Ocean", Midnight = "Midnight",
-        MaroonMahal = "MaroonMahal";
+        MaroonMahal = "MaroonMahal", Tally = "Tally";
     /// <summary>Removed themes (still read from older settings).</summary>
     public const string Sunset = "Sunset", Frost = "Frost", GlassBlack = "GlassBlack", NeonNight = "NeonNight";
 
     public static readonly string[] All = [Light, Dark, System, Graphite, GlassBlue, GlassGreen, GlassMaroon, Parchment, ForestGold, HeroLight, Ocean, Midnight,
-        MaroonMahal];
+        MaroonMahal, Tally];
     public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
     /// <summary>
     /// A saved theme that still exists: More Maroon → Glass (Maroon); Neon Night and Glass (Black) → Default Dark; any other

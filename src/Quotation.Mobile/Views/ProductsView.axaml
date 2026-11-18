@@ -5,10 +5,12 @@
              x:Class="Quotation.Mobile.Views.ProductsView"
              x:DataType="vm:ProductsViewModel">
   <DockPanel>
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="18,14,18,8">
+    <Border DockPanel.Dock="Top" Classes="pagehead" Padding="18,14,18,8">
+    <Grid ColumnDefinitions="*,Auto">
       <TextBlock Classes="h1" Text="Products" VerticalAlignment="Center" />
       <Button Grid.Column="1" Classes="round" Command="{Binding MoreCommand}"><TextBlock Text="{Binding Initial}" FontWeight="Bold" /></Button>
     </Grid>
+    </Border>
     <TextBox DockPanel.Dock="Top" Name="SearchBox" Text="{Binding Search}" Watermark="Name, part number, brand…" Margin="16,0,16,8">
       <TextBox.InnerLeftContent>
         <Path Classes="icon" Data="{x:Static m:PhoneIcons.Search}" Stroke="{DynamicResource MutedBrush}" Margin="14,0,0,0" />

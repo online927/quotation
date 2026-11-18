@@ -55,7 +55,7 @@
           <StackPanel>
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Classes="eyebrow" Text="TODAY'S QUOTATIONS" VerticalAlignment="Center" />
-              <Border Grid.Column="1" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
+              <Border Grid.Column="1" Classes="tileicon" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
                 <Path Data="{x:Static vm:NavIcons.Today}" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
                       Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>
@@ -67,7 +67,7 @@
           <StackPanel>
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Classes="eyebrow" Text="DRAFTS" VerticalAlignment="Center" />
-              <Border Grid.Column="1" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
+              <Border Grid.Column="1" Classes="tileicon" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
                 <Path Data="{x:Static vm:NavIcons.Drafts}" Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
                       Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>
@@ -79,7 +79,7 @@
           <StackPanel>
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Classes="eyebrow" Text="PENDING REVIEW" VerticalAlignment="Center" />
-              <Border Grid.Column="1" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
+              <Border Grid.Column="1" Classes="tileicon" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
                 <Path Data="{x:Static vm:NavIcons.History}" Stroke="{DynamicResource OrangeBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
                       Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>
@@ -91,7 +91,7 @@
           <StackPanel>
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Classes="eyebrow" Text="AI INBOX — NEEDS ATTENTION" VerticalAlignment="Center" />
-              <Border Grid.Column="1" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
+              <Border Grid.Column="1" Classes="tileicon" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
                 <Path Data="{x:Static vm:NavIcons.Inbox}" Stroke="{DynamicResource PurpleBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
                       Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>

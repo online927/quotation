@@ -1,0 +1,152 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    The Tally theme changes more than colours: like TallyPrime it has square boxes with thin lines and no shadows, the
+    chosen item in a yellow bar, menu headings in capitals with a red shortcut letter in each item, boxes with a dark
+    heading strip, a light band with the page's name, and a key bar on the right. ShellView has the class "tally" while
+    the theme is on (the colours and square corners themselves come from ColourThemes).
+  -->
+
+  <!-- Hidden in the other themes -->
+  <Style Selector="Border.keybar"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector="TextBlock.navhot"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector="TextBlock.sidehead.caps"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector="Border.vtype"><Setter Property="IsVisible" Value="False" /></Style>
+
+  <!-- ===== Side menu: like Gateway of Tally ===== -->
+  <Style Selector=".tally Border.sidebar:not(.collapsed) TextBlock.sidehead.caps"><Setter Property="IsVisible" Value="True" /></Style>
+  <Style Selector=".tally TextBlock.sidehead.plain"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector=".tally TextBlock.sidehead">
+    <Setter Property="FontSize" Value="10.5" />
+    <Setter Property="LetterSpacing" Value="0.6" />
+  </Style>
+  <Style Selector=".tally TextBlock.navtitle"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector=".tally TextBlock.navhot"><Setter Property="IsVisible" Value="True" /></Style>
+  <Style Selector=".tally Border.sidebar:not(.collapsed) Grid.navgrid Path.icon"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector=".tally Border.sidebar:not(.collapsed) Grid.navgrid TextBlock"><Setter Property="Margin" Value="-22,0,6,0" /></Style>
+  <Style Selector=".tally Button.nav">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Padding" Value="12,4" />
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector=".tally Button.nav.selected"><Setter Property="FontWeight" Value="Bold" /></Style>
+  <Style Selector=".tally Border.sidebar ItemsControl"><Setter Property="Margin" Value="0,6" /></Style>
+
+  <!-- ===== The light band with the page's name (under the top bar) ===== -->
+  <Style Selector=".tally Border.crumbbar">
+    <Setter Property="Background" Value="{DynamicResource TallyBandBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Padding" Value="12,3" />
+    <Setter Property="Margin" Value="0,0,0,10" />
+  </Style>
+  <Style Selector=".tally Border.crumbbar Button.round">
+    <Setter Property="Width" Value="24" />
+    <Setter Property="Height" Value="24" />
+  </Style>
+  <Style Selector=".tally Border.crumbbar Button.round /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector=".tally Border.crumbbar TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource HeadingBrush}" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <!-- ===== The key bar on the right ===== -->
+  <Style Selector=".tally Border.keybar">
+    <Setter Property="IsVisible" Value="True" />
+    <Setter Property="Width" Value="168" />
+    <Setter Property="Background" Value="{DynamicResource KeyBarBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1,0,0,0" />
+    <Setter Property="Margin" Value="0,-10,0,0" />
+  </Style>
+  <Style Selector="Button.keyitem">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Padding" Value="9,6" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource KeyBarLineBrush}" />
+  </Style>
+  <Style Selector="Button.keyitem /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource KeyBarLineBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="BoxShadow" Value="0 0 0 0 #00000000" />
+  </Style>
+  <Style Selector="Button.keyitem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SidebarSelectedBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource SidebarSelectedTextBrush}" />
+  </Style>
+  <Style Selector="Button.keyitem:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="#8FA6B1" />
+  </Style>
+
+  <!-- ===== Boxes: square, thin darker lines, a dark heading strip on the Dashboard's number boxes ===== -->
+  <Style Selector=".tally Border.card">
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+  </Style>
+  <Style Selector=".tally Button.tile">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector=".tally Button.tile /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector=".tally Button.tile Border.tileicon"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector=".tally Button.tile TextBlock.eyebrow">
+    <Setter Property="Background" Value="{DynamicResource TallyHeadBrush}" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Padding" Value="9,4" />
+  </Style>
+  <Style Selector=".tally Button.tile TextBlock.big"><Setter Property="Padding" Value="10,0,10,8" /></Style>
+  <Style Selector=".tally Button.tile TextBlock.muted"><Setter Property="Padding" Value="9,4,9,0" /></Style>
+
+  <!-- ===== Lists: heading line, the chosen row in a yellow bar ===== -->
+  <Style Selector=".tally Border.tablehead">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <Style Selector=".tally Border.tablehead TextBlock"><Setter Property="Foreground" Value="{DynamicResource HeadingBrush}" /></Style>
+  <Style Selector=".tally ListBoxItem">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector=".tally ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector=".tally ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter,
+                   .tally ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter,
+                   .tally ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ListSelectedBrush}" />
+  </Style>
+  <Style Selector=".tally ListBoxItem:selected"><Setter Property="FontWeight" Value="Bold" /></Style>
+
+  <!-- ===== Quotation screen: the document type in a dark box, like a Tally voucher type ===== -->
+  <Style Selector=".tally Border.vtype">
+    <Setter Property="IsVisible" Value="True" />
+    <Setter Property="Background" Value="{DynamicResource TopBarBrush}" />
+    <Setter Property="Padding" Value="10,3" />
+  </Style>
+  <Style Selector=".tally Border.vtype TextBlock">
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <!-- ===== Question boxes: square with a thin dark line (Tally's "Accept?") ===== -->
+  <Style Selector=".tally Border.question">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TopBarBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BoxShadow" Value="0 4 14 0 #401F4D63" />
+  </Style>
+</Styles>

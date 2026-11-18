@@ -31,9 +31,12 @@
     <BoxShadows x:Key="CardShadow">0 1 3 0 #0F000000</BoxShadows>
     <!-- Keyboard focus on a button: a soft accent halo (set per theme by ThemeService) -->
     <BoxShadows x:Key="FocusRing">0 0 0 3 #730A66D9</BoxShadows>
+    <BoxShadows x:Key="FocusRingInset">inset 0 0 0 2 #990A66D9</BoxShadows>
     <BoxShadows x:Key="InputRing">0 0 0 3 #2E0A66D9</BoxShadows>
     <BoxShadows x:Key="PrimaryGlow">0 4 12 0 #590A66D9</BoxShadows>
-    <BoxShadows x:Key="PopupShadow">0 14 36 0 #2E0F172A</BoxShadows>
+    <!-- Floating cards (lists, calendar): the shadow fits in the clear space around the card (PopupMargin), so no hard edges -->
+    <BoxShadows x:Key="PopupShadow">0 6 16 0 #2E0F172A</BoxShadows>
+    <Thickness x:Key="PopupMargin">10,3,10,18</Thickness>
     <!-- Theme extras (Maroon): a bar on the chosen menu item, a coloured strip on the Dashboard number boxes -->
     <BoxShadows x:Key="SidebarSelectedShadow">0 0 0 0 #00000000</BoxShadows>
     <BoxShadows x:Key="TileStrip1">0 0 0 0 #00000000</BoxShadows>
@@ -427,7 +430,8 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="10" />
       <Setter Property="Padding" Value="10" />
-      <Setter Property="BoxShadow" Value="0 6 20 0 #26000000" />
+      <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
+      <Setter Property="Margin" Value="{DynamicResource PopupMargin}" />
     </Style>
     <Style Selector="TextBlock.caltitle">
       <Setter Property="FontSize" Value="13" />
@@ -576,12 +580,35 @@
       <Setter Property="CornerRadius" Value="{DynamicResource ButtonRadius}" />
       <Setter Property="Padding" Value="14,5" />
     </Style>
-    <!-- Keyboard focus (Tab, or Enter from Packing & Forwarding): no square black box, a soft halo around the button's own shape -->
-    <Style Selector="Button">
+    <!--
+      Keyboard focus (Tab, Enter from Packing & Forwarding, Alt keys): never the square black box; a soft halo in the theme's
+      accent colour around the control's own shape (buttons, pill choices, switches, tick boxes, tabs, drop-downs), and a soft
+      highlight on a list row.
+    -->
+    <Style Selector=":is(Button), TabItem, ListBoxItem, ComboBox, ComboBoxItem, SplitButton, MenuItem, Expander, Slider, TreeViewItem">
       <Setter Property="FocusAdorner" Value="{x:Null}" />
     </Style>
     <Style Selector="Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="BoxShadow" Value="{DynamicResource FocusRing}" />
+    </Style>
+    <!-- Controls that cut off anything drawn outside them get the ring just inside their edge -->
+    <Style Selector="ToggleButton:focus-visible /template/ ContentPresenter#PART_ContentPresenter, RepeatButton:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BoxShadow" Value="{DynamicResource FocusRingInset}" />
+    </Style>
+    <Style Selector="ToggleSwitch:focus-visible /template/ Border#OuterBorder">
+      <Setter Property="BoxShadow" Value="{DynamicResource FocusRing}" />
+    </Style>
+    <Style Selector="CheckBox:focus-visible /template/ Border#NormalRectangle">
+      <Setter Property="BoxShadow" Value="{DynamicResource FocusRing}" />
+    </Style>
+    <Style Selector="TabItem:focus-visible /template/ Border#PART_LayoutRoot">
+      <Setter Property="BoxShadow" Value="{DynamicResource FocusRingInset}" />
+    </Style>
+    <Style Selector="ComboBox:focus-visible /template/ Border#Background">
+      <Setter Property="BoxShadow" Value="{DynamicResource InputRing}" />
+    </Style>
+    <Style Selector="ListBoxItem:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ListHoverBrush}" />
     </Style>
     <Style Selector="Button.primary">
       <Setter Property="Padding" Value="18,6" />

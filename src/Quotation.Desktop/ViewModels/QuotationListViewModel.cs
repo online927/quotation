@@ -87,7 +87,7 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
     /// <summary>W5: a WhatsApp button on each row of the To Follow Up list (Won / Lost and WhatsApp switched on).</summary>
     [ObservableProperty] private bool _showFollowUpWhatsApp;
     /// <summary>Room for the row buttons (Open, Duplicate, and WhatsApp in the To Follow Up list).</summary>
-    public double ActionsWidth => ShowFollowUpWhatsApp ? 190 : 150;
+    public double ActionsWidth => ShowFollowUpWhatsApp ? 232 : 192;
     partial void OnShowFollowUpWhatsAppChanged(bool value) => OnPropertyChanged(nameof(ActionsWidth));
     partial void OnTrackOutcomesChanged(bool value) => OnPropertyChanged(nameof(ShowOutcomeFilter));
 

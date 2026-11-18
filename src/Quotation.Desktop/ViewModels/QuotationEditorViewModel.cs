@@ -30,8 +30,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public QuotationEditorViewModel(AppSession session, INavigator navigator, Guid? id = null, DocumentType docType = DocumentType.Quotation)
     {
         _session = session;
-        _stepMode = session.Config.LineStepMode is { Length: > 0 } m && StepModes.Any(o => o.Key == m) ? m : "Off";
-        foreach (var o in StepModes) o.IsSelected = o.Key == _stepMode;
+        _stepMode = CleanStepMode(session.Config.LineStepMode);
+        foreach (var o in StepModes) o.IsSelected = StepKeys(_stepMode).Contains(o.Key);
         _stepUp = session.Config.LineStepUp;
         _hideHsnGst = session.Config.HideHsnGst;
         _navigator = navigator;
@@ -483,12 +483,46 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         new("Quantity", "Quantity"), new("Rate", "Rate"), new("Discount", "Discount"),
     ];
 
+    /// <summary>
+    /// The switches that are on: "Off", "Line" (the whole line) or one or more columns ("Rate,Discount"). Several columns
+    /// can be on together; "Next line" already covers every box, so it is on by itself.
+    /// </summary>
     [ObservableProperty] private string _stepMode = "Off";
     public bool StepModeOn => StepMode != "Off";
-    /// <summary>"Going down: Rate · line 2 of 3" while a line is open in a step mode.</summary>
+
+    /// <summary>The boxes of a line in the order they are on the screen (Enter goes through the chosen ones in this order).</summary>
+    private static readonly string[] ScreenOrder = ["Name", "Quantity", "Rate", "Discount", "Description"];
+
+    /// <summary>The chosen columns in screen order (none for Off and for the whole line).</summary>
+    public IReadOnlyList<string> StepColumns => StepKeys(StepMode).Where(k => k != "Line").OrderBy(k => Array.IndexOf(ScreenOrder, k)).ToList();
+
+    /// <summary>The box the cursor goes to when a line opens: the first chosen column, or Quantity for the whole line.</summary>
+    public string? FirstStepBox => StepMode == "Line" ? "Quantity" : StepColumns.FirstOrDefault();
+
+    /// <summary>The chosen column after this one on the same line; null when this is the last one (Enter then saves the line).</summary>
+    public string? NextStepColumn(string column)
+    {
+        var columns = StepColumns.ToList();
+        var at = columns.IndexOf(column);
+        return at >= 0 && at + 1 < columns.Count ? columns[at + 1] : null;
+    }
+
+    /// <summary>"Going down: Rate, Discount · line 2 of 3" while a line is open in a step mode.</summary>
     public string StepInfo => StepModeOn && EditingLine is { } l
-        ? $"Going {(StepUp ? "up" : "down")}: {(StepMode == "Line" ? "line by line" : StepModes.First(m => m.Key == StepMode).Name)} · line {l.LineNo} of {Lines.Count}"
+        ? $"Going {(StepUp ? "up" : "down")}: {(StepMode == "Line" ? "line by line" : string.Join(", ", StepColumns.Select(k => StepModes.First(m => m.Key == k).Name)))} · line {l.LineNo} of {Lines.Count}"
         : "";
+
+    private static IReadOnlyCollection<string> StepKeys(string? mode) =>
+        (mode ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(k => k != "Off").ToHashSet();
+
+    /// <summary>A saved choice made tidy: known keys only, in the gear's order; the whole line on its own; "Off" when none.</summary>
+    private string CleanStepMode(string? mode)
+    {
+        var keys = StepKeys(mode);
+        if (keys.Contains("Line")) return "Line";
+        var chosen = StepModes.Where(m => keys.Contains(m.Key)).Select(m => m.Key).ToList();
+        return chosen.Count == 0 ? "Off" : string.Join(",", chosen);
+    }
 
     /// <summary>Gear: go to the line above instead of below (remembered on this PC).</summary>
     [ObservableProperty] private bool _stepUp;
@@ -546,20 +580,42 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// <summary>After a line is saved: the box the cursor goes to ("Product" for a new line; a column or "Quantity" for the next line).</summary>
     public event Action<string>? FocusEntry;
 
-    /// <summary>A switch in the gear: on → that mode; switching the one that is on off → Off (as before the gear).</summary>
+    /// <summary>
+    /// A switch in the gear turns that choice on or off; the others stay as they are (several columns can be on together).
+    /// "Next line" (the whole line) and the columns do not go together: turning one on turns the other kind off. "Off" turns
+    /// everything off.
+    /// </summary>
     [RelayCommand]
     private void ChooseStepMode(string? mode)
     {
         if (mode is null) return;
-        if (mode == "Off" || mode == StepMode) StepMode = "Off";
-        else if (StepModes.Any(m => m.Key == mode)) StepMode = mode;
-        foreach (var m in StepModes) m.IsSelected = m.Key == StepMode;
+        if (mode == "Off") StepMode = "Off";
+        else if (StepModes.Any(m => m.Key == mode))
+        {
+            var keys = StepKeys(StepMode).ToHashSet();
+            if (!keys.Remove(mode))
+            {
+                if (mode == "Line") keys.Clear();
+                else keys.Remove("Line");
+                keys.Add(mode);
+            }
+            StepMode = CleanStepMode(string.Join(",", keys));
+        }
+        SyncStepSwitches();
+    }
+
+    private void SyncStepSwitches()
+    {
+        var keys = StepKeys(StepMode);
+        foreach (var m in StepModes) m.IsSelected = keys.Contains(m.Key);
     }
 
     partial void OnStepModeChanged(string value)
     {
-        foreach (var m in StepModes) m.IsSelected = m.Key == value;
+        SyncStepSwitches();
         OnPropertyChanged(nameof(StepModeOn));
+        OnPropertyChanged(nameof(StepColumns));
+        OnPropertyChanged(nameof(FirstStepBox));
         OnPropertyChanged(nameof(StepInfo));
         OnPropertyChanged(nameof(HasStepInfo));
         if (_session.Config.LineStepMode == value) return;
@@ -589,7 +645,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         if (editing is not null && StepModeOn && index >= 0 && next >= 0 && next < Lines.Count)
         {
             EditLine(Lines[next]);
-            FocusEntry?.Invoke(StepMode == "Line" ? "Quantity" : StepMode);
+            FocusEntry?.Invoke(FirstStepBox ?? "Quantity");
             return;
         }
         FocusEntry?.Invoke("Product");
@@ -680,6 +736,22 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// <summary>"Source: …" only for quotations made from the AI Inbox or Gmail.</summary>
     public bool ShowSource => Source != QuotationSource.Manual;
     public string Title => Number is null ? "New " + DocLabel : $"{DocLabel} {Number}";
+    /// <summary>The heading of the page: the number (the next free one until the first save); "New Quotation" until one is known.</summary>
+    public string Heading => Number ?? _provisionalNumber ?? "New " + DocLabel;
+    /// <summary>Beside a number that is not saved yet: "(provisional)", or why no number can be shown.</summary>
+    public string HeadingNote => Number is not null ? ""
+        : _provisionalNumber is not null ? "(provisional)"
+        : NumberText.StartsWith('(') && NumberText != "(assigned on save)" ? NumberText : "";
+    public bool HasHeadingNote => HeadingNote.Length > 0;
+
+    private void NotifyHeading()
+    {
+        OnPropertyChanged(nameof(Heading));
+        OnPropertyChanged(nameof(HeadingNote));
+        OnPropertyChanged(nameof(HasHeadingNote));
+    }
+
+    partial void OnNumberTextChanged(string value) => NotifyHeading();
     /// <summary>A saved quotation can be turned into a proforma invoice (a new document with its own TSPI number).</summary>
     public bool CanConvertToProforma => !IsProforma && Id is not null && Status != QuotationStatus.Cancelled && MakesDocuments
                                         && _settings.Quotation.ProformaEnabled;
@@ -770,11 +842,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         try
         {
             var next = await _session.Api.NextNumberAsync(Date is null ? null : DateOnly.FromDateTime(Date.Value), DocType);
-            NumberText = $"{next.Number} (provisional)";
             _provisionalNumber = next.Number;
+            NumberText = $"{next.Number} (provisional)";
         }
         catch (ApiException ex)
         {
+            _provisionalNumber = null;
             NumberText = "(" + ex.Message + ")";
         }
     }
@@ -910,6 +983,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(DocLabel));
         OnPropertyChanged(nameof(CancelTip));
         OnPropertyChanged(nameof(NumberLabel));
+        NotifyHeading();
         NotifyState();
     }
 
@@ -926,6 +1000,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(IsNumberProvisional));
+        NotifyHeading();
     }
 
     partial void OnSourceChanged(QuotationSource value) => OnPropertyChanged(nameof(ShowSource));

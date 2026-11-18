@@ -154,7 +154,7 @@
             <Path Classes="si" Data="M4,5 H20 M4,9.5 H14 M4,14 H20 M4,18.5 H11" />
             <TextBlock Classes="h2" Text="Quotation text" Margin="0" VerticalAlignment="Center" />
           </StackPanel>
-          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" Margin="14,6,14,12"><TextBlock Text="A blank line between the parts: customer, other reference, then each item." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Leave a blank line between the parts: the customer (first line the name; address lines start with &quot;-&quot;; then GSTIN, phone, e-mail), then the other reference, then each item. An item's first line is: item name, qty, rate, discount (discount optional); the lines under it are its description."><Path Classes="infoicon" /></Border></StackPanel>
+          <StackPanel DockPanel.Dock="Bottom" Classes="help" Orientation="Horizontal" Spacing="6" Margin="14,6,14,12"><TextBlock Text="A blank line between the parts." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Leave a blank line between the parts: the customer (first line the name; address lines start with &quot;-&quot;; then GSTIN, phone, e-mail), then the other reference, then each item. An item's first line is: item name, qty, rate, discount (discount optional); the lines under it are its description."><Path Classes="infoicon" /></Border></StackPanel>
           <!-- Packing & forwarding: its own box (Alt+P), an amount in rupees -->
           <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" Margin="14,10,14,0">
             <TextBlock Text="P&amp;F" FontWeight="SemiBold" VerticalAlignment="Center" />

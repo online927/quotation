@@ -808,3 +808,17 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
    phone (More → Theme): there the page headings sit in a dark blue-green bar, boxes are square with thin lines, the number
    boxes have a dark strip, the chosen tab is yellow, and Approve asks "Approve? Yes or No".
 5. Formater: typing or pasting at the moment the page opens no longer shows the customer and items of the older text.
+
+### Round 31
+
+1. Keyboard highlight: no square black box around buttons, choices, switches, tick boxes, tabs and drop-downs any more; a soft
+   ring in the theme colour that follows each control's own shape (inside the shape where it would otherwise be cut off).
+2. Floating lists (Customer, Product, drop-downs, calendars): a soft shadow with room around it, so no square lines.
+3. Formater: the typing box is back on the left of the page (it had slipped behind the result boxes).
+4. Gear next to Items: several columns can be on together (e.g. Rate and Discount): Enter goes through the chosen boxes of a
+   line from left to right, then on to the same boxes of the next line. "Next line" (the whole line) goes on by itself. The
+   menu stays open while switches are turned on and off (a click outside closes it).
+5. Theme Maroon Mahal removed; its users get Glass (Maroon).
+6. Quotation screen: the heading is the quotation number ("TSQ2627-1 (provisional)" until it is saved) instead of "New
+   Quotation"; the date sits right above "Ref. dated", inside the References box. The item table headings are bold.
+7. Quotation lists (Today's, Drafts, History): the Source column is left out for now; clearer Open and Duplicate buttons.

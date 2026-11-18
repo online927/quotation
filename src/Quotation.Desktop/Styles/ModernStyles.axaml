@@ -107,7 +107,11 @@
     <Setter Property="CornerRadius" Value="14" />
     <Setter Property="Padding" Value="0,4" />
     <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
-    <Setter Property="Margin" Value="0,4,0,0" />
+    <Setter Property="Margin" Value="{DynamicResource PopupMargin}" />
+  </Style>
+  <!-- The clear space for the shadow moves the card right: the list opens under the box again -->
+  <Style Selector="ComboBox /template/ Popup#PART_Popup">
+    <Setter Property="HorizontalOffset" Value="-10" />
   </Style>
 
   <!-- ===== Calendar (date boxes): a drawn calendar symbol; round days, the chosen one filled ===== -->
@@ -152,6 +156,7 @@
     <Setter Property="CornerRadius" Value="14" />
     <Setter Property="Padding" Value="12" />
     <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
+    <Setter Property="Margin" Value="{DynamicResource PopupMargin}" />
   </Style>
   <Style Selector="Button.calday">
     <Setter Property="Width" Value="32" />
@@ -294,6 +299,9 @@
   </Style>
   <Style Selector="RadioButton.seg:checked">
     <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+  </Style>
+  <Style Selector="RadioButton.seg:focus-visible /template/ Border#seg">
+    <Setter Property="BoxShadow" Value="{DynamicResource FocusRingInset}" />
   </Style>
   <Style Selector="RadioButton.seg:checked /template/ Border#seg">
     <Setter Property="Background" Value="{DynamicResource PopupBrush}" />

@@ -60,6 +60,20 @@
     <Setter Property="BoxShadow" Value="{DynamicResource CardShadow}" />
   </Style>
 
+  <!-- Highlighted from a keyboard: never the square black box, a soft ring in the accent colour -->
+  <Style Selector=":is(Button), ListBoxItem, ComboBox, ComboBoxItem, MenuItem">
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+  </Style>
+  <Style Selector="Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource FocusRing}" />
+  </Style>
+  <Style Selector="ToggleButton:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BoxShadow" Value="{DynamicResource FocusRingInset}" />
+  </Style>
+  <Style Selector="RadioButton.seg:focus-visible /template/ Border#seg">
+    <Setter Property="BoxShadow" Value="{DynamicResource FocusRingInset}" />
+  </Style>
+
   <!-- Buttons: soft filled, rounded, at least 44 high for a thumb -->
   <Style Selector="Button">
     <Setter Property="CornerRadius" Value="12" />

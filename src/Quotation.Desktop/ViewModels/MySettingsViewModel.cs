@@ -89,7 +89,7 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         _session.Api.UpdateCurrentUser(me);
         _loading = true;
         WithoutGstNext = me.WithoutGstNext;
-        ThemeIndex = Math.Max(0, Array.IndexOf(Themes, me.Theme));
+        ThemeIndex = Math.Max(0, Array.IndexOf(Themes, AppTheme.Normalize(me.Theme)));
         TextSizeIndex = me.TextSize == AppDisplay.Large ? 1 : 0;
         SpacingIndex = me.Spacing == AppDisplay.Compact ? 1 : 0;
         ReduceMotion = me.ReduceMotion;

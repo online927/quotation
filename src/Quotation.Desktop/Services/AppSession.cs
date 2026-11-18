@@ -96,7 +96,7 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
     /// <summary>Theme, text size, spacing and animations of the signed-in user.</summary>
     public void ApplyAppearance(Contracts.UserDto user)
     {
-        ApplyTheme(user.Theme);
+        ApplyTheme(Contracts.AppTheme.Normalize(user.Theme));
         ThemeService.ApplyDisplay(user.TextSize, user.Spacing, user.ReduceMotion);
     }
 

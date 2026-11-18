@@ -94,9 +94,11 @@ public sealed class SearchPicker : UserControl
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(14),
             Padding = new Thickness(2, 4),
-            BoxShadow = BoxShadows.Parse("0 14 36 0 #2E0F172A"),
+            // Clear space around the card for its shadow (a shadow cut off by the pop-up's edge showed as square lines).
+            Margin = new Thickness(10, 3, 10, 18),
             Child = new Panel { Children = { _list, _noMatch } },
         };
+        _dropDown.Bind(Border.BoxShadowProperty, _dropDown.GetResourceObservable("PopupShadow"));
 
         // Light or dark, following the user's choice.
         _dropDown.Bind(Border.BackgroundProperty, _dropDown.GetResourceObservable("PopupBrush"));
@@ -106,6 +108,7 @@ public sealed class SearchPicker : UserControl
         {
             PlacementTarget = _textBox,
             Placement = PlacementMode.BottomEdgeAlignedLeft,
+            HorizontalOffset = -10, // the card's clear space: the list still starts under the box
             IsLightDismissEnabled = true,
             OverlayDismissEventPassThrough = true,
             Child = _dropDown,

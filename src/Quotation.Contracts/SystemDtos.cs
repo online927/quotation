@@ -39,29 +39,29 @@ public static class AppTheme
     // Colour themes (My Settings > Appearance).
     // (Lagoon, Cyberpunk and the colourful Glass were removed: users who had them get Default Light.
     //  More Maroon was removed in Round 19: its users get Glass (Maroon). Round 27 removed Sunset and Frost (→ Default
-    //  Light) and Neon Night and Glass (Black) (→ Default Dark).)
+    //  Light) and Neon Night and Glass (Black) (→ Default Dark). Round 31 removed Maroon Mahal (→ Glass (Maroon)).)
     public const string Graphite = "Graphite", GlassBlue = "GlassBlue", GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon",
         Parchment = "Parchment", ForestGold = "ForestGold", HeroLight = "HeroLight", Ocean = "Ocean", Midnight = "Midnight",
-        MaroonMahal = "MaroonMahal", Tally = "Tally";
+        Tally = "Tally";
     /// <summary>Removed themes (still read from older settings).</summary>
-    public const string Sunset = "Sunset", Frost = "Frost", GlassBlack = "GlassBlack", NeonNight = "NeonNight";
+    public const string Sunset = "Sunset", Frost = "Frost", GlassBlack = "GlassBlack", NeonNight = "NeonNight", MaroonMahal = "MaroonMahal";
 
     public static readonly string[] All = [Light, Dark, System, Graphite, GlassBlue, GlassGreen, GlassMaroon, Parchment, ForestGold, HeroLight, Ocean, Midnight,
-        MaroonMahal, Tally];
+        Tally];
     public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
     /// <summary>
-    /// A saved theme that still exists: More Maroon → Glass (Maroon); Neon Night and Glass (Black) → Default Dark; any other
-    /// removed theme → Default Light.
+    /// A saved theme that still exists: More Maroon and Maroon Mahal → Glass (Maroon); Neon Night and Glass (Black) → Default
+    /// Dark; any other removed theme → Default Light.
     /// </summary>
     public static string Normalize(string? theme) => theme switch
     {
-        "MoreMaroon" => GlassMaroon,
+        "MoreMaroon" or MaroonMahal => GlassMaroon,
         NeonNight or GlassBlack => Dark,
         _ when IsValid(theme) => theme!,
         _ => Light,
     };
     /// <summary>Themes drawn on dark screens.</summary>
-    public static bool IsDarkTheme(string? theme) => theme is Dark or ForestGold or Midnight or MaroonMahal;
+    public static bool IsDarkTheme(string? theme) => theme is Dark or ForestGold or Midnight;
 }
 
 /// <summary>Text size and spacing, chosen by each user.</summary>

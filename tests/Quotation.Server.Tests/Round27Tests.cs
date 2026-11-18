@@ -60,4 +60,25 @@ public class Round27Tests : QuotationTestBase
         Assert.Equal(AppTheme.Light, AppTheme.Normalize("Frost"));
         Assert.Equal(AppTheme.Ocean, AppTheme.Normalize(AppTheme.Ocean));
     }
+
+    [Fact]
+    public async Task Maroon_mahal_is_removed_and_its_users_get_glass_maroon()
+    {
+        Assert.DoesNotContain("MaroonMahal", AppTheme.All);
+        Assert.Equal(AppTheme.GlassMaroon, AppTheme.Normalize("MaroonMahal"));
+        Assert.False(AppTheme.IsDarkTheme("MaroonMahal"));
+
+        var ravi = await Server.LoginAsStandardAsync();
+        // It can no longer be chosen.
+        await Assert.ThrowsAsync<ApiException>(() => ravi.SetMyPreferencesAsync(new MyPreferencesDto(Theme: "MaroonMahal")));
+        // Someone who had it before: Glass (Maroon) when they log in.
+        var me = await ravi.MeAsync();
+        Server.Db(db =>
+        {
+            db.Users.Single(u => u.Id == me.Id).Theme = "MaroonMahal";
+            return db.SaveChanges();
+        });
+        var again = await Server.LoginAsStandardAsync();
+        Assert.Equal(AppTheme.GlassMaroon, (await again.MeAsync()).Theme);
+    }
 }

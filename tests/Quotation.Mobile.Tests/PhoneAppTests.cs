@@ -214,7 +214,7 @@ public class PhoneAppTests
         Assert.Contains(more.Themes, t => t.Name == "Same as the phone");
         try
         {
-            foreach (var theme in new[] { AppTheme.Dark, AppTheme.Ocean, AppTheme.Midnight, AppTheme.GlassMaroon, AppTheme.MaroonMahal, AppTheme.ForestGold })
+            foreach (var theme in new[] { AppTheme.Dark, AppTheme.Ocean, AppTheme.Midnight, AppTheme.GlassMaroon, AppTheme.ForestGold })
             {
                 more.Theme = more.Themes.First(t => t.Key == theme);
                 await Ui.WaitUntil(() => !more.IsBusy);

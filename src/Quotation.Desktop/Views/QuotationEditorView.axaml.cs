@@ -34,8 +34,8 @@ public partial class QuotationEditorView : UserControl
             vm.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName != nameof(QuotationEditorViewModel.EditingLine) || vm.EditingLine is null) return;
-                // With the gear on one column, the cursor goes straight to that column's box.
-                if (StepBox(vm.StepMode) is not null) OnFocusEntry(vm.StepMode);
+                // With the gear on columns, the cursor goes straight to the first chosen column's box.
+                if (vm.StepColumns.FirstOrDefault() is { } column) OnFocusEntry(column);
                 else FocusLater(QtyBox);
             };
             // After a line is saved: a new line (Product), or with the gear on the next line in the chosen box.
@@ -151,19 +151,22 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
             return;
         }
+        if (owner is NumericUpDown n && n.Text is { } text && decimal.TryParse(text, out var value)) n.Value = value;
+        // Gear on columns: Enter in a chosen box goes to the next chosen box of the line; after the last one it saves the
+        // line and opens the next line in the first chosen box.
+        if (Vm is { EditingLine: not null } stepping &&
+            stepping.StepColumns.FirstOrDefault(k => StepBox(k) == owner ||
+                (k == "Name" && owner == ProductBox.InputBox && stepping.EntryProduct is not null)) is { } column)
+        {
+            if (stepping.NextStepColumn(column) is { } nextColumn) OnFocusEntry(nextColumn);
+            else stepping.SaveLineCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
         if (owner == DiscountBox)
         {
             DescriptionBox.Focus();
             DescriptionBox.CaretIndex = DescriptionBox.Text?.Length ?? 0;
-            e.Handled = true;
-            return;
-        }
-        if (owner is NumericUpDown n && n.Text is { } text && decimal.TryParse(text, out var value)) n.Value = value;
-        // Gear on one column: Enter in that box saves the line and opens the next line in the same box.
-        if (Vm is { EditingLine: not null } stepping && StepBox(stepping.StepMode) is { } column &&
-            (owner == column || (column == ProductBox && owner == ProductBox.InputBox && stepping.EntryProduct is not null)))
-        {
-            stepping.SaveLineCommand.Execute(null);
             e.Handled = true;
             return;
         }
@@ -214,10 +217,6 @@ public partial class QuotationEditorView : UserControl
             input.SelectAll();
         }, Avalonia.Threading.DispatcherPriority.Background);
     }
-
-    // Closed only after the click has made its choice (closing it at once took the choice away with the menu).
-    private void OnStepModeClick(object? sender, RoutedEventArgs e) =>
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => StepGearButton.Flyout?.Hide(), Avalonia.Threading.DispatcherPriority.Background);
 
     /// <summary>Alt+P: the cursor in the Packing &amp; Forwarding box with its amount selected (when it can be changed).</summary>
     public void FocusPacking()

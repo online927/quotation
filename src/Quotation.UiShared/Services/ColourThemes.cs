@@ -119,22 +119,6 @@ public static class ColourThemes
                 ["SkyArtBrush"] = "#8CFFFFFF", ["SunArtBrush"] = "#C7F6E7B6", ["FarArtBrush"] = "#1F9AA6D6", ["NearArtBrush"] = "#D903061A",
                 ["SideArtBrush"] = "#4DFFFFFF", ["PictureScrimBrush"] = "#99070B1F",
             }),
-        // Maroon Mahal: a dark royal maroon night; blush highlights, glowing glass boxes, a mandala, flags and a canopy.
-        [AppTheme.MaroonMahal] = new("#22050C→#3A0A16→#5E1024", "#F2A7B6", "#4A1424", "#5A1A2C", true,
-            new()
-            {
-                ["CardBrush"] = "#14FFFFFF", ["PopupBrush"] = "#2A0A14", ["TopBarBrush"] = "#5E1024→#8E2238",
-                ["TopBarTextBrush"] = "#FFFFFF", ["TopBarMutedBrush"] = "#E8BCC5", ["TopBarFieldBrush"] = "#29FFFFFF",
-                ["SidebarBrush"] = "#5E1024→#8E2238", ["SidebarBorderBrush"] = "#5E1024", ["SidebarSelectedBrush"] = "#F2DCE0",
-                ["SidebarSelectedTextBrush"] = "#5E1024", ["SidebarTextBrush"] = "#FFFFFF", ["SidebarMutedBrush"] = "#D9A1AD",
-                ["SidebarHoverBrush"] = "#1FFFFFFF", ["HairlineBrush"] = "#40D9A1AD", ["PanelBorderBrush"] = "#73D9A1AD",
-                ["SubtleFillBrush"] = "#14FFFFFF", ["FillBrush"] = "#1FFFFFFF", ["MutedBrush"] = "#E8BCC5", ["ListHoverBrush"] = "#1FFFFFFF",
-                ["TextBrush"] = "#FFF5F7", ["HeadingBrush"] = "#FFFFFF", ["BadgeBrush"] = "#F2DCE0", ["BadgeTextBrush"] = "#5E1024",
-                ["ActionBrush"] = "#C2416A", ["PrimaryHoverBrush"] = "#D24F79", ["PrimaryPressedBrush"] = "#A8355A", ["PrimaryDisabledBrush"] = "#4A2030",
-                ["SaveBrush"] = "#2FA57A", ["SaveHoverBrush"] = "#39B98A",
-                ["SkyArtBrush"] = "#38D9A1AD", ["SunArtBrush"] = "#00000000", ["FarArtBrush"] = "#00000000", ["NearArtBrush"] = "#00000000",
-                ["SideArtBrush"] = "#40F2DCE0", ["PictureScrimBrush"] = "#9922050C",
-            }),
         // Tally: like TallyPrime — a dark blue-green top bar, a light blue page, white boxes with thin lines, square corners and no
         // shadows; the chosen item in a yellow bar, the menu's shortcut letters in red, a key bar on the right.
         [AppTheme.Tally] = new("#E4EEF3", "#1F5F7D", "#DCEAF1", "#F9C74F", false,
@@ -230,7 +214,7 @@ public static class ColourThemes
             SetShape(app, "ControlCornerRadius", new CornerRadius(12));
             SetShape(app, "InputPadding", new Thickness(11, 2)); // the cursor clears the round corner
             SetShape(app, "SpinnerEndRadius", new CornerRadius(0, 12, 12, 0));
-            GlowShadow = theme == AppTheme.MaroonMahal ? "0 0 24 0 #66A84D61" : GlassShadow;
+            GlowShadow = GlassShadow;
             return;
         }
         if (theme is null || !Palettes.TryGetValue(theme, out var p)) return;

@@ -152,6 +152,56 @@ public class Round28UiTests
             return view.FindControl<NumericUpDown>("QtyBox")!.GetVisualDescendants().OfType<TextBox>().First().IsFocused;
         });
         editor.ChooseStepModeCommand.Execute("Off");
+        Assert.Equal("Off", ctx.Session.Config.LineStepMode);
+    }
+
+    [AvaloniaFact]
+    public async Task Several_gear_switches_can_be_on_and_next_line_goes_by_itself()
+    {
+        using var ctx = await SetupAsync();
+        var editor = await ThreeLinesAsync(ctx);
+        // Columns add up; the saved choice is in the gear's order whatever the order they were turned on.
+        editor.ChooseStepModeCommand.Execute("Discount");
+        editor.ChooseStepModeCommand.Execute("Quantity");
+        editor.ChooseStepModeCommand.Execute("Description");
+        Assert.Equal("Description,Quantity,Discount", editor.StepMode);
+        Assert.Equal(["Quantity", "Discount", "Description"], editor.StepColumns); // Enter goes left to right on the screen
+        Assert.Equal("Quantity", editor.FirstStepBox);
+        Assert.Equal("Discount", editor.NextStepColumn("Quantity"));
+        Assert.Equal("Description", editor.NextStepColumn("Discount"));
+        Assert.Null(editor.NextStepColumn("Description"));
+        // Turning one off leaves the others on.
+        editor.ChooseStepModeCommand.Execute("Quantity");
+        Assert.Equal("Description,Discount", editor.StepMode);
+        // "Next line" already covers every box: it goes on by itself, and a column turns it off again.
+        editor.ChooseStepModeCommand.Execute("Line");
+        Assert.Equal("Line", editor.StepMode);
+        Assert.Equal(["Line"], editor.StepModes.Where(m => m.IsSelected).Select(m => m.Key));
+        Assert.Empty(editor.StepColumns);
+        Assert.Equal("Quantity", editor.FirstStepBox);
+        editor.ChooseStepModeCommand.Execute("Rate");
+        Assert.Equal("Rate", editor.StepMode);
+        Assert.Equal(["Rate"], editor.StepModes.Where(m => m.IsSelected).Select(m => m.Key));
+        // Saving a line walks to the next one with both columns on.
+        editor.ChooseStepModeCommand.Execute("Discount");
+        editor.EditLineCommand.Execute(editor.Lines[1]);
+        editor.SaveLineCommand.Execute(null);
+        Assert.Same(editor.Lines[2], editor.EditingLine);
+        Assert.Equal("Going down: Rate, Discount · line 3 of 3", editor.StepInfo);
+        editor.SaveLineCommand.Execute(null);
+        Assert.Null(editor.EditingLine);
+        // The choice made on this PC comes back on the next quotation; an older single choice still reads.
+        Assert.Equal("Rate,Discount", ctx.Session.Config.LineStepMode);
+        var next = new QuotationEditorViewModel(ctx.Session, ctx.Shell);
+        Assert.Equal("Rate,Discount", next.StepMode);
+        ctx.Session.Config.LineStepMode = "Quantity";
+        Assert.Equal("Quantity", new QuotationEditorViewModel(ctx.Session, ctx.Shell).StepMode);
+        ctx.Session.Config.LineStepMode = "Rate,Line,Nonsense";
+        Assert.Equal("Line", new QuotationEditorViewModel(ctx.Session, ctx.Shell).StepMode);
+        ctx.Session.Config.LineStepMode = "Nonsense";
+        Assert.Equal("Off", new QuotationEditorViewModel(ctx.Session, ctx.Shell).StepMode);
+        editor.ChooseStepModeCommand.Execute("Off");
+        Assert.DoesNotContain(editor.StepModes, m => m.IsSelected);
     }
 
     [AvaloniaFact]
@@ -222,21 +272,44 @@ public class Round28UiTests
         ctx.Window.MouseUp(at, Avalonia.Input.MouseButton.Left);
         await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return gear.Flyout is Avalonia.Controls.Primitives.FlyoutBase { IsOpen: true }; });
         var overlay = Avalonia.Controls.Primitives.OverlayLayer.GetOverlayLayer(ctx.Window)!;
-        // The "Rate" row of the gear: its switch is clicked with the mouse.
-        var rate = overlay.GetVisualDescendants().OfType<ToggleSwitch>()
-            .Single(t => t.Parent is Grid g && g.Children.OfType<TextBlock>().Any(b => b.Text == "Rate"));
-        var rp = rate.TranslatePoint(new Point(8, 8), ctx.Window)!.Value;
-        ctx.Window.MouseDown(rp, Avalonia.Input.MouseButton.Left);
-        ctx.Window.MouseUp(rp, Avalonia.Input.MouseButton.Left);
-        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return gear.Flyout is Avalonia.Controls.Primitives.FlyoutBase { IsOpen: false }; });
-        Assert.Equal("Rate", editor.StepMode); // the click's choice is kept (the menu closed after it)
+        // The "Rate" and "Discount" rows of the gear: their switches are clicked with the mouse, one after the other.
+        void ClickSwitch(string row)
+        {
+            var toggle = overlay.GetVisualDescendants().OfType<ToggleSwitch>()
+                .Single(t => t.Parent is Grid g && g.Children.OfType<TextBlock>().Any(b => b.Text == row));
+            var p = toggle.TranslatePoint(new Point(8, 8), ctx.Window)!.Value;
+            ctx.Window.MouseDown(p, Avalonia.Input.MouseButton.Left);
+            ctx.Window.MouseUp(p, Avalonia.Input.MouseButton.Left);
+            for (var i = 0; i < 5; i++) Dispatcher.UIThread.RunJobs();
+        }
+        bool MenuOpen() => gear.Flyout is Avalonia.Controls.Primitives.FlyoutBase { IsOpen: true };
+        ClickSwitch("Rate");
+        Assert.Equal("Rate", editor.StepMode);
+        Assert.True(MenuOpen()); // the menu stays open after a switch is turned on
+        ClickSwitch("Discount");
+        Assert.True(MenuOpen());
+        Assert.Equal("Rate,Discount", editor.StepMode); // both on together
+        Assert.Equal("Rate,Discount", ctx.Session.Config.LineStepMode); // remembered on this PC
+        Assert.True(editor.StepModes.Single(m => m.Key == "Rate").IsSelected);
+        Assert.True(editor.StepModes.Single(m => m.Key == "Discount").IsSelected);
+        await Shot(ctx.Window, "r28-gear-two-on");
+        // A click outside closes the menu.
+        var outside = view.FindControl<Button>("StepGearButton")!.TranslatePoint(new Point(-400, 200), ctx.Window)!.Value;
+        ctx.Window.MouseDown(outside, Avalonia.Input.MouseButton.Left);
+        ctx.Window.MouseUp(outside, Avalonia.Input.MouseButton.Left);
+        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return !MenuOpen(); });
 
-        // Edit on line 1: the cursor goes straight to Rate; Enter there saves and opens line 2 in Rate.
+        // Edit on line 1: the cursor goes straight to Rate; Enter → Discount of the same line; Enter → line 2 in Rate.
         editor.EditLineCommand.Execute(editor.Lines[0]);
-        TextBox RateInput() => view.FindControl<NumericUpDown>("RateBox")!.GetVisualDescendants().OfType<TextBox>().First();
-        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return RateInput().IsFocused; });
+        TextBox Input(string box) => view.FindControl<NumericUpDown>(box)!.GetVisualDescendants().OfType<TextBox>().First();
+        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return Input("RateBox").IsFocused; });
+        Assert.Equal("Going down: Rate, Discount · line 1 of 3", editor.StepInfo);
         ctx.Window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
-        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return editor.EditingLine == editor.Lines[1] && RateInput().IsFocused; });
+        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return editor.EditingLine == editor.Lines[0] && Input("DiscountBox").IsFocused; });
+        ctx.Window.KeyTextInput("5");
+        ctx.Window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return editor.EditingLine == editor.Lines[1] && Input("RateBox").IsFocused; });
+        Assert.Equal(5m, editor.Lines[0].DiscountPercent); // line 1 was saved with the discount typed
         editor.ChooseStepModeCommand.Execute("Off");
     }
 }

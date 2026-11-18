@@ -133,6 +133,8 @@ public static class ThemeService
         // Keyboard focus: a soft halo in the theme's accent colour that follows the button's round corners.
         var accent = app.TryGetResource("AccentBrush", app.ActualThemeVariant, out var a) && a is ISolidColorBrush b ? b.Color : Color.Parse("#0A66D9");
         app.Resources["FocusRing"] = BoxShadows.Parse($"0 0 0 4 #99{accent.R:X2}{accent.G:X2}{accent.B:X2}");
+        // The same ring just inside the edge, for controls that cut off what is drawn outside them (pill choices, tabs).
+        app.Resources["FocusRingInset"] = BoxShadows.Parse($"inset 0 0 0 2 #B3{accent.R:X2}{accent.G:X2}{accent.B:X2}");
         // Typing boxes: a thin soft ring in the accent colour (with the 1 px accent edge it reads as one clean outline).
         app.Resources["InputRing"] = BoxShadows.Parse($"0 0 0 3 #2E{accent.R:X2}{accent.G:X2}{accent.B:X2}");
         // Main (blue) buttons lift a little under the mouse; none with "Reduce animations".

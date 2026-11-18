@@ -101,7 +101,7 @@
       </TabItem>
       <TabItem Header="Slow requests">
         <DockPanel Margin="0,8">
-          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6"><TextBlock Text="Requests that took longer than 1 second (last 500)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Requests that took longer than 1 second (last 500). Total = on the user's PC, from click to answer; Server = the server's own time. Total slow but Server quick means the network or finding the server PC; Server slow means the server PC was busy."><Path Classes="infoicon" /></Border></StackPanel>
+          <StackPanel DockPanel.Dock="Top" Classes="help" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6"><TextBlock Text="Requests that took longer than 1 second (last 500)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Requests that took longer than 1 second (last 500). Total = on the user's PC, from click to answer; Server = the server's own time. Total slow but Server quick means the network or finding the server PC; Server slow means the server PC was busy."><Path Classes="infoicon" /></Border></StackPanel>
           <Border DockPanel.Dock="Top" Classes="tablehead">
             <Grid ColumnDefinitions="120,170,150,70,70,150,*">
               <TextBlock Text="When" />

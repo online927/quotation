@@ -210,11 +210,12 @@ public class PhoneAppTests
         using var ctx = await PhoneContext.StartAsync();
         await ctx.Main.ShowTabCommand.ExecuteAsync(Tabs.More);
         var more = (MoreViewModel)ctx.Main.Page!;
-        Assert.Equal(AppTheme.Light, more.Theme!.Key);
-        Assert.Contains(more.Themes, t => t.Name == "Same as the phone");
+        Assert.Equal(AppTheme.GlassBlue, more.Theme!.Key); // the start theme (Round 32)
+        Assert.DoesNotContain(more.Themes, t => t.Name is "Same as the phone" or "Default Light" or "Default Dark");
+        Assert.Equal("Glass (Blue)", more.Themes[0].Name);
         try
         {
-            foreach (var theme in new[] { AppTheme.Dark, AppTheme.Ocean, AppTheme.Midnight, AppTheme.GlassMaroon, AppTheme.ForestGold })
+            foreach (var theme in new[] { AppTheme.Graphite, AppTheme.Ocean, AppTheme.Midnight, AppTheme.GlassMaroon, AppTheme.ForestGold })
             {
                 more.Theme = more.Themes.First(t => t.Key == theme);
                 await Ui.WaitUntil(() => !more.IsBusy);

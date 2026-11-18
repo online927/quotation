@@ -12,8 +12,9 @@ public interface INavigator
     void GoBack();
     /// <summary>Asks a Yes/No question in the app window; true for <paramref name="yes"/>.</summary>
     Task<bool> ConfirmAsync(string title, string message, string yes = "Yes", string no = "No");
-    /// <summary>Asks for a value (e.g. the 4-digit seal PIN); null when cancelled.</summary>
-    Task<string?> AskAsync(string title, string message, string inputLabel, bool secret = false, string ok = "OK");
+    /// <summary>Asks for a value (e.g. the 4-digit seal PIN); null when cancelled. <paramref name="stamp"/>: the rubber-stamp
+    /// picture instead of the question mark (the seal PIN).</summary>
+    Task<string?> AskAsync(string title, string message, string inputLabel, bool secret = false, string ok = "OK", bool stamp = false);
     /// <summary>A short message in the bottom-right corner that fades after a few seconds.</summary>
     void Toast(string message, int seconds = 5) { }
     /// <summary>A corner message with a button (e.g. "Line 2 removed — Undo").</summary>
@@ -27,9 +28,12 @@ public interface INavigator
 }
 
 /// <summary>A question shown over the app window (Yes/No, or with an input box).</summary>
-public sealed partial class ShellDialog(string title, string message, string primary, string secondary, string? inputLabel = null, bool secret = false)
+public sealed partial class ShellDialog(string title, string message, string primary, string secondary, string? inputLabel = null, bool secret = false,
+    bool stamp = false)
     : ObservableObject
 {
+    /// <summary>The seal PIN: a rubber stamp at the top instead of the question mark.</summary>
+    public bool IsStamp { get; } = stamp;
     private readonly TaskCompletionSource<bool> _answer = new();
 
     public string Title { get; } = title;

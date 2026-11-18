@@ -9,7 +9,7 @@
 AppId={{7C1B1E7A-5D41-4B2E-9C11-2D5A1F0E0A02}
 AppName=Quotations
 AppVersion={#AppVersion}
-AppPublisher=T.SAIFUDDIN & CO.
+AppPublisher=Mohamed
 DefaultDirName={autopf}\TSQuotation\Client
 DefaultGroupName=Quotations
 ; Use the new Start-menu folder name also when updating an installation made under the old name.

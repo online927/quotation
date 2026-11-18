@@ -234,7 +234,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     public bool ShowWhatsApp => _settings.Quotation.WhatsAppButton && IsFinal && CanAct;
 
-    /// <summary>Makes the PDF, copies it, and opens WhatsApp Desktop in the customer's chat with the message typed.</summary>
+    /// <summary>Makes the PDF, copies it, and opens the customer's chat (WhatsApp program or WhatsApp Web) with the message typed.</summary>
     [RelayCommand]
     private Task WhatsAppAsync() => RunAsync(async () =>
     {
@@ -246,12 +246,11 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             .Replace("{number}", Number ?? "", StringComparison.OrdinalIgnoreCase)
             .Replace("{customer}", BuyerName, StringComparison.OrdinalIgnoreCase);
         var phone = DocumentLauncher.WhatsAppNumber(BuyerPhone);
+        var web = _session.Documents.WhatsAppOnWeb;
         if (_session.Documents.ShareOnWhatsApp(path, phone, message))
-            InfoMessage = phone is null
-                ? "PDF copied. WhatsApp opened: pick the chat, press Ctrl+V, then Enter."
-                : "PDF copied. In WhatsApp press Ctrl+V, then Enter.";
+            InfoMessage = DocumentLauncher.WhatsAppHint(web, phone is not null);
         else
-            ErrorMessage = "WhatsApp Desktop could not be opened. Is it installed on this PC? The PDF is saved: " + path;
+            ErrorMessage = DocumentLauncher.WhatsAppError(web, path);
     });
 
     // ---------------------------------------------------------------- who changed it (M3)
@@ -1601,7 +1600,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         string? pin = null;
         if (SealPdf && CanSeal && SealAvailable)
         {
-            pin = await _navigator.AskAsync("Your seal", $"Enter your 4-digit seal PIN to seal {Number}.", "Seal PIN", secret: true, ok: "Seal & Save");
+            pin = await _navigator.AskAsync("Your seal", $"Enter your 4-digit seal PIN to seal {Number}.", "Seal PIN", secret: true, ok: "Seal & Save",
+                stamp: true);
             if (pin is null) return;
         }
         await RunAsync(async () =>

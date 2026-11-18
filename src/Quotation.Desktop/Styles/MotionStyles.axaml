@@ -118,6 +118,17 @@
     </Style.Animations>
   </Style>
 
+  <!-- N9: Hide menu / Show menu: the side menu glides between full width and icons only (the names are cut off at its edge
+       while it grows) -->
+  <Style Selector="Border.sidebar">
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Width" Duration="0:0:0.22" Easing="CubicEaseOut" />
+      </Transitions>
+    </Setter>
+  </Style>
+
   <!-- N8: a new item line fades in -->
   <Style Selector="Border.row">
     <Style.Animations>

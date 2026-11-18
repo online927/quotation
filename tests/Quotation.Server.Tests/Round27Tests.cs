@@ -51,14 +51,40 @@ public class Round27Tests : QuotationTestBase
     }
 
     [Fact]
-    public void Removed_themes_become_default_light_or_dark()
+    public void Removed_themes_become_glass_blue_or_midnight_stars()
     {
         foreach (var gone in new[] { "Sunset", "Frost", "NeonNight", "GlassBlack" }) Assert.DoesNotContain(gone, AppTheme.All);
-        Assert.Equal(AppTheme.Dark, AppTheme.Normalize("NeonNight"));
-        Assert.Equal(AppTheme.Dark, AppTheme.Normalize("GlassBlack"));
-        Assert.Equal(AppTheme.Light, AppTheme.Normalize("Sunset"));
-        Assert.Equal(AppTheme.Light, AppTheme.Normalize("Frost"));
+        Assert.Equal(AppTheme.Midnight, AppTheme.Normalize("NeonNight"));
+        Assert.Equal(AppTheme.Midnight, AppTheme.Normalize("GlassBlack"));
+        Assert.Equal(AppTheme.GlassBlue, AppTheme.Normalize("Sunset"));
+        Assert.Equal(AppTheme.GlassBlue, AppTheme.Normalize("Frost"));
         Assert.Equal(AppTheme.Ocean, AppTheme.Normalize(AppTheme.Ocean));
+    }
+
+    [Fact]
+    public async Task Default_light_dark_and_same_as_windows_are_removed()
+    {
+        // Round 32: Glass (Blue) is the start theme; the three plain choices are gone.
+        Assert.Equal(AppTheme.GlassBlue, AppTheme.StartTheme);
+        Assert.Equal(AppTheme.GlassBlue, AppTheme.All[0]);
+        foreach (var gone in new[] { AppTheme.Light, AppTheme.Dark, AppTheme.System }) Assert.DoesNotContain(gone, AppTheme.All);
+        Assert.Equal(AppTheme.GlassBlue, AppTheme.Normalize(AppTheme.Light));
+        Assert.Equal(AppTheme.GlassBlue, AppTheme.Normalize(AppTheme.System));
+        Assert.Equal(AppTheme.Midnight, AppTheme.Normalize(AppTheme.Dark));
+        Assert.Equal(AppTheme.GlassBlue, AppTheme.Normalize(null));
+
+        // Users who had them get the new ones when they log in.
+        var ravi = await Server.LoginAsStandardAsync();
+        var me = await ravi.MeAsync();
+        foreach (var (had, gets) in new[] { (AppTheme.Light, AppTheme.GlassBlue), (AppTheme.System, AppTheme.GlassBlue), (AppTheme.Dark, AppTheme.Midnight) })
+        {
+            Server.Db(db =>
+            {
+                db.Users.Single(u => u.Id == me.Id).Theme = had;
+                return db.SaveChanges();
+            });
+            Assert.Equal(gets, (await (await Server.LoginAsStandardAsync()).MeAsync()).Theme);
+        }
     }
 
     [Fact]

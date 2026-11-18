@@ -119,6 +119,14 @@
             <Style Selector="TextBlock">
               <Setter Property="Margin" Value="0,5" />
             </Style>
+            <!-- The status pills (Tally, Gmail, Claude AI): the same room above and below as a text row, so two pills one
+                 under the other never touch -->
+            <Style Selector="Border.chip">
+              <Setter Property="Margin" Value="0,3" />
+            </Style>
+            <Style Selector="Border.chip TextBlock">
+              <Setter Property="Margin" Value="0" />
+            </Style>
           </Grid.Styles>
           <TextBlock Classes="h2" Grid.ColumnSpan="2" Text="Connections" Margin="0,0,0,8" />
           <TextBlock Grid.Row="1" Classes="label" Text="Tally" />

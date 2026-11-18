@@ -67,6 +67,7 @@ builder.Services.AddSingleton<GmailIngestionService>();
 builder.Services.AddHostedService<GmailPollingWorker>();
 builder.Services.AddSingleton<BackupService>();
 builder.Services.AddHostedService<BackupWorker>();
+builder.Services.AddHostedService<ServerFinderService>();
 
 builder.Services.AddAuthentication(TokenAuthenticationHandler.SchemeName)
     .AddScheme<AuthenticationSchemeOptions, TokenAuthenticationHandler>(TokenAuthenticationHandler.SchemeName, null);

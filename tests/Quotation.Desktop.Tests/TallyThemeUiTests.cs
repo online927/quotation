@@ -155,8 +155,8 @@ public class TallyThemeUiTests
         await approving;
         Assert.Equal(QuotationStatus.Generated, editor.Status);
 
-        // Back to Default Light: none of the Tally parts.
-        await ctx.Session.SetThemeAsync(AppTheme.Light);
+        // Back to Glass (Blue): none of the Tally parts.
+        await ctx.Session.SetThemeAsync(AppTheme.GlassBlue);
         Dispatcher.UIThread.RunJobs();
         Assert.DoesNotContain("tally", shell.Classes);
         Assert.False(shell.FindControl<Border>("KeyBarPanel")!.IsEffectivelyVisible);

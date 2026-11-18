@@ -10,7 +10,7 @@
 AppId={{7C1B1E7A-5D41-4B2E-9C11-2D5A1F0E0A01}
 AppName=Quotations Server
 AppVersion={#AppVersion}
-AppPublisher=T.SAIFUDDIN & CO.
+AppPublisher=Mohamed
 DefaultDirName={autopf}\TSQuotation\Server
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
@@ -49,6 +49,9 @@ Filename: "{sys}\sc.exe"; Parameters: "failure {#ServiceName} reset= 86400 actio
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""TS Quotation Server"""; Flags: runhidden waituntilterminated
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Quotations Server"""; Flags: runhidden waituntilterminated
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Quotations Server"" dir=in action=allow protocol=TCP localport=5080 profile=domain,private"; Flags: runhidden waituntilterminated
+; Phones and Macs find this PC by its name: a small question on UDP 5080 that the server answers
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Quotations Server finder"""; Flags: runhidden waituntilterminated
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Quotations Server finder"" dir=in action=allow protocol=UDP localport=5080 profile=domain,private"; Flags: runhidden waituntilterminated
 Filename: "{sys}\sc.exe"; Parameters: "start {#ServiceName}"; Flags: runhidden waituntilterminated; StatusMsg: "Starting the Quotation Server…"
 
 [UninstallDelete]
@@ -59,6 +62,7 @@ Filename: "{sys}\sc.exe"; Parameters: "stop {#ServiceName}"; Flags: runhidden wa
 Filename: "{sys}\sc.exe"; Parameters: "delete {#ServiceName}"; Flags: runhidden waituntilterminated; RunOnceId: "DeleteService"
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Quotations Server"""; Flags: runhidden waituntilterminated; RunOnceId: "DeleteFirewall"
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""TS Quotation Server"""; Flags: runhidden waituntilterminated; RunOnceId: "DeleteOldFirewall"
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Quotations Server finder"""; Flags: runhidden waituntilterminated; RunOnceId: "DeleteFinderFirewall"
 
 [Code]
 function ServiceExists: Boolean;

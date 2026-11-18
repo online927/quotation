@@ -17,9 +17,9 @@ public sealed partial class MoreViewModel(MainViewModel main) : PageViewModel
     public string Version => "Version " + (typeof(MoreViewModel).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "");
     public bool MakesDocuments => main.Session.User?.MakesDocuments == true;
 
-    /// <summary>The themes, with "Same as Windows" as "Same as the phone".</summary>
+    /// <summary>The themes, as on the PC.</summary>
     public IReadOnlyList<ThemeChoice> Themes { get; } = ThemeNames.All
-        .Select(t => new ThemeChoice(t.Theme, t.Theme == AppTheme.System ? "Same as the phone" : t.Name)).ToList();
+        .Select(t => new ThemeChoice(t.Theme, t.Name)).ToList();
 
     [ObservableProperty] private ThemeChoice? _theme;
 

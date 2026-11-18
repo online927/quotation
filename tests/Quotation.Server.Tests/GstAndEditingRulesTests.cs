@@ -116,23 +116,24 @@ public class GstAndEditingRulesTests : QuotationTestBase
     }
 
     [Fact]
-    public async Task Each_user_keeps_their_own_light_or_dark_choice()
+    public async Task Each_user_keeps_their_own_theme()
     {
         var user = await UserAsync();
-        Assert.Equal(AppTheme.Light, (await user.MeAsync()).Theme);
+        Assert.Equal(AppTheme.StartTheme, (await user.MeAsync()).Theme); // Glass (Blue) for a new user
         await user.SetMyPreferencesAsync(new MyPreferencesDto(WithoutGstNext: true));
-        var me = await user.SetMyPreferencesAsync(new MyPreferencesDto(Theme: AppTheme.Dark));
-        Assert.Equal(AppTheme.Dark, me.Theme);
+        var me = await user.SetMyPreferencesAsync(new MyPreferencesDto(Theme: AppTheme.Midnight));
+        Assert.Equal(AppTheme.Midnight, me.Theme);
         Assert.True(me.WithoutGstNext); // only the theme changed
 
         // Another PC: the same login gets the same choice; other users are not affected.
         var otherPc = Server.CreateApi("OTHER-PC");
         await otherPc.LoginAsync("keerthana", "user-pass");
-        Assert.Equal(AppTheme.Dark, otherPc.CurrentUser!.Theme);
-        Assert.Equal(AppTheme.Light, (await Api.MeAsync()).Theme);
+        Assert.Equal(AppTheme.Midnight, otherPc.CurrentUser!.Theme);
+        Assert.Equal(AppTheme.StartTheme, (await Api.MeAsync()).Theme);
 
-        Assert.Equal(AppTheme.System, (await user.SetMyPreferencesAsync(new MyPreferencesDto(Theme: AppTheme.System))).Theme);
-        await Assert.ThrowsAsync<ApiException>(() => user.SetMyPreferencesAsync(new MyPreferencesDto(Theme: "Purple")));
+        // Default Light, Default Dark and Same as Windows can no longer be chosen (Round 32).
+        foreach (var gone in new[] { AppTheme.Light, AppTheme.Dark, AppTheme.System, "Purple" })
+            await Assert.ThrowsAsync<ApiException>(() => user.SetMyPreferencesAsync(new MyPreferencesDto(Theme: gone)));
     }
 
     [Fact]

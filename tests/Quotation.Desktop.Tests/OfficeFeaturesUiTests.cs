@@ -116,32 +116,34 @@ public class OfficeFeaturesUiTests
     }
 
     [AvaloniaFact]
-    public async Task Dark_mode_switch_changes_the_screens_and_is_saved_for_the_user()
+    public async Task Theme_button_goes_through_the_themes_and_is_saved_for_the_user()
     {
         using var ctx = await SetupAsync();
         try
         {
+            // Round 32: Glass (Blue) is the start theme; Default Light, Default Dark and Same as Windows are gone.
+            Assert.Equal(AppTheme.GlassBlue, ThemeService.Current);
             Assert.False(ThemeService.IsDark);
-            await ctx.Shell.ToggleThemeCommand.ExecuteAsync(null);
-            Assert.True(ThemeService.IsDark);
-            Assert.Equal(AppTheme.Dark, (await ctx.Session.Api.MeAsync()).Theme);
-            Assert.Equal(AppTheme.Dark, ctx.Session.Config.Theme); // the login screen on this PC follows it
-            // Round 27: each click is the next theme in the list (Same as Windows skipped), back to Light after the last.
             Assert.Equal("Next theme: Graphite", ctx.Shell.ThemeTip);
             await ctx.Shell.ToggleThemeCommand.ExecuteAsync(null);
             Assert.Equal(AppTheme.Graphite, (await ctx.Session.Api.MeAsync()).Theme);
+            Assert.Equal(AppTheme.Graphite, ctx.Session.Config.Theme); // the login screen on this PC follows it
+            // Each click is the next theme in the list, back to Glass (Blue) after the last.
             Assert.Equal(AppTheme.Tally, ShellViewModel.NextTheme(AppTheme.Midnight)); // Maroon Mahal was removed
-            Assert.DoesNotContain(ThemeNames.All, t => t.Name == "Maroon Mahal");
-            Assert.Equal(AppTheme.Light, ShellViewModel.NextTheme(AppTheme.Tally));
-            Assert.Equal(AppTheme.Dark, ShellViewModel.NextTheme(AppTheme.System));
-            await ctx.Session.SetThemeAsync(AppTheme.Dark);
+            Assert.DoesNotContain(ThemeNames.All, t => t.Name is "Maroon Mahal" or "Default Light" or "Default Dark" or "Same as Windows");
+            Assert.Equal(AppTheme.GlassBlue, ShellViewModel.NextTheme(AppTheme.Tally));
+            Assert.Equal(AppTheme.Graphite, ShellViewModel.NextTheme(AppTheme.Light)); // an old Default Light counts as Glass (Blue)
+            Assert.Equal(AppTheme.Tally, ShellViewModel.NextTheme(AppTheme.Dark)); // an old Default Dark counts as Midnight Stars
+            await ctx.Session.SetThemeAsync(AppTheme.Midnight);
+            Assert.True(ThemeService.IsDark);
 
             ctx.Shell.Navigate("mysettings");
             var mine = Assert.IsType<MySettingsViewModel>(ctx.Shell.CurrentPage);
-            await UiHelpers.WaitUntil(() => !mine.IsBusy && mine.ThemeIndex == 1);
+            await UiHelpers.WaitUntil(() => !mine.IsBusy && mine.ThemeChoices[mine.ThemeIndex] == "Midnight Stars");
+            Assert.Equal("Glass (Blue)", mine.ThemeChoices[0]);
             mine.ThemeIndex = 0;
             await UiHelpers.WaitUntil(() => !ThemeService.IsDark && !mine.IsBusy);
-            Assert.Equal(AppTheme.Light, (await ctx.Session.Api.MeAsync()).Theme);
+            Assert.Equal(AppTheme.GlassBlue, (await ctx.Session.Api.MeAsync()).Theme);
         }
         finally
         {

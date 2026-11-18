@@ -57,7 +57,7 @@ public sealed partial class LoginViewModel : ObservableObject
         if (PhoneSettings.NormalizeServer(ServerAddress).Length == 0)
         {
             ServerOk = false;
-            ServerStatus = "Type the server's address (the PC with the Quotation Server, e.g. 192.168.1.20).";
+            ServerStatus = "Type the server PC's name or address (the PC with the Quotation Server, e.g. TSSERVER or 192.168.1.20).";
             return;
         }
         _session.UseServer(ServerAddress);

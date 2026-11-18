@@ -18,6 +18,8 @@ public sealed class ServerOptions
     /// administrator make documents again, for an office with nobody else to make them.
     /// </summary>
     public bool AdministratorsMakeDocuments { get; set; }
+    /// <summary>UDP port of the finder that answers phones and Macs looking for this PC by name (0 = the web port, 5080).</summary>
+    public int FinderPort { get; set; }
     /// <summary>Disable background workers (used by tests).</summary>
     public bool EnableBackgroundWorkers { get; set; } = true;
 

@@ -37,7 +37,7 @@
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Appearance" />
-          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Just for you, and saved with your login, so it follows you to every PC." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Just for you, and saved with your login, so it follows you to every PC. The moon/sun button at the top switches between Default Light and Dark. PDFs are always printed white."><Path Classes="infoicon" /></Border></StackPanel>
+          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Just for you, and saved with your login, so it follows you to every PC." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Just for you, and saved with your login, so it follows you to every PC. The moon/sun button at the top goes on to the next theme. PDFs are always printed white."><Path Classes="infoicon" /></Border></StackPanel>
           <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
             <TextBlock Classes="label" Text="Theme" />
             <ComboBox Grid.Column="1" Name="ThemeBox" ItemsSource="{Binding ThemeChoices}" SelectedIndex="{Binding ThemeIndex}" Width="200" />
@@ -80,6 +80,40 @@
             <Button ctl:ButtonIcon.Kind="folder" Grid.Column="2" Name="BrowseProformaButton" Content="Browse…" Click="OnBrowseProforma" />
           </Grid>
           <Button ctl:ButtonIcon.Kind="save" Classes="primary" Content="Save" Command="{Binding SavePdfFolderCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" Name="WhatsAppCard">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="WhatsApp (this PC)" />
+          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Where the WhatsApp button opens the customer's chat." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="WhatsApp app: the WhatsApp program installed on this PC. WhatsApp Web: web.whatsapp.com in your browser (log in once with the QR code on your phone). Either way the PDF is copied: in the chat press Ctrl+V, then Enter."><Path Classes="infoicon" /></Border></StackPanel>
+          <Border Classes="pillbar" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="2">
+              <RadioButton Name="WhatsAppAppRadio" Classes="seg" GroupName="WhatsAppOpensIn" Content="WhatsApp app" IsChecked="{Binding WhatsAppOnApp}" />
+              <RadioButton Name="WhatsAppWebRadio" Classes="seg" GroupName="WhatsAppOpensIn" Content="WhatsApp Web" IsChecked="{Binding WhatsAppOnWeb}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" Name="TextSelectionCard">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Selected text (this PC)" />
+          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="How text looks when you select it in a box." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Soft blue, Blue sketch and Yellow highlighter change the letters so they stay easy to read. Theme colour only tints the background in the theme's own colour: the letters keep their own colour."><Path Classes="infoicon" /></Border></StackPanel>
+          <Border Classes="pillbar" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="2">
+              <RadioButton Name="SelectionSoftBlueRadio" Classes="seg" GroupName="TextSelection" Content="Soft blue" IsChecked="{Binding SelectionSoftBlue}" />
+              <RadioButton Name="SelectionSolidBlueRadio" Classes="seg" GroupName="TextSelection" Content="Blue sketch" IsChecked="{Binding SelectionSolidBlue}" />
+              <RadioButton Name="SelectionMarkerRadio" Classes="seg" GroupName="TextSelection" Content="Yellow highlighter" IsChecked="{Binding SelectionMarker}" />
+              <RadioButton Name="SelectionThemeColourRadio" Classes="seg" GroupName="TextSelection" Content="Theme colour" IsChecked="{Binding SelectionThemeColour}" />
+            </StackPanel>
+          </Border>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Classes="label" Text="Looks like" VerticalAlignment="Center" />
+            <Border Name="SelectionSample" Background="{Binding SelectionSampleBack}" CornerRadius="3" Padding="3,1" VerticalAlignment="Center">
+              <TextBlock Text="Your enquiry dated 02-Nov-2026" Foreground="{Binding SelectionSampleLetters}" />
+            </Border>
+          </StackPanel>
         </StackPanel>
       </Border>
 

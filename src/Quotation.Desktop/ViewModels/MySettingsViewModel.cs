@@ -17,7 +17,7 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
     [ObservableProperty] private bool _withoutGstNext;
     [ObservableProperty] private string _pdfFolder = "";
     [ObservableProperty] private string _proformaPdfFolder = "";
-    /// <summary>Index in <see cref="ThemeChoices"/> (Default Light, Default Dark, Same as Windows, then the colour themes).</summary>
+    /// <summary>Index in <see cref="ThemeChoices"/> (Glass (Blue) first, then the other themes).</summary>
     [ObservableProperty] private int _themeIndex;
 
     public IReadOnlyList<string> ThemeChoices { get; } = ThemeNames.All.Select(t => t.Name).ToList();
@@ -142,6 +142,7 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         _ = RunAsync(async () =>
         {
             await _session.SetThemeAsync(Themes[value]);
+            OnSelectionChanged(); // "theme colour" follows the theme
             InfoMessage = $"Screens: {ThemeChoices[value]}. This is saved with your login and used on every PC.";
         });
     }
@@ -214,11 +215,95 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         InfoMessage = $"Quotations will be saved in {_session.Documents.Folder}, proforma invoices in {_session.Documents.ProformaFolder}";
     }
 
+    /// <summary>My Settings → WhatsApp (this PC): the button opens WhatsApp Web in the browser (else the WhatsApp program).</summary>
+    public bool WhatsAppOnWeb
+    {
+        get => string.Equals(_session.Config.WhatsAppOpensIn, DocumentLauncher.WhatsAppWeb, StringComparison.OrdinalIgnoreCase);
+        set
+        {
+            if (value == WhatsAppOnWeb) return;
+            _session.Config.WhatsAppOpensIn = value ? DocumentLauncher.WhatsAppWeb : DocumentLauncher.WhatsAppApp;
+            try
+            {
+                _session.Config.Save();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Kept for this session; only this PC's choice.
+            }
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(WhatsAppOnApp));
+            InfoMessage = value
+                ? "WhatsApp opens in WhatsApp Web (your browser) on this PC."
+                : "WhatsApp opens in the WhatsApp app on this PC.";
+        }
+    }
+
+    public bool WhatsAppOnApp
+    {
+        get => !WhatsAppOnWeb;
+        set
+        {
+            if (value) WhatsAppOnWeb = false;
+        }
+    }
+
     /// <summary>Called by the view after the user picked a folder.</summary>
     public void SetFolder(string path, bool proforma = false)
     {
         if (proforma) ProformaPdfFolder = path;
         else PdfFolder = path;
         SavePdfFolder();
+    }
+
+    // ------------------------------------------------------------------ selected text (this PC)
+
+    public bool SelectionSoftBlue { get => IsSelection(TextSelectionLook.SoftBlue); set { if (value) SetSelection(TextSelectionLook.SoftBlue); } }
+    public bool SelectionSolidBlue { get => IsSelection(TextSelectionLook.SolidBlue); set { if (value) SetSelection(TextSelectionLook.SolidBlue); } }
+    public bool SelectionMarker { get => IsSelection(TextSelectionLook.Marker); set { if (value) SetSelection(TextSelectionLook.Marker); } }
+    public bool SelectionThemeColour { get => IsSelection(TextSelectionLook.ThemeColour); set { if (value) SetSelection(TextSelectionLook.ThemeColour); } }
+
+    /// <summary>The sample under the choices: the highlight and the letters as they look in a box.</summary>
+    public Avalonia.Media.IBrush SelectionSampleBack =>
+        new Avalonia.Media.SolidColorBrush(TextSelectionLook.Colours(_session.Config.TextSelection, TextSelectionLook.Accent()).Back);
+    public Avalonia.Media.IBrush? SelectionSampleLetters =>
+        TextSelectionLook.Colours(_session.Config.TextSelection, TextSelectionLook.Accent()).Letters is { } letters
+            ? new Avalonia.Media.SolidColorBrush(letters)
+            : Avalonia.Application.Current?.Resources.TryGetResource("TextBrush", Avalonia.Application.Current.ActualThemeVariant, out var t) == true
+                ? t as Avalonia.Media.IBrush
+                : null;
+
+    public static string SelectionName(string look) => TextSelectionLook.Normalize(look) switch
+    {
+        TextSelectionLook.SolidBlue => "Blue sketch",
+        TextSelectionLook.Marker => "Yellow highlighter",
+        TextSelectionLook.ThemeColour => "Theme colour",
+        _ => "Soft blue",
+    };
+
+    private bool IsSelection(string look) => TextSelectionLook.Normalize(_session.Config.TextSelection) == look;
+
+    private void SetSelection(string look)
+    {
+        if (IsSelection(look)) return;
+        _session.Config.TextSelection = look;
+        try
+        {
+            _session.Config.Save();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Kept for this session; only this PC's choice.
+        }
+        TextSelectionLook.Apply(look);
+        OnSelectionChanged();
+        InfoMessage = $"Selected text: {SelectionName(look)} on this PC.";
+    }
+
+    private void OnSelectionChanged()
+    {
+        foreach (var name in new[] { nameof(SelectionSoftBlue), nameof(SelectionSolidBlue), nameof(SelectionMarker), nameof(SelectionThemeColour),
+                     nameof(SelectionSampleBack), nameof(SelectionSampleLetters) })
+            OnPropertyChanged(name);
     }
 }

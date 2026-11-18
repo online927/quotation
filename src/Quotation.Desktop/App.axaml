@@ -17,6 +17,9 @@
       <ResourceInclude Source="avares://TSQuotation/Styles/ModernResources.axaml" />
     </ResourceDictionary.MergedDictionaries>
     <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI, Inter, Helvetica Neue, Arial</FontFamily>
+    <!-- Selected text in typing boxes (My Settings > Selected text, this PC; Services/TextSelectionLook): soft blue, dark letters -->
+    <SolidColorBrush x:Key="TextSelectionBrush">#B3D7FF</SolidColorBrush>
+    <SolidColorBrush x:Key="TextSelectionForegroundBrush">#111827</SolidColorBrush>
 
     <!-- Fluent theme overrides -->
     <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
@@ -60,6 +63,8 @@
     -->
     <ResourceDictionary.ThemeDictionaries>
       <ResourceDictionary x:Key="Light">
+          <!-- Behind the rubber stamp of the seal PIN question: none on light screens (the soft theme circle shows) -->
+          <SolidColorBrush x:Key="StampCircleBrush">Transparent</SolidColorBrush>
           <SolidColorBrush x:Key="PageBrush">#F6F8FD</SolidColorBrush>
           <SolidColorBrush x:Key="CardBrush">#FFFFFF</SolidColorBrush>
           <!-- Suggestion lists, calendar, corner messages and questions: always solid (the glass themes see-through only the cards) -->
@@ -195,6 +200,8 @@
           <SolidColorBrush x:Key="TopBarFieldBrush">#EDEDF0</SolidColorBrush>
       </ResourceDictionary>
       <ResourceDictionary x:Key="Dark">
+          <!-- A light circle behind the rubber stamp, so its dark handle shows on dark screens -->
+          <SolidColorBrush x:Key="StampCircleBrush">#ECE6DB</SolidColorBrush>
           <SolidColorBrush x:Key="PageBrush">#1C1C1E</SolidColorBrush>
           <SolidColorBrush x:Key="CardBrush">#2C2C2E</SolidColorBrush>
           <SolidColorBrush x:Key="PopupBrush">#2C2C2E</SolidColorBrush>
@@ -378,6 +385,11 @@
       <Setter Property="MinHeight" Value="{DynamicResource InputMinHeight}" />
       <Setter Property="Padding" Value="{DynamicResource InputPadding}" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="SelectionBrush" Value="{DynamicResource TextSelectionBrush}" />
+      <Setter Property="SelectionForegroundBrush" Value="{DynamicResource TextSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="SelectableTextBlock">
+      <Setter Property="SelectionBrush" Value="{DynamicResource TextSelectionBrush}" />
     </Style>
     <Style Selector="TextBox[AcceptsReturn=True]">
       <Setter Property="VerticalContentAlignment" Value="Top" />

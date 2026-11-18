@@ -244,7 +244,7 @@
             </StackPanel>
           </Panel>
         </Button>
-        <ScrollViewer Name="NavScroller">
+        <ScrollViewer Name="NavScroller" HorizontalScrollBarVisibility="Disabled">
           <ItemsControl ItemsSource="{Binding NavItems}" Margin="10,10">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:NavItem">
@@ -262,7 +262,7 @@
                       <Path Classes="icon" Data="{Binding Icon}" StrokeThickness="1.7" Width="20" Height="20" Stretch="Uniform"
                             StrokeLineCap="Round" StrokeJoin="Round" HorizontalAlignment="Center" />
                     </StackPanel>
-                    <Grid Classes="navgrid" ColumnDefinitions="32,*,Auto" Width="216">
+                    <Grid Classes="navgrid" ColumnDefinitions="32,*,Auto" Width="216" HorizontalAlignment="Left">
                       <Path Classes="icon" Data="{Binding Icon}" StrokeThickness="1.7" Width="20" Height="20" Stretch="Uniform"
                             StrokeLineCap="Round" StrokeJoin="Round" VerticalAlignment="Center" HorizontalAlignment="Left" />
                       <TextBlock Grid.Column="1" Classes="navtitle" Text="{Binding Title}" FontSize="13" TextTrimming="CharacterEllipsis" Margin="0,0,6,0" VerticalAlignment="Center" />
@@ -488,8 +488,22 @@
     <Border Name="DialogPanel" Background="#59141C2D" IsVisible="{Binding PendingDialog, Converter={x:Static ObjectConverters.IsNotNull}}">
       <Border Classes="question" Width="420">
         <StackPanel Spacing="12">
-          <Border Classes="qicon">
-            <Path Data="M12,3 A9,9 0 1 1 11.99,3 Z M9.5,9.5 A2.5,2.5 0 1 1 13,11.8 C12.3,12.2 12,12.7 12,13.5 M12,17 L12,17.1" Classes="qsym" />
+          <Border Classes="qicon" Classes.stamp="{Binding PendingDialog.IsStamp, FallbackValue=False}">
+            <Panel>
+              <Path Data="M12,3 A9,9 0 1 1 11.99,3 Z M9.5,9.5 A2.5,2.5 0 1 1 13,11.8 C12.3,12.2 12,12.7 12,13.5 M12,17 L12,17.1" Classes="qsym"
+                    IsVisible="{Binding !PendingDialog.IsStamp, FallbackValue=True}" />
+              <!-- The seal PIN: a rubber stamp pressing its red mark -->
+              <Ellipse Fill="{DynamicResource StampCircleBrush}" IsVisible="{Binding PendingDialog.IsStamp, FallbackValue=False}" />
+              <Viewbox Name="SealStampIcon" Width="46" Height="46" IsVisible="{Binding PendingDialog.IsStamp, FallbackValue=False}">
+                <Canvas Width="64" Height="64">
+                  <Path Data="M32,6 A7.5,7.5 0 1 1 31.99,6 Z" Fill="#7A5536" />
+                  <Path Data="M28,19 L36,19 L37.5,32 L26.5,32 Z" Fill="#7A5536" />
+                  <Path Data="M15,32 L49,32 Q51,32 51,34 L51,40 L13,40 L13,34 Q13,32 15,32 Z" Fill="#3B3F46" />
+                  <Path Data="M15,40 L49,40 L49,44 L15,44 Z" Fill="#C62828" />
+                  <Path Data="M12,52 L52,52 M18,57 L46,57" Stroke="#C62828" StrokeThickness="3" StrokeLineCap="Round" />
+                </Canvas>
+              </Viewbox>
+            </Panel>
           </Border>
           <TextBlock Classes="qtitle" Text="{Binding PendingDialog.Title, FallbackValue=''}" />
           <TextBlock Classes="qtext" Text="{Binding PendingDialog.Message, FallbackValue=''}"

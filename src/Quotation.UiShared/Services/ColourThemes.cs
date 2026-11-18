@@ -32,7 +32,13 @@ public static class ColourThemes
     private static readonly Dictionary<string, Glass> GlassThemes = new()
     {
         [AppTheme.GlassBlue] = new("#6F9FE6→#A4C4F0→#D6E5F9", "#0A5FD0", "#DCE9FB", "#C7DCF8", false),
-        [AppTheme.GlassGreen] = new("#6DBF97→#A5D9BD→#D8EFE2", "#0E7A4F", "#DBF1E6", "#C4E6D3", false),
+        // Grass Green: the green glass look with white clouds, a pale sun, soft hills and grass at the foot of the pages.
+        [AppTheme.GlassGreen] = new("#6DBF97→#A5D9BD→#D8EFE2", "#0E7A4F", "#DBF1E6", "#C4E6D3", false,
+            new()
+            {
+                ["SkyArtBrush"] = "#B3FFFFFF", ["SunArtBrush"] = "#8CFFE27A", ["FarArtBrush"] = "#4D3E9E6B",
+                ["NearArtBrush"] = "#A62E8B57", ["SideArtBrush"] = "#732E8B57", ["PictureScrimBrush"] = "#B3D8EFE2",
+            }),
         // Maroon (B1 "Maroon Frame"): the top bar joins the maroon menu; a calm blush page with two soft rose curves.
         [AppTheme.GlassMaroon] = new("#F6E1E5", "#8E1B2E", "#F6E1E5", "#EDC9D0", false,
             new()

@@ -327,6 +327,12 @@
     <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
     <Setter Property="HorizontalAlignment" Value="Center" />
   </Style>
+  <!-- The seal PIN question: a larger circle for the rubber-stamp picture -->
+  <Style Selector="Border.qicon.stamp">
+    <Setter Property="Width" Value="64" />
+    <Setter Property="Height" Value="64" />
+    <Setter Property="CornerRadius" Value="32" />
+  </Style>
   <Style Selector="Path.qsym">
     <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
     <Setter Property="StrokeThickness" Value="1.9" />

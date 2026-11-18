@@ -8,7 +8,7 @@ public sealed class PhoneSettings
     public string ServerUrl { get; set; } = "";
     public string Username { get; set; } = "";
     public string CompanyName { get; set; } = "";
-    public string Theme { get; set; } = Quotation.Contracts.AppTheme.Light;
+    public string Theme { get; set; } = Quotation.Contracts.AppTheme.StartTheme;
     public string? Token { get; set; }
     public DateTime? TokenExpiresUtc { get; set; }
 

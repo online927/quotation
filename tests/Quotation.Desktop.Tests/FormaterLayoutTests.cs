@@ -34,7 +34,7 @@ public class FormaterLayoutTests
             var window = new MainWindow { DataContext = new MainWindowViewModel(session) { Content = shell }, Width = 1366, Height = 768 };
             window.Show();
             await UiHelpers.WaitUntil(() => shell.CurrentPage is DashboardViewModel && session.Settings is not null);
-            foreach (var theme in new[] { AppTheme.Light, AppTheme.Tally })
+            foreach (var theme in new[] { AppTheme.GlassBlue, AppTheme.Tally })
             {
                 await session.SetThemeAsync(theme);
                 shell.Navigate("formater");

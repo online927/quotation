@@ -275,12 +275,11 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
             .Replace("{date}", q.Date.ToString("dd-MMM-yyyy"), StringComparison.OrdinalIgnoreCase)
             .Replace("{customer}", q.Buyer.Name, StringComparison.OrdinalIgnoreCase);
         var phone = DocumentLauncher.WhatsAppNumber(q.Buyer.Phone);
+        var web = _session.Documents.WhatsAppOnWeb;
         if (_session.Documents.ShareOnWhatsApp(path, phone, message))
-            InfoMessage = phone is null
-                ? "PDF copied. WhatsApp opened: pick the chat, press Ctrl+V, then Enter."
-                : "PDF copied. In WhatsApp press Ctrl+V, then Enter.";
+            InfoMessage = DocumentLauncher.WhatsAppHint(web, phone is not null);
         else
-            ErrorMessage = "WhatsApp Desktop could not be opened. Is it installed on this PC? The PDF is saved: " + path;
+            ErrorMessage = DocumentLauncher.WhatsAppError(web, path);
     });
 
     [RelayCommand]

@@ -60,10 +60,35 @@ public class DocumentLauncher(ClientConfig config)
         }
     }
 
+    public const string WhatsAppApp = "App", WhatsAppWeb = "Web";
+
+    /// <summary>My Settings → WhatsApp (this PC): the button opens WhatsApp Web in the browser instead of the WhatsApp program.</summary>
+    public bool WhatsAppOnWeb => string.Equals(config.WhatsAppOpensIn, WhatsAppWeb, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The customer's chat with the message typed: the WhatsApp program (whatsapp://) or WhatsApp Web (browser).</summary>
+    public static string WhatsAppUrl(bool web, string? phone, string message) =>
+        (web ? "https://web.whatsapp.com/send?" : "whatsapp://send?") + (phone is { Length: > 0 } p ? "phone=" + p + "&" : "")
+        + "text=" + Uri.EscapeDataString(message);
+
+    /// <summary>What to do next, after the chat opened.</summary>
+    public static string WhatsAppHint(bool web, bool hasPhone) => (web, hasPhone) switch
+    {
+        (true, true) => "PDF copied. WhatsApp Web is opening in your browser: press Ctrl+V, then Enter.",
+        (true, false) => "PDF copied. WhatsApp Web is opening in your browser: pick the chat, press Ctrl+V, then Enter.",
+        (false, true) => "PDF copied. In WhatsApp press Ctrl+V, then Enter.",
+        _ => "PDF copied. WhatsApp opened: pick the chat, press Ctrl+V, then Enter.",
+    };
+
+    /// <summary>The chat could not be opened (the PDF is saved all the same).</summary>
+    public static string WhatsAppError(bool web, string path) => web
+        ? "The browser could not be opened for WhatsApp Web. The PDF is saved: " + path
+        : "WhatsApp could not be opened. Is it installed on this PC? (Or choose WhatsApp Web in My Settings.) The PDF is saved: " + path;
+
     /// <summary>
-    /// WhatsApp (E2): the PDF is put on the clipboard (as if copied in File Explorer) and WhatsApp Desktop opens in the
-    /// customer's chat (or without a chat when there is no phone number) with the message typed. The user pastes (Ctrl+V)
-    /// and presses Enter. WhatsApp does not let other programs attach or send by themselves.
+    /// WhatsApp (E2): the PDF is put on the clipboard (as if copied in File Explorer) and the customer's chat opens (or the
+    /// chat list when there is no phone number) with the message typed, in the WhatsApp program or in WhatsApp Web (My
+    /// Settings). The user pastes (Ctrl+V) and presses Enter. WhatsApp does not let other programs attach or send by
+    /// themselves.
     /// </summary>
     public virtual bool ShareOnWhatsApp(string pdfPath, string? phone, string message)
     {
@@ -77,13 +102,12 @@ public class DocumentLauncher(ClientConfig config)
                 clip?.WaitForExit(5000);
             }
             else if (MacSupport.IsMac) MacSupport.CopyFileToClipboard(pdfPath);
-            var url = "whatsapp://send?" + (phone is { Length: > 0 } p ? "phone=" + p + "&" : "") + "text=" + Uri.EscapeDataString(message);
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(WhatsAppUrl(WhatsAppOnWeb, phone, message)) { UseShellExecute = true });
             return true;
         }
         catch (Exception)
         {
-            return false; // WhatsApp Desktop not installed
+            return false; // WhatsApp not installed, or no browser
         }
     }
 

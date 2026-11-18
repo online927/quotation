@@ -18,6 +18,8 @@ public sealed partial class TallyViewModel : ViewModelBase
     [ObservableProperty] private string _sampleType = "StockItem";
     [ObservableProperty] private string _sampleName = "";
     [ObservableProperty] private string _sampleXml = "";
+    /// <summary>"Changes are synchronized automatically every 3 hours …" with the times set in Settings → Tally.</summary>
+    [ObservableProperty] private string _autoSyncText = AutoSyncTextFor(180, "02:00");
 
     public ObservableCollection<SyncRunRow> Runs { get; } = [];
     public IReadOnlyList<string> SampleTypes { get; } = ["StockItem", "Ledger", "StockGroup", "Unit"];
@@ -30,6 +32,21 @@ public sealed partial class TallyViewModel : ViewModelBase
     }
 
     public bool IsAdmin => _session.IsAdmin;
+
+    /// <summary>The help line under Synchronization, from Settings → Tally (every 180 minutes → "every 3 hours").</summary>
+    public static string AutoSyncTextFor(int minutes, string? nightly)
+    {
+        minutes = Math.Max(1, minutes);
+        var every = minutes switch
+        {
+            60 => "every hour",
+            _ when minutes % 60 == 0 => $"every {minutes / 60} hours",
+            1 => "every minute",
+            _ => $"every {minutes} minutes",
+        };
+        var night = TimeOnly.TryParseExact(nightly ?? "", "HH:mm", out var t) ? $" and a full sync runs every night at {t:HH:mm}" : "";
+        return $"Changes are synchronized automatically {every}{night}.";
+    }
     public string LastSyncText => Formatting.LocalDateTime(Status?.LastSuccessfulSyncUtc) ?? "Never";
     public string ConnectionText => Status?.TallyConnected == true ? "Connected" : "Disconnected";
     public bool IsConnected => Status?.TallyConnected == true;
@@ -51,6 +68,7 @@ public sealed partial class TallyViewModel : ViewModelBase
         Status = await _session.Api.StatusAsync();
         var settings = await _session.Api.SettingsAsync();
         TallyUrl = settings.Tally.Url + (string.IsNullOrWhiteSpace(settings.Tally.CompanyName) ? "" : $"  —  {settings.Tally.CompanyName}");
+        AutoSyncText = AutoSyncTextFor(settings.Tally.IncrementalSyncMinutes, settings.Tally.NightlyFullSyncTime);
         await LoadRunsAsync();
     });
 

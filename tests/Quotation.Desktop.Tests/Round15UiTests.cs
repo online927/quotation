@@ -233,6 +233,7 @@ public class Round15UiTests
             var asking = ctx.Shell.CheckForUpdateAsync();
             await UiHelpers.WaitUntil(() => ctx.Shell.PendingDialog is not null);
             Assert.Equal("Close app", ctx.Shell.PendingDialog!.SecondaryText);
+            Assert.DoesNotContain("administrator", ctx.Shell.PendingDialog.Message, StringComparison.OrdinalIgnoreCase);
             ctx.Shell.AnswerDialogCommand.Execute(false);
             await asking;
             Assert.Equal(2, exited);

@@ -204,11 +204,11 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public Avalonia.Media.Geometry ThemeIcon => ThemeService.IsDark ? SunIcon : MoonIcon;
     public string ThemeTip => "Next theme: " + ThemeNames.Of(NextTheme(ThemeService.Current));
 
-    /// <summary>The theme after <paramref name="current"/> in the order of the theme list ("Same as Windows" is skipped).</summary>
+    /// <summary>The theme after <paramref name="current"/> in the order of the theme list (after the last: the first again).</summary>
     public static string NextTheme(string? current)
     {
-        var cycle = AppTheme.All.Where(t => t != AppTheme.System).ToList();
-        var i = Math.Max(0, cycle.IndexOf(current ?? AppTheme.Light)); // Same as Windows counts as Light
+        var cycle = AppTheme.All.ToList();
+        var i = Math.Max(0, cycle.IndexOf(AppTheme.Normalize(current))); // a removed theme counts as the one it became
         return cycle[(i + 1) % cycle.Count];
     }
 
@@ -397,7 +397,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         var size = update.Size >= 1024 * 1024 ? $" ({update.Size / 1024.0 / 1024.0:0} MB)" : "";
         var now = await ConfirmAsync($"New version {Normal(offered)} is available",
             update.Required
-                ? $"An administrator asks everyone to update now{size}. Unsaved work is kept and opens again after the update."
+                ? $"You have {Normal(CurrentVersion)}. Unsaved work is kept and opens again after the update."
                 : $"You have {Normal(CurrentVersion)}. Update now{size}? Unsaved work is kept and opens again after the update.",
             "Update now", update.Required ? "Close app" : "Later");
         if (!now)
@@ -534,8 +534,8 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public async Task<bool> ConfirmAsync(string title, string message, string yes = "Yes", string no = "No") =>
         await ShowDialogAsync(new ShellDialog(title, message, yes, no)) is not null;
 
-    public async Task<string?> AskAsync(string title, string message, string inputLabel, bool secret = false, string ok = "OK") =>
-        await ShowDialogAsync(new ShellDialog(title, message, ok, "Cancel", inputLabel, secret));
+    public async Task<string?> AskAsync(string title, string message, string inputLabel, bool secret = false, string ok = "OK", bool stamp = false) =>
+        await ShowDialogAsync(new ShellDialog(title, message, ok, "Cancel", inputLabel, secret, stamp));
 
     private async Task<string?> ShowDialogAsync(ShellDialog dialog)
     {

@@ -11,14 +11,14 @@ public sealed class ClientConfig
     /// <summary>Where "Save as PDF" puts proforma invoices; empty = "Proforma Invoices" inside <see cref="PdfFolder"/>.</summary>
     public string ProformaPdfFolder { get; set; } = "";
     /// <summary>Light/dark of the last user on this PC, used for the login screen.</summary>
-    public string Theme { get; set; } = "Light";
+    public string Theme { get; set; } = Quotation.Contracts.AppTheme.StartTheme;
     /// <summary>The company name from Settings → Company, remembered for the sign-in screen on this PC.</summary>
     public string CompanyName { get; set; } = "";
     /// <summary>The side menu is folded to icons on this PC.</summary>
     public bool SidebarCollapsed { get; set; }
     /// <summary>
     /// Quotation screen, gear next to Items: after a line is changed, Enter goes on to the next line: "Off", "Line" (the whole
-    /// line), or one column top to bottom ("Name", "Description", "Quantity", "Rate", "Discount").
+    /// line), or one or more columns top to bottom ("Rate", or "Rate,Discount"; also "Name", "Description", "Quantity").
     /// </summary>
     public string LineStepMode { get; set; } = "Off";
 
@@ -27,6 +27,13 @@ public sealed class ClientConfig
 
     /// <summary>Gear: hide the HSN/SAC and GST columns of the item list on this PC's screen (the PDF keeps them).</summary>
     public bool HideHsnGst { get; set; }
+    /// <summary>
+    /// Where the WhatsApp button opens the customer's chat on this PC: "App" (the WhatsApp program) or "Web" (WhatsApp Web in
+    /// the browser).
+    /// </summary>
+    public string WhatsAppOpensIn { get; set; } = DocumentLauncher.WhatsAppApp;
+    /// <summary>How selected text looks in typing boxes (My Settings > Selected text): see <see cref="TextSelectionLook"/>.</summary>
+    public string TextSelection { get; set; } = TextSelectionLook.SoftBlue;
     /// <summary>A picture behind the pages on this PC (a copy kept next to this file); empty = none.</summary>
     public string BackgroundPicture { get; set; } = "";
 

@@ -46,8 +46,8 @@
       <!-- The server: shown the first time (or when it cannot be reached); otherwise one tap on the chip -->
       <StackPanel Name="ServerPanel" Spacing="8" Margin="0,22,0,0" IsVisible="{Binding ShowServer}">
         <TextBlock Classes="h2" Text="Quotation Server" />
-        <TextBlock Classes="muted" TextWrapping="Wrap" Text="The address of the office PC with the Quotation Server, e.g. 192.168.1.20" />
-        <TextBox Name="ServerBox" Text="{Binding ServerAddress}" Watermark="192.168.1.20">
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="The name or address of the office PC with the Quotation Server, e.g. TSSERVER or 192.168.1.20" />
+        <TextBox Name="ServerBox" Text="{Binding ServerAddress}" Watermark="TSSERVER or 192.168.1.20">
           <TextBox.InnerLeftContent>
             <Path Classes="icon" Data="{x:Static m:PhoneIcons.Server}" Stroke="{DynamicResource MutedBrush}" Margin="14,0,0,0" />
           </TextBox.InnerLeftContent>

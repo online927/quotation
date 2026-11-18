@@ -822,3 +822,26 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
 6. Quotation screen: the heading is the quotation number ("TSQ2627-1 (provisional)" until it is saved) instead of "New
    Quotation"; the date sits right above "Ref. dated", inside the References box. The item table headings are bold.
 7. Quotation lists (Today's, Drafts, History): the Source column is left out for now; clearer Open and Duplicate buttons.
+
+### Round 32
+
+1. Quotation lists (Today's, Drafts, History): the Item column is left out.
+2. Installers: the publisher shows as "Mohamed" (no more "Unknown publisher" in the installer details).
+3. Tally page: the help line shows the real automatic sync times (changes every few hours, a full sync every night); "Sync
+   changes" (F9) reads only what changed in Tally, for anyone, right after editing items, prices or customers in Tally.
+4. My Settings → WhatsApp (this PC): the WhatsApp button opens the WhatsApp app or WhatsApp Web in the browser.
+5. Themes Default Light, Default Dark and Same as Windows removed: their users get Glass (Blue) (Midnight Stars for the dark
+   ones); Glass (Blue) is the theme at first start.
+6. Glass (Green) is now **Grass Green**, with clouds, a pale sun, soft hills and grass at the foot of the pages.
+7. Dashboard: the Gmail and Claude AI status chips no longer touch.
+8. Seal PIN question: a rubber stamp instead of the question mark.
+9. Hide menu / Show menu: the side menu glides between full width and icons only (no glide with "Reduce animations").
+10. Phone and Mac connect with the server PC's name (e.g. TSSERVER), not only its IP address: when they cannot look the name
+    up, they ask the office network and the Quotation Server answers (a small UDP listener on port 5080, with its own
+    firewall rule in the server installer); Windows' own name service also answers for a server not yet updated. The
+    address found is kept for 10 minutes and asked again when the server PC gets a new address.
+11. Update question: no "An administrator asks everyone to update now" sentence.
+12. My Settings → Selected text (this PC): Soft blue (the default; the old solid blue hid the letters), Blue sketch (white
+    letters), Yellow highlighter, Theme colour (a see-through tint of the theme's colour).
+
+Server update needed (10: the finder and its firewall rule).

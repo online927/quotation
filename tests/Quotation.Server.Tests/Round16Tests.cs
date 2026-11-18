@@ -19,7 +19,7 @@ public class Round16Tests : QuotationTestBase
     }
 
     [Fact]
-    public async Task Removed_themes_become_default_light()
+    public async Task Removed_themes_become_the_start_theme()
     {
         Assert.DoesNotContain("Lagoon", AppTheme.All);
         Assert.DoesNotContain("Cyberpunk", AppTheme.All);
@@ -31,6 +31,6 @@ public class Round16Tests : QuotationTestBase
             foreach (var u in db.Users) u.Theme = "Lagoon"; // chosen before this version
             return db.SaveChanges();
         });
-        Assert.Equal(AppTheme.Light, (await Api.MeAsync()).Theme);
+        Assert.Equal(AppTheme.StartTheme, (await Api.MeAsync()).Theme); // Glass (Blue) since Round 32
     }
 }

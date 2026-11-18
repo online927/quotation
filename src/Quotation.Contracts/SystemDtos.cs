@@ -7,7 +7,7 @@ public sealed record LoginRequest(string Username, string Password, string? Clie
 public sealed record LoginResponse(string Token, DateTime ExpiresUtc, UserDto User);
 
 public sealed record UserDto(int Id, string Username, string DisplayName, UserRole Role, bool IsActive, bool MustChangePassword,
-    bool WithoutGstNext = false, string Theme = AppTheme.Light, string? PdfLayout = null,
+    bool WithoutGstNext = false, string Theme = AppTheme.StartTheme, string? PdfLayout = null,
     string TextSize = AppDisplay.Normal, string Spacing = AppDisplay.Comfortable, bool ReduceMotion = false,
     string PdfFileOrder = PdfFileOrders.NumberFirst, bool HasSealImage = false, bool HasSealPin = false, bool OpenPdfAfterSave = true)
 {
@@ -29,36 +29,41 @@ public static class PdfFileOrders
 /// <summary>An administrator sets a user's seal PIN (4 digits).</summary>
 public sealed record SealPinRequest(string Pin);
 
-/// <summary>Light or dark screens, chosen by each user (PDFs are always white).</summary>
+/// <summary>The screens' theme, chosen by each user (PDFs are always white).</summary>
 public static class AppTheme
 {
+    /// <summary>The plain looks every theme starts from. As choices they were removed in Round 32 (still read from older settings).</summary>
     public const string Light = "Light";
     public const string Dark = "Dark";
-    /// <summary>Follows the Windows setting (light or dark apps).</summary>
+    /// <summary>Followed the Windows setting (removed in Round 32).</summary>
     public const string System = "System";
     // Colour themes (My Settings > Appearance).
-    // (Lagoon, Cyberpunk and the colourful Glass were removed: users who had them get Default Light.
-    //  More Maroon was removed in Round 19: its users get Glass (Maroon). Round 27 removed Sunset and Frost (→ Default
-    //  Light) and Neon Night and Glass (Black) (→ Default Dark). Round 31 removed Maroon Mahal (→ Glass (Maroon)).)
+    // (Lagoon, Cyberpunk and the colourful Glass were removed: users who had them get the start theme.
+    //  More Maroon was removed in Round 19: its users get Glass (Maroon). Round 27 removed Sunset and Frost (→ the start
+    //  theme) and Neon Night and Glass (Black) (→ Midnight Stars). Round 31 removed Maroon Mahal (→ Glass (Maroon)).
+    //  Round 32 removed Default Light and Same as Windows (→ Glass (Blue)) and Default Dark (→ Midnight Stars).)
     public const string Graphite = "Graphite", GlassBlue = "GlassBlue", GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon",
         Parchment = "Parchment", ForestGold = "ForestGold", HeroLight = "HeroLight", Ocean = "Ocean", Midnight = "Midnight",
         Tally = "Tally";
     /// <summary>Removed themes (still read from older settings).</summary>
     public const string Sunset = "Sunset", Frost = "Frost", GlassBlack = "GlassBlack", NeonNight = "NeonNight", MaroonMahal = "MaroonMahal";
 
-    public static readonly string[] All = [Light, Dark, System, Graphite, GlassBlue, GlassGreen, GlassMaroon, Parchment, ForestGold, HeroLight, Ocean, Midnight,
+    /// <summary>The theme of new users and of the sign-in screen.</summary>
+    public const string StartTheme = GlassBlue;
+
+    public static readonly string[] All = [GlassBlue, Graphite, GlassGreen, GlassMaroon, Parchment, ForestGold, HeroLight, Ocean, Midnight,
         Tally];
     public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
     /// <summary>
-    /// A saved theme that still exists: More Maroon and Maroon Mahal → Glass (Maroon); Neon Night and Glass (Black) → Default
-    /// Dark; any other removed theme → Default Light.
+    /// A saved theme that still exists: More Maroon and Maroon Mahal → Glass (Maroon); Default Dark, Neon Night and Glass
+    /// (Black) → Midnight Stars; Default Light, Same as Windows and any other removed theme → Glass (Blue).
     /// </summary>
     public static string Normalize(string? theme) => theme switch
     {
         "MoreMaroon" or MaroonMahal => GlassMaroon,
-        NeonNight or GlassBlack => Dark,
+        Dark or NeonNight or GlassBlack => Midnight,
         _ when IsValid(theme) => theme!,
-        _ => Light,
+        _ => StartTheme,
     };
     /// <summary>Themes drawn on dark screens.</summary>
     public static bool IsDarkTheme(string? theme) => theme is Dark or ForestGold or Midnight;

@@ -71,7 +71,9 @@ public class ServerFinderTests
                 Assert.False(service.ExecuteTask?.IsFaulted ?? false, service.ExecuteTask?.Exception?.ToString());
                 await phone.SendAsync(FinderMessages.FindRequest(Environment.MachineName.ToLowerInvariant()), server);
                 using var wait = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
-                try { reply = await phone.ReceiveAsync(wait.Token); } catch (OperationCanceledException) { }
+                try { reply = await phone.ReceiveAsync(wait.Token); }
+                catch (OperationCanceledException) { }
+                catch (SocketException) { await Task.Delay(100); } // Windows: "port unreachable" while the finder is not listening yet
             }
             Assert.NotNull(reply);
             Assert.True(FinderMessages.TryReadHere(reply.Value.Buffer, Environment.MachineName, out var port));

@@ -88,6 +88,11 @@ public static class ServerFinder
     private static async Task<IPAddress?> AskAsync(string name, int serverPort, CancellationToken ct)
     {
         using var udp = new UdpClient(AddressFamily.InterNetwork) { EnableBroadcast = true };
+        if (OperatingSystem.IsWindows())
+        {
+            try { udp.Client.IOControl(unchecked((int)0x9800000C), [0, 0, 0, 0], null); } // ignore "port unreachable" from other PCs
+            catch (SocketException) { }
+        }
         var id = (ushort)Random.Shared.Next(1, ushort.MaxValue);
         var finder = FinderMessages.FindRequest(name);
         var netBios = NetBiosQuery(name, id);

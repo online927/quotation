@@ -441,6 +441,8 @@ public class Round33UiTests
     public async Task Sharp_text_is_a_switch_in_my_settings_and_off_is_the_old_look()
     {
         using var ctx = await StartAsync();
+        var clearTypeHere = SharpTextLook.ClearTypeHere;
+        SharpTextLook.ClearTypeHere = true; // the Windows look, on any computer
         try
         {
             ctx.Shell.Navigate("mysettings");
@@ -459,12 +461,18 @@ public class Round33UiTests
 
             mine.SharpText = true;
             Assert.Equal(SharpTextLook.SmallOn, Small());
-            Assert.Equal(OperatingSystem.IsWindows() ? TextRenderingMode.SubpixelAntialias : TextRenderingMode.Unspecified,
-                RenderOptions.GetTextRenderingMode(ctx.Window));
+            Assert.Equal(TextRenderingMode.SubpixelAntialias, RenderOptions.GetTextRenderingMode(ctx.Window));
             Assert.Equal("Sharp text on for this PC.", mine.InfoMessage);
+
+            // A window opened later draws its letters the same way
+            var later = new Window();
+            later.Show();
+            Assert.Equal(TextRenderingMode.SubpixelAntialias, RenderOptions.GetTextRenderingMode(later));
+            later.Close();
         }
         finally
         {
+            SharpTextLook.ClearTypeHere = clearTypeHere;
             SharpTextLook.Apply(true);
         }
     }

@@ -16,6 +16,7 @@ public partial class App : Application
     {
         Services.ThemeService.MotionFactory = () => new Styles.MotionStyles();
         Services.ThemeService.Initialise();
+        SharpTextLook.Hook(); // before the first window opens
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var session = new AppSession(ClientConfig.Load(), url => QuotationApiClient.Create(url));

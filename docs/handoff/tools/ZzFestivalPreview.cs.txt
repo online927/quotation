@@ -1,0 +1,91 @@
+using System.Text.Json;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Quotation.Core.Domain;
+using Quotation.Desktop.Services;
+using Quotation.Desktop.ViewModels;
+using Quotation.Desktop.Views;
+
+namespace Quotation.Desktop.Tests;
+
+// Sample only (not part of the app): festival looks drawn over Midnight Stars.
+public class ZzFestival
+{
+    private static IBrush Solid(string c) => new SolidColorBrush(Color.Parse(c));
+    private static IBrush Grad(bool across, params string[] c)
+    {
+        var b = new LinearGradientBrush { StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(across ? 1 : 0, across ? 0 : 1, RelativeUnit.Relative) };
+        for (var i = 0; i < c.Length; i++) b.GradientStops.Add(new GradientStop(Color.Parse(c[i]), i / (double)(c.Length - 1)));
+        return b;
+    }
+
+    private static void Look(string name, string[] art)
+    {
+        var r = Application.Current!.Resources;
+        string[] keys = ["SkyArt", "SunArt", "FarArt", "NearArt", "SideArt"];
+        for (var i = 0; i < 5; i++) r[keys[i]] = Geometry.Parse("F1 " + art[i]);
+        if (name == "eid")
+        {
+            r["PageBrush"] = Grad(false, "#021A18", "#05302C", "#0A4A43");
+            r["SidebarBrush"] = Grad(false, "#01110F", "#042824"); r["SidebarBorderBrush"] = Solid("#01110F");
+            r["SidebarSelectedBrush"] = Solid("#E8C15A"); r["SidebarSelectedTextBrush"] = Solid("#062421");
+            r["TopBarBrush"] = Solid("#03211E"); r["CardBrush"] = Solid("#0B2F2B"); r["PopupBrush"] = Solid("#0D3430");
+            r["HairlineBrush"] = Solid("#1C4A44"); r["PanelBorderBrush"] = Solid("#245750"); r["SubtleFillBrush"] = Solid("#0F3A35");
+            r["FillBrush"] = Solid("#14443E"); r["ListHoverBrush"] = Solid("#12403A"); r["MutedBrush"] = Solid("#A9CFC6");
+            r["AccentBrush"] = Solid("#E8C15A"); r["AccentSoftBrush"] = Solid("#2E3A2A");
+            r["ActionBrush"] = Solid("#1E9C86"); r["PrimaryHoverBrush"] = Solid("#25B39A");
+            r["SkyArtBrush"] = Solid("#D9E8C15A"); r["SunArtBrush"] = Solid("#F2F2D27A");
+            r["FarArtBrush"] = Solid("#33E8C15A"); r["NearArtBrush"] = Solid("#E6011412"); r["SideArtBrush"] = Solid("#8CE8C15A");
+        }
+        else
+        {
+            r["PageBrush"] = Grad(false, "#160822", "#2A0C30", "#44142E");
+            r["SidebarBrush"] = Grad(false, "#0E0418", "#2A0A26"); r["SidebarBorderBrush"] = Solid("#0E0418");
+            r["SidebarSelectedBrush"] = Solid("#FF9F1C"); r["SidebarSelectedTextBrush"] = Solid("#2A0A26");
+            r["TopBarBrush"] = Solid("#1A0824"); r["CardBrush"] = Solid("#2A1230"); r["PopupBrush"] = Solid("#301536");
+            r["HairlineBrush"] = Solid("#4A2650"); r["PanelBorderBrush"] = Solid("#5A2E5E"); r["SubtleFillBrush"] = Solid("#341838");
+            r["FillBrush"] = Solid("#3E1E42"); r["ListHoverBrush"] = Solid("#3A1C3E"); r["MutedBrush"] = Solid("#E0BFD8");
+            r["AccentBrush"] = Solid("#FFB347"); r["AccentSoftBrush"] = Solid("#4A2A20");
+            r["ActionBrush"] = Solid("#E8590C"); r["PrimaryHoverBrush"] = Solid("#FF6B1A");
+            r["SkyArtBrush"] = Grad(true, "#E6FF5DA2", "#E6FFC93C", "#E66EC6FF", "#E6FF8C42");
+            r["SunArtBrush"] = Grad(false, "#F2FF5DA2", "#F2FFB347");
+            r["FarArtBrush"] = Solid("#FFC0582E"); r["NearArtBrush"] = Solid("#FFFFC93C"); r["SideArtBrush"] = Solid("#D9FFB347");
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Capture()
+    {
+        var dir = Environment.GetEnvironmentVariable("SCREENSHOT_DIR");
+        if (string.IsNullOrEmpty(dir)) return;
+        Directory.CreateDirectory(dir);
+        var art = JsonSerializer.Deserialize<Dictionary<string, string[]>>(File.ReadAllText(Path.Combine(dir, "art.json")))!;
+        using var server = new TestServer(products: 300, customers: 60, today: DateOnly.FromDateTime(DateTime.Today));
+        var admin = await server.LoginAsAdminAsync();
+        await admin.StartSyncAsync(SyncKind.Full, wait: true);
+        await server.LoginAsStandardAsync("ravi");
+        var config = new ClientConfig { FilePath = Path.Combine(server.DataDirectory, "c.json") };
+        var session = new AppSession(config, _ => server.CreateApi()) { Documents = new RecordingLauncher(config) };
+        await session.Api.LoginAsync("ravi", "ravi-pass");
+        using var shell = new ShellViewModel(session, () => { });
+        var window = new MainWindow { DataContext = new MainWindowViewModel(session) { Content = shell }, Width = 1366, Height = 768 };
+        window.Show();
+        await UiHelpers.WaitUntil(() => shell.CurrentPage is DashboardViewModel { IsBusy: false });
+        await session.SetThemeAsync(Quotation.Contracts.AppTheme.Midnight);
+        foreach (var (name, hello) in new[] { ("eid", "Eid Mubarak!  ·  Today at a glance"), ("diwali", "Happy Diwali!  ·  Today at a glance") })
+        {
+            Look(name, art[name]);
+            foreach (var t in window.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Text?.Contains("Today at a glance") == true))
+            { t.Text = hello; t.FontSize = 15; t.FontWeight = FontWeight.SemiBold; t.Foreground = Application.Current!.Resources["AccentBrush"] as IBrush; }
+            await Task.Delay(700);
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame()?.Save(Path.Combine(dir, name + ".png"));
+        }
+        await session.SetThemeAsync(Quotation.Contracts.AppTheme.GlassBlue);
+    }
+}

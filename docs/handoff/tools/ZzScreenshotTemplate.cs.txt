@@ -1,0 +1,48 @@
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
+using Quotation.Core.Domain;
+using Quotation.Desktop.Services;
+using Quotation.Desktop.ViewModels;
+using Quotation.Desktop.Views;
+
+namespace Quotation.Desktop.Tests;
+
+public class ZzEditorNow
+{
+    [AvaloniaFact]
+    public async Task Capture()
+    {
+        var dir = Environment.GetEnvironmentVariable("SCREENSHOT_DIR");
+        if (string.IsNullOrEmpty(dir)) return;
+        using var server = new TestServer(products: 300, customers: 60, today: DateOnly.FromDateTime(DateTime.Today));
+        var admin = await server.LoginAsAdminAsync();
+        await admin.StartSyncAsync(SyncKind.Full, wait: true);
+        await server.LoginAsStandardAsync("ravi");
+        var config = new ClientConfig { FilePath = Path.Combine(server.DataDirectory, "c.json") };
+        var session = new AppSession(config, _ => server.CreateApi()) { Documents = new RecordingLauncher(config) };
+        await session.Api.LoginAsync("ravi", "ravi-pass");
+        using var shell = new ShellViewModel(session, () => { });
+        var window = new MainWindow { DataContext = new MainWindowViewModel(session) { Content = shell }, Width = 1366, Height = 768 };
+        window.Show();
+        await UiHelpers.WaitUntil(() => shell.CurrentPage is DashboardViewModel { IsBusy: false });
+        shell.Navigate("new");
+        var editor = (QuotationEditorViewModel)shell.CurrentPage!;
+        await UiHelpers.WaitUntil(() => editor.NumberText.Contains("provisional"));
+        await editor.SelectCustomerAsync((await session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id);
+        editor.OtherReferences = "Your enquiry dated 02-Nov-2026";
+        foreach (var (q, rate) in new[] { ("universal bevel", 15600m), ("digital caliper", 21978m), ("micrometer", 4250m) })
+        {
+            var p = (await session.Api.SearchProductsAsync(q)).FirstOrDefault()?.Product;
+            if (p is null) continue;
+            editor.SelectProduct(p); editor.EntryRate = rate; editor.CommitEntryCommand.Execute(null);
+        }
+        async Task Shot(string name) { await Task.Delay(400); Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame()?.Save(Path.Combine(dir, name + ".png")); }
+        editor.HeaderCollapsed = true; editor.FooterCollapsed = true;
+        await Shot("now-folded");
+        editor.HeaderCollapsed = false; editor.FooterCollapsed = false;
+        window.Height = 1900;
+        await Shot("now-open-tall");
+        editor.IsDirty = false;
+    }
+}

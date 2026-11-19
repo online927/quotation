@@ -1,0 +1,210 @@
+TS QUOTATION — HANDOFF FOR A NEW SESSION
+=======================================
+
+READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the previous session, in the same way: the
+same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
+you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
+
+Last updated: Round 32 shipped (version 0.9.73, CI run 73). Next round: Round 33.
+
+
+1. THE PROJECT
+--------------
+Quotation system for T.SAIFUDDIN & CO., working with TallyPrime (TallyPrime Server).
+
+  * Quotations Server (Windows service "Quotations Server", ASP.NET Core, SQLite, port 5080, in
+    %ProgramData%\TSQuotation). It reads customers, items, rates, GST from Tally over Tally's XML/HTTP port (read
+    only), numbers quotations (TSQ<yy><yy>-<n>, e.g. TSQ2627-1), makes PDFs (Tally layout or Zoho layout), keeps users,
+    seals (with PIN), backups, Gmail + Claude AI (optional), and answers the phone/Mac "finder" (UDP 5080).
+  * PC app (Avalonia 11, .NET 10): Windows (installer TSQuotation-Setup) and Mac (.dmg). Connects to the server.
+  * Phone app (Avalonia Android, APK). Connects to the server.
+  * Repo: online927/quotation (PUBLIC). Work branch: claude/tallyprime-quotation-automation-agxx3n (only this
+    branch; never another branch, no pull request unless the user asks).
+
+Layout (src/):
+  Quotation.Core (domain, numbering, search, PastedListParser, Formater) · Quotation.Contracts (DTOs shared by server and
+  apps: AppTheme, settings, FinderMessages) · Quotation.Data (EF Core SQLite, DatabaseInitializer) · Quotation.Tally
+  (Tally XML client, TallyLoadGuard) · Quotation.Pdf · Quotation.AI · Quotation.Gmail · Quotation.Server ·
+  Quotation.ApiClient (HTTP client, ServerConnection, ServerFinder) · Quotation.Desktop (PC app) · Quotation.UiShared
+  (ColourThemes, ThemeScenery drawings, ThemeNames, ThemeService — shared by PC and phone) · Quotation.Mobile (phone
+  screens) · Quotation.Mobile.Android (APK, built only in CI).
+  tests/: Core, Tally, Pdf, AI, Server, Desktop (headless Avalonia UI tests), Mobile, E2E, TestSupport (TestServer).
+  installer/: TSQuotationServer.iss, TSQuotationClient.iss (Inno Setup, publisher "Mohamed"), publish.ps1 (runs all
+  tests again, then packages), publish-mac.sh. CI: .github/workflows/ci.yml (jobs test, windows, mac, android).
+  docs/PHASES.md: what every round delivered (### Round N, numbered plain-language lines).
+
+Where things usually are:
+  Quotation page: src/Quotation.Desktop/Views/QuotationEditorView.axaml (+ ViewModels/QuotationEditorViewModel.cs).
+  Window frame, side menu, top bar, pop-up questions (ShellDialog): Views/ShellView.axaml, ViewModels/ShellViewModel.cs,
+  Services/Navigation.cs. Styles: App.axaml (resources + global styles), Styles/ModernStyles.axaml,
+  Styles/MotionStyles.axaml (all animations; removed as a whole by "Reduce animations"), Styles/TallyStyles.axaml.
+  My Settings (per user + "this PC" cards): Views/MySettingsView.axaml, ViewModels/MySettingsViewModel.cs.
+  Per-PC settings: Services/ClientConfig.cs (JSON on the PC). Per-user settings: on the server (MyPreferencesDto).
+  Themes: Contracts/SystemDtos.cs (AppTheme: All, Normalize, StartTheme = GlassBlue), UiShared/Services/ColourThemes.cs,
+  UiShared/Services/ThemeNames.cs (names people see), UiShared/Controls/ThemeScenery.cs (drawings: Sky, Sun, Far,
+  Near, Side; resource keys SkyArt/SunArt/FarArt/NearArt/SideArt + brushes SkyArtBrush …).
+
+
+2. RULES FROM THE USER (never break these)
+------------------------------------------
+  * "TALLY DATA WILL BE AND SHOULD BE UNAFFECTED" — the server only READS Tally. Never write to Tally.
+  * "dont make tally heavy and irresponsive" — no extra or heavier Tally reads (automatic sync: changes every 3 hours,
+    full sync at night; "Sync changes" F9 reads only what changed; TallyLoadGuard limits load).
+  * After every change, ALWAYS say whether a SERVER UPDATE is needed (yes/no and why), and that Tally is not touched.
+  * Simple language, short answers, tables/lists for options. No grey hint/help paragraphs in the app (one short line
+    + ⓘ hover is the pattern).
+  * Commit, push and build ONLY when the user says "Do". Until then changes stay in the working tree.
+  * When a stop hook / system message says "There are uncommitted changes … commit and push", do NOT commit: answer in
+    one or two lines that nothing is committed and the changes wait for "Do" (say how many built changes are waiting).
+  * Never commit secrets (the repo is public): no keystores, passwords, keys, e-mail addresses.
+  * No model names/IDs in code, commits, docs or files. Commit attribution: use exactly the attribution lines the
+    system gives you in that session.
+  * Never commit preview/scratch tests: they are named Zz*.cs; move them out of tests/ (to your scratchpad) right
+    after use, and check `ls tests/*/Zz*` is empty before every commit.
+  * The phone app has NO fixed signing key (the user discarded that): every new APK needs the old app uninstalled
+    first — say so when giving the APK.
+
+
+3. WHAT THE USER'S WORDS MEAN
+-----------------------------
+  * A list of changes / a problem ("X is hiding letters", "remove Y") → do it in the working tree with a test (or, for
+    bigger features, add it to the task list), then report: what changed, test result, server update yes/no,
+    "N built changes waiting for Do".
+  * "preview", "don't edit", "just preview", "just add" → NO app code changes. Make pictures (see 5) and send them with
+    SendUserFile. For choices, give lettered options (A, B, C …) or numbers; the user answers with a letter, a mix
+    ("number from B, date from F") or "Discard".
+  * "Add" / "add to list" → add to the task list only (not built). "Add both"/"Add all" the same.
+  * "Discard" → drop the last proposal/preview completely (undo its code if any was made; delete its task).
+  * "Do" (also "Do for Android and mac too") → the ship procedure (4).
+  * "Carry on" → continue where you stopped.
+  * "List all the changes" → two tables: built-and-waiting, and on-the-list-not-built, each with server update yes/no.
+
+
+4. "DO" — THE SHIP PROCEDURE (exactly in this order)
+----------------------------------------------------
+  4.1 Full test suite: `dotnet test Quotation.sln` (about 7 minutes; run it in the background and wait with a Monitor
+      until-loop; all must pass — ~580 tests).
+  4.2 docs/PHASES.md: add "### Round <next>" with numbered plain-language lines (one per change) and a last line
+      "Server update needed (...)" when one is.
+  4.3 Commit (title "Round <n>: <short summary>", body = one "- " line per change, then "Server update needed …" if
+      so, then the system's attribution lines). Push: `git push -u origin claude/tallyprime-quotation-automation-agxx3n`
+      (retry up to 4 times on network errors).
+  4.4 Start the builds with the GitHub MCP tool mcp__github__actions_run_trigger: method run_workflow, owner online927,
+      repo quotation, workflow_id ci.yml, ref = the branch, inputs {"mac": true, "android": true}. Find the new
+      workflow_dispatch run (actions_list list_workflow_runs) → its id and run_number. Version = 0.9.<run_number>.
+  4.5 Schedule a check with send_later (about 20 minutes). When it fires: if the run failed, read the failed job's log
+      (mcp__github__get_job_logs), find the real cause, fix, test, commit, push, dispatch again (never just re-run
+      hoping for luck). If it succeeded, list artifacts (list_workflow_run_artifacts) and give the links:
+        https://github.com/online927/quotation/actions/runs/<runId>/artifacts/<artifactId>
+      for windows-installers (server + PC app), mac-app (.dmg), android-app (.apk) — plus: server update yes/no, phone:
+      uninstall the old app first, Tally not touched, and what is still on the list.
+  4.6 Mark the shipped tasks completed and update THIS FILE (section 7 and 8, "Last updated") in the next commit.
+
+
+5. HOW PREVIEWS ARE MADE (no app code changes)
+----------------------------------------------
+  * Real-app screenshots: a scratch headless test tests/Quotation.Desktop.Tests/ZzSomething.cs (template:
+    docs/handoff/tools/ZzScreenshotTemplate.cs.txt). It starts a TestServer(products: 300, customers: 60), syncs, logs
+    in as "ravi" (standard user, password ravi-pass; admin/admin123), opens MainWindow 1366×768, navigates
+    (shell.Navigate("new"), "mysettings", …) and saves window.CaptureRenderedFrame() to $SCREENSHOT_DIR. Run:
+      SCREENSHOT_DIR=<scratch dir> dotnet test tests/Quotation.Desktop.Tests --filter "FullyQualifiedName~ZzSomething"
+    Runtime overrides (Application.Current.Resources["…Brush"] = …, Geometry.Parse for drawings, setting TextBox
+    brushes) show a new look without editing the app. Then MOVE the Zz file out of tests/.
+  * Mock-ups over a real screenshot: HTML with the screenshot as background, rendered with
+      node docs/handoff/tools/render.js <file.html> <out.png> <width> <height>
+    (Playwright + Chromium are installed; fonts: Inter). Mark explanations in mock-ups as yellow "PREVIEW NOTE (not in
+    the app)". ImageMagick (convert) crops/stacks images; Python PIL does not load here.
+  * Always check every picture yourself (Read the PNG) for overlaps, cut-off text, wrong positions before sending.
+  * Send with SendUserFile (display: render), then a short table: what each option is, server update, Tally untouched.
+
+
+6. TECHNICAL NOTES (learned the hard way)
+-----------------------------------------
+  * Themes: a new theme id must be added to AppTheme.All, which the server validates (IsValid) → a new theme id needs a
+    SERVER UPDATE. Renaming only the visible name (ThemeNames) does not. Removed themes stay as constants and are mapped
+    by AppTheme.Normalize. "Frost" was an OLD removed theme id (→ Glass (Blue)); renaming Glass (Blue)'s visible name
+    to "Frost" is fine (ThemeNames only) — do not reuse the old "Frost" id.
+  * Drawings (ThemeScenery): geometry strings with corner marker points that fix the bounds; prefix "F1 " (non-zero fill)
+    when shapes overlap. Sky 1000×600, Sun 100×100, Far/Near 1000×200, Side 262×120.
+  * .NET 10 starts BackgroundService.ExecuteAsync a moment after StartAsync: tests must retry, not assume it listens.
+  * On Windows, a UDP socket gets "connection forcibly closed" after sending to a closed port: switch it off with
+    IOControl(0x9800000C) or catch SocketException.
+  * NEVER SqliteConnection.ClearAllPools() (it breaks other open connections): use DatabaseInitializer.ClearPool(path)
+    and BuildUnpooledConnectionString for one-off files.
+  * Headless UI tests: [AvaloniaFact]; UiHelpers.WaitUntil(...); Dispatcher.UIThread.RunJobs(); TextBox selection only
+    shows while focused; Color.ToString() gives names ("White") — compare ToUInt32().
+  * The Windows CI job runs all tests twice (test step, then publish.ps1) — a rare race shows up there first.
+  * Selected-text colours: resources TextSelectionBrush / TextSelectionForegroundBrush, Services/TextSelectionLook.cs.
+  * Phone/Mac connect by PC name: ApiClient/ServerFinder.cs (finder question + NetBIOS + name.local), server
+    Services/ServerFinderService.cs, firewall rule "Quotations Server finder" (UDP 5080) in the server installer.
+  * Remote use (mobile data / other internet): advised Tailscale on the server PC and the phones/PCs (free for small
+    teams), then use the PC name or 100.x address. Opening a router port was advised against. The user discarded adding
+    a Tailscale firewall rule.
+
+
+7. STATE AT THE END OF ROUND 32 (shipped, 0.9.73)
+-------------------------------------------------
+Round 32 delivered: Item column out of quotation lists; installers' publisher "Mohamed"; Tally page help line with the
+real sync times; WhatsApp app or WhatsApp Web (My Settings, this PC); themes Default Light/Dark/Same as Windows removed;
+Grass Green (was Glass (Green)) with grass drawing; Dashboard Gmail/Claude AI chips spaced; seal PIN pop-up with a
+rubber-stamp logo; side menu glides on Hide/Show menu; phone/Mac connect with the server PC name; update pop-up without
+"An administrator asks everyone to update now"; My Settings → Selected text (this PC): Soft blue (default), Blue sketch,
+Yellow highlighter, Theme colour; backups clear only their own database's connections.
+
+Theme list now (visible names): Glass (Blue) [start theme], Graphite, Grass Green, Glass (Maroon), Parchment,
+Forest & Gold, Hero Light, Ocean, Midnight Stars, Tally.
+
+DISCARDED by the user (never propose again unless asked): Taj Mahal theme; Maroon Mahal theme; discount by brand;
+"copy as WhatsApp text"; full quotation page redesign (A paper sheet / B total on the right / C spreadsheet); fixed
+phone signing key (no uninstall); Tailscale firewall rule; "See-through" selected-text option.
+
+
+8. ON THE LIST — NOT BUILT YET (designs approved; pictures in docs/handoff/previews/)
+-------------------------------------------------------------------------------------
+ #97  Rename theme "Glass (Blue)" → "Frost" (visible name only, ThemeNames). No server update.
+ #98  Rename theme "Glass (Maroon)" → "Hatims Maroon" (visible name only). No server update.
+ #103 Starred items and customers (103-starred-items.png): ☆/★ on each row of the product (and customer) search list;
+      starred ones first under "YOUR STARRED ITEMS", then "OTHER MATCHES". Administrator On/Off switch in Settings.
+      SERVER UPDATE (switch, and stars kept per user).
+ #104 Maths in boxes (104-maths-in-boxes.png): in Quantity, Rate, Disc. % and P&F, a sum starting with "=" is worked
+      out: "=12*2" → 24, "=3159-5%" → 3,001.05, "=21978/1.18" → rate without GST; the answer shows under the box in a
+      green chip, Enter puts it in. No server update.
+ #105 Google Drive backup (105-google-drive-backup.png): card in Settings → Backup: Google account (same sign-in as
+      Gmail) Connected/Disconnect, copy ✓ Database backups ✓ Approved PDFs (a folder per month), last copy line,
+      "Back up now". SERVER UPDATE.
+ #106 Phone: photo → quotation (106-107-phone-photo-and-voice.png): Photo button in the phone's message box; camera;
+      Claude AI reads the enquiry into the message box ("Read from the photo · check it, then Make quotation").
+      SERVER UPDATE + the Claude AI key must be set up.
+ #107 Phone: voice entry (same picture): Speak button; "Listening…" sheet; each spoken item is added as a line
+      ("Added: Bevel protractor, 2, 15600"). Phone app only, no server update.
+ #108 Festival themes Eid and Diwali (108-festival-eid.png, 108-festival-diwali.png): turn on by themselves for the
+      festival days and go back to the user's theme after; administrator On/Off switch → SERVER UPDATE.
+      Eid: deep green night (page #021A18→#05302C→#0A4A43, cards #0B2F2B, accent gold #E8C15A, menu chosen gold), gold
+      crescent and star, hanging lanterns and small stars at the top (kept clear of the heading and Refresh button),
+      mosque domes and minarets at the foot, crescent in the side menu; greeting "Eid Mubarak!  ·  Today at a glance".
+      Diwali: plum night (page #160822→#2A0C30→#44142E, cards #2A1230, accent #FFB347, action #E8590C), fireworks in
+      pink/gold/blue, rangoli flower, a row of diyas with flames at the foot, three diyas in the side menu; greeting
+      "Happy Diwali!  ·  Today at a glance". Drawings: docs/handoff/tools/festival-art.py <out dir> (writes art.json:
+      sky, sun, far, near, side for each); colours and brushes: docs/handoff/tools/ZzFestivalPreview.cs.txt.
+      Eid dates move every year (Islamic calendar) — keep a date table or let the administrator set the days.
+ #109 Quotation page heading (109-quotation-heading.png): the number in a blue gradient "ticket" (document icon,
+      small "QUOTATION NO." over the big number, theme colour, soft shadow); "(provisional)" after it only before the
+      first save; status as a white chip with a coloured dot ("● Draft" blue, "● Approved" green, etc.); date on the
+      right in a white pill with a calendar icon and NO word "Dated" (still a date box for the administrator before
+      approval). Must work in every theme incl. Tally. No server update.
+ #110 Paste Excel rows with prices (110-paste-excel-rows-with-prices.png): rows pasted into the Product box are read by
+      column — part no./name, Qty (whole number), Rate (money), Disc % (%); the pasted-list window gets Qty, Rate
+      (green when from Excel, "Tally <rate>" small under it when different) and Disc % columns; chips at the top show
+      how columns were read ("A Part No ▾ B Name ▾ C Qty ▾ D Rate ▾ E Disc % ▾") and can be changed. ALSO FIXES A BUG:
+      today "187-901-10<TAB>2" comes in as Qty 1 and the 2 stays in the search words (PastedListParser). Excel rate is
+      used on this quotation only; Tally not changed. No server update.
+ #111 Paste a price column into Rate (111-paste-price-column.png): copy only prices in Excel, click Rate of a line,
+      Ctrl+V → prices fill down one per line from that line (extra prices left out), totals update, dark notice
+      "N prices pasted into Rate — lines x to y" with Undo (puts the old rates back). No server update.
+
+
+9. FIRST MESSAGE IN A NEW SESSION
+---------------------------------
+After reading this file: run `git log --oneline -3` and `git status`, check `ls tests/*/Zz*` is empty, then answer in
+2–4 lines: you have the handoff, the last shipped round/version, how many items are on the list, and that you are ready.
+Do not start building list items until the user asks.

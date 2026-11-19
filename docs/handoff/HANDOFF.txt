@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 32 shipped (version 0.9.73, CI run 73). Next round: Round 33.
+Last updated: Round 33 shipped (version 0.9.76, CI run 76). Next round: Round 34. The list is empty.
 
 
 1. THE PROJECT
@@ -142,8 +142,8 @@ Where things usually are:
     a Tailscale firewall rule.
 
 
-7. STATE AT THE END OF ROUND 33
---------------------------------
+7. STATE AT THE END OF ROUND 33 (shipped, 0.9.76)
+-------------------------------------------------
 Round 33 delivered the whole list (#97–#111), on PC, Mac and phone where it applies:
   * Themes renamed: Glass (Blue) → Frost, Glass (Maroon) → Hatims Maroon (ThemeNames only).
   * Quotation page heading: number "ticket" (TicketBrush = AccentBrush, or ActionBrush on dark themes), status chip,

@@ -324,7 +324,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     // ---------------------------------------------------------------- header
     [ObservableProperty] private Guid? _id;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(DocTypeName))] private DocumentType _docType;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(DocTypeName))] [NotifyPropertyChangedFor(nameof(TicketLabel))] private DocumentType _docType;
 
     /// <summary>"Quotation" or "Proforma Invoice" (the Tally theme shows it in a dark box, like a voucher type).</summary>
     public string DocTypeName => DocType == DocumentType.ProformaInvoice ? "Proforma Invoice" : "Quotation";
@@ -653,6 +653,37 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public Func<string?, CancellationToken, Task<IEnumerable<object>>> ProductPopulator { get; }
     public Func<string?, CancellationToken, Task<IEnumerable<object>>> CustomerPopulator { get; }
 
+    /// <summary>
+    /// The ☆ / ★ on each row of the product and customer search lists (null when the administrator switched Stars off):
+    /// starred ones come first in this user's searches.
+    /// </summary>
+    public Func<object, Task>? StarToggle => _session.Settings?.Quotation.Stars == false ? null : ToggleStarAsync;
+
+    /// <summary>"★ YOUR STARRED ITEMS" over the first starred row and "OTHER MATCHES" over the first one after them.</summary>
+    private string? PickHeading(bool starred, bool first, bool anyStarred, string what) =>
+        StarToggle is null || !anyStarred || !first ? null : starred ? "★ YOUR STARRED " + what : "OTHER MATCHES";
+
+    public async Task ToggleStarAsync(object item)
+    {
+        try
+        {
+            switch (item)
+            {
+                case ProductSearchHitDto p:
+                    await _session.Api.SetStarAsync("product", p.Product.Id, !p.IsStarred);
+                    break;
+                case CustomerSearchHitDto c:
+                    await _session.Api.SetStarAsync("customer", c.Customer.Id, !c.IsStarred);
+                    break;
+            }
+        }
+        catch (ApiException ex)
+        {
+            _navigator.Toast(ex.Status == System.Net.HttpStatusCode.NotFound ? "Stars need the server update." : ex.Message);
+            throw;
+        }
+    }
+
     // ---------------------------------------------------------------- totals
     [ObservableProperty] private decimal? _packingForwarding; // empty box = 0.00
     [ObservableProperty] private decimal? _packingForwardingPercent;
@@ -730,6 +761,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public string DocLabel => IsProforma ? "Proforma Invoice" : "Quotation";
     public string CancelTip => $"Cancel this {DocLabel.ToLowerInvariant()} (it is kept, marked CANCELLED)";
     public string NumberLabel => IsProforma ? "Invoice No." : "Quotation No.";
+    /// <summary>Over the number in the heading's ticket: "QUOTATION NO." / "INVOICE NO.".</summary>
+    public string TicketLabel => NumberLabel.ToUpperInvariant();
+    /// <summary>The status chip in the heading: "Draft", "Approved", "Pending review" …</summary>
+    public string StatusChipText => StatusText.Length == 0 ? "" : StatusText[0] + StatusText[1..].ToLowerInvariant();
     /// <summary>The number beside the date only while it is provisional; once saved it is in the title.</summary>
     public bool IsNumberProvisional => Number is null;
     /// <summary>"Source: …" only for quotations made from the AI Inbox or Gmail.</summary>
@@ -959,6 +994,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(ShowOutcome));
         OnPropertyChanged(nameof(ShowWhatsApp));
         OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(StatusChipText));
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(CanConvertToProforma));
         OnPropertyChanged(nameof(IsLocked));
@@ -1040,7 +1076,11 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     private async Task<IEnumerable<object>> SearchCustomersAsync(string? text, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(text)) return [];
-        try { return await _session.Api.SearchCustomersAsync(text, 15, ct); }
+        try
+        {
+            var hits = await _session.Api.SearchCustomersAsync(text, 15, ct, starredFirst: StarToggle is not null);
+            return hits.Select((h, i) => h with { Heading = PickHeading(h.IsStarred, i == 0 || hits[i - 1].IsStarred != h.IsStarred, hits[0].IsStarred, "CUSTOMERS") });
+        }
         catch (Exception) { return []; }
     }
 
@@ -1108,7 +1148,11 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     private async Task<IEnumerable<object>> SearchProductsAsync(string? text, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(text)) return [];
-        try { return await _session.Api.SearchProductsAsync(text, 25, ct); }
+        try
+        {
+            var hits = await _session.Api.SearchProductsAsync(text, 25, ct, starredFirst: StarToggle is not null);
+            return hits.Select((h, i) => h with { Heading = PickHeading(h.IsStarred, i == 0 || hits[i - 1].IsStarred != h.IsStarred, hits[0].IsStarred, "ITEMS") });
+        }
         catch (Exception) { return []; }
     }
 
@@ -1267,14 +1311,53 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         var lines = PastedListParser.Parse(text);
         if (lines.Count < 2) return false;
 
+        // Rows copied from Excel: chips show how each column was read (A Part No, B Name, C Qty, D Rate …) and can be changed
+        _pastedText = text;
+        PasteColumns.Clear();
+        PasteIsTable = PastedListParser.IsTable(text);
+        if (PasteIsTable)
+        {
+            var roles = PastedListParser.GuessColumns(text, out _pasteHasHeader);
+            for (var c = 0; c < roles.Length; c++)
+            {
+                var column = new PasteColumnViewModel { Letter = ((char)('A' + Math.Min(c, 25))).ToString(), RoleIndex = (int)roles[c] };
+                column.Changed = () => _ = RereadPastedColumnsAsync();
+                PasteColumns.Add(column);
+            }
+        }
+        IsPasteOpen = true;
+        await LoadPasteRowsAsync(lines);
+        return true;
+    }
+
+    private string? _pastedText;
+    private bool _pasteHasHeader;
+
+    /// <summary>The columns of rows pasted from Excel (empty for a WhatsApp or e-mail list).</summary>
+    public ObservableCollection<PasteColumnViewModel> PasteColumns { get; } = [];
+    [ObservableProperty] private bool _pasteIsTable;
+
+    /// <summary>A column chip was changed: the rows are read again with the chosen columns.</summary>
+    private async Task RereadPastedColumnsAsync()
+    {
+        if (!IsPasteOpen || _pastedText is null) return;
+        var lines = PastedListParser.ParseTable(_pastedText, PasteColumns.Select(c => c.Role).ToList(), _pasteHasHeader);
+        await LoadPasteRowsAsync(lines);
+    }
+
+    private async Task LoadPasteRowsAsync(IReadOnlyList<PastedLine> lines)
+    {
         PasteRows.Clear();
         foreach (var (line, i) in lines.Select((l, i) => (l, i)))
         {
-            var row = new PasteRowViewModel { No = i + 1, Raw = line.Raw, Query = line.Query, Quantity = line.Quantity, SearchText = line.Query };
+            var row = new PasteRowViewModel
+            {
+                No = i + 1, Raw = line.Raw, Query = line.Query, NameQuery = line.NameQuery, Quantity = line.Quantity, SearchText = line.Query,
+                Rate = line.Rate, RateFromPaste = line.Rate is not null, Discount = line.Discount,
+            };
             row.Changed = OnPasteRowsChanged;
             PasteRows.Add(row);
         }
-        IsPasteOpen = true;
         OnPasteRowsChanged();
 
         using var gate = new SemaphoreSlim(4);
@@ -1286,12 +1369,17 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 IReadOnlyList<ProductSearchHitDto> hits;
                 try { hits = await _session.Api.SearchProductsAsync(row.Query, 8); }
                 catch (Exception) { hits = []; }
+                // An Excel part number the item list does not know: try the row's item name
+                if (hits.Count == 0 && row.NameQuery is { Length: > 0 } name)
+                {
+                    try { hits = await _session.Api.SearchProductsAsync(name, 8); }
+                    catch (Exception) { hits = []; }
+                }
                 row.SetResults(hits);
             }
             finally { gate.Release(); }
         }));
         OnPasteRowsChanged();
-        return true;
     }
 
     private void OnPasteRowsChanged()
@@ -1317,9 +1405,15 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         IsPasteOpen = false;
         PasteRows.Clear();
+        PasteColumns.Clear();
+        PasteIsTable = false;
+        _pastedText = null;
     }
 
-    /// <summary>Adds every ready line (found or chosen, quantity above zero) with the item's Tally rate, as typing it would.</summary>
+    /// <summary>
+    /// Adds every ready line (found or chosen, quantity above zero): with the rate and discount pasted from Excel (or typed in
+    /// the box), else the item's Tally rate, as typing it would. The pasted rate is for this quotation only; Tally is not changed.
+    /// </summary>
     [RelayCommand(CanExecute = nameof(CanAddPasted))]
     private void AddPastedLines()
     {
@@ -1338,8 +1432,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 Unit = p.Unit,
                 TallyRate = p.Rate,
                 Quantity = row.Quantity!.Value,
-                Rate = p.Rate > 0 ? p.Rate.Value : 0,
-                DiscountPercent = 0,
+                Rate = row.Rate ?? (p.Rate > 0 ? p.Rate.Value : 0),
+                DiscountPercent = row.Discount is > 0 and < 100 ? row.Discount.Value : 0,
                 Description = (p.Description ?? "").Trim(),
                 ZeroGst = WithoutGst,
             });
@@ -1352,6 +1446,48 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(CanApprove));
         OnPropertyChanged(nameof(CanSaveAsPdf));
         _navigator.Toast(added == 1 ? "1 line added from the pasted list." : $"{added} lines added from the pasted list.");
+    }
+
+    /// <summary>
+    /// Prices copied from an Excel column and pasted into Rate: one per line, from the line being changed (or line 1)
+    /// down; extra prices are left out. A notice says which lines changed, with Undo. Tally is not changed. Returns how
+    /// many lines got a price (0: the text is not a column of prices, and is pasted as usual).
+    /// </summary>
+    public int PastePriceColumn(string? text)
+    {
+        if (!CanEditContent || Lines.Count == 0 || string.IsNullOrWhiteSpace(text)) return 0;
+        var cells = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
+        if (cells.Count < 2) return 0;
+        var prices = new List<decimal>();
+        foreach (var cell in cells)
+        {
+            if (!PastedListParser.TryNumber(cell.Split('\t')[0], out var price, out _, out var percent) || percent || price < 0) return 0;
+            prices.Add(price);
+        }
+        var start = EditingLine is { } editing ? Math.Max(0, Lines.IndexOf(editing)) : 0;
+        var changed = new List<(QuotationLineViewModel Line, decimal Old)>();
+        for (var i = 0; i < prices.Count && start + i < Lines.Count; i++)
+        {
+            var line = Lines[start + i];
+            changed.Add((line, line.Rate));
+            line.Rate = prices[i];
+        }
+        if (changed.Count == 0) return 0;
+        AfterPricesChanged();
+        var lines = changed.Count == 1 ? $"line {start + 1}" : $"lines {start + 1} to {start + changed.Count}";
+        _navigator.Toast($"{changed.Count} price{(changed.Count == 1 ? "" : "s")} pasted into Rate — {lines}", "Undo", () =>
+        {
+            foreach (var (line, old) in changed) line.Rate = old;
+            AfterPricesChanged();
+        }, 12);
+        return changed.Count;
+    }
+
+    private void AfterPricesChanged()
+    {
+        if (EditingLine is { } editing) EntryRate = editing.Rate;
+        RecalculateTotals();
+        MarkDirty();
     }
 
     [RelayCommand]

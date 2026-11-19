@@ -140,7 +140,8 @@ public class OfficeFeaturesUiTests
             ctx.Shell.Navigate("mysettings");
             var mine = Assert.IsType<MySettingsViewModel>(ctx.Shell.CurrentPage);
             await UiHelpers.WaitUntil(() => !mine.IsBusy && mine.ThemeChoices[mine.ThemeIndex] == "Midnight Stars");
-            Assert.Equal("Glass (Blue)", mine.ThemeChoices[0]);
+            Assert.Equal("Frost", mine.ThemeChoices[0]); // Glass (Blue), called Frost since Round 33
+            Assert.Contains("Hatims Maroon", mine.ThemeChoices); // Glass (Maroon)
             mine.ThemeIndex = 0;
             await UiHelpers.WaitUntil(() => !ThemeService.IsDark && !mine.IsBusy);
             Assert.Equal(AppTheme.GlassBlue, (await ctx.Session.Api.MeAsync()).Theme);

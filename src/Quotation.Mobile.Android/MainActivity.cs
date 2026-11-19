@@ -1,5 +1,7 @@
 using Android.App;
+using Android.Content;
 using Android.Content.PM;
+using Android.OS;
 using Android.Views;
 using Avalonia;
 using Avalonia.Android;
@@ -13,6 +15,21 @@ namespace Quotation.PhoneApp;
     WindowSoftInputMode = SoftInput.AdjustResize)]
 public class MainActivity : AvaloniaMainActivity<App>
 {
+    /// <summary>The open screen (the camera, picture chooser and speech recognizer answer to it).</summary>
+    public static MainActivity? Current { get; private set; }
+
+    protected override void OnCreate(Bundle? savedInstanceState)
+    {
+        Current = this;
+        base.OnCreate(savedInstanceState);
+    }
+
+    protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
+    {
+        base.OnActivityResult(requestCode, resultCode, data);
+        AndroidPhoneActions.OnActivityResult(requestCode, resultCode, data);
+    }
+
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
     {
         App.Phone = new AndroidPhoneActions();

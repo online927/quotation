@@ -58,6 +58,7 @@ public sealed class PhoneSession(PhoneSettings settings, Func<string, QuotationA
     {
         try { Company = await Api.SettingsAsync(); }
         catch (ApiException) { Company = null; }
+        Quotation.Desktop.Services.FestivalLooks.Refresh(Company?.Quotation.FestivalLooks == true); // Eid / Diwali look
         if (Company?.Company.CompanyName is { Length: > 0 } name) Settings.CompanyName = name;
         if (User is { } u) Settings.Theme = AppTheme.Normalize(u.Theme);
         Settings.Save();

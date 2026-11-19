@@ -13,6 +13,15 @@ public interface IPhoneActions
     /// <summary>A WhatsApp chat with this number.</summary>
     void WhatsAppChat(string phone);
     void Email(string address, string subject);
+
+    /// <summary>
+    /// A photo of an enquiry from the camera, or a picture chosen on the phone (a WhatsApp screenshot), made smaller for
+    /// sending (JPEG); null when cancelled.
+    /// </summary>
+    Task<byte[]?> TakePhotoAsync(bool chooseOnPhone);
+
+    /// <summary>What was said into the phone (its own speech recognition, Indian English); null when cancelled or not heard.</summary>
+    Task<string?> ListenAsync();
 }
 
 /// <summary>For tests and for running the phone screens on a PC: remembers what was asked.</summary>
@@ -25,6 +34,24 @@ public sealed class RecordingPhoneActions : IPhoneActions
     public void Dial(string phone) => Done.Add("call " + phone);
     public void WhatsAppChat(string phone) => Done.Add("chat " + phone);
     public void Email(string address, string subject) => Done.Add("mail " + address);
+
+    /// <summary>The photo the camera "takes" (null = cancelled).</summary>
+    public byte[]? Photo { get; set; }
+
+    /// <summary>What is "said", one each time the phone listens (empty = stopped).</summary>
+    public Queue<string> Speech { get; } = new();
+
+    public Task<byte[]?> TakePhotoAsync(bool chooseOnPhone)
+    {
+        Done.Add(chooseOnPhone ? "choose picture" : "camera");
+        return Task.FromResult(Photo);
+    }
+
+    public Task<string?> ListenAsync()
+    {
+        Done.Add("listen");
+        return Task.FromResult(Speech.TryDequeue(out var said) ? said : null);
+    }
 }
 
 /// <summary>Phone numbers for WhatsApp links: digits only, India (91) added to a 10-digit mobile number.</summary>

@@ -91,6 +91,12 @@ public sealed record AiToolCallRecord(string Name, string InputJson, string Outp
 
 public sealed record AnalyzeRequest(string Text);
 
+/// <summary>A photo of an enquiry from the phone's camera (JPEG or PNG, base64).</summary>
+public sealed record ReadPhotoRequest(string ImageBase64, string MediaType = "image/jpeg");
+
+/// <summary>The enquiry in the photo, written out for the phone's message box.</summary>
+public sealed record ReadPhotoResponse(string Text);
+
 public sealed class AiRequestDto
 {
     public int Id { get; set; }

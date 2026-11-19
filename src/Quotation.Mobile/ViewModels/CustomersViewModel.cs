@@ -12,7 +12,7 @@ public sealed partial class CustomersViewModel(MainViewModel main) : PageViewMod
 {
     private CancellationTokenSource? _typing;
     public override string Title => "Customers";
-    public ObservableCollection<CustomerSummaryDto> Items { get; } = [];
+    public ObservableCollection<CustomerRow> Items { get; } = [];
     public string Initial => (main.Session.User?.DisplayName is { Length: > 0 } n ? n[..1] : "?").ToUpperInvariant();
 
     [ObservableProperty] private string _search = "";
@@ -36,15 +36,37 @@ public sealed partial class CustomersViewModel(MainViewModel main) : PageViewMod
         Items.Clear();
         IsEmpty = false;
         if (q.Length == 0) return;
-        foreach (var hit in await main.Session.Api.SearchCustomersAsync(q, 30)) Items.Add(hit.Customer);
+        foreach (var hit in await main.Session.Api.SearchCustomersAsync(q, 30, starredFirst: StarsOn)) Items.Add(new CustomerRow(hit.Customer) { IsStarred = hit.IsStarred, StarsOn = StarsOn });
         IsEmpty = Items.Count == 0;
     });
 
     [RelayCommand]
-    private Task OpenAsync(CustomerSummaryDto? c) => c is null ? Task.CompletedTask : main.PushAsync(new CustomerDetailViewModel(main, c.Id, c.Name));
+    private Task OpenAsync(CustomerRow? c) => c is null ? Task.CompletedTask : main.PushAsync(new CustomerDetailViewModel(main, c.Id, c.Name));
+
+    /// <summary>The administrator's Stars switch: a ☆ / ★ on each card; starred ones come first in searches.</summary>
+    public bool StarsOn => main.Session.Company?.Quotation.Stars != false;
+
+    [RelayCommand]
+    private Task StarAsync(CustomerRow? row) => row is null ? Task.CompletedTask : RunAsync(async () =>
+    {
+        await main.Session.Api.SetStarAsync("customer", row.Id, !row.IsStarred);
+        row.IsStarred = !row.IsStarred;
+    });
 
     [RelayCommand]
     private Task MoreAsync() => main.ShowTabAsync(Tabs.More);
+}
+
+/// <summary>A customer in the list: name, state and GSTIN, and the star.</summary>
+public sealed partial class CustomerRow(CustomerSummaryDto c) : ObservableObject
+{
+    public CustomerSummaryDto Customer { get; } = c;
+    public int Id => Customer.Id;
+    public string Name => Customer.Name;
+    public string StateName => Customer.StateName;
+    public string Gstin => Customer.Gstin;
+    public bool StarsOn { get; init; }
+    [ObservableProperty] private bool _isStarred;
 }
 
 /// <summary>A customer: Call / WhatsApp / E-mail in one tap, GSTIN, contact, address, and the quotations made to them.</summary>

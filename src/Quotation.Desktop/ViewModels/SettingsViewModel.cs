@@ -280,9 +280,62 @@ public sealed partial class SettingsViewModel : ViewModelBase
             NewNextSequence = Series.NextSequence;
             ProformaSeries = await _session.Api.NumberSeriesAsync(type: DocumentType.ProformaInvoice);
             NewNextProformaSequence = ProformaSeries.NextSequence;
+            await LoadDriveAsync();
         }
         _session.Settings = s;
     });
+
+    // ------------------------------------------------------------------ Google Drive backup (Backup & updates)
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DriveConnected), nameof(DriveNotConnected), nameof(DriveAccountText), nameof(DriveLastCopyText),
+        nameof(DriveError), nameof(HasDriveError))]
+    private DriveBackupStatusDto? _drive;
+
+    [ObservableProperty] private bool _driveBusy;
+
+    public bool DriveConnected => Drive?.Connected == true;
+    public bool DriveNotConnected => Drive is { Connected: false };
+    public string DriveAccountText => Drive?.Account is { Length: > 0 } a ? a : DriveConnected ? "Google account" : "Connect it on the Gmail Connection page";
+
+    public string DriveLastCopyText => Drive switch
+    {
+        null => "",
+        { LastCopyLocal: { } at } d => When(at) + " · " + d.LastCopyText + (d.PdfsWaiting > 0 ? $" ({d.PdfsWaiting} PDFs to go)" : ""),
+        { PdfsWaiting: > 0 } d => $"Not yet ({d.PdfsWaiting} PDFs to copy)",
+        _ => "Not yet",
+    };
+
+    public string? DriveError => Drive?.Error;
+    public bool HasDriveError => !string.IsNullOrEmpty(Drive?.Error);
+
+    private static string When(DateTime at) =>
+        at.Date == DateTime.Today ? "Today " + at.ToString("HH:mm") :
+        at.Date == DateTime.Today.AddDays(-1) ? "Yesterday " + at.ToString("HH:mm") : at.ToString("dd-MMM-yy HH:mm");
+
+    private async Task LoadDriveAsync()
+    {
+        try { Drive = await _session.Api.DriveBackupAsync(); }
+        catch (Quotation.ApiClient.ApiException) { Drive = null; } // a server without Google Drive backup (not updated yet): no card
+    }
+
+    /// <summary>Back up now: a new database backup, then everything new goes to Google Drive.</summary>
+    [RelayCommand]
+    private async Task DriveBackupNowAsync()
+    {
+        if (DriveBusy) return;
+        DriveBusy = true;
+        InfoMessage = null;
+        try
+        {
+            if (await RunAsync(async () => Drive = await _session.Api.DriveBackupNowAsync()) && !HasDriveError)
+                InfoMessage = "Copied to Google Drive: " + Drive!.LastCopyText + ".";
+        }
+        finally
+        {
+            DriveBusy = false;
+        }
+    }
 
     [RelayCommand]
     private async Task SetNextNumberAsync()

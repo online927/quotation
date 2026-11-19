@@ -71,3 +71,66 @@ public class PastedListParserTests
         Assert.True(PastedListParser.LooksLikeAList("187-901 x 2\r\n530-312 x 1"));
     }
 }
+
+/// <summary>Round 33: rows copied from Excel are read column by column, with their rates and discounts.</summary>
+public class PastedExcelRowsTests
+{
+    [Fact]
+    public void Part_numbers_with_a_quantity_column_keep_their_quantity()
+    {
+        // Before Round 33 these came in with quantity 1 and the number stayed in the search words
+        var lines = PastedListParser.Parse("187-901-10\t2\n530-104\t5\n2046S\t3");
+        Assert.Equal(["187-901-10", "530-104", "2046S"], lines.Select(l => l.Query));
+        Assert.Equal([2m, 5m, 3m], lines.Select(l => l.Quantity));
+        Assert.Equal(2m, PastedListParser.ParseLine("187-901-10\t2")!.Quantity); // one row on its own too
+    }
+
+    [Fact]
+    public void Rates_and_discounts_are_read_from_their_columns()
+    {
+        const string rows = "187-901-10\tUniversal Bevel Protractor\t2\t15200\n530-104\tVernier caliper 0-150mm\t5\t2450\t5%\n" +
+                            "2046S\tDial indicator 0-10mm\t3\t3800\n\t3 core 2.5 sqmm flexible cable\t100\t42.50";
+        Assert.Equal([PastedColumnRole.PartNo, PastedColumnRole.Item, PastedColumnRole.Quantity, PastedColumnRole.Rate, PastedColumnRole.Discount],
+            PastedListParser.GuessColumns(rows, out var header));
+        Assert.False(header);
+        var lines = PastedListParser.Parse(rows);
+        Assert.Equal(["187-901-10", "530-104", "2046S", "3 core 2.5 sqmm flexible cable"], lines.Select(l => l.Query));
+        Assert.Equal([2m, 5m, 3m, 100m], lines.Select(l => l.Quantity));
+        Assert.Equal([15200m, 2450m, 3800m, 42.50m], lines.Select(l => l.Rate));
+        Assert.Equal([null, 5m, null, null], lines.Select(l => l.Discount));
+        Assert.Equal("Universal Bevel Protractor", lines[0].NameQuery); // searched when the part number finds nothing
+    }
+
+    [Fact]
+    public void A_heading_row_names_the_columns_and_the_amount_is_left_out()
+    {
+        const string rows = "Sl\tPart No\tDescription\tQty\tRate\tAmount\n1\t187-901-10\tBevel protractor\t2\t\"15,600.00\"\t\"31,200.00\"\n" +
+                            "2\t530-104\tVernier caliper\t5\t\"2,450.00\"\t\"12,250.00\"";
+        Assert.Equal([PastedColumnRole.Skip, PastedColumnRole.PartNo, PastedColumnRole.Item, PastedColumnRole.Quantity, PastedColumnRole.Rate, PastedColumnRole.Skip],
+            PastedListParser.GuessColumns(rows, out var header));
+        Assert.True(header);
+        var lines = PastedListParser.Parse(rows);
+        Assert.Equal(2, lines.Count);
+        Assert.Equal([15600m, 2450m], lines.Select(l => l.Rate));
+    }
+
+    [Fact]
+    public void Without_a_heading_the_serial_number_and_the_amount_are_left_out()
+    {
+        var roles = PastedListParser.GuessColumns("1\t187-901-10\t2\t15600\t31200\n2\t530-104\t5\t2450\t12250", out _);
+        Assert.Equal([PastedColumnRole.Skip, PastedColumnRole.PartNo, PastedColumnRole.Quantity, PastedColumnRole.Rate, PastedColumnRole.Skip], roles);
+        // One column of big numbers is a rate (the quantity is then 1)
+        var lines = PastedListParser.Parse("187-901-10\t15600\n530-104\t2450");
+        Assert.Equal([15600m, 2450m], lines.Select(l => l.Rate));
+        Assert.Equal([1m, 1m], lines.Select(l => l.Quantity));
+    }
+
+    [Fact]
+    public void Columns_can_be_set_by_hand()
+    {
+        var lines = PastedListParser.ParseTable("187-901-10\t2\t15600\n530-104\t5\t2450",
+            [PastedColumnRole.PartNo, PastedColumnRole.Skip, PastedColumnRole.Rate], hasHeader: false);
+        Assert.Equal([1m, 1m], lines.Select(l => l.Quantity));
+        Assert.Equal([15600m, 2450m], lines.Select(l => l.Rate));
+    }
+}

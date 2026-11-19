@@ -1,6 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:Quotation.Desktop"
+             xmlns:ctl="using:Quotation.Desktop.Controls"
              x:Class="Quotation.Desktop.App"
              RequestedThemeVariant="Light">
   <Application.DataTemplates>
@@ -20,6 +21,8 @@
     <!-- Selected text in typing boxes (My Settings > Selected text, this PC; Services/TextSelectionLook): soft blue, dark letters -->
     <SolidColorBrush x:Key="TextSelectionBrush">#B3D7FF</SolidColorBrush>
     <SolidColorBrush x:Key="TextSelectionForegroundBrush">#111827</SolidColorBrush>
+    <!-- The quotation number's ticket (ThemeService sets the theme's colour) -->
+    <SolidColorBrush x:Key="TicketBrush">#0A5FD0</SolidColorBrush>
 
     <!-- Fluent theme overrides -->
     <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
@@ -394,6 +397,10 @@
     <Style Selector="TextBox[AcceptsReturn=True]">
       <Setter Property="VerticalContentAlignment" Value="Top" />
     </Style>
+    <!-- Sums in every number box: "=12*2", "=3159-5%" (Controls/MathBox) -->
+    <Style Selector="NumericUpDown">
+      <Setter Property="ctl:MathBox.IsEnabled" Value="True" />
+    </Style>
     <Style Selector="NumericUpDown, ComboBox, CalendarDatePicker">
       <Setter Property="MinHeight" Value="{DynamicResource InputMinHeight}" />
     </Style>
@@ -544,6 +551,60 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="12" />
     </Style>
+    <!-- The festival greeting over the dashboard ("Eid Mubarak!  ·  Today at a glance") -->
+    <Style Selector="TextBlock.festive">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    </Style>
+
+    <!-- Stars (☆ / ★) in the product and customer search lists: shown while the administrator's Stars switch is on -->
+    <Style Selector="Border.star">
+      <Setter Property="IsVisible" Value="False" />
+      <Setter Property="Width" Value="26" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="Margin" Value="8,0,-6,0" />
+      <Setter Property="CornerRadius" Value="13" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Border.dropdown.stars Border.star">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Border.star:pointerover">
+      <Setter Property="Background" Value="#22F5B301" />
+    </Style>
+    <Style Selector="Path.staricon">
+      <Setter Property="Data" Value="M12,2 L15.09,8.26 L22,9.27 L17,14.14 L18.18,21.02 L12,17.77 L5.82,21.02 L7,14.14 L2,9.27 L8.91,8.26 Z" />
+      <Setter Property="Width" Value="15" />
+      <Setter Property="Height" Value="15" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="StrokeThickness" Value="1.5" />
+      <Setter Property="StrokeJoin" Value="Round" />
+      <Setter Property="Stroke" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="Fill" Value="Transparent" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.star:pointerover Path.staricon">
+      <Setter Property="Stroke" Value="#E0A100" />
+    </Style>
+    <Style Selector="Border.star.on Path.staricon">
+      <Setter Property="Fill" Value="#F5B301" />
+      <Setter Property="Stroke" Value="#E0A100" />
+    </Style>
+    <Style Selector="TextBlock.pickhead">
+      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="LetterSpacing" Value="0.6" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="Margin" Value="0,2,0,6" />
+    </Style>
+    <Style Selector="TextBlock.pickhead.starred">
+      <Setter Property="Foreground" Value="#B7791F" />
+    </Style>
+
     <Style Selector="ListBox.table">
       <Setter Property="BorderThickness" Value="1,0,1,1" />
       <Setter Property="CornerRadius" Value="0,0,12,12" />

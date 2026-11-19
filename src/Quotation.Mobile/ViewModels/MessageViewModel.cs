@@ -54,6 +54,74 @@ public sealed partial class MessageViewModel(MainViewModel main) : PageViewModel
         InfoMessage = cleaned.Removed > 0 ? "Taken out: " + cleaned.Describe() + "." : null;
     }
 
+    // ------------------------------------------------------------------ photo and voice
+
+    /// <summary>Photo: Claude reads the enquiry in a photo (camera) into the box.</summary>
+    [RelayCommand]
+    private Task PhotoAsync() => ReadPhotoAsync(chooseOnPhone: false);
+
+    /// <summary>A picture already on the phone (a WhatsApp screenshot) read the same way.</summary>
+    [RelayCommand]
+    private Task PictureAsync() => ReadPhotoAsync(chooseOnPhone: true);
+
+    private Task ReadPhotoAsync(bool chooseOnPhone) => RunAsync(async () =>
+    {
+        InfoMessage = null;
+        var photo = await main.Session.Phone.TakePhotoAsync(chooseOnPhone);
+        if (photo is not { Length: > 0 }) return;
+        InfoMessage = "Claude is reading the photo…";
+        try
+        {
+            var read = await main.Session.Api.ReadPhotoAsync(photo);
+            Text = Text.Trim().Length == 0 ? read : Text.TrimEnd() + Environment.NewLine + Environment.NewLine + read;
+            InfoMessage = "Read from the photo · check it, then Make quotation";
+        }
+        catch
+        {
+            InfoMessage = null;
+            throw;
+        }
+    });
+
+    [ObservableProperty] private bool _isListening;
+    [ObservableProperty] private string _heard = "";
+    [ObservableProperty] private string _lastAdded = "";
+    public bool HasLastAdded => LastAdded.Length > 0;
+    partial void OnLastAddedChanged(string value) => OnPropertyChanged(nameof(HasLastAdded));
+
+    /// <summary>Speak: each item said ("two bevel protractors at fifteen thousand six hundred") becomes a line; say the next, or stop.</summary>
+    [RelayCommand]
+    private async Task SpeakAsync()
+    {
+        if (IsListening) return;
+        IsListening = true;
+        Heard = "";
+        LastAdded = "";
+        InfoMessage = null;
+        var added = 0;
+        try
+        {
+            for (var i = 0; i < 40 && IsListening; i++)
+            {
+                var said = await main.Session.Phone.ListenAsync();
+                if (string.IsNullOrWhiteSpace(said)) break;
+                Heard = said.Trim();
+                var line = SpokenItem.ToLine(said) ?? Heard;
+                Text = Text.Trim().Length == 0 ? line : Text.TrimEnd() + Environment.NewLine + Environment.NewLine + line;
+                LastAdded = line;
+                added++;
+            }
+        }
+        finally
+        {
+            IsListening = false;
+        }
+        if (added > 0) InfoMessage = (added == 1 ? "1 spoken item added" : $"{added} spoken items added") + " · check, then Make quotation";
+    }
+
+    [RelayCommand]
+    private void StopListening() => IsListening = false;
+
     [RelayCommand]
     private Task MakeAsync() => RunAsync(async () =>
     {

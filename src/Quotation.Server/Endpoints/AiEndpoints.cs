@@ -18,6 +18,17 @@ public static class AiEndpoints
                 return await ai.AnalyzeAsync(new AnalyzeInput(r.Text.Trim()), QuotationSource.Ai, QuotationEndpoints.User(ctx), null, ct);
             }));
 
+        // The phone's Photo button: Claude reads the enquiry in the photo into the message box (nothing is saved here).
+        g.MapPost("/read-photo", (ReadPhotoRequest r, AiService ai, HttpContext ctx, CancellationToken ct) =>
+            QuotationEndpoints.Handle(async () =>
+            {
+                byte[] image;
+                try { image = Convert.FromBase64String(r.ImageBase64 ?? ""); }
+                catch (FormatException) { throw new QuotationException(400, ApiErrorCodes.Validation, "The photo could not be read."); }
+                var type = r.MediaType is "image/png" or "image/webp" ? r.MediaType : "image/jpeg";
+                return new ReadPhotoResponse(await ai.ReadPhotoAsync(image, type, QuotationEndpoints.User(ctx), ct));
+            }));
+
         g.MapGet("/requests", (AiRequestStatus? status, int? take, AiService ai, CancellationToken ct) =>
             QuotationEndpoints.Handle(() => ai.ListAsync(status, Math.Clamp(take ?? 100, 1, 500), ct)));
 

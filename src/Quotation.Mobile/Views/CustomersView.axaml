@@ -25,16 +25,22 @@
           <ItemsControl Name="CustomerList" ItemsSource="{Binding Items}">
             <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="10" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="c:CustomerSummaryDto">
+              <DataTemplate x:DataType="vm:CustomerRow">
                 <Button Classes="cardbtn" Command="{Binding $parent[ItemsControl].((vm:CustomersViewModel)DataContext).OpenCommand}" CommandParameter="{Binding}">
-                  <StackPanel>
-                    <TextBlock Text="{Binding Name}" FontWeight="Bold" TextWrapping="Wrap" />
-                    <TextBlock Classes="muted" FontSize="12">
-                      <Run Text="{Binding StateName, Mode=OneWay}" />
-                      <Run Text="  " />
-                      <Run Text="{Binding Gstin, Mode=OneWay}" />
-                    </TextBlock>
-                  </StackPanel>
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                      <TextBlock Text="{Binding Name}" FontWeight="Bold" TextWrapping="Wrap" />
+                      <TextBlock Classes="muted" FontSize="12">
+                        <Run Text="{Binding StateName, Mode=OneWay}" />
+                        <Run Text="  " />
+                        <Run Text="{Binding Gstin, Mode=OneWay}" />
+                      </TextBlock>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="star" Classes.on="{Binding IsStarred}" IsVisible="{Binding StarsOn}" VerticalAlignment="Top" Margin="6,-4,-6,0"
+                            Command="{Binding $parent[ItemsControl].((vm:CustomersViewModel)DataContext).StarCommand}" CommandParameter="{Binding}">
+                      <Path Classes="staricon" />
+                    </Button>
+                  </Grid>
                 </Button>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

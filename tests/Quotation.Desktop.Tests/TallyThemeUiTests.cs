@@ -126,7 +126,7 @@ public class TallyThemeUiTests
         editor.CommitEntryCommand.Execute(null);
         Dispatcher.UIThread.RunJobs();
         var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
-        Assert.True(view.FindControl<Border>("VoucherType")!.IsEffectivelyVisible);
+        Assert.Equal(new CornerRadius(0), view.FindControl<Border>("NumberTicket")!.CornerRadius); // a square dark box, like a voucher type
         Assert.True(ctx.Shell.KeyBar.First(k => k.Label == "Save").IsOn);
 
         ClickKey(shell, "F1");
@@ -160,7 +160,7 @@ public class TallyThemeUiTests
         Dispatcher.UIThread.RunJobs();
         Assert.DoesNotContain("tally", shell.Classes);
         Assert.False(shell.FindControl<Border>("KeyBarPanel")!.IsEffectivelyVisible);
-        Assert.False(view.FindControl<Border>("VoucherType")!.IsEffectivelyVisible);
+        Assert.NotEqual(new CornerRadius(0), view.FindControl<Border>("NumberTicket")!.CornerRadius);
         Assert.False(ColourThemes.IsFlat);
         Assert.NotEqual(new CornerRadius(0), Application.Current!.Resources["CardRadius"]);
         Assert.Contains(shell.GetVisualDescendants().OfType<TextBlock>(), t => t.Classes.Contains("navtitle") && t.IsEffectivelyVisible);

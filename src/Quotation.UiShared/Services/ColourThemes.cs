@@ -125,6 +125,34 @@ public static class ColourThemes
                 ["SkyArtBrush"] = "#8CFFFFFF", ["SunArtBrush"] = "#C7F6E7B6", ["FarArtBrush"] = "#1F9AA6D6", ["NearArtBrush"] = "#D903061A",
                 ["SideArtBrush"] = "#4DFFFFFF", ["PictureScrimBrush"] = "#99070B1F",
             }),
+        // Eid (festival look, on by itself on Eid): a deep green night with gold.
+        [FestivalLooks.Eid] = new("#021A18→#05302C→#0A4A43", "#E8C15A", "#2E3A2A", "#3A4026", true,
+            new()
+            {
+                ["CardBrush"] = "#0B2F2B", ["PopupBrush"] = "#0D3430", ["TopBarBrush"] = "#03211E",
+                ["SidebarBrush"] = "#01110F→#042824", ["SidebarBorderBrush"] = "#01110F", ["SidebarSelectedBrush"] = "#E8C15A",
+                ["SidebarSelectedTextBrush"] = "#062421", ["SidebarTextBrush"] = "#E6F4F0", ["SidebarMutedBrush"] = "#A9CFC6",
+                ["SidebarHoverBrush"] = "#1FFFFFFF", ["HairlineBrush"] = "#1C4A44", ["PanelBorderBrush"] = "#245750",
+                ["SubtleFillBrush"] = "#0F3A35", ["FillBrush"] = "#14443E", ["MutedBrush"] = "#A9CFC6", ["ListHoverBrush"] = "#12403A",
+                ["TextBrush"] = "#EEF7F4", ["ActionBrush"] = "#1E9C86", ["PrimaryHoverBrush"] = "#25B39A",
+                ["PrimaryPressedBrush"] = "#187F6D", ["PrimaryDisabledBrush"] = "#1F4A44", ["SaveBrush"] = "#2FA57A", ["SaveHoverBrush"] = "#39B98A",
+                ["SkyArtBrush"] = "#D9E8C15A", ["SunArtBrush"] = "#F2F2D27A", ["FarArtBrush"] = "#33E8C15A", ["NearArtBrush"] = "#E6011412",
+                ["SideArtBrush"] = "#8CE8C15A", ["PictureScrimBrush"] = "#99021A18",
+            }),
+        // Diwali (festival look, on by itself at Diwali): a plum night with orange and gold, fireworks in pink, gold and blue.
+        [FestivalLooks.Diwali] = new("#160822→#2A0C30→#44142E", "#FFB347", "#4A2A20", "#4A2A30", true,
+            new()
+            {
+                ["CardBrush"] = "#2A1230", ["PopupBrush"] = "#301536", ["TopBarBrush"] = "#1A0824",
+                ["SidebarBrush"] = "#0E0418→#2A0A26", ["SidebarBorderBrush"] = "#0E0418", ["SidebarSelectedBrush"] = "#FF9F1C",
+                ["SidebarSelectedTextBrush"] = "#2A0A26", ["SidebarTextBrush"] = "#FBEFF6", ["SidebarMutedBrush"] = "#E0BFD8",
+                ["SidebarHoverBrush"] = "#1FFFFFFF", ["HairlineBrush"] = "#4A2650", ["PanelBorderBrush"] = "#5A2E5E",
+                ["SubtleFillBrush"] = "#341838", ["FillBrush"] = "#3E1E42", ["MutedBrush"] = "#E0BFD8", ["ListHoverBrush"] = "#3A1C3E",
+                ["TextBrush"] = "#FFF4FA", ["ActionBrush"] = "#E8590C", ["PrimaryHoverBrush"] = "#FF6B1A",
+                ["PrimaryPressedBrush"] = "#C44A0A", ["PrimaryDisabledBrush"] = "#4A2A3A", ["SaveBrush"] = "#2FA57A", ["SaveHoverBrush"] = "#39B98A",
+                ["SkyArtBrush"] = "#E6FF5DA2⇒#E6FFC93C⇒#E66EC6FF⇒#E6FF8C42", ["SunArtBrush"] = "#F2FF5DA2→#F2FFB347",
+                ["FarArtBrush"] = "#FFC0582E", ["NearArtBrush"] = "#FFFFC93C", ["SideArtBrush"] = "#D9FFB347", ["PictureScrimBrush"] = "#99160822",
+            }),
         // Tally: like TallyPrime — a dark blue-green top bar, a light blue page, white boxes with thin lines, square corners and no
         // shadows; the chosen item in a yellow bar, the menu's shortcut letters in red, a key bar on the right.
         [AppTheme.Tally] = new("#E4EEF3", "#1F5F7D", "#DCEAF1", "#F9C74F", false,
@@ -251,15 +279,16 @@ public static class ColourThemes
     /// <summary>A flat theme (Tally): no shadows and no glow on the main buttons.</summary>
     public static bool IsFlat => GlowShadow == NoShadow;
 
-    /// <summary>"#RRGGBB" / "#AARRGGBB", or a gradient "#A→#B(→#C)".</summary>
+    /// <summary>"#RRGGBB" / "#AARRGGBB", or a gradient "#A→#B(→#C)" (top to bottom) or "#A⇒#B⇒…" (left to right).</summary>
     public static IBrush BrushOf(string colour)
     {
-        var parts = colour.Split('→');
+        var across = colour.Contains('⇒');
+        var parts = colour.Split(across ? '⇒' : '→');
         if (parts.Length == 1) return new SolidColorBrush(Color.Parse(colour));
         var brush = new LinearGradientBrush
         {
             StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-            EndPoint = new RelativePoint(0.35, 1, RelativeUnit.Relative),
+            EndPoint = across ? new RelativePoint(1, 0, RelativeUnit.Relative) : new RelativePoint(0.35, 1, RelativeUnit.Relative),
         };
         for (var i = 0; i < parts.Length; i++) brush.GradientStops.Add(new GradientStop(Color.Parse(parts[i]), (double)i / (parts.Length - 1)));
         return brush;

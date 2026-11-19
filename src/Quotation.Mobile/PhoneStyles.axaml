@@ -132,6 +132,43 @@
   <Style Selector="Button.cardbtn.open:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
   </Style>
+  <!-- The star on product and customer cards (administrator's Stars switch) -->
+  <Style Selector="Button.star">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Path.staricon">
+    <Setter Property="Data" Value="M12,2 L15.09,8.26 L22,9.27 L17,14.14 L18.18,21.02 L12,17.77 L5.82,21.02 L7,14.14 L2,9.27 L8.91,8.26 Z" />
+    <Setter Property="Width" Value="19" />
+    <Setter Property="Height" Value="19" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="StrokeThickness" Value="1.6" />
+    <Setter Property="StrokeJoin" Value="Round" />
+    <Setter Property="Stroke" Value="{DynamicResource MutedBrush}" />
+    <Setter Property="Fill" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.star.on Path.staricon">
+    <Setter Property="Fill" Value="#F5B301" />
+    <Setter Property="Stroke" Value="#E0A100" />
+  </Style>
+  <!-- The festival greeting on the dashboard ("Eid Mubarak!  ·  Today at a glance") -->
+  <Style Selector="TextBlock.festive">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+  </Style>
+  <!-- "✓ Added: Bevel protractor, 2, 15600" while speaking items -->
+  <Style Selector="Border.addedpill">
+    <Setter Property="Background" Value="{DynamicResource PillOkBrush}" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="14,10" />
+  </Style>
+  <Style Selector="Border.addedpill TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource GreenBrush}" />
+  </Style>
   <!-- Round icon buttons (back, user) -->
   <Style Selector="Button.round">
     <Setter Property="Width" Value="40" />

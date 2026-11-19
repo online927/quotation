@@ -53,6 +53,7 @@ builder.Services.AddSingleton<LastRateService>();
 builder.Services.AddSingleton<TallySyncService>();
 builder.Services.AddHostedService<SyncWorker>();
 builder.Services.AddSingleton<CatalogSearchService>();
+builder.Services.AddSingleton<StarsService>();
 builder.Services.AddSingleton<NumberingService>();
 builder.Services.AddSingleton<PdfStorage>();
 builder.Services.AddSingleton<PdfQuotationRenderer>();
@@ -67,6 +68,9 @@ builder.Services.AddSingleton<GmailIngestionService>();
 builder.Services.AddHostedService<GmailPollingWorker>();
 builder.Services.AddSingleton<BackupService>();
 builder.Services.AddHostedService<BackupWorker>();
+builder.Services.AddSingleton<IDriveClientFactory, GoogleDriveClientFactory>();
+builder.Services.AddSingleton<DriveBackupService>();
+builder.Services.AddHostedService<DriveBackupWorker>();
 builder.Services.AddHostedService<ServerFinderService>();
 
 builder.Services.AddAuthentication(TokenAuthenticationHandler.SchemeName)

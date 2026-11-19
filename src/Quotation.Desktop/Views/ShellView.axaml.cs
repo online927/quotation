@@ -124,7 +124,7 @@ public partial class ShellView : UserControl
     /// <summary>The Tally theme changes more than colours (Styles/TallyStyles.axaml): its styles look for the "tally" class here.</summary>
     private void OnThemeColoursChanged() => Classes.Set("tally", IsTallyTheme);
 
-    private static bool IsTallyTheme => ThemeService.Current == Quotation.Contracts.AppTheme.Tally;
+    private static bool IsTallyTheme => ThemeService.Shown == Quotation.Contracts.AppTheme.Tally; // the look on screen (not on festival days)
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {

@@ -36,7 +36,20 @@ public sealed class ClaudeProvider(ClaudeOptions options, ILogger<ClaudeProvider
             CacheControl = i == request.Tools.Count - 1 ? new BetaCacheControlEphemeral() : null,
         }).ToList();
 
-        List<BetaMessageParam> messages = [new() { Role = Role.User, Content = request.UserMessage }];
+        List<BetaMessageParam> messages = [request.Image is { Length: > 0 } image
+            ? new()
+            {
+                Role = Role.User,
+                Content = new List<BetaContentBlockParam>
+                {
+                    new BetaImageBlockParam
+                    {
+                        Source = new BetaBase64ImageSource { Data = Convert.ToBase64String(image), MediaType = ImageType(request.ImageMediaType) },
+                    },
+                    new BetaTextBlockParam { Text = request.UserMessage },
+                },
+            }
+            : new() { Role = Role.User, Content = request.UserMessage }];
         var calls = new List<AiToolCallRecord>();
         long inputTokens = 0, outputTokens = 0;
         var finalText = "";
@@ -162,6 +175,14 @@ public sealed class ClaudeProvider(ClaudeOptions options, ILogger<ClaudeProvider
         };
         return InputSchema.FromRawUnchecked(raw);
     }
+
+    private static MediaType ImageType(string mediaType) => mediaType.ToLowerInvariant() switch
+    {
+        "image/png" => MediaType.ImagePng,
+        "image/webp" => MediaType.ImageWebP,
+        "image/gif" => MediaType.ImageGif,
+        _ => MediaType.ImageJpeg,
+    };
 
     private static Effort ParseEffort(string effort) => effort.ToLowerInvariant() switch
     {

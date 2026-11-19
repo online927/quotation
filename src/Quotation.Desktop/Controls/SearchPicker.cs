@@ -38,6 +38,10 @@ public sealed class SearchPicker : UserControl
     public static readonly StyledProperty<Func<string?, CancellationToken, Task<IEnumerable<object>>>?> SearchProperty =
         AvaloniaProperty.Register<SearchPicker, Func<string?, CancellationToken, Task<IEnumerable<object>>>?>(nameof(Search));
 
+    /// <summary>Stars or unstars a match (the ☆ / ★ on each row, class "star"); null = no stars.</summary>
+    public static readonly StyledProperty<Func<object, Task>?> StarProperty =
+        AvaloniaProperty.Register<SearchPicker, Func<object, Task>?>(nameof(Star));
+
     public static readonly StyledProperty<double> MaxDropDownHeightProperty =
         AvaloniaProperty.Register<SearchPicker, double>(nameof(MaxDropDownHeight), 400);
 
@@ -143,6 +147,13 @@ public sealed class SearchPicker : UserControl
         set => SetValue(SearchProperty, value);
     }
 
+    /// <summary>Stars or unstars a match (clicking the ☆ / ★ on its row); the list is then searched again.</summary>
+    public Func<object, Task>? Star
+    {
+        get => GetValue(StarProperty);
+        set => SetValue(StarProperty, value);
+    }
+
     public double MaxDropDownHeight
     {
         get => GetValue(MaxDropDownHeightProperty);
@@ -192,6 +203,10 @@ public sealed class SearchPicker : UserControl
             CancelSearch();
             ClosePopup();
             SetBoxText(change.GetNewValue<string?>());
+        }
+        else if (change.Property == StarProperty)
+        {
+            _dropDown.Classes.Set("stars", change.NewValue is not null);
         }
         else if (change.Property == WatermarkProperty || change.Property == ItemTemplateProperty ||
                  change.Property == MaxDropDownHeightProperty || change.Property == NoMatchTextProperty)
@@ -382,7 +397,35 @@ public sealed class SearchPicker : UserControl
         var container = (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true);
         if (container?.DataContext is not { } item) return;
         e.Handled = true;
+        if (Star is { } star && IsOnStar(e.Source as Visual))
+        {
+            _ = ToggleStarAsync(star, item);
+            return;
+        }
         Pick(item);
+    }
+
+    private static bool IsOnStar(Visual? v)
+    {
+        for (; v is not null and not ListBoxItem; v = v.GetVisualParent())
+            if (v is StyledElement { Classes: var c } && c.Contains("star")) return true;
+        return false;
+    }
+
+    /// <summary>The ☆ / ★ on a row was clicked: star or unstar it and show the list again (starred ones come first).</summary>
+    public async Task ToggleStarAsync(Func<object, Task> star, object item)
+    {
+        try
+        {
+            await star(item);
+        }
+        catch (Exception)
+        {
+            // the server could not save it (e.g. not updated yet): the list stays as it was
+            return;
+        }
+        _textBox.Focus();
+        SearchNow();
     }
 
     private void CloseIfFocusLeft()

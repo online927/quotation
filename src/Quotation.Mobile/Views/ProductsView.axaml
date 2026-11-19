@@ -28,12 +28,16 @@
                 <Button Classes="cardbtn" Classes.open="{Binding IsOpen}"
                         Command="{Binding $parent[ItemsControl].((vm:ProductsViewModel)DataContext).ToggleCommand}" CommandParameter="{Binding}">
                   <StackPanel>
-                    <Grid ColumnDefinitions="*,Auto">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
                       <StackPanel>
                         <TextBlock Text="{Binding Name}" FontWeight="Bold" TextWrapping="Wrap" Foreground="{DynamicResource TextBrush}" />
                         <TextBlock Classes="muted" FontSize="12" Text="{Binding Sub}" />
                       </StackPanel>
                       <TextBlock Grid.Column="1" Text="{Binding RateText}" FontWeight="Bold" VerticalAlignment="Bottom" Margin="10,0,0,0" />
+                      <Button Grid.Column="2" Classes="star" Classes.on="{Binding IsStarred}" IsVisible="{Binding StarsOn}" VerticalAlignment="Top" Margin="6,-4,-6,0"
+                              Command="{Binding $parent[ItemsControl].((vm:ProductsViewModel)DataContext).StarCommand}" CommandParameter="{Binding}">
+                        <Path Classes="staricon" />
+                      </Button>
                     </Grid>
                     <Grid ColumnDefinitions="110,*" Margin="0,10,0,0" IsVisible="{Binding IsOpen}">
                       <ItemsControl Grid.ColumnSpan="2" ItemsSource="{Binding Info}">

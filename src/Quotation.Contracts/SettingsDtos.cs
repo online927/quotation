@@ -74,7 +74,22 @@ public sealed class BackupSettings
     public string CopyFolder { get; set; } = "";
     /// <summary>Client PCs must install a newer version from the server before they can be used.</summary>
     public bool ClientsMustUpdate { get; set; }
+
+    /// <summary>Google Drive backup: each database backup is also copied to the office Google Drive (same Google sign-in as Gmail).</summary>
+    public bool DriveBackups { get; set; } = true;
+
+    /// <summary>Google Drive backup: each approved PDF is also copied (a folder per month).</summary>
+    public bool DrivePdfs { get; set; } = true;
 }
+
+/// <summary>Google Drive backup (Settings → Backup &amp; updates): the Google account, the last copy and what went wrong.</summary>
+public sealed record DriveBackupStatusDto(
+    bool Connected,
+    string? Account,
+    DateTime? LastCopyLocal,
+    string LastCopyText,
+    string? Error,
+    int PdfsWaiting);
 
 public sealed class GmailSettings
 {

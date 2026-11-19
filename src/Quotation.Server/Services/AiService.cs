@@ -48,6 +48,54 @@ public sealed class AiService(
 
     public bool IsConfigured => providers.Create() is not null;
 
+    public const int MaxPhotoBytes = 8 * 1024 * 1024;
+
+    private const string PhotoPrompt = """
+        You read photos of quotation enquiries for T.SAIFUDDIN & CO., a tools and instruments trading company in India: a
+        customer's handwritten or printed list, a WhatsApp screenshot, a letterhead enquiry, a visiting card with items written
+        on it. Write out what the photo asks for, in exactly this plain-text form and nothing else:
+
+        The customer first, if the photo shows one: the company name on the first line, then its address lines, GSTIN,
+        contact person and phone, each on its own line.
+        Then a blank line.
+        Then each item as one line "item name, quantity, rate" with a blank line before each item. Leave out the rate (and
+        its comma) when the photo gives none; write the quantity as 1 when none is given. Numbers without thousand
+        separators or currency signs (15600, not 15,600 or Rs.15,600/-). Keep model numbers, sizes and makes in the name
+        exactly as written ("Mitutoyo 500-196 digital caliper 0-150mm").
+        A size, make or other detail written under an item goes on the line under it.
+
+        Do not add greetings, headings, explanations or anything not in the photo. If a word cannot be read, write your best
+        reading followed by "(?)". If the photo is not an enquiry or cannot be read at all, answer only: NOT READABLE
+        """;
+
+    /// <summary>
+    /// A photo of an enquiry (phone camera) read by Claude into the text of the phone's message box: the customer, then
+    /// "item, qty, rate" lines. Nothing is saved; the person checks the text and presses Make quotation.
+    /// </summary>
+    public async Task<string> ReadPhotoAsync(byte[] image, string mediaType, UserContext user, CancellationToken ct)
+    {
+        var provider = providers.Create()
+                       ?? throw new QuotationException(503, "AI_NOT_CONFIGURED", "Claude AI is not set up. An administrator can switch it on in Settings → Claude AI.");
+        if (image.Length == 0 || image.Length > MaxPhotoBytes)
+            throw new QuotationException(400, ApiErrorCodes.Validation, "The photo is too large. Take it again a little further away.");
+        AiRunResult result;
+        try
+        {
+            result = await provider.RunAsync(new AiRunRequest(PhotoPrompt, "Write out this enquiry.", [], MaxTurns: 1, Image: image,
+                ImageMediaType: mediaType), (_, _) => Task.FromResult(new AiToolOutput("No tools here.", IsError: true)), ct);
+        }
+        catch (AiUnavailableException ex)
+        {
+            throw new QuotationException(503, "AI_UNAVAILABLE", ex.Message);
+        }
+        var text = result.FinalText.Trim();
+        await audit.WriteAsync(user.UserName, user.Machine, "AiReadPhoto", "AiRequest", "", $"{image.Length / 1024} KB photo, {text.Length} letters", ct);
+        if (text.Length == 0 || text.StartsWith("NOT READABLE", StringComparison.OrdinalIgnoreCase))
+            throw new QuotationException(422, "PHOTO_NOT_READ", "Claude could not read an enquiry in this photo. Take it again in good light, straight on.");
+        log.LogInformation("Photo read by {Model} for {User}: {Letters} letters", result.Model, user.UserName, text.Length);
+        return text;
+    }
+
     /// <summary>Analyzes the text; if everything is unambiguous a review draft is created immediately.</summary>
     public async Task<AiRequestDto> AnalyzeAsync(AnalyzeInput input, QuotationSource source, UserContext user, int? emailMessageId,
         CancellationToken ct)

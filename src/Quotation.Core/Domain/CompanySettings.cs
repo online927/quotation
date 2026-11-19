@@ -129,6 +129,19 @@ public sealed class QuotationSettings
 
     /// <summary>The hidden XO game (Ctrl+Alt+Shift+X) for everyone (administrator switch; off by default).</summary>
     public bool XoGame { get; set; }
+
+    /// <summary>
+    /// Stars (administrator switch; on by default): each user stars the items and customers they quote often (☆ / ★ in the
+    /// search lists, PC and phone); starred ones come first in every search.
+    /// </summary>
+    public bool Stars { get; set; } = true;
+
+    /// <summary>
+    /// Festival looks (administrator switch; on by default): on Eid and Diwali the app wears a festival look (Eid: green
+    /// night, gold crescent, lanterns and domes; Diwali: plum night, fireworks, rangoli and diyas) and greets everyone, then
+    /// goes back to each user's own theme. PC, Mac and phone.
+    /// </summary>
+    public bool FestivalLooks { get; set; } = true;
     /// <summary>The message typed into WhatsApp. {number} = the quotation number, {customer} = the customer.</summary>
     public string WhatsAppMessage { get; set; } = "Dear Sir, please find our quotation {number} attached.";
     /// <summary>The message of the WhatsApp button in the To Follow Up list ({number}, {date}, {customer}).</summary>

@@ -15,8 +15,16 @@ public sealed partial class PasteRowViewModel : ObservableObject
     public required int No { get; init; }
     public required string Raw { get; init; }
     public required string Query { get; init; }
+    /// <summary>The item name of an Excel row searched by its part number (looked up when the part number finds nothing).</summary>
+    public string? NameQuery { get; init; }
 
     [ObservableProperty] private decimal? _quantity;
+    /// <summary>The rate from Excel (or typed); empty: the item's Tally rate.</summary>
+    [ObservableProperty] private decimal? _rate;
+    /// <summary>The discount % from Excel (or typed).</summary>
+    [ObservableProperty] private decimal? _discount;
+    /// <summary>The rate came from the pasted rows (shown green).</summary>
+    [ObservableProperty] private bool _rateFromPaste;
     [ObservableProperty] private PasteRowState _state = PasteRowState.Searching;
     [ObservableProperty] private ProductSearchHitDto? _selected;
     [ObservableProperty] private bool _isSearching;
@@ -40,6 +48,10 @@ public sealed partial class PasteRowViewModel : ObservableObject
     public bool IsReady => Selected is not null && Quantity is > 0 && State is PasteRowState.Found or PasteRowState.Choose;
 
     public string ItemName => Selected?.Product.Name ?? "";
+
+    /// <summary>Under an Excel rate that differs from Tally's: "Tally 15,600.00".</summary>
+    public string TallyRateText => Rate is { } r && Selected?.Product.Rate is { } t && t > 0 && t != r ? $"Tally {t:#,##0.00}" : "";
+    public bool ShowsTallyRate => TallyRateText.Length > 0;
 
     public string ItemDetail => State switch
     {
@@ -123,6 +135,7 @@ public sealed partial class PasteRowViewModel : ObservableObject
 
     partial void OnStateChanged(PasteRowState value) => Notify();
     partial void OnQuantityChanged(decimal? value) => Notify();
+    partial void OnRateChanged(decimal? value) => Notify();
     partial void OnIsSearchingChanged(bool value) => Notify();
     partial void OnChosenByUserChanged(bool value) => Notify();
 
@@ -132,9 +145,22 @@ public sealed partial class PasteRowViewModel : ObservableObject
                  {
                      nameof(IsFound), nameof(IsChoose), nameof(IsNotFound), nameof(IsLoading), nameof(ShowsName), nameof(ShowsChoices),
                      nameof(ShowsNothingFound), nameof(ShowsSearchButton), nameof(ShowsSearchBox), nameof(IsReady), nameof(ItemName),
-                     nameof(ItemDetail), nameof(StateText),
+                     nameof(ItemDetail), nameof(StateText), nameof(TallyRateText), nameof(ShowsTallyRate),
                  })
             OnPropertyChanged(name);
         Changed?.Invoke();
     }
+}
+
+/// <summary>One column of rows pasted from Excel (A, B, C …) and what it holds; changing it reads the rows again.</summary>
+public sealed partial class PasteColumnViewModel : ObservableObject
+{
+    public static readonly string[] RoleNames = ["Left out", "Name", "Part No", "Qty", "Rate", "Disc %"];
+
+    public required string Letter { get; init; }
+    public string[] Roles => RoleNames;
+    [ObservableProperty] private int _roleIndex;
+    public Quotation.Core.Search.PastedColumnRole Role => (Quotation.Core.Search.PastedColumnRole)RoleIndex;
+    public Action? Changed { get; set; }
+    partial void OnRoleIndexChanged(int value) => Changed?.Invoke();
 }

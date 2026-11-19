@@ -8,6 +8,17 @@ namespace Quotation.Desktop.ViewModels;
 
 public sealed partial class DashboardViewModel : ViewModelBase, IReturnablePage
 {
+    /// <summary>"Today at a glance", or "Eid Mubarak!  ·  Today at a glance" / "Happy Diwali!  ·  …" on the festival days.</summary>
+    public string GlanceTitle => FestivalLooks.GlanceTitle;
+    public bool IsFestival => ThemeService.Festival is not null;
+
+    /// <summary>The festival look came on or went off.</summary>
+    public void FestivalChanged()
+    {
+        OnPropertyChanged(nameof(GlanceTitle));
+        OnPropertyChanged(nameof(IsFestival));
+    }
+
     private readonly AppSession _session;
     private readonly Action<string> _navigate;
 

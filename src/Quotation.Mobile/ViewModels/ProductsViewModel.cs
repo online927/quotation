@@ -35,7 +35,7 @@ public sealed partial class ProductsViewModel(MainViewModel main) : PageViewMode
         Items.Clear();
         IsEmpty = false;
         if (q.Length == 0) return;
-        foreach (var hit in await main.Session.Api.SearchProductsAsync(q, 30)) Items.Add(new ProductRow(hit.Product));
+        foreach (var hit in await main.Session.Api.SearchProductsAsync(q, 30, starredFirst: StarsOn)) Items.Add(new ProductRow(hit.Product) { IsStarred = hit.IsStarred, StarsOn = StarsOn });
         IsEmpty = Items.Count == 0;
     });
 
@@ -47,6 +47,16 @@ public sealed partial class ProductsViewModel(MainViewModel main) : PageViewMode
         foreach (var other in Items) other.IsOpen = false;
         row.Detail ??= await main.Session.Api.ProductAsync(row.Product.Id);
         row.IsOpen = true;
+    });
+
+    /// <summary>The administrator's Stars switch: a ☆ / ★ on each card; starred ones come first in searches.</summary>
+    public bool StarsOn => main.Session.Company?.Quotation.Stars != false;
+
+    [RelayCommand]
+    private Task StarAsync(ProductRow? row) => row is null ? Task.CompletedTask : RunAsync(async () =>
+    {
+        await main.Session.Api.SetStarAsync("product", row.Product.Id, !row.IsStarred);
+        row.IsStarred = !row.IsStarred;
     });
 
     [RelayCommand]
@@ -62,7 +72,9 @@ public sealed partial class ProductRow(ProductSummaryDto p) : ObservableObject
     public bool IsHidden => Product.Hidden;
 
     [ObservableProperty] private bool _isOpen;
+    [ObservableProperty] private bool _isStarred;
     [ObservableProperty] private ProductDetailDto? _detail;
+    public bool StarsOn { get; init; }
 
     public IReadOnlyList<InfoRow> Info => Detail is not { } d ? [] :
     [

@@ -34,6 +34,15 @@ public sealed class TestServer : WebApplicationFactory<Program>
         public Quotation.Gmail.IGmailClient? Create() => server.Gmail;
     }
 
+    /// <summary>Fake office Google Drive for the Google Drive backup (null = the Google account is not connected).</summary>
+    public FakeDrive? Drive { get; set; }
+
+    private sealed class DriveFactory(TestServer server) : IDriveClientFactory
+    {
+        public bool Connected => server.Drive is not null;
+        public Quotation.Gmail.IDriveClient? Create() => server.Drive;
+    }
+
     /// <summary>
     /// Most tests sign in as "admin" and make quotations, so this test server lets the administrator make documents
     /// (Server:AdministratorsMakeDocuments). False = the real office rule: administrators make no quotations.
@@ -64,6 +73,7 @@ public sealed class TestServer : WebApplicationFactory<Program>
                 .ConfigurePrimaryHttpMessageHandler(() => new SimulatorHttpHandler(Tally));
             services.AddSingleton<IAIProviderFactory>(new FixedFactory(this));
             services.AddSingleton<IGmailClientFactory>(new GmailFactory(this));
+            services.AddSingleton<IDriveClientFactory>(new DriveFactory(this));
             // No gaps or pauses between requests against the in-memory simulator.
             services.AddSingleton(new Quotation.Tally.TallyLoadGuard { MinimumGap = TimeSpan.Zero });
             services.AddSingleton(sp => new LastRateService(sp.GetRequiredService<TallyGateway>(), sp.GetRequiredService<SettingsService>(),

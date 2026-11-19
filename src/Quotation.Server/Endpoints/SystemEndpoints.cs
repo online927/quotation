@@ -180,6 +180,14 @@ public static class SystemEndpoints
             return Results.Ok(AuthService.ToDto(user));
         });
 
+        // The current user's starred items and customers (first in their searches while the Stars switch is on).
+        app.MapGet("/api/me/stars", (HttpContext ctx, StarsService stars) => stars.Get(ctx.User.UserName())).RequireAuthorization();
+        app.MapPut("/api/me/stars", async (StarRequest req, HttpContext ctx, StarsService stars, CancellationToken ct) =>
+        {
+            if (req.Kind is not ("product" or "customer")) return Results.BadRequest(new ApiError("Kind must be product or customer."));
+            return Results.Ok(await stars.SetAsync(ctx.User.UserName(), req, ct));
+        }).RequireAuthorization();
+
         // The current user's own switches.
         app.MapPut("/api/me/preferences", async (MyPreferencesDto req, HttpContext ctx, QuotationDbContext db, AuthService svc, CancellationToken ct) =>
         {

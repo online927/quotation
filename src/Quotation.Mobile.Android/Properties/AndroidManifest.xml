@@ -28,5 +28,17 @@
       <action android:name="android.intent.action.SENDTO" />
       <data android:scheme="mailto" />
     </intent>
+    <!-- Photo of an enquiry (the phone's camera app, or a picture on the phone) and speaking items (the phone's speech recognizer).
+         The camera and the microphone are used by those apps: this app asks for neither permission. -->
+    <intent>
+      <action android:name="android.media.action.IMAGE_CAPTURE" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.GET_CONTENT" />
+      <data android:mimeType="image/*" />
+    </intent>
+    <intent>
+      <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+    </intent>
   </queries>
 </manifest>

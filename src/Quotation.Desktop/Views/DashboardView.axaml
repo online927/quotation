@@ -21,7 +21,7 @@
       <Grid ColumnDefinitions="*,Auto">
         <StackPanel>
           <ctl:PageTitle Text="Dashboard" Icon="dashboard" />
-          <TextBlock Classes="muted" Text="Today at a glance" />
+          <TextBlock Name="GlanceTitle" Classes="muted" Classes.festive="{Binding IsFestival}" Text="{Binding GlanceTitle}" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
           <Button Command="{Binding LoadCommand}" HotKey="F5" ToolTip.Tip="Refresh (F5)">

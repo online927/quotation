@@ -132,4 +132,86 @@
     <Style Selector="Border.pill.status">
       <Setter Property="Padding" Value="13,4" />
     </Style>
+    <!-- Pasted list: a rate that came from the Excel rows -->
+    <Style Selector="NumericUpDown.fromexcel TextBox /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{DynamicResource PillOkBrush}" />
+    </Style>
+    <!-- Quotation page heading: the number "ticket" in the theme's button colour, the status chip, the date pill -->
+    <Style Selector="Border.ticket">
+      <!-- The theme's own colour (the button colour on the dark themes, whose own colour is too light for white letters) -->
+      <Setter Property="Background" Value="{DynamicResource TicketBrush}" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="BoxShadow" Value="0 6 16 0 #33000000" />
+    </Style>
+    <Style Selector="Border.ticketshine">
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Background">
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+          <GradientStop Color="#00FFFFFF" Offset="0" />
+          <GradientStop Color="#33FFFFFF" Offset="1" />
+        </LinearGradientBrush>
+      </Setter>
+    </Style>
+    <Style Selector="Path.ticketicon">
+      <Setter Property="Stroke" Value="White" />
+    </Style>
+    <Style Selector="TextBlock.ticketlabel">
+      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="LetterSpacing" Value="0.8" />
+      <Setter Property="Foreground" Value="#DDFFFFFF" />
+    </Style>
+    <Style Selector="TextBlock.ticketnumber">
+      <Setter Property="FontSize" Value="24" />
+      <Setter Property="FontWeight" Value="ExtraBold" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Border.statuschip, Border.datepill">
+      <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="BoxShadow" Value="0 3 12 0 #22000000" />
+    </Style>
+    <Style Selector="Border.statuschip">
+      <Setter Property="Padding" Value="11,4" />
+    </Style>
+    <Style Selector="Border.datepill">
+      <Setter Property="Padding" Value="15,6" />
+      <Setter Property="MinHeight" Value="40" />
+    </Style>
+    <Style Selector="Border.statuschip Ellipse">
+      <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Border.statuschip TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Border.statuschip.ok Ellipse"><Setter Property="Fill" Value="{DynamicResource GreenBrush}" /></Style>
+    <Style Selector="Border.statuschip.ok TextBlock"><Setter Property="Foreground" Value="{DynamicResource GreenBrush}" /></Style>
+    <Style Selector="Border.statuschip.pending Ellipse"><Setter Property="Fill" Value="{DynamicResource OrangeBrush}" /></Style>
+    <Style Selector="Border.statuschip.pending TextBlock"><Setter Property="Foreground" Value="{DynamicResource OrangeBrush}" /></Style>
+    <Style Selector="Border.statuschip.bad Ellipse"><Setter Property="Fill" Value="{DynamicResource BadBrush}" /></Style>
+    <Style Selector="Border.statuschip.bad TextBlock"><Setter Property="Foreground" Value="{DynamicResource BadBrush}" /></Style>
+    <Style Selector="Path.dateicon">
+      <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <!-- The administrator's date box sits in the pill without a box of its own -->
+    <Style Selector="Border.datepill CalendarDatePicker">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <!-- Tally theme (here, after the styles above, so these win): square boxes without shadows, the number in a dark box
+         like a Tally voucher type -->
+    <Style Selector=".tally Border.ticket">
+      <Setter Property="Background" Value="{DynamicResource TopBarBrush}" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="BoxShadow" Value="0 0 0 0 #00000000" />
+    </Style>
+    <Style Selector=".tally Border.ticketshine">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector=".tally Border.statuschip, .tally Border.datepill">
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="BoxShadow" Value="0 0 0 0 #00000000" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
 </Styles>

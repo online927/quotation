@@ -16,9 +16,9 @@ namespace Quotation.Desktop.Tests;
 public class Round31UiTests
 {
     [AvaloniaTheory]
-    [InlineData(AppTheme.Light)]
+    [InlineData(AppTheme.GlassBlue)]
     [InlineData(AppTheme.Tally)]
-    public async Task The_number_is_the_heading_and_the_date_sits_over_ref_dated(string theme)
+    public async Task The_number_is_in_a_ticket_with_a_status_chip_and_the_date_in_a_pill(string theme)
     {
         using var server = new TestServer(products: 100, customers: 60, today: DateOnly.FromDateTime(DateTime.Today));
         var config = new ClientConfig { FilePath = Path.Combine(server.DataDirectory, "c.json") };
@@ -44,17 +44,18 @@ public class Round31UiTests
             Assert.True(view.FindControl<TextBlock>("HeadingNote")!.IsVisible);
             Assert.Equal("New Quotation", editor.Title); // the back button still names the page
 
-            // The date box is right above "Ref. dated": the same left and right edges, inside the References box.
-            Rect InWindow(Control c) => new(c.TranslatePoint(new Point(0, 0), window)!.Value, c.Bounds.Size);
-            var date = InWindow(view.FindControl<CalendarDatePicker>("DateBox")!);
-            var refDated = InWindow(view.FindControl<TextBox>("RefDateBox")!);
+            // The number in its ticket ("QUOTATION NO." over it; the theme's colour, a square dark box in Tally), the
+            // status as a chip with a dot, the date in a pill on the right: its right edge on the boxes' right edge, and
+            // no word "Dated". The administrator can still change the date (a date box in the pill).
+            Assert.Equal("QUOTATION NO.", view.FindControl<TextBlock>("TicketLabel")!.Text);
+            Assert.Equal(theme == AppTheme.Tally ? new CornerRadius(0) : new CornerRadius(14), view.FindControl<Border>("NumberTicket")!.CornerRadius);
+            Assert.Equal("Draft", editor.StatusChipText);
+            Assert.True(view.FindControl<Border>("StatusChip")!.IsVisible);
             Assert.True(view.FindControl<CalendarDatePicker>("DateBox")!.IsVisible);
-            Assert.InRange(date.Right, refDated.Right - 1, refDated.Right + 1);
-            if (refDated.Width >= 140) Assert.InRange(date.X, refDated.X - 1, refDated.X + 1);
-            else Assert.InRange(date.Width, 139, 141); // narrow window: never too small for the date
-            // Nothing of the title line sticks out past the boxes.
-            var references = refDated.Right + 14;
-            Assert.True(InWindow(view.FindControl<Grid>("DatePanel")!).Right <= references + 1);
+            Rect InWindow(Control c) => new(c.TranslatePoint(new Point(0, 0), window)!.Value, c.Bounds.Size);
+            var references = InWindow(view.FindControl<TextBox>("RefDateBox")!).Right + 14;
+            Assert.InRange(InWindow(view.FindControl<Border>("DatePill")!).Right, references - 2, references + 1);
+            Assert.DoesNotContain(view.FindControl<Grid>("TitleBar")!.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Dated");
 
             // Saved: the number without the note.
             await editor.SelectCustomerAsync((await session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id);
@@ -68,7 +69,7 @@ public class Round31UiTests
         }
         finally
         {
-            ThemeService.Apply(AppTheme.Light);
+            ThemeService.Apply(AppTheme.GlassBlue);
             window.Close();
         }
     }

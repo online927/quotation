@@ -122,6 +122,8 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
         set
         {
             _settings = value;
+            // Eid / Diwali: the festival look while the administrator's switch is on
+            FestivalLooks.Refresh(value?.Quotation.FestivalLooks == true);
             SettingsChanged?.Invoke(this, EventArgs.Empty);
         }
     }

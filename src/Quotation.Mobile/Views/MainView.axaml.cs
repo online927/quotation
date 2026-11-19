@@ -20,7 +20,7 @@ public partial class MainView : UserControl
 
     /// <summary>The Tally theme changes more than colours (PhoneStyles.axaml, ".tally"): square boxes, dark heading bars, yellow choices.</summary>
     private void OnThemeColoursChanged() =>
-        Classes.Set("tally", Quotation.Desktop.Services.ThemeService.Current == Quotation.Contracts.AppTheme.Tally);
+        Classes.Set("tally", Quotation.Desktop.Services.ThemeService.Shown == Quotation.Contracts.AppTheme.Tally);
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {

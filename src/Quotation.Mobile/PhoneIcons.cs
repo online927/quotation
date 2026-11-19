@@ -21,6 +21,8 @@ public static class PhoneIcons
     public const string Share = "M18,3.5 A2.5,2.5 0 1 0 18.01,3.5 Z M6,9.5 A2.5,2.5 0 1 0 6.01,9.5 Z M18,15.5 A2.5,2.5 0 1 0 18.01,15.5 Z M8.2,10.8 L15.8,6.7 M8.2,13.2 L15.8,17.3";
     public const string Paste = "M9,3.5 L15,3.5 L15,6.5 L9,6.5 Z M9,5 L6,5 L6,21 L18,21 L18,5 L15,5";
     public const string Plus = "M12,5 L12,19 M5,12 L19,12";
+    public const string Camera = "M3,8 L7,8 L9,5 L15,5 L17,8 L21,8 L21,19 L3,19 Z M12,9.5 A3.5,3.5 0 1 0 12.01,9.5 Z";
+    public const string Mic = "M9,6 A3,3 0 0 1 15,6 L15,11 A3,3 0 0 1 9,11 Z M5.5,11 A6.5,6.5 0 0 0 18.5,11 M12,17.5 L12,21 M9,21 L15,21";
     public const string Logout = "M15,4 L19,4 L19,20 L15,20 M10,8 L6,12 L10,16 M6,12 L15,12";
     public const string Refresh = "M20,11 A8,8 0 1 0 17.7,16.6 M20,4 L20,11 L13,11";
     public const string User = "M12,4 A4,4 0 1 0 12.01,4 Z M4,21 C5,17 8.5,15 12,15 C15.5,15 19,17 20,21";

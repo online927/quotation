@@ -13,6 +13,9 @@ public sealed class ScriptedProvider(Func<ScriptedProvider.Context, Task> script
     public string Name => "Scripted";
     public AiRunRequest? LastRequest { get; private set; }
 
+    /// <summary>The model's answer text (e.g. a photo read into text).</summary>
+    public string FinalText { get; set; } = "";
+
     public sealed class Context(Func<AiToolCall, CancellationToken, Task<AiToolOutput>> execute, AiRunRequest request)
     {
         public AiRunRequest Request { get; } = request;
@@ -35,7 +38,7 @@ public sealed class ScriptedProvider(Func<ScriptedProvider.Context, Task> script
         LastRequest = request;
         var ctx = new Context(executeTool, request);
         await script(ctx);
-        return new AiRunResult("", ctx.Calls, ctx.Calls.Count + 1, "end_turn", 1000, 200, "scripted");
+        return new AiRunResult(FinalText, ctx.Calls, ctx.Calls.Count + 1, "end_turn", 1000, 200, "scripted");
     }
 
     public static object Draft(string? customerQuery, int? customerId, params object[] lines) => new

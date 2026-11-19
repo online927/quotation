@@ -12,22 +12,44 @@ namespace Quotation.Desktop.Services;
 public static class ThemeService
 {
     private static string? _theme;
+    private static bool _applied;
 
-    /// <summary>The theme now on the screens (null before the first one is applied).</summary>
+    /// <summary>The user's own theme (null before the first one is applied); on festival days the screens wear <see cref="Festival"/>.</summary>
     public static string? Current => _theme;
     private static bool _reduceMotion;
+
+    /// <summary>The festival look worn today instead of the user's theme (Eid, Diwali), or null.</summary>
+    public static string? Festival { get; private set; }
+
+    /// <summary>The look on the screens now: the festival look on festival days, else the user's theme.</summary>
+    public static string? Shown => Festival ?? _theme;
+
+    /// <summary>Puts on (or takes off) the festival look; the user's own theme stays chosen underneath.</summary>
+    public static void SetFestival(string? look)
+    {
+        if (look == Festival) return;
+        Festival = look;
+        if (_applied) Apply(_theme);
+    }
 
     public static void Apply(string? theme)
     {
         if (Application.Current is not { } app) return;
         _theme = theme;
-        app.RequestedThemeVariant = theme switch
+        _applied = true;
+        var shown = Festival ?? theme;
+        var dark = AppTheme.IsDarkTheme(shown) || FestivalLooks.IsFestivalLook(shown);
+        app.RequestedThemeVariant = shown switch
         {
             AppTheme.System => ThemeVariant.Default,
-            _ when AppTheme.IsDarkTheme(theme) => ThemeVariant.Dark,
+            _ when dark => ThemeVariant.Dark,
             _ => ThemeVariant.Light,
         };
-        ColourThemes.Apply(theme);
+        ColourThemes.Apply(shown);
+        // The quotation number's "ticket": the theme's own colour, or the button colour on dark themes (gold, too light
+        // for white letters)
+        var key = dark ? "ActionBrush" : "AccentBrush";
+        if (app.Resources.TryGetResource(key, app.ActualThemeVariant, out var ticket)) app.Resources["TicketBrush"] = ticket;
         ApplyShadow(app);
         ColoursChanged?.Invoke();
     }

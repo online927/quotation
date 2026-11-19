@@ -8,6 +8,17 @@ namespace Quotation.Mobile.ViewModels;
 /// <summary>Dashboard: today's numbers, Tally and Gmail, and the latest quotations.</summary>
 public sealed partial class HomeViewModel(MainViewModel main) : PageViewModel
 {
+    /// <summary>"Today at a glance", or "Eid Mubarak!  ·  Today at a glance" / "Happy Diwali!  ·  …" on the festival days.</summary>
+    public string GlanceTitle => Quotation.Desktop.Services.FestivalLooks.GlanceTitle;
+    public bool IsFestival => Quotation.Desktop.Services.ThemeService.Festival is not null;
+
+    /// <summary>The festival look came on or went off.</summary>
+    public void FestivalChanged()
+    {
+        OnPropertyChanged(nameof(GlanceTitle));
+        OnPropertyChanged(nameof(IsFestival));
+    }
+
     public override string Title => "Dashboard";
 
     [ObservableProperty] private DashboardDto? _data;

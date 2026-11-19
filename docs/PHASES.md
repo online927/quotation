@@ -848,3 +848,45 @@ open a quotation → *History / audit trail* → *Load history*; Diagnostics (ad
     ends a rare test failure on Windows.
 
 Server update needed (10: the finder and its firewall rule; 13).
+
+### Round 33
+
+1. Themes renamed: Glass (Blue) is now **Frost**, Glass (Maroon) is now **Hatims Maroon** (same looks; everyone keeps their
+   theme).
+2. Quotation page heading: the number in a coloured "ticket" (document icon, small "QUOTATION NO." over the big number, the
+   theme's colour, soft shadow); "(provisional)" after it only before the first save; the status as a chip with a coloured
+   dot (● Draft, ● Approved …); the date on the right in a pill with a calendar icon and no word "Dated" (still a date box
+   for the administrator before approval). Every theme, Tally included (square, flat).
+3. Sums in number boxes (Quantity, Rate, Disc. %, P&F and every other number box): type "=12*2", "=3159-5%" (5 % off),
+   "=1500+10%", "=21978/1.18" (the rate without GST) or "=200*10%"; the answer shows under the box in a green chip, and
+   Enter or leaving the box puts it in.
+4. Paste Excel rows with prices: rows copied from Excel (or a price list) come into the pasted-list window with their
+   quantity, rate and discount; the columns are guessed (headings such as Qty / Rate / Disc are read when there are any),
+   and a chip over each column lets you say what it is (Name, Part No, Qty, Rate, Disc %, Left out). The rate from the
+   sheet is used, with the Tally rate shown under it when they differ.
+5. Paste a price column into Rate: a column of prices copied from Excel and pasted into the Rate box fills the rates of
+   the lines from the line being edited downwards ("12 prices pasted into Rate — lines 1 to 12", with Undo).
+6. Stars: ☆ / ★ on each row of the product and customer search lists (PC, Mac and phone): starred ones come first in your
+   own searches, under "★ YOUR STARRED ITEMS", then "OTHER MATCHES". Each user has their own stars. The automatic matching
+   (paste a list, Formater, the phone's message) still takes the best match. Administrator switch: Settings → Quotation
+   → Stars (on at first).
+7. Google Drive backup (Settings → Backup & updates): every database backup and every approved PDF is also copied to the
+   office Google Drive ("TS Quotations" → "Database backups", and "Approved PDFs" with a folder per month), every 15
+   minutes when there is something new, and on "Back up now". Ticks for backups and PDFs; the card shows the Google
+   account, the last copy and what went wrong. Uses the Google account of the Gmail connection: connect it again once so
+   Google asks to allow Google Drive (and switch on "Google Drive API" in the same Google Cloud project as the Gmail API).
+   The app can only see the files it puts there.
+8. Phone: Photo button in "New from a message": take a photo of an enquiry (or choose a picture, e.g. a WhatsApp
+   screenshot); Claude AI reads it into the message box (customer, then "item, qty, rate" lines) to check before Make
+   quotation. Needs Claude AI set up (Settings → Claude AI).
+9. Phone: Speak button in "New from a message": say each item ("two bevel protractors at fifteen thousand six hundred");
+   each becomes a line ("Bevel protractor, 2, 15600"), then say the next or tap Stop. Uses the phone's own speech
+   recognition (Indian English); the app asks for no microphone or camera permission.
+10. Festival looks: on Eid (green night, gold crescent and star, lanterns, mosque domes) and Diwali (plum night, fireworks,
+    rangoli, diyas) the app wears the festival look by itself and greets everyone ("Eid Mubarak!  ·  Today at a glance"),
+    then goes back to each user's own theme. PC, Mac and phone. Eid dates follow a table (the look is on from the day
+    before to two days after, as the moon can move it by a day). Administrator switch: Settings → Quotation → Festival
+    looks (on at first).
+11. Gmail Connection page: the sign-in line says Gmail is read-only and Google Drive is used only for the backup copies.
+
+Server update needed (6: stars; 7: Google Drive backup; 8: reading photos; 10: the administrator's switch).

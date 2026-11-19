@@ -43,6 +43,7 @@ public partial class QuotationEditorView : UserControl
         };
         // A list pasted into the Product box opens the pasted-list box; a single line is typed in as usual.
         ProductBox.InputBox.AddHandler(TextBox.PastingFromClipboardEvent, OnProductPasting, RoutingStrategies.Bubble);
+        RateBox.AddHandler(TextBox.PastingFromClipboardEvent, OnRatePasting, RoutingStrategies.Bubble);
         LinesList.PointerMoved += OnLinesPointerMoved;
         LinesList.PointerReleased += (_, _) => EndDrag();
         LinesList.PointerCaptureLost += (_, _) => EndDrag();
@@ -254,6 +255,30 @@ public partial class QuotationEditorView : UserControl
         catch (Exception) { return; }
         if (string.IsNullOrEmpty(text)) return;
         await PasteIntoProductAsync(vm, box, text);
+    }
+
+    private async void OnRatePasting(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { CanEditContent: true } vm || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard) return;
+        if (e.Source is not TextBox box) return;
+        e.Handled = true; // a column of prices fills the lines; anything else is put in below, as a normal paste would
+        string? text;
+        try { text = await clipboard.GetTextAsync(); }
+        catch (Exception) { return; }
+        if (string.IsNullOrEmpty(text)) return;
+        PasteIntoRate(vm, box, text);
+    }
+
+    /// <summary>What Ctrl+V in Rate does with <paramref name="text"/>: a column of prices fills the lines down (also used by tests).</summary>
+    public static void PasteIntoRate(QuotationEditorViewModel vm, TextBox box, string text)
+    {
+        if (vm.PastePriceColumn(text) > 0) return;
+        var line = text.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? "";
+        var current = box.Text ?? "";
+        var start = Math.Clamp(Math.Min(box.SelectionStart, box.SelectionEnd), 0, current.Length);
+        var end = Math.Clamp(Math.Max(box.SelectionStart, box.SelectionEnd), 0, current.Length);
+        box.Text = current[..start] + line + current[end..];
+        box.SelectionStart = box.SelectionEnd = box.CaretIndex = start + line.Length;
     }
 
     /// <summary>What Ctrl+V in the Product box does with <paramref name="text"/> (also used by tests).</summary>

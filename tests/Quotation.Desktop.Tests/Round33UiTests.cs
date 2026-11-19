@@ -1,0 +1,330 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Quotation.Contracts;
+using Quotation.Core.Domain;
+using Quotation.Desktop.Controls;
+using Quotation.Desktop.Services;
+using Quotation.Desktop.ViewModels;
+using Quotation.Desktop.Views;
+
+namespace Quotation.Desktop.Tests;
+
+/// <summary>Round 33: sums in number boxes, Excel pastes with prices, stars, festivals …</summary>
+public class Round33UiTests
+{
+    internal sealed class Ctx : IDisposable
+    {
+        public required TestServer Server { get; init; }
+        public required AppSession Session { get; init; }
+        public required ShellViewModel Shell { get; init; }
+        public required MainWindow Window { get; init; }
+        public void Dispose()
+        {
+            Window.Close();
+            Shell.Dispose();
+            Server.Dispose();
+        }
+    }
+
+    internal static async Task<Ctx> StartAsync(int products = 300, string user = "ravi", Action<TestServer>? setUp = null)
+    {
+        var server = new TestServer(products: products, customers: 60, today: DateOnly.FromDateTime(DateTime.Today));
+        setUp?.Invoke(server);
+        var admin = await server.LoginAsAdminAsync();
+        await admin.StartSyncAsync(SyncKind.Full, wait: true);
+        await server.LoginAsStandardAsync("ravi");
+        var config = new ClientConfig { FilePath = Path.Combine(server.DataDirectory, "c.json") };
+        var session = new AppSession(config, _ => server.CreateApi()) { Documents = new RecordingLauncher(config) };
+        await session.Api.LoginAsync(user, user == "admin" ? "admin123" : "ravi-pass");
+        var shell = new ShellViewModel(session, () => { });
+        var window = new MainWindow { DataContext = new MainWindowViewModel(session) { Content = shell }, Width = 1366, Height = 768 };
+        window.Show();
+        await UiHelpers.WaitUntil(() => shell.CurrentPage is DashboardViewModel);
+        return new Ctx { Server = server, Session = session, Shell = shell, Window = window };
+    }
+
+    internal static async Task<(QuotationEditorViewModel Editor, QuotationEditorView View)> NewQuotationAsync(Ctx ctx)
+    {
+        ctx.Shell.Navigate("new");
+        var editor = Assert.IsType<QuotationEditorViewModel>(ctx.Shell.CurrentPage);
+        await UiHelpers.WaitUntil(() => editor.NumberText.Contains("provisional"));
+        await editor.SelectCustomerAsync((await ctx.Session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id);
+        Dispatcher.UIThread.RunJobs();
+        return (editor, ctx.Window.FindDescendantOfType<QuotationEditorView>()!);
+    }
+
+    private static TextBox Inner(NumericUpDown box) => box.GetVisualDescendants().OfType<TextBox>().First();
+
+    [AvaloniaFact]
+    public async Task Sums_typed_in_the_number_boxes_are_worked_out()
+    {
+        using var ctx = await StartAsync();
+        var (editor, view) = await NewQuotationAsync(ctx);
+        try
+        {
+            NumericUpDown Box(string name) => view.FindControl<NumericUpDown>(name)!;
+            void Type(string box, string text)
+            {
+                var t = Inner(Box(box));
+                t.Focus();
+                t.Text = text;
+                Dispatcher.UIThread.RunJobs();
+            }
+            string? ChipText(string box) => MathBox.Chip(Box(box)) is { IsOpen: true } chip ? ((TextBlock)((Border)chip.Child!).Child!).Text : null;
+
+            // "=12*2" in Quantity: the answer shows under the box, and leaving the box puts it in
+            Type("QtyBox", "=12*2");
+            Assert.Equal("= 24 · Enter", ChipText("QtyBox"));
+            Type("RateBox", "=3159-5%"); // leaving Quantity
+            Assert.Equal(24m, editor.EntryQuantity);
+            Assert.Null(ChipText("QtyBox"));
+            Assert.Equal("= 3,001.05 · Enter", ChipText("RateBox"));
+            Type("DiscountBox", "=10/0"); // leaving Rate; a sum that cannot be worked out shows nothing
+            Assert.Equal(3001.05m, editor.EntryRate);
+            Assert.Null(ChipText("DiscountBox"));
+            Type("QtyBox", "7"); // leaving Disc. %: its old value stays; plain numbers work as before
+            Assert.Equal(0m, editor.EntryDiscount ?? 0m);
+            Type("RateBox", "=1500+10%");
+            Assert.Equal(7m, editor.EntryQuantity);
+            Inner(Box("QtyBox")).Focus();
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(1650m, editor.EntryRate);
+        }
+        finally
+        {
+            editor.IsDirty = false;
+        }
+    }
+    [AvaloniaFact]
+    public async Task Excel_rows_come_in_with_their_quantities_rates_and_discounts()
+    {
+        using var ctx = await StartAsync();
+        var (editor, view) = await NewQuotationAsync(ctx);
+        try
+        {
+            const string rows = "187-901-10\tUniversal Bevel Protractor\t2\t15200\n530-104\tVernier caliper 0-150mm\t5\t2450\t5%\n2046S\tDial indicator\t3\t3800";
+            Assert.True(await editor.OpenPastedListAsync(rows));
+            await UiHelpers.WaitUntil(() => !editor.PasteStillSearching);
+            Dispatcher.UIThread.RunJobs();
+
+            // How the columns were read, shown as chips that can be changed
+            Assert.True(view.FindControl<StackPanel>("PasteColumnsBar")!.IsVisible);
+            Assert.Equal(["A", "B", "C", "D", "E"], editor.PasteColumns.Select(c => c.Letter));
+            Assert.Equal(["Part No", "Name", "Qty", "Rate", "Disc %"], editor.PasteColumns.Select(c => PasteColumnViewModel.RoleNames[c.RoleIndex]));
+            // The quantities (not 1 any more), the rates and the discount from Excel; Tally's rate under a different one
+            Assert.All(editor.PasteRows, r => Assert.True(r.IsFound, r.Query));
+            Assert.Equal([2m, 5m, 3m], editor.PasteRows.Select(r => r.Quantity!.Value));
+            Assert.Equal([15200m, 2450m, 3800m], editor.PasteRows.Select(r => r.Rate!.Value));
+            Assert.Equal([null, 5m, null], editor.PasteRows.Select(r => r.Discount));
+            Assert.All(editor.PasteRows, r => Assert.True(r.RateFromPaste));
+            var first = editor.PasteRows[0];
+            if (first.Selected!.Product.Rate is { } tally && tally > 0 && tally != 15200m)
+                Assert.Equal($"Tally {tally:#,##0.00}", first.TallyRateText);
+
+            editor.AddPastedLinesCommand.Execute(null);
+            Assert.Equal([15200m, 2450m, 3800m], editor.Lines.Select(l => l.Rate));
+            Assert.Equal([0m, 5m, 0m], editor.Lines.Select(l => l.DiscountPercent));
+            Assert.Equal([2m, 5m, 3m], editor.Lines.Select(l => l.Quantity));
+
+            // A column read wrongly is changed with its chip: rate "Left out" → the Tally rates
+            Assert.True(await editor.OpenPastedListAsync(rows));
+            await UiHelpers.WaitUntil(() => !editor.PasteStillSearching);
+            editor.PasteColumns[3].RoleIndex = 0;
+            await UiHelpers.WaitUntil(() => editor.PasteRows.All(r => r.Rate is null) && !editor.PasteStillSearching);
+            Assert.All(editor.PasteRows, r => Assert.False(r.RateFromPaste));
+            editor.ClosePasteListCommand.Execute(null);
+            Assert.Empty(editor.PasteColumns);
+        }
+        finally
+        {
+            editor.IsDirty = false;
+        }
+    }
+    [AvaloniaFact]
+    public async Task A_column_of_prices_pasted_into_rate_fills_the_lines_with_undo()
+    {
+        using var ctx = await StartAsync();
+        var (editor, view) = await NewQuotationAsync(ctx);
+        try
+        {
+            Assert.True(await editor.OpenPastedListAsync("187-901-10 x 1\n530-104 x 1\n2046S x 1"));
+            await UiHelpers.WaitUntil(() => !editor.PasteStillSearching);
+            editor.AddPastedLinesCommand.Execute(null);
+            Assert.Equal(3, editor.Lines.Count);
+            var old = editor.Lines.Select(l => l.Rate).ToList();
+            var total = editor.GrandTotalText;
+
+            // Prices copied from Excel, pasted into Rate (no line being changed): lines 1 to 3; the extra price is left out
+            var rate = Inner(view.FindControl<NumericUpDown>("RateBox")!);
+            QuotationEditorView.PasteIntoRate(editor, rate, "15,200.00\r\n21500\r\n4100\r\n999\r\n");
+            Assert.Equal([15200m, 21500m, 4100m], editor.Lines.Select(l => l.Rate));
+            Assert.NotEqual(total, editor.GrandTotalText);
+            var notice = ctx.Shell.Toasts.Last();
+            Assert.Equal("3 prices pasted into Rate — lines 1 to 3", notice.Text);
+            Assert.Equal("Undo", notice.ActionText);
+
+            // Undo puts the old rates back
+            notice.Action!();
+            Assert.Equal(old, editor.Lines.Select(l => l.Rate));
+            Assert.Equal(total, editor.GrandTotalText);
+
+            // While line 2 is being changed: from line 2 down; the Rate box shows its new rate
+            editor.EditLineCommand.Execute(editor.Lines[1]);
+            Assert.Equal(2, editor.PastePriceColumn("700\n800\n900"));
+            Assert.Equal([old[0], 700m, 800m], editor.Lines.Select(l => l.Rate));
+            Assert.Equal(700m, editor.EntryRate);
+
+            // One number is pasted into the box as usual
+            editor.CancelEntryCommand.Execute(null);
+            rate.Text = "";
+            QuotationEditorView.PasteIntoRate(editor, rate, "1234.5");
+            Assert.Equal("1234.5", rate.Text);
+            Assert.Equal([old[0], 700m, 800m], editor.Lines.Select(l => l.Rate));
+        }
+        finally
+        {
+            editor.IsDirty = false;
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task A_starred_item_comes_first_in_the_product_list_under_its_heading()
+    {
+        using var ctx = await StartAsync();
+        var (editor, view) = await NewQuotationAsync(ctx);
+        try
+        {
+            var box = view.FindControl<SearchPicker>("ProductBox")!;
+            Assert.NotNull(box.Star); // the administrator's switch is on at first
+            box.Focus();
+            Dispatcher.UIThread.RunJobs();
+            ctx.Window.KeyTextInput("caliper");
+            await UiHelpers.WaitUntil(() => box.IsDropDownOpen && box.Results.Cast<object>().Count() > 3);
+            var hits = box.Results.Cast<ProductSearchHitDto>().ToList();
+            Assert.All(hits, h => Assert.Null(h.Heading)); // nothing starred yet: no headings
+            var star = box.ResultList.GetVisualDescendants().OfType<Border>().First(b => b.Classes.Contains("star"));
+            Assert.True(star.IsVisible);
+
+            // The ☆ on the last row: it is starred and comes first, under "★ YOUR STARRED ITEMS"
+            var last = hits[^1];
+            await box.ToggleStarAsync(box.Star!, last);
+            await UiHelpers.WaitUntil(() => box.Results.Cast<ProductSearchHitDto>().FirstOrDefault()?.Product.Id == last.Product.Id);
+            var now = box.Results.Cast<ProductSearchHitDto>().ToList();
+            Assert.True(now[0].IsStarred);
+            Assert.Equal("★ YOUR STARRED ITEMS", now[0].Heading);
+            Assert.Equal("OTHER MATCHES", now[1].Heading);
+            Assert.Null(now[2].Heading);
+            Assert.True(box.IsDropDownOpen);
+            Assert.Null(editor.EntryProduct); // starring does not pick it
+
+            // ★ again: unstarred, back in its place
+            await box.ToggleStarAsync(box.Star!, now[0]);
+            await UiHelpers.WaitUntil(() => box.Results.Cast<ProductSearchHitDto>().First().Product.Id == hits[0].Product.Id);
+            Assert.All(box.Results.Cast<ProductSearchHitDto>(), h => Assert.False(h.IsStarred));
+        }
+        finally
+        {
+            editor.IsDirty = false;
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Settings_shows_the_google_drive_backup_and_backs_up_now()
+    {
+        using var ctx = await StartAsync(user: "admin", setUp: s => s.Drive = new TestSupport.FakeDrive());
+        var product = (await ctx.Session.Api.SearchProductsAsync("universal bevel protractor")).First().Product;
+        var q = await ctx.Session.Api.CreateQuotationAsync(new SaveQuotationRequest
+        {
+            Date = DateOnly.FromDateTime(DateTime.Today),
+            CustomerId = (await ctx.Session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id,
+            Lines = [new QuotationLineDto { ProductId = product.Id, Quantity = 1, Rate = product.Rate ?? 15600, TallyRate = product.Rate }],
+        });
+        await ctx.Session.Api.ApproveQuotationAsync(q.Id);
+
+        ctx.Shell.Navigate("settings");
+        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is SettingsViewModel { Drive: not null });
+        var settings = (SettingsViewModel)ctx.Shell.CurrentPage!;
+        var view = ctx.Window.FindDescendantOfType<SettingsView>()!;
+        var tabs = view.GetVisualDescendants().OfType<TabControl>().First();
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().First(t => t.Header as string == "Backup & updates");
+        await Task.Delay(300);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(view.FindControl<Border>("DriveCard")!.IsVisible);
+        Assert.True(settings.DriveConnected);
+        Assert.Equal("Not yet (1 PDFs to copy)", settings.DriveLastCopyText);
+        Assert.True(view.FindControl<CheckBox>("DriveBackupsBox")!.IsChecked);
+        Assert.True(view.FindControl<CheckBox>("DrivePdfsBox")!.IsChecked);
+
+        await settings.DriveBackupNowCommand.ExecuteAsync(null);
+        Assert.StartsWith("Today ", settings.DriveLastCopyText);
+        Assert.EndsWith(" + 1 PDF", settings.DriveLastCopyText);
+        Assert.StartsWith("Copied to Google Drive: database ", settings.InfoMessage);
+        Assert.False(settings.HasDriveError);
+        Assert.Equal(2, ctx.Server.Drive!.Paths().Count);
+    }
+
+    [AvaloniaFact]
+    public async Task Eid_and_diwali_looks_come_on_by_themselves_and_go_back_to_the_users_theme()
+    {
+        FestivalLooks.Today = () => new DateOnly(2027, 3, 10); // Eid al-Fitr 2027
+        try
+        {
+            using var ctx = await StartAsync();
+            await UiHelpers.WaitUntil(() => ctx.Session.Settings is not null);
+            Assert.Equal(FestivalLooks.Eid, ThemeService.Festival);
+            Assert.Equal(AppTheme.GlassBlue, ThemeService.Current); // the user's own theme stays chosen
+            Assert.Equal(FestivalLooks.Eid, ThemeService.Shown);
+            Assert.True(ThemeService.IsDark);
+            var page = (LinearGradientBrush)Application.Current!.Resources["PageBrush"]!;
+            Assert.Equal(Color.Parse("#021A18"), page.GradientStops[0].Color);
+            Assert.NotNull(Application.Current.Resources["SideArt"]);
+            var dashboard = Assert.IsType<DashboardViewModel>(ctx.Shell.CurrentPage);
+            Assert.Equal("Eid Mubarak!  ·  Today at a glance", dashboard.GlanceTitle);
+            Assert.Contains("festive", ctx.Window.FindDescendantOfType<DashboardView>()!.FindControl<TextBlock>("GlanceTitle")!.Classes);
+            await Shot(ctx, "festival-eid");
+
+            // The day after the festival days: the user's own theme again
+            FestivalLooks.Today = () => new DateOnly(2027, 3, 14);
+            ctx.Session.Settings = ctx.Session.Settings;
+            Assert.Null(ThemeService.Festival);
+            Assert.Equal(AppTheme.GlassBlue, ThemeService.Shown);
+            Assert.False(ThemeService.IsDark);
+
+            // Diwali
+            FestivalLooks.Today = () => new DateOnly(2027, 10, 29);
+            ctx.Session.Settings = ctx.Session.Settings;
+            Assert.Equal(FestivalLooks.Diwali, ThemeService.Shown);
+            Assert.Equal("Happy Diwali!  ·  Today at a glance", FestivalLooks.GlanceTitle);
+            ctx.Shell.Navigate("history");
+            ctx.Shell.Navigate("dashboard");
+            await Shot(ctx, "festival-diwali");
+
+            // The administrator's switch off: no festival look
+            ctx.Session.Settings!.Quotation.FestivalLooks = false;
+            ctx.Session.Settings = ctx.Session.Settings;
+            Assert.Null(ThemeService.Festival);
+            Assert.Equal(AppTheme.GlassBlue, ThemeService.Shown);
+        }
+        finally
+        {
+            FestivalLooks.Today = () => DateOnly.FromDateTime(DateTime.Today);
+            ThemeService.SetFestival(null);
+        }
+    }
+
+    private static async Task Shot(Ctx ctx, string name)
+    {
+        var dir = Environment.GetEnvironmentVariable("SCREENSHOT_DIR");
+        if (string.IsNullOrEmpty(dir)) return;
+        Directory.CreateDirectory(dir);
+        await Task.Delay(500);
+        Dispatcher.UIThread.RunJobs();
+        ctx.Window.CaptureRenderedFrame()?.Save(Path.Combine(dir, name + ".png"));
+    }
+}

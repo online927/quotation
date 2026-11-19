@@ -87,6 +87,17 @@ public partial class QuotationApiClient
         SendAsync(HttpMethod.Post, $"api/users/{id}/reset-password", new CreateUserRequest("", "", password, default), ct);
     public Task<UserDto> UpdateUserAsync(int id, UpdateUserRequest req, CancellationToken ct = default) =>
         SendAsync<UserDto>(HttpMethod.Put, $"api/users/{id}", req, ct);
+    /// <summary>Claude reads the enquiry in a photo (phone camera) into text for the message box.</summary>
+    public async Task<string> ReadPhotoAsync(byte[] image, string mediaType = "image/jpeg", CancellationToken ct = default) =>
+        (await PostAsync<ReadPhotoResponse>("api/ai/read-photo", new ReadPhotoRequest(Convert.ToBase64String(image), mediaType), ct)).Text;
+
+    /// <summary>The items and customers this user starred.</summary>
+    public Task<StarsDto> StarsAsync(CancellationToken ct = default) => GetAsync<StarsDto>("api/me/stars", ct);
+
+    /// <summary>Stars or unstars an item ("product") or a customer ("customer").</summary>
+    public Task<StarsDto> SetStarAsync(string kind, int id, bool on, CancellationToken ct = default) =>
+        SendAsync<StarsDto>(HttpMethod.Put, "api/me/stars", new StarRequest(kind, id, on), ct);
+
     public Task<UserDto> SetMyPreferencesAsync(MyPreferencesDto prefs, CancellationToken ct = default) =>
         SendAsync<UserDto>(HttpMethod.Put, "api/me/preferences", prefs, ct);
 
@@ -268,13 +279,17 @@ public partial class QuotationApiClient
 public partial class QuotationApiClient
 {
     /// <param name="includeHidden">Also items marked "Do Not Use" (DNU) in Tally (Products page only).</param>
-    public Task<List<ProductSearchHitDto>> SearchProductsAsync(string query, int limit = 20, CancellationToken ct = default, bool includeHidden = false) =>
-        GetAsync<List<ProductSearchHitDto>>($"api/products/search?limit={limit}{Q("q", query)}{(includeHidden ? "&includeHidden=true" : "")}", ct);
+    /// <param name="starredFirst">The user's starred items first (lists people pick from by hand; not for automatic matching).</param>
+    public Task<List<ProductSearchHitDto>> SearchProductsAsync(string query, int limit = 20, CancellationToken ct = default, bool includeHidden = false,
+        bool starredFirst = false) =>
+        GetAsync<List<ProductSearchHitDto>>(
+            $"api/products/search?limit={limit}{Q("q", query)}{(includeHidden ? "&includeHidden=true" : "")}{(starredFirst ? "&starredFirst=true" : "")}", ct);
 
     public Task<ProductDetailDto> ProductAsync(int id, CancellationToken ct = default) => GetAsync<ProductDetailDto>($"api/products/{id}", ct);
 
-    public Task<List<CustomerSearchHitDto>> SearchCustomersAsync(string query, int limit = 20, CancellationToken ct = default) =>
-        GetAsync<List<CustomerSearchHitDto>>($"api/customers/search?limit={limit}{Q("q", query)}", ct);
+    /// <param name="starredFirst">The user's starred customers first (lists people pick from by hand; not for automatic matching).</param>
+    public Task<List<CustomerSearchHitDto>> SearchCustomersAsync(string query, int limit = 20, CancellationToken ct = default, bool starredFirst = false) =>
+        GetAsync<List<CustomerSearchHitDto>>($"api/customers/search?limit={limit}{Q("q", query)}{(starredFirst ? "&starredFirst=true" : "")}", ct);
 
     public Task<CustomerDetailDto> CustomerAsync(int id, CancellationToken ct = default) => GetAsync<CustomerDetailDto>($"api/customers/{id}", ct);
 
@@ -406,6 +421,13 @@ public partial class QuotationApiClient
         using var doc = await System.Text.Json.JsonDocument.ParseAsync(await r.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
         return doc.RootElement.GetProperty("path").GetString() ?? "";
     }
+
+    /// <summary>Google Drive backup: the Google account, the last copy and what went wrong (administrators).</summary>
+    public Task<DriveBackupStatusDto> DriveBackupAsync(CancellationToken ct = default) => GetAsync<DriveBackupStatusDto>("api/diagnostics/drive", ct);
+
+    /// <summary>Google Drive backup: back up now and copy everything new (administrators).</summary>
+    public Task<DriveBackupStatusDto> DriveBackupNowAsync(CancellationToken ct = default) =>
+        PostAsync<DriveBackupStatusDto>("api/diagnostics/drive", null, ct);
 }
 
 public partial class QuotationApiClient

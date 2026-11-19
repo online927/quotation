@@ -10,11 +10,14 @@ public sealed record AiToolCall(string Id, string Name, JsonElement Input);
 
 public sealed record AiToolOutput(string Content, bool IsError = false);
 
+/// <param name="Image">A picture sent with the message (a photo of an enquiry), or null.</param>
 public sealed record AiRunRequest(
     string SystemPrompt,
     string UserMessage,
     IReadOnlyList<AiToolDefinition> Tools,
-    int MaxTurns = 10);
+    int MaxTurns = 10,
+    byte[]? Image = null,
+    string ImageMediaType = "image/jpeg");
 
 public sealed record AiRunResult(
     string FinalText,

@@ -9,7 +9,7 @@
     <Grid ColumnDefinitions="*,Auto,Auto">
       <StackPanel>
         <TextBlock Classes="h1" Text="Dashboard" />
-        <TextBlock Classes="muted" Text="Today at a glance" />
+        <TextBlock Name="GlanceTitle" Classes="muted" Classes.festive="{Binding IsFestival}" Text="{Binding GlanceTitle}" />
       </StackPanel>
       <Button Grid.Column="1" Classes="round" Margin="0,0,8,0" Command="{Binding RefreshCommand}">
         <Path Classes="icon" Data="{x:Static m:PhoneIcons.Refresh}" Width="16" Height="16" />

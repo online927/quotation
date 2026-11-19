@@ -1,3 +1,4 @@
+using Quotation.TestSupport;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.LogicalTree;
@@ -157,6 +158,81 @@ public class PhoneAppTests
     }
 
     [AvaloniaFact]
+    public async Task Products_and_customers_can_be_starred_on_the_phone_and_come_first()
+    {
+        using var ctx = await PhoneContext.StartAsync();
+        await ctx.Main.ShowTabCommand.ExecuteAsync(Tabs.Products);
+        var products = (ProductsViewModel)ctx.Main.Page!;
+        Assert.True(products.StarsOn);
+        products.Search = "caliper";
+        await Ui.WaitUntil(() => !products.IsBusy && products.Items.Count > 3);
+        var last = products.Items[^1];
+        Assert.True(last.StarsOn);
+        await products.StarCommand.ExecuteAsync(last);
+        Assert.True(last.IsStarred);
+        await products.LoadAsync();
+        Assert.Equal(last.Product.Id, products.Items[0].Product.Id); // starred ones first
+        Assert.True(products.Items[0].IsStarred);
+        await ctx.ShotAsync("phone-7-starred");
+
+        await ctx.Main.ShowTabCommand.ExecuteAsync(Tabs.Customers);
+        var customers = (CustomersViewModel)ctx.Main.Page!;
+        customers.Search = "a";
+        await Ui.WaitUntil(() => !customers.IsBusy && customers.Items.Count > 3);
+        var lastCustomer = customers.Items[^1];
+        await customers.StarCommand.ExecuteAsync(lastCustomer);
+        await customers.LoadAsync();
+        Assert.Equal(lastCustomer.Id, customers.Items[0].Id);
+        Assert.True(customers.Items[0].IsStarred);
+    }
+
+    [AvaloniaFact]
+    public async Task A_photo_of_an_enquiry_and_spoken_items_fill_the_message_box()
+    {
+        using var ctx = await PhoneContext.StartAsync();
+        var read = new ScriptedProvider(_ => Task.CompletedTask)
+        {
+            FinalText = "SONEPAR INDIA PRIVATE LIMITED\n- Peenya, Bengaluru\n\n187-901-10 universal bevel protractor, 2",
+        };
+        ctx.Server.AiProvider = read;
+        await ctx.Main.ShowTabCommand.ExecuteAsync(Tabs.More);
+        await ((MoreViewModel)ctx.Main.Page!).NewFromMessageCommand.ExecuteAsync(null);
+        var message = Assert.IsType<MessageViewModel>(ctx.Main.Page);
+
+        // Photo: the camera's picture goes to Claude; what it reads fills the box
+        ctx.Phone.Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3];
+        await message.PhotoCommand.ExecuteAsync(null);
+        Assert.Equal("camera", ctx.Phone.Done[^1]);
+        Assert.Null(message.ErrorMessage);
+        Assert.StartsWith("SONEPAR INDIA PRIVATE LIMITED", message.Text);
+        Assert.Equal("Read from the photo · check it, then Make quotation", message.InfoMessage);
+        Assert.Equal(ctx.Phone.Photo, read.LastRequest!.Image);
+        Assert.Equal("image/jpeg", read.LastRequest.ImageMediaType);
+
+        // Speak: each item said becomes a line; nothing more said stops
+        ctx.Phone.Speech.Enqueue("two vernier calipers at three thousand one hundred fifty nine");
+        ctx.Phone.Speech.Enqueue("530-104 vernier caliper 0-150mm 1 nos at 3,159");
+        await message.SpeakCommand.ExecuteAsync(null);
+        Assert.False(message.IsListening);
+        Assert.Contains("\n\nVernier caliper, 2, 3159", message.Text.Replace("\r", ""));
+        Assert.EndsWith("530-104 vernier caliper 0-150mm, 1, 3159", message.Text);
+        Assert.Equal("2 spoken items added · check, then Make quotation", message.InfoMessage);
+
+        await message.MakeCommand.ExecuteAsync(null);
+        await Ui.WaitUntil(() => !message.IsBusy);
+        Assert.True(message.HasResult);
+        Assert.Equal("SONEPAR INDIA PRIVATE LIMITED", message.CustomerName, ignoreCase: true);
+        Assert.Equal(3, message.Lines.Count);
+
+        // A photo Claude cannot read: the reason is shown, the text stays
+        read.FinalText = "NOT READABLE";
+        await message.PictureCommand.ExecuteAsync(null);
+        Assert.Equal("choose picture", ctx.Phone.Done[^1]);
+        Assert.Contains("could not read an enquiry", message.ErrorMessage);
+        Assert.StartsWith("SONEPAR", message.Text);
+    }
+
+    [AvaloniaFact]
     public async Task A_pasted_message_becomes_an_approved_quotation()
     {
         using var ctx = await PhoneContext.StartAsync();
@@ -212,7 +288,7 @@ public class PhoneAppTests
         var more = (MoreViewModel)ctx.Main.Page!;
         Assert.Equal(AppTheme.GlassBlue, more.Theme!.Key); // the start theme (Round 32)
         Assert.DoesNotContain(more.Themes, t => t.Name is "Same as the phone" or "Default Light" or "Default Dark");
-        Assert.Equal("Glass (Blue)", more.Themes[0].Name);
+        Assert.Equal("Frost", more.Themes[0].Name); // Glass (Blue) is called Frost since Round 33
         try
         {
             foreach (var theme in new[] { AppTheme.Graphite, AppTheme.Ocean, AppTheme.Midnight, AppTheme.GlassMaroon, AppTheme.ForestGold })

@@ -142,65 +142,49 @@ Where things usually are:
     a Tailscale firewall rule.
 
 
-7. STATE AT THE END OF ROUND 32 (shipped, 0.9.73)
--------------------------------------------------
-Round 32 delivered: Item column out of quotation lists; installers' publisher "Mohamed"; Tally page help line with the
-real sync times; WhatsApp app or WhatsApp Web (My Settings, this PC); themes Default Light/Dark/Same as Windows removed;
-Grass Green (was Glass (Green)) with grass drawing; Dashboard Gmail/Claude AI chips spaced; seal PIN pop-up with a
-rubber-stamp logo; side menu glides on Hide/Show menu; phone/Mac connect with the server PC name; update pop-up without
-"An administrator asks everyone to update now"; My Settings → Selected text (this PC): Soft blue (default), Blue sketch,
-Yellow highlighter, Theme colour; backups clear only their own database's connections.
+7. STATE AT THE END OF ROUND 33
+--------------------------------
+Round 33 delivered the whole list (#97–#111), on PC, Mac and phone where it applies:
+  * Themes renamed: Glass (Blue) → Frost, Glass (Maroon) → Hatims Maroon (ThemeNames only).
+  * Quotation page heading: number "ticket" (TicketBrush = AccentBrush, or ActionBrush on dark themes), status chip,
+    date pill without "Dated" (QuotationEditorView TitleBar, Styles/DocumentStyles.axaml incl. the .tally overrides).
+  * Sums in number boxes: Core/Calculation/BoxMaths.cs + Desktop/Controls/MathBox.cs (attached to every NumericUpDown
+    by a style in App.axaml; NumericUpDown.TextConverter: Convert = text → value on every key, ConvertBack = value → text).
+  * Excel rows with qty/rate/disc: Core/Search/PastedListParser.cs (IsTable, GuessColumns, HeaderRole, ParseTable);
+    pasted-list window with column chips (PasteColumnViewModel) and RATE / DISC % columns.
+  * Price column pasted into Rate: QuotationEditorViewModel.PastePriceColumn + toast with Undo.
+  * Stars: server Services/StarsService.cs (settings key "stars:<user>"), /api/me/stars (GET/PUT), search endpoints
+    mark IsStarred and put starred first only with starredFirst=true (the pick lists; automatic matching never asks);
+    SearchPicker.Star + Border.star (a click on it does not pick the row); headings "★ YOUR STARRED ITEMS" /
+    "OTHER MATCHES" (DTO Heading, JsonIgnore); phone ☆/★ buttons on product and customer cards. Switch: Stars.
+  * Google Drive backup: Gmail project GoogleDriveClient (scope drive.file added to the Gmail sign-in), server
+    Services/DriveBackupService.cs (+ worker every 15 min, state in settings key "drive-backup"), /api/diagnostics/drive
+    (GET status, POST back up now), Settings → Backup & updates card. Tests use TestSupport/FakeDrive.
+    The user must: connect Gmail again once (Google then asks for Drive) and enable "Google Drive API" in the same
+    Google Cloud project.
+  * Phone Photo: IPhoneActions.TakePhotoAsync (Android camera intent / picture chooser, made ≤1600 px JPEG, turned by
+    EXIF), POST /api/ai/read-photo → AiService.ReadPhotoAsync (Claude image block, no tools, MaxTurns 1).
+  * Phone Speak: IPhoneActions.ListenAsync (Android RecognizerIntent, en-IN), Core/Formater/SpokenItem.cs turns speech
+    into "name, qty, rate" lines; "Listening…" card with Stop.
+  * Festival looks: Contracts/FestivalCalendar.cs (date table Eid al-Fitr/al-Adha 2026–2032, Diwali 2026–2032; Eid look
+    day-1..day+2, Diwali day-2..day+1), UiShared/Services/FestivalLooks.cs, ThemeService.Festival/Shown (Current stays the
+    user's own theme; festival ids are never saved), palettes in ColourThemes, drawings in ThemeScenery. Refreshed
+    whenever settings are read (AppSession.Settings setter, PhoneSession.AfterSignInAsync). Switch: Festival looks.
+  * Android code can be compile-checked here without the Android SDK: a scratch net10.0 project that compiles
+    src/Quotation.Mobile.Android/*.cs against ~/.dotnet/packs/Microsoft.Android.Ref.36/*/ref/net10.0/*.dll and the
+    compile dlls listed in src/Quotation.Mobile.Android/obj/project.assets.json (the SDK download is blocked here).
 
-Theme list now (visible names): Glass (Blue) [start theme], Graphite, Grass Green, Glass (Maroon), Parchment,
-Forest & Gold, Hero Light, Ocean, Midnight Stars, Tally.
+Theme list now (visible names): Frost [start theme], Graphite, Grass Green, Hatims Maroon, Parchment, Forest & Gold,
+Hero Light, Ocean, Midnight Stars, Tally. (+ Eid / Diwali festival looks, by themselves on the festival days.)
 
 DISCARDED by the user (never propose again unless asked): Taj Mahal theme; Maroon Mahal theme; discount by brand;
 "copy as WhatsApp text"; full quotation page redesign (A paper sheet / B total on the right / C spreadsheet); fixed
 phone signing key (no uninstall); Tailscale firewall rule; "See-through" selected-text option.
 
 
-8. ON THE LIST — NOT BUILT YET (designs approved; pictures in docs/handoff/previews/)
--------------------------------------------------------------------------------------
- #97  Rename theme "Glass (Blue)" → "Frost" (visible name only, ThemeNames). No server update.
- #98  Rename theme "Glass (Maroon)" → "Hatims Maroon" (visible name only). No server update.
- #103 Starred items and customers (103-starred-items.png): ☆/★ on each row of the product (and customer) search list;
-      starred ones first under "YOUR STARRED ITEMS", then "OTHER MATCHES". Administrator On/Off switch in Settings.
-      SERVER UPDATE (switch, and stars kept per user).
- #104 Maths in boxes (104-maths-in-boxes.png): in Quantity, Rate, Disc. % and P&F, a sum starting with "=" is worked
-      out: "=12*2" → 24, "=3159-5%" → 3,001.05, "=21978/1.18" → rate without GST; the answer shows under the box in a
-      green chip, Enter puts it in. No server update.
- #105 Google Drive backup (105-google-drive-backup.png): card in Settings → Backup: Google account (same sign-in as
-      Gmail) Connected/Disconnect, copy ✓ Database backups ✓ Approved PDFs (a folder per month), last copy line,
-      "Back up now". SERVER UPDATE.
- #106 Phone: photo → quotation (106-107-phone-photo-and-voice.png): Photo button in the phone's message box; camera;
-      Claude AI reads the enquiry into the message box ("Read from the photo · check it, then Make quotation").
-      SERVER UPDATE + the Claude AI key must be set up.
- #107 Phone: voice entry (same picture): Speak button; "Listening…" sheet; each spoken item is added as a line
-      ("Added: Bevel protractor, 2, 15600"). Phone app only, no server update.
- #108 Festival themes Eid and Diwali (108-festival-eid.png, 108-festival-diwali.png): turn on by themselves for the
-      festival days and go back to the user's theme after; administrator On/Off switch → SERVER UPDATE.
-      Eid: deep green night (page #021A18→#05302C→#0A4A43, cards #0B2F2B, accent gold #E8C15A, menu chosen gold), gold
-      crescent and star, hanging lanterns and small stars at the top (kept clear of the heading and Refresh button),
-      mosque domes and minarets at the foot, crescent in the side menu; greeting "Eid Mubarak!  ·  Today at a glance".
-      Diwali: plum night (page #160822→#2A0C30→#44142E, cards #2A1230, accent #FFB347, action #E8590C), fireworks in
-      pink/gold/blue, rangoli flower, a row of diyas with flames at the foot, three diyas in the side menu; greeting
-      "Happy Diwali!  ·  Today at a glance". Drawings: docs/handoff/tools/festival-art.py <out dir> (writes art.json:
-      sky, sun, far, near, side for each); colours and brushes: docs/handoff/tools/ZzFestivalPreview.cs.txt.
-      Eid dates move every year (Islamic calendar) — keep a date table or let the administrator set the days.
- #109 Quotation page heading (109-quotation-heading.png): the number in a blue gradient "ticket" (document icon,
-      small "QUOTATION NO." over the big number, theme colour, soft shadow); "(provisional)" after it only before the
-      first save; status as a white chip with a coloured dot ("● Draft" blue, "● Approved" green, etc.); date on the
-      right in a white pill with a calendar icon and NO word "Dated" (still a date box for the administrator before
-      approval). Must work in every theme incl. Tally. No server update.
- #110 Paste Excel rows with prices (110-paste-excel-rows-with-prices.png): rows pasted into the Product box are read by
-      column — part no./name, Qty (whole number), Rate (money), Disc % (%); the pasted-list window gets Qty, Rate
-      (green when from Excel, "Tally <rate>" small under it when different) and Disc % columns; chips at the top show
-      how columns were read ("A Part No ▾ B Name ▾ C Qty ▾ D Rate ▾ E Disc % ▾") and can be changed. ALSO FIXES A BUG:
-      today "187-901-10<TAB>2" comes in as Qty 1 and the 2 stays in the search words (PastedListParser). Excel rate is
-      used on this quotation only; Tally not changed. No server update.
- #111 Paste a price column into Rate (111-paste-price-column.png): copy only prices in Excel, click Rate of a line,
-      Ctrl+V → prices fill down one per line from that line (extra prices left out), totals update, dark notice
-      "N prices pasted into Rate — lines x to y" with Undo (puts the old rates back). No server update.
+8. ON THE LIST — NOT BUILT YET
+------------------------------
+ (nothing — the list is empty after Round 33)
 
 
 9. FIRST MESSAGE IN A NEW SESSION

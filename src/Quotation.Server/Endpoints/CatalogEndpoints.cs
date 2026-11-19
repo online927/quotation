@@ -4,6 +4,7 @@ using Quotation.Contracts;
 using Quotation.Core.Gst;
 using Quotation.Data;
 using Quotation.Data.Entities;
+using Quotation.Server.Infrastructure;
 using Quotation.Server.Services;
 using Quotation.Tally;
 
@@ -16,25 +17,34 @@ public static class CatalogEndpoints
         var p = app.MapGroup("/api/products").RequireAuthorization();
 
         // Items marked "Do Not Use" (DNU) are left out unless includeHidden (the Products page's "Show DNU items").
-        p.MapGet("/search", async (string? q, int? limit, bool? includeHidden, CatalogSearchService search, QuotationDbContext db,
-            CancellationToken ct) =>
+        // starredFirst: the user's starred items come first (only the lists people pick from by hand ask for it; the
+        // automatic matching — paste a list, Formater, the phone's message — keeps the best match on top).
+        p.MapGet("/search", async (string? q, int? limit, bool? includeHidden, bool? starredFirst, CatalogSearchService search, QuotationDbContext db,
+            StarsService stars, HttpContext ctx, CancellationToken ct) =>
         {
             var take = Math.Clamp(limit ?? 20, 1, 100);
             var withHidden = includeHidden == true;
+            var starred = stars.Products(ctx.User.UserName());
+            var first = starredFirst == true && starred.Count > 0;
+            var wide = first ? Math.Min(100, take * 2) : take; // a starred one just below the top is not missed
             if (string.IsNullOrWhiteSpace(q))
             {
-                var first = await db.Products.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Name).Take(take * 3).ToListAsync(ct);
-                return first.Select(x => (Product: x, Hidden: search.IsHidden(x.Description)))
+                var mine = !first ? [] : await db.Products.AsNoTracking().Where(x => !x.IsDeleted && starred.Contains(x.Id)).OrderBy(x => x.Name).ToListAsync(ct);
+                var byName = await db.Products.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Name).Take(take * 3).ToListAsync(ct);
+                return mine.Concat(byName.Where(x => !mine.Any(m => m.Id == x.Id))).Select(x => (Product: x, Hidden: search.IsHidden(x.Description)))
                     .Where(x => withHidden || !x.Hidden).Take(take)
-                    .Select(x => new ProductSearchHitDto(ToSummary(x.Product, x.Hidden), 0, new SearchMatchDto(true, false, false, false, []))).ToList();
+                    .Select(x => new ProductSearchHitDto(ToSummary(x.Product, x.Hidden), 0, new SearchMatchDto(true, false, false, false, []))
+                    {
+                        IsStarred = starred.Contains(x.Product.Id),
+                    }).ToList();
             }
-            var hits = (await search.ProductsAsync(ct)).Search(q, take).ToList();
-            if (withHidden) hits = hits.Concat((await search.HiddenProductsAsync(ct)).Search(q, take)).OrderByDescending(h => h.Score).Take(take).ToList();
+            var hits = (await search.ProductsAsync(ct)).Search(q, wide).ToList();
+            if (withHidden) hits = hits.Concat((await search.HiddenProductsAsync(ct)).Search(q, wide)).OrderByDescending(h => h.Score).Take(wide).ToList();
             var result = new List<ProductSearchHitDto>();
             foreach (var h in hits)
                 result.Add(new ProductSearchHitDto(await search.WithRememberedAsync(CatalogSearchService.ToSummary(h.Item), ct), Math.Round(h.Score, 2),
-                    CatalogSearchService.ToMatch(h.Evidence)));
-            return result;
+                    CatalogSearchService.ToMatch(h.Evidence)) { IsStarred = starred.Contains(h.Item.Id) });
+            return (first ? StarsService.StarredFirst(result, r => r.Product.Id, starred) : result).Take(take).ToList();
         });
 
         p.MapGet("/{id:int}", async (int id, QuotationDbContext db, CatalogSearchService search, CancellationToken ct) =>
@@ -45,17 +55,27 @@ public static class CatalogEndpoints
 
         var c = app.MapGroup("/api/customers").RequireAuthorization();
 
-        c.MapGet("/search", async (string? q, int? limit, CatalogSearchService search, QuotationDbContext db, CancellationToken ct) =>
+        c.MapGet("/search", async (string? q, int? limit, bool? starredFirst, CatalogSearchService search, QuotationDbContext db, StarsService stars,
+            HttpContext ctx, CancellationToken ct) =>
         {
             var take = Math.Clamp(limit ?? 20, 1, 100);
+            var starred = stars.Customers(ctx.User.UserName());
+            var first = starredFirst == true && starred.Count > 0;
             if (string.IsNullOrWhiteSpace(q))
             {
-                var first = await db.Customers.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Name).Take(take).ToListAsync(ct);
-                return first.Select(x => new CustomerSearchHitDto(ToSummary(x), 0, new SearchMatchDto(true, false, false, false, []))).ToList();
+                var mine = !first ? [] : await db.Customers.AsNoTracking().Where(x => !x.IsDeleted && starred.Contains(x.Id)).OrderBy(x => x.Name).ToListAsync(ct);
+                var byName = await db.Customers.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Name).Take(take).ToListAsync(ct);
+                return mine.Concat(byName.Where(x => !mine.Any(m => m.Id == x.Id))).Take(take)
+                    .Select(x => new CustomerSearchHitDto(ToSummary(x), 0, new SearchMatchDto(true, false, false, false, [])) { IsStarred = starred.Contains(x.Id) })
+                    .ToList();
             }
             var index = await search.CustomersAsync(ct);
-            return index.Search(q, take).Select(h =>
-                new CustomerSearchHitDto(CatalogSearchService.ToSummary(h.Item), Math.Round(h.Score, 2), CatalogSearchService.ToMatch(h.Evidence))).ToList();
+            var hits = index.Search(q, first ? Math.Min(100, take * 2) : take).Select(h =>
+                new CustomerSearchHitDto(CatalogSearchService.ToSummary(h.Item), Math.Round(h.Score, 2), CatalogSearchService.ToMatch(h.Evidence))
+                {
+                    IsStarred = starred.Contains(h.Item.Id),
+                });
+            return (first ? StarsService.StarredFirst(hits, h => h.Customer.Id, starred) : hits.ToList()).Take(take).ToList();
         });
 
         c.MapGet("/{id:int}", async (int id, QuotationDbContext db, CancellationToken ct) =>

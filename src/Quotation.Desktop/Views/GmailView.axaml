@@ -37,8 +37,8 @@
           <Button ctl:ButtonIcon.Kind="unlink" Content="Disconnect" Command="{Binding DisconnectCommand}" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <TextBlock FontSize="12" Text="Read-only Google sign-in; your Gmail password is never seen." VerticalAlignment="Center" />
-          <Border Classes="info" ToolTip.Tip="Sign-in happens on Google's page; this application never sees your Gmail password. Access is read-only; the token is stored encrypted on the Quotation Server. Enable polling and set the search query in Settings → Gmail.">
+          <TextBlock FontSize="12" Text="Google sign-in: Gmail read-only, Google Drive only for the backup copies; your password is never seen." VerticalAlignment="Center" />
+          <Border Classes="info" ToolTip.Tip="Sign-in happens on Google's page; this application never sees your Gmail password. Gmail is read-only; Google Drive is used only for the files the app puts there (Google Drive backup, Settings → Backup &amp; updates). Connected before the Google Drive backup? Connect again once so Google asks to allow Google Drive. The token is stored encrypted on the Quotation Server. Enable polling and set the search query in Settings → Gmail.">
             <Path Classes="infoicon" />
           </Border>
         </StackPanel>

@@ -11,7 +11,6 @@
   <Style Selector="Border.keybar"><Setter Property="IsVisible" Value="False" /></Style>
   <Style Selector="TextBlock.navhot"><Setter Property="IsVisible" Value="False" /></Style>
   <Style Selector="TextBlock.sidehead.caps"><Setter Property="IsVisible" Value="False" /></Style>
-  <Style Selector="Border.vtype"><Setter Property="IsVisible" Value="False" /></Style>
 
   <!-- ===== Side menu: like Gateway of Tally ===== -->
   <Style Selector=".tally Border.sidebar:not(.collapsed) TextBlock.sidehead.caps"><Setter Property="IsVisible" Value="True" /></Style>
@@ -130,17 +129,6 @@
     <Setter Property="Background" Value="{DynamicResource ListSelectedBrush}" />
   </Style>
   <Style Selector=".tally ListBoxItem:selected"><Setter Property="FontWeight" Value="Bold" /></Style>
-
-  <!-- ===== Quotation screen: the document type in a dark box, like a Tally voucher type ===== -->
-  <Style Selector=".tally Border.vtype">
-    <Setter Property="IsVisible" Value="True" />
-    <Setter Property="Background" Value="{DynamicResource TopBarBrush}" />
-    <Setter Property="Padding" Value="10,3" />
-  </Style>
-  <Style Selector=".tally Border.vtype TextBlock">
-    <Setter Property="Foreground" Value="White" />
-    <Setter Property="FontWeight" Value="Bold" />
-  </Style>
 
   <!-- ===== Question boxes: square with a thin dark line (Tally's "Accept?") ===== -->
   <Style Selector=".tally Border.question">

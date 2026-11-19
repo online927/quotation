@@ -271,6 +271,12 @@
                 </StackPanel>
                 <TextBlock Classes="h2" Text="Greetings" Margin="0,8,0,0" />
                 <ToggleSwitch Name="GreetingsSwitch" IsChecked="{Binding Settings.Quotation.Greetings}" OnContent="On" OffContent="Off" />
+                <TextBlock Classes="h2" Text="Stars" Margin="0,8,0,0" />
+                <ToggleSwitch Name="StarsSwitch" IsChecked="{Binding Settings.Quotation.Stars}"
+                              OnContent="On: everyone can star items and customers; starred ones come first in their searches" OffContent="Off" />
+                <TextBlock Classes="h2" Text="Festival looks" Margin="0,8,0,0" />
+                <ToggleSwitch Name="FestivalLooksSwitch" IsChecked="{Binding Settings.Quotation.FestivalLooks}"
+                              OnContent="On: Eid and Diwali looks and greetings on the festival days (PC, Mac and phone)" OffContent="Off" />
                 <TextBlock Classes="h2" Text="XO game" Margin="0,8,0,0" />
                 <ToggleSwitch Name="XoGameSwitch" IsChecked="{Binding Settings.Quotation.XoGame}" OnContent="On" OffContent="Off" />
               </StackPanel>
@@ -293,6 +299,30 @@
                   <TextBlock Grid.Row="1" Text="Second backup folder" VerticalAlignment="Center" />
                   <TextBox Grid.Row="1" Grid.Column="1" Name="BackupCopyFolderBox" Text="{Binding Settings.Backup.CopyFolder}" />
                 </Grid>
+              </StackPanel>
+            </Border>
+            <Border Classes="card" Name="DriveCard" IsVisible="{Binding Drive, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Google Drive backup" />
+                <StackPanel Classes="help" Orientation="Horizontal" Spacing="6"><TextBlock Text="A copy of every backup and every approved PDF also goes to the office Google Drive." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Uses the Google account of the Gmail connection (connect it again once, so Google asks to allow Google Drive). The copies go to the folder 'TS Quotations' in that Google Drive: 'Database backups', and 'Approved PDFs' with a folder per month. New copies go every 15 minutes."><Path Classes="infoicon" /></Border></StackPanel>
+                <Grid ColumnDefinitions="160,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+                  <TextBlock Text="Google account" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Border Classes="chip ok" IsVisible="{Binding DriveConnected}"><TextBlock Text="● Connected" /></Border>
+                    <Border Classes="chip bad" IsVisible="{Binding DriveNotConnected}"><TextBlock Text="Not connected" /></Border>
+                    <TextBlock Name="DriveAccountText" Text="{Binding DriveAccountText}" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Grid.Row="1" Text="Copy" VerticalAlignment="Center" />
+                  <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="18">
+                    <CheckBox Name="DriveBackupsBox" IsChecked="{Binding Settings.Backup.DriveBackups}" Content="Database backups" />
+                    <CheckBox Name="DrivePdfsBox" IsChecked="{Binding Settings.Backup.DrivePdfs}" Content="Approved PDFs (a folder per month)" />
+                  </StackPanel>
+                  <TextBlock Grid.Row="2" Text="Last copy" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" Name="DriveLastCopy" Text="{Binding DriveLastCopyText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  <Button Grid.Row="2" Grid.Column="2" Name="DriveBackupNowButton" Classes="primary" ctl:ButtonIcon.Kind="upload" Content="Back up now"
+                          Command="{Binding DriveBackupNowCommand}" IsEnabled="{Binding DriveConnected}" />
+                </Grid>
+                <TextBlock Classes="error" Name="DriveErrorText" Text="{Binding DriveError}" IsVisible="{Binding HasDriveError}" TextWrapping="Wrap" />
               </StackPanel>
             </Border>
             <Border Classes="card">

@@ -111,6 +111,15 @@ public static class DiagnosticsEndpoints
             return Results.Ok(new { path });
         });
 
+        // Google Drive backup (Settings → Backup & updates): the status, and "Back up now" (a new backup, then everything new).
+        g.MapGet("/drive", (DriveBackupService drive, CancellationToken ct) => drive.StatusAsync(ct));
+        g.MapPost("/drive", async (DriveBackupService drive, AuditService audit, HttpContext ctx, CancellationToken ct) =>
+        {
+            var status = await drive.CopyNowAsync(ctx.User.UserName(), makeBackup: true, ct);
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "DriveBackup", "Database", status.Error ?? status.LastCopyText, ct: ct);
+            return status;
+        });
+
         g.MapGet("/log", (IOptions<ServerOptions> options, string? file, int? lines) =>
         {
             var logDir = Path.Combine(options.Value.ResolveDataDirectory(), "logs");

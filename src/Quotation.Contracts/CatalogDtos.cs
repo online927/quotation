@@ -20,6 +20,13 @@ public sealed record SearchMatchDto(bool AllTermsMatched, bool ExactName, bool E
 
 public sealed record ProductSearchHitDto(ProductSummaryDto Product, double Score, SearchMatchDto Match)
 {
+    /// <summary>Starred by this user (shown first in searches when Stars is on).</summary>
+    public bool IsStarred { get; init; }
+
+    /// <summary>A heading over this row in a pick list ("★ YOUR STARRED …" / "OTHER MATCHES"; set by the app, not sent).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? Heading { get; init; }
+
     /// <summary>Shown wherever a hit is displayed as text, so a raw record dump never reaches the user.</summary>
     public override string ToString() => Product.Name;
 }
@@ -61,6 +68,13 @@ public sealed record CustomerSummaryDto(
 
 public sealed record CustomerSearchHitDto(CustomerSummaryDto Customer, double Score, SearchMatchDto Match)
 {
+    /// <summary>Starred by this user (shown first in searches when Stars is on).</summary>
+    public bool IsStarred { get; init; }
+
+    /// <summary>A heading over this row in a pick list ("★ YOUR STARRED …" / "OTHER MATCHES"; set by the app, not sent).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? Heading { get; init; }
+
     /// <summary>Shown wherever a hit is displayed as text, so a raw record dump never reaches the user.</summary>
     public override string ToString() => Customer.Name;
 }
@@ -97,3 +111,9 @@ public sealed record FormaterMatchDto(string Kind, string Typed, int TallyId, st
     public static string Normalize(string typed) =>
         string.Join(' ', typed.Trim().ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
 }
+
+/// <summary>The items and customers a user starred (Settings > Quotation > Stars, administrator switch).</summary>
+public sealed record StarsDto(IReadOnlyList<int> ProductIds, IReadOnlyList<int> CustomerIds, bool Enabled = true);
+
+/// <summary>Star (On) or unstar an item ("product") or a customer ("customer").</summary>
+public sealed record StarRequest(string Kind, int Id, bool On);

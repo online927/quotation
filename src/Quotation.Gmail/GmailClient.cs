@@ -31,11 +31,12 @@ public interface IGmailClient
 /// <summary>
 /// Google OAuth 2.0 for installed applications. The user signs in on Google's own page; the app
 /// receives an authorization code on a loopback address and exchanges it for a refresh token.
-/// The Gmail password is never seen. Scope: read-only.
+/// The Gmail password is never seen. Scopes: Gmail read-only, and Google Drive only for the files the app itself puts there
+/// (the Google Drive backup copies).
 /// </summary>
 public static class GmailOAuth
 {
-    public static readonly string[] Scopes = [GmailService.Scope.GmailReadonly];
+    public static readonly string[] Scopes = [GmailService.Scope.GmailReadonly, Google.Apis.Drive.v3.DriveService.Scope.DriveFile];
 
     public static GoogleAuthorizationCodeFlow CreateFlow(string clientSecretJson)
     {

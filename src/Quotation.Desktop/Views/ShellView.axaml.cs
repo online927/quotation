@@ -225,10 +225,18 @@ public partial class ShellView : UserControl
             return;
         }
         // Alt+← / Alt+→ are never typing keys: Back / Forward before any box sees them.
-        if (Vm is { PendingPrompt: null } shell && e.KeyModifiers == KeyModifiers.Alt && e.Key is Key.Left or Key.Right)
+        if (Vm is { PendingPrompt: null } shell && AltKey.IsAlt(e.KeyModifiers) && e.Key is Key.Left or Key.Right)
         {
             if (e.Key == Key.Left) shell.GoBack();
             else shell.GoForward();
+            e.Handled = true;
+            return;
+        }
+        // Ctrl+N (⌘N on a Mac) on an approved quotation: Clear, a new empty one, wherever the keyboard is
+        if (Vm is { PendingPrompt: null, CurrentPage: QuotationEditorViewModel { ShowClear: true } approved }
+            && e.Key == Key.N && e.KeyModifiers == MacSupport.Command)
+        {
+            approved.ClearCommand.Execute(null);
             e.Handled = true;
             return;
         }

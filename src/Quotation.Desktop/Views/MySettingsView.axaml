@@ -117,6 +117,14 @@
         </StackPanel>
       </Border>
 
+      <Border Classes="card" Name="SharpTextCard">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Sharp text (this PC)" />
+          <ToggleSwitch Name="SharpTextSwitch" IsChecked="{Binding SharpText}"
+                        OnContent="On: sharper letters and slightly bigger small text" OffContent="Off: the old look" />
+        </StackPanel>
+      </Border>
+
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Connection and version (this PC)" />

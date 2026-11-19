@@ -89,7 +89,7 @@
                   <TextBlock Grid.Column="2" Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" />
                   <StackPanel Grid.Column="3">
                     <TextBlock Text="{Binding Changes}" FontSize="12" />
-                    <TextBlock Text="{Binding Message}" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Message}" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
                   </StackPanel>
                 </Grid>
               </DataTemplate>
@@ -107,7 +107,7 @@
             <TextBox Grid.Column="2" Text="{Binding SampleName}" Watermark="Exact name as in Tally" />
             <Button ctl:ButtonIcon.Kind="download" Grid.Column="4" Content="Fetch" Command="{Binding LoadSampleCommand}" />
           </Grid>
-          <TextBox Text="{Binding SampleXml}" IsReadOnly="True" FontFamily="Consolas,Menlo,monospace" FontSize="11" Height="220" AcceptsReturn="True"
+          <TextBox Text="{Binding SampleXml}" IsReadOnly="True" FontFamily="Consolas,Menlo,monospace" FontSize="{DynamicResource FontSmall}" Height="220" AcceptsReturn="True"
                    IsVisible="{Binding SampleXml, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </StackPanel>
       </Border>

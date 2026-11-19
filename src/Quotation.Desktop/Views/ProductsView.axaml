@@ -16,7 +16,7 @@
         <CheckBox Grid.Column="2" Content="Show DNU items" IsChecked="{Binding ShowHidden}"
                   ToolTip.Tip="Items whose Tally description is DNU (do not use) are never offered in quotations" />
       </Grid>
-      <TextBlock Classes="muted" FontSize="11" Text="{Binding ResultInfo}" />
+      <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="{Binding ResultInfo}" />
       <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
     </StackPanel>
     <ListBox Grid.Row="2" Name="ResultList" ItemsSource="{Binding Results}" SelectedItem="{Binding Selected}">
@@ -26,11 +26,11 @@
             <StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <Border Classes="pill" Background="{DynamicResource WarnSoftBrush}" Padding="6,0" IsVisible="{Binding Product.Hidden}">
-                  <TextBlock Text="DNU" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource WarnBrush}" />
+                  <TextBlock Text="DNU" FontSize="{DynamicResource FontTiny}" FontWeight="SemiBold" Foreground="{DynamicResource WarnBrush}" />
                 </Border>
                 <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
               </StackPanel>
-              <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis">
+              <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis">
                 <Run Text="{Binding Product.Brand, Mode=OneWay}" />
                 <Run Text="  HSN " />
                 <Run Text="{Binding Product.Hsn, Mode=OneWay}" />

@@ -17,12 +17,13 @@
     <ResourceDictionary.MergedDictionaries>
       <ResourceInclude Source="avares://TSQuotation/Styles/ModernResources.axaml" />
     </ResourceDictionary.MergedDictionaries>
+    <!-- The small text sizes (Sharp text in My Settings makes them half a point bigger: Services/SharpTextLook.cs) -->
+    <x:Double x:Key="FontSmall">11</x:Double>
+    <x:Double x:Key="FontTiny">10.5</x:Double>
     <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI, Inter, Helvetica Neue, Arial</FontFamily>
     <!-- Selected text in typing boxes (My Settings > Selected text, this PC; Services/TextSelectionLook): soft blue, dark letters -->
     <SolidColorBrush x:Key="TextSelectionBrush">#B3D7FF</SolidColorBrush>
     <SolidColorBrush x:Key="TextSelectionForegroundBrush">#111827</SolidColorBrush>
-    <!-- The quotation number's ticket (ThemeService sets the theme's colour) -->
-    <SolidColorBrush x:Key="TicketBrush">#0A5FD0</SolidColorBrush>
 
     <!-- Fluent theme overrides -->
     <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
@@ -366,7 +367,7 @@
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     </Style>
     <Style Selector="TextBlock.eyebrow">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSmall}" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
     </Style>
@@ -457,7 +458,7 @@
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="TextBlock.calweek">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSmall}" />
       <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
       <Setter Property="Margin" Value="0,2" />
     </Style>
@@ -595,7 +596,7 @@
       <Setter Property="Stroke" Value="#E0A100" />
     </Style>
     <Style Selector="TextBlock.pickhead">
-      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="FontSize" Value="{DynamicResource FontTiny}" />
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="LetterSpacing" Value="0.6" />
       <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
@@ -642,7 +643,7 @@
       <Setter Property="Background" Value="{DynamicResource GroupLineBrush}" />
     </Style>
     <Style Selector="Button TextBlock.key">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSmall}" />
       <Setter Property="Opacity" Value="0.65" />
       <Setter Property="Margin" Value="8,0,0,0" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -802,7 +803,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource TileHoverBorderBrush}" />
     </Style>
     <Style Selector="Button.small">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSmall}" />
       <Setter Property="Padding" Value="9,2" />
     </Style>
 
@@ -863,7 +864,7 @@
       <Setter Property="Foreground" Value="{DynamicResource SidebarSelectedTextBrush}" />
     </Style>
     <Style Selector="TextBlock.sidehead">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSmall}" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource SidebarMutedBrush}" />
     </Style>

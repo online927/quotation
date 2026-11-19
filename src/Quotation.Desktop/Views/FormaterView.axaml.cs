@@ -65,8 +65,9 @@ public partial class FormaterView : UserControl
             e.Handled = true;
             return;
         }
-        if (e.Key != Key.P || e.KeyModifiers != KeyModifiers.Alt) return;
+        if (e.Key != Key.P || !Services.AltKey.IsAlt(e.KeyModifiers)) return; // either Alt key
         FocusPacking();
+        Services.AltKey.SwallowTypedLetter(this, e.KeyModifiers);
         e.Handled = true;
     }
 

@@ -34,6 +34,9 @@ public sealed class ClientConfig
     public string WhatsAppOpensIn { get; set; } = DocumentLauncher.WhatsAppApp;
     /// <summary>How selected text looks in typing boxes (My Settings > Selected text): see <see cref="TextSelectionLook"/>.</summary>
     public string TextSelection { get; set; } = TextSelectionLook.SoftBlue;
+
+    /// <summary>Sharp text (My Settings, this PC): ClearType-style letters and slightly bigger small text; off = the old look.</summary>
+    public bool SharpText { get; set; } = true;
     /// <summary>A picture behind the pages on this PC (a copy kept next to this file); empty = none.</summary>
     public string BackgroundPicture { get; set; } = "";
 

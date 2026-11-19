@@ -33,21 +33,16 @@
          Tally voucher. -->
     <Grid Name="TitleBar" DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
       <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+        <!-- The number in a small light "ticket" in the theme's colour (hover: "Quotation No." / "Proforma Invoice No.") -->
         <Border Name="NumberTicket" Classes="ticket" VerticalAlignment="Center" ToolTip.Tip="{Binding NumberLabel}">
-          <Panel>
-            <Border Classes="ticketshine" />
-            <StackPanel Orientation="Horizontal" Spacing="11" Margin="14,7,18,7">
-              <Path Classes="ticketicon" Data="M14,2 L6,2 C4.9,2 4,2.9 4,4 L4,20 C4,21.1 4.9,22 6,22 L18,22 C19.1,22 20,21.1 20,20 L20,8 Z M14,2 L14,8 L20,8 M16,13 L8,13 M16,17 L8,17"
-                    StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center" />
-              <StackPanel VerticalAlignment="Center">
-                <TextBlock Name="TicketLabel" Classes="ticketlabel" Text="{Binding TicketLabel}" />
-                <TextBlock Name="HeadingText" Classes="ticketnumber" Text="{Binding Heading}" />
-              </StackPanel>
-            </StackPanel>
-          </Panel>
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="11,5,14,5">
+            <Path Classes="ticketicon" Data="M14,2 L6,2 C4.9,2 4,2.9 4,4 L4,20 C4,21.1 4.9,22 6,22 L18,22 C19.1,22 20,21.1 20,20 L20,8 Z M14,2 L14,8 L20,8 M16,13 L8,13 M16,17 L8,17"
+                  StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="15" Height="15" Stretch="Uniform" VerticalAlignment="Center" />
+            <TextBlock Name="HeadingText" Classes="ticketnumber" Text="{Binding Heading}" VerticalAlignment="Center" />
+          </StackPanel>
         </Border>
         <!-- Not saved yet: the number can still change when it is saved -->
-        <TextBlock Name="HeadingNote" Text="{Binding HeadingNote}" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding HasHeadingNote}" />
+        <TextBlock Name="HeadingNote" Text="{Binding HeadingNote}" FontSize="12" VerticalAlignment="Center" IsVisible="{Binding HasHeadingNote}" />
         <Border Name="StatusChip" Classes="statuschip" Classes.ok="{Binding IsFinal}" Classes.pending="{Binding IsPendingReview}" Classes.bad="{Binding IsCancelled}"
                 VerticalAlignment="Center">
           <StackPanel Orientation="Horizontal" Spacing="6">
@@ -57,19 +52,19 @@
         </Border>
         <Border Classes="pill" Background="{DynamicResource WarnSoftBrush}" IsVisible="{Binding WithoutGst}" VerticalAlignment="Center"
                 ToolTip.Tip="0 % GST on all items and on packing &amp; forwarding, no tax lines (My Settings → Without GST)">
-          <TextBlock Text="WITHOUT GST" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource WarnBrush}" />
+          <TextBlock Text="WITHOUT GST" FontWeight="SemiBold" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource WarnBrush}" />
         </Border>
-        <TextBlock Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="11" IsVisible="{Binding ShowSource}" />
+        <TextBlock Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="{DynamicResource FontSmall}" IsVisible="{Binding ShowSource}" />
       </StackPanel>
       <!-- The date: a date box only where it can be changed (the administrator, before approval); otherwise plain -->
       <Border Name="DatePill" Grid.Column="1" Classes="datepill" VerticalAlignment="Center">
         <StackPanel Orientation="Horizontal" Spacing="9">
           <Path Classes="dateicon" Data="M5,4 L19,4 C20.1,4 21,4.9 21,6 L21,20 C21,21.1 20.1,22 19,22 L5,22 C3.9,22 3,21.1 3,20 L3,6 C3,4.9 3.9,4 5,4 Z M16,2 L16,6 M8,2 L8,6 M3,10 L21,10"
-                StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" Width="17" Height="17" Stretch="Uniform" VerticalAlignment="Center"
+                StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" Width="14" Height="14" Stretch="Uniform" VerticalAlignment="Center"
                 IsVisible="{Binding !CanChangeDate}" />
           <CalendarDatePicker Name="DateBox" SelectedDate="{Binding Date}" CustomDateFormatString="dd-MMM-yyyy" SelectedDateFormat="Custom" Width="150"
                               IsVisible="{Binding CanChangeDate}" />
-          <TextBlock Name="DateText" Text="{Binding Date, StringFormat='{}{0:dd-MMM-yyyy}'}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"
+          <TextBlock Name="DateText" Text="{Binding Date, StringFormat='{}{0:dd-MMM-yyyy}'}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
                      IsVisible="{Binding !CanChangeDate}" />
         </StackPanel>
       </Border>
@@ -137,8 +132,8 @@
         <TextBlock Foreground="{DynamicResource WarnBrush}" Text="{Binding DataWarning}" IsVisible="{Binding DataWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <TextBlock Foreground="{DynamicResource BadBrush}" Text="{Binding PdfError}" IsVisible="{Binding PdfError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding LastPdfPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-          <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
-          <Button Classes="link" FontSize="11" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
+          <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="{Binding LastPdfPath, StringFormat='PDF: {0}'}" />
+          <Button Classes="link" FontSize="{DynamicResource FontSmall}" Content="Open folder" Command="{Binding OpenPdfFolderCommand}" />
         </StackPanel>
         <!-- Always one line: approve and save as PDF | preview and PDF; Cancel and Delete apart on the right. When the window is
              too narrow, Delete, Cancel, Open PDF, Preview and WhatsApp (in that order) show only their icon. Ctrl+S saves a draft. -->
@@ -170,8 +165,16 @@
           <!-- A chip with its own background, readable on every theme (also the maroon ones) -->
           <Border Name="UnsavedChip" IsVisible="{Binding IsDirty}" VerticalAlignment="Center" CornerRadius="10" Padding="9,3"
                   Background="{DynamicResource WarnSoftBrush}" BorderBrush="{DynamicResource WarnBorderBrush}" BorderThickness="1">
-            <TextBlock FontSize="11" FontWeight="SemiBold" Text="● Unsaved changes" Foreground="{DynamicResource WarnBrush}" />
+            <TextBlock FontSize="{DynamicResource FontSmall}" FontWeight="SemiBold" Text="● Unsaved changes" Foreground="{DynamicResource WarnBrush}" />
           </Border>
+          <!-- Approved: Clear starts a new, empty quotation (the user's Cancel is gone by then; an administrator keeps Cancel) -->
+          <Button Name="ClearButton" Classes="bar tile" ctl:ActionBar.Right="True" ctl:ActionBar.CollapseOrder="2"
+                  Command="{Binding ClearCommand}" IsVisible="{Binding ShowClear}" ToolTip.Tip="{Binding ClearTip}">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Classes="bi" Data="M14,4 L20,10 L11,19 L6,19 L3,16 Z M9,9 L15,15 M11,20 L21,20" Stroke="{DynamicResource TextBrush}" />
+              <TextBlock Classes="lbl" Text="Clear" />
+            </StackPanel>
+          </Button>
           <Button Name="CancelDocButton" Classes="danger bar tile" ctl:ActionBar.Right="True" ctl:ActionBar.CollapseOrder="2"
                   Command="{Binding CancelQuotationCommand}" IsEnabled="{Binding CanCancel}" IsVisible="{Binding ShowCancel}"
                   ToolTip.Tip="{Binding CancelTip}" ToolTip.ShowOnDisabled="True">
@@ -232,7 +235,7 @@
                       <Grid ColumnDefinitions="*,Auto">
                         <StackPanel>
                           <TextBlock Text="{Binding Customer.Name}" FontWeight="SemiBold" />
-                          <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}">
+                          <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}">
                             <Run Text="{Binding Customer.StateName, Mode=OneWay}" />
                             <Run Text="  " />
                             <Run Text="{Binding Customer.Gstin, Mode=OneWay}" />
@@ -306,7 +309,7 @@
                   </StackPanel>
                 </Grid>
               </StackPanel>
-              <TextBlock Classes="muted" FontSize="11" Margin="0,6,0,0" Text="Consignee is the same as the buyer." IsVisible="{Binding ConsigneeSameAsBuyer}" />
+              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Margin="0,6,0,0" Text="Consignee is the same as the buyer." IsVisible="{Binding ConsigneeSameAsBuyer}" />
             </StackPanel>
           </Border>
 
@@ -474,9 +477,9 @@
                       </StackPanel>
                       <StackPanel Grid.Column="1">
                         <TextBlock Classes="td" Text="{Binding ItemName}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                        <TextBlock Classes="td" Text="{Binding PartNumber, StringFormat='Part No. {0}'}" FontSize="11" Foreground="{DynamicResource MutedBrush}"
+                        <TextBlock Classes="td" Text="{Binding PartNumber, StringFormat='Part No. {0}'}" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}"
                                    IsVisible="{Binding HasPartNumber}" />
-                        <TextBlock Classes="td" Text="{Binding Description}" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
+                        <TextBlock Classes="td" Text="{Binding Description}" FontSize="{DynamicResource FontSmall}" FontStyle="Italic" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
                       </StackPanel>
                       <TextBlock Classes="td" Grid.Column="2" Text="{Binding Hsn}" Width="80"
                                  IsVisible="{Binding $parent[ItemsControl].((vm:QuotationEditorViewModel)DataContext).ShowHsnGst}" />
@@ -521,7 +524,7 @@
                             <Grid ColumnDefinitions="*,60,90,Auto">
                               <StackPanel>
                                 <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" />
-                                <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}">
+                                <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}">
                                   <Run Text="{Binding Product.Brand, Mode=OneWay}" />
                                   <Run Text="  HSN " />
                                   <Run Text="{Binding Product.Hsn, Mode=OneWay}" />
@@ -532,7 +535,7 @@
                               <TextBlock Grid.Column="1" Text="{Binding Product.Unit}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                               <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Product.Rate, StringFormat='{}{0:N2}', TargetNullValue='no rate'}" HorizontalAlignment="Right" />
-                                <TextBlock Text="last rate" FontSize="10" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"
+                                <TextBlock Text="last rate" FontSize="{DynamicResource FontTiny}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"
                                            IsVisible="{Binding Product.RateNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                               </StackPanel>
                               <Border Grid.Column="3" Classes="star" Classes.on="{Binding IsStarred}" ToolTip.Tip="Star: comes first when you search">
@@ -568,7 +571,7 @@
                     <TextBox Name="DescriptionBox" Text="{Binding EntryDescription}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
                   </StackPanel>
                   <StackPanel Grid.Column="2" VerticalAlignment="Bottom" HorizontalAlignment="Right" IsVisible="{Binding EntryProduct, Converter={x:Static ObjectConverters.IsNotNull}}">
-                    <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}">
+                    <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}">
                       <Run Text="From Tally — HSN " />
                       <Run Text="{Binding EntryProduct.Hsn, FallbackValue='', Mode=OneWay}" />
                       <Run Text=", GST " />
@@ -578,7 +581,7 @@
                       <Run Text=", Rate " />
                       <Run Text="{Binding EntryProduct.Rate, StringFormat='{}{0:N2}', FallbackValue='', TargetNullValue='not set — enter a rate', Mode=OneWay}" />
                     </TextBlock>
-                    <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right" Text="{Binding EntryRateNoteText}"
+                    <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right" Text="{Binding EntryRateNoteText}"
                                IsVisible="{Binding EntryRateNoteText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                   </StackPanel>
                 </Grid>
@@ -642,12 +645,16 @@
                 <TextBlock Text="Subtotal" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" VerticalAlignment="Center" />
               </Grid>
-              <Grid ColumnDefinitions="Auto,*,Auto">
-                <TextBlock Text="{Binding PackingLabel}" VerticalAlignment="Center" />
+              <!-- The label takes the room that is left (it wraps rather than run into the box); "Without GST" in small under it -->
+              <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Name="PackingLabelText" Text="{Binding PackingLabel}" TextWrapping="Wrap" />
+                  <TextBlock Name="PackingNoGstText" Text="Without GST" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" IsVisible="{Binding WithoutGst}" />
+                </StackPanel>
                 <!-- Enter here goes to Approve (or Save as PDF) without pressing it -->
                 <NumericUpDown Grid.Column="1" Name="PackingBox" Value="{Binding PackingForwarding}" Minimum="0" FormatString="0.00" Width="90"
-                               HorizontalAlignment="Left" Margin="6,0,0,0" />
-                <TextBlock Grid.Column="2" Text="{Binding PackingText}" VerticalAlignment="Center" />
+                               Margin="6,0,10,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Name="PackingAmountText" Text="{Binding PackingText}" VerticalAlignment="Center" />
               </Grid>
               <TextBlock Text="{Binding TaxText}" FontSize="12" Foreground="{DynamicResource MutedBrush}" IsVisible="{Binding ShowsTaxes}" TextWrapping="Wrap" />
               <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding RoundOffText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
@@ -674,7 +681,7 @@
             <ItemsControl ItemsSource="{Binding AuditTrail}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="x:String">
-                  <TextBlock Text="{Binding}" FontSize="11" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding}" FontSize="{DynamicResource FontSmall}" TextWrapping="Wrap" />
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -718,22 +725,22 @@
         </StackPanel>
         <Border DockPanel.Dock="Top" Background="{DynamicResource SubtleFillBrush}" CornerRadius="8" Padding="10,7">
           <Grid ColumnDefinitions="28,210,*,76,112,70,104">
-            <TextBlock Classes="muted" FontSize="11" Text="#" />
-            <TextBlock Grid.Column="1" Classes="muted" FontSize="11" Text="YOU PASTED" />
-            <TextBlock Grid.Column="2" Classes="muted" FontSize="11" Text="ITEM FOUND" />
-            <TextBlock Grid.Column="3" Classes="muted" FontSize="11" Text="QTY" HorizontalAlignment="Right" Margin="0,0,8,0" />
-            <TextBlock Grid.Column="4" Classes="muted" FontSize="11" Text="RATE" HorizontalAlignment="Right" Margin="0,0,8,0" />
-            <TextBlock Grid.Column="5" Classes="muted" FontSize="11" Text="DISC %" HorizontalAlignment="Right" Margin="0,0,8,0" />
+            <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="#" />
+            <TextBlock Grid.Column="1" Classes="muted" FontSize="{DynamicResource FontSmall}" Text="YOU PASTED" />
+            <TextBlock Grid.Column="2" Classes="muted" FontSize="{DynamicResource FontSmall}" Text="ITEM FOUND" />
+            <TextBlock Grid.Column="3" Classes="muted" FontSize="{DynamicResource FontSmall}" Text="QTY" HorizontalAlignment="Right" Margin="0,0,8,0" />
+            <TextBlock Grid.Column="4" Classes="muted" FontSize="{DynamicResource FontSmall}" Text="RATE" HorizontalAlignment="Right" Margin="0,0,8,0" />
+            <TextBlock Grid.Column="5" Classes="muted" FontSize="{DynamicResource FontSmall}" Text="DISC %" HorizontalAlignment="Right" Margin="0,0,8,0" />
           </Grid>
         </Border>
         <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,14,0,0">
           <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto">
-            <Border Classes="pill status ok" VerticalAlignment="Center" Margin="0,0,6,0"><TextBlock Text="{Binding PasteReadyText}" FontSize="11" FontWeight="SemiBold" /></Border>
+            <Border Classes="pill status ok" VerticalAlignment="Center" Margin="0,0,6,0"><TextBlock Text="{Binding PasteReadyText}" FontSize="{DynamicResource FontSmall}" FontWeight="SemiBold" /></Border>
             <Border Grid.Column="1" Classes="pill status pending" VerticalAlignment="Center" Margin="0,0,6,0" IsVisible="{Binding PasteChooseCount}">
-              <TextBlock Text="{Binding PasteChooseText}" FontSize="11" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding PasteChooseText}" FontSize="{DynamicResource FontSmall}" FontWeight="SemiBold" />
             </Border>
             <Border Grid.Column="2" Classes="pill status bad" VerticalAlignment="Center" IsVisible="{Binding PasteNotFoundCount}">
-              <TextBlock Text="{Binding PasteNotFoundText}" FontSize="11" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding PasteNotFoundText}" FontSize="{DynamicResource FontSmall}" FontWeight="SemiBold" />
             </Border>
             <Button ctl:ButtonIcon.Kind="x" Grid.Column="4" Name="PasteCancelButton" Content="Cancel" Margin="0,0,8,0" Command="{Binding ClosePasteListCommand}" />
             <Button ctl:ButtonIcon.Kind="listplus" Grid.Column="5" Name="PasteAddButton" Classes="primary" Content="{Binding PasteAddText}" Command="{Binding AddPastedLinesCommand}" />
@@ -753,7 +760,7 @@
                       <TextBlock Classes="muted" Text="Searching…" IsVisible="{Binding IsLoading}" />
                       <StackPanel IsVisible="{Binding ShowsName}">
                         <TextBlock Text="{Binding ItemName}" FontWeight="SemiBold" FontSize="12.5" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Classes="muted" FontSize="11" Text="{Binding ItemDetail}" />
+                        <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="{Binding ItemDetail}" />
                       </StackPanel>
                       <StackPanel IsVisible="{Binding ShowsChoices}" Spacing="2">
                         <ComboBox Name="PasteChoice" ItemsSource="{Binding Candidates}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch">
@@ -763,7 +770,7 @@
                             </DataTemplate>
                           </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Classes="muted" FontSize="11" Text="{Binding ItemDetail}" />
+                        <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="{Binding ItemDetail}" />
                       </StackPanel>
                       <TextBlock Text="Nothing found" Foreground="{DynamicResource BadBrush}" FontWeight="SemiBold" IsVisible="{Binding ShowsNothingFound}" />
                       <ctl:SearchPicker Name="PasteSearchBox" IsVisible="{Binding ShowsSearchBox}" Text="{Binding SearchText}"
@@ -774,7 +781,7 @@
                           <DataTemplate x:DataType="c:ProductSearchHitDto">
                             <StackPanel>
                               <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" />
-                              <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" Text="{Binding Product.PartNumber}" />
+                              <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" Text="{Binding Product.PartNumber}" />
                             </StackPanel>
                           </DataTemplate>
                         </ctl:SearchPicker.ItemTemplate>
@@ -785,7 +792,7 @@
                     <!-- Rate: from Excel (green, Tally's rate under it when different), typed, or empty for the Tally rate -->
                     <StackPanel Grid.Column="4" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
                       <NumericUpDown Name="PasteRateBox" Classes.fromexcel="{Binding RateFromPaste}" Value="{Binding Rate}" Minimum="0" FormatString="0.00" Width="100" />
-                      <TextBlock Text="{Binding TallyRateText}" FontSize="10.5" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"
+                      <TextBlock Text="{Binding TallyRateText}" FontSize="{DynamicResource FontTiny}" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"
                                  IsVisible="{Binding ShowsTallyRate}" />
                     </StackPanel>
                     <NumericUpDown Grid.Column="5" Value="{Binding Discount}" Minimum="0" Maximum="99.99" FormatString="0.##" Width="58" HorizontalAlignment="Right"
@@ -793,7 +800,7 @@
                     <Panel Grid.Column="6" HorizontalAlignment="Right" VerticalAlignment="Center">
                       <Border Classes="pill status" Classes.ok="{Binding IsFound}" Classes.pending="{Binding IsChoose}" Classes.bad="{Binding IsNotFound}"
                               IsVisible="{Binding !ShowsSearchButton}">
-                        <TextBlock Text="{Binding StateText}" FontSize="11" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding StateText}" FontSize="{DynamicResource FontSmall}" FontWeight="SemiBold" />
                       </Border>
                       <Button ctl:ButtonIcon.Kind="search" Content="Search…" Padding="12,3" FontSize="12" IsVisible="{Binding ShowsSearchButton}" Click="OnPasteRowSearchClick" />
                     </Panel>

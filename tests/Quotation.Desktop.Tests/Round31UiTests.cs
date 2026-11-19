@@ -44,11 +44,15 @@ public class Round31UiTests
             Assert.True(view.FindControl<TextBlock>("HeadingNote")!.IsVisible);
             Assert.Equal("New Quotation", editor.Title); // the back button still names the page
 
-            // The number in its ticket ("QUOTATION NO." over it; the theme's colour, a square dark box in Tally), the
+            // The number in a small light ticket (no "QUOTATION NO." over it; the theme's colour, square in Tally), the
             // status as a chip with a dot, the date in a pill on the right: its right edge on the boxes' right edge, and
             // no word "Dated". The administrator can still change the date (a date box in the pill).
-            Assert.Equal("QUOTATION NO.", view.FindControl<TextBlock>("TicketLabel")!.Text);
-            Assert.Equal(theme == AppTheme.Tally ? new CornerRadius(0) : new CornerRadius(14), view.FindControl<Border>("NumberTicket")!.CornerRadius);
+            Assert.DoesNotContain(view.FindControl<Grid>("TitleBar")!.GetVisualDescendants().OfType<TextBlock>(),
+                t => t.Text?.Contains("NO.", StringComparison.Ordinal) == true);
+            var ticket = view.FindControl<Border>("NumberTicket")!;
+            Assert.Equal(theme == AppTheme.Tally ? new CornerRadius(0) : new CornerRadius(10), ticket.CornerRadius);
+            Assert.Equal(17, view.FindControl<TextBlock>("HeadingText")!.FontSize);
+            Assert.InRange(ticket.Bounds.Height, 24, 34); // one line, small
             Assert.Equal("Draft", editor.StatusChipText);
             Assert.True(view.FindControl<Border>("StatusChip")!.IsVisible);
             Assert.True(view.FindControl<CalendarDatePicker>("DateBox")!.IsVisible);

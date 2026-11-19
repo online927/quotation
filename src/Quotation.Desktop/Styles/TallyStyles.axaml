@@ -16,7 +16,7 @@
   <Style Selector=".tally Border.sidebar:not(.collapsed) TextBlock.sidehead.caps"><Setter Property="IsVisible" Value="True" /></Style>
   <Style Selector=".tally TextBlock.sidehead.plain"><Setter Property="IsVisible" Value="False" /></Style>
   <Style Selector=".tally TextBlock.sidehead">
-    <Setter Property="FontSize" Value="10.5" />
+    <Setter Property="FontSize" Value="{DynamicResource FontTiny}" />
     <Setter Property="LetterSpacing" Value="0.6" />
   </Style>
   <Style Selector=".tally TextBlock.navtitle"><Setter Property="IsVisible" Value="False" /></Style>

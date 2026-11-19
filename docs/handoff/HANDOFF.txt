@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 33 shipped (version 0.9.76, CI run 76). Next round: Round 34. The list is empty.
+Last updated: Round 34 built and pushed (version in the next line once CI finishes). The list is empty.
 
 
 1. THE PROJECT
@@ -142,8 +142,16 @@ Where things usually are:
     a Tailscale firewall rule.
 
 
-7. STATE AT THE END OF ROUND 33 (shipped, 0.9.76)
--------------------------------------------------
+7. STATE AT THE END OF ROUND 34
+--------------------------------
+Round 34 (after Round 33, PC and Mac app only, no server update): simpler quotation heading (light ticket, no "QUOTATION
+NO."); top bar user as one round initial (UserTip); connection as a round button with signal bars (SignalBars,
+StackPanel.signal styles in ModernStyles); presence fix (QuotationEditorViewModel.PageHidden/PageShown from
+ShellViewModel.OnCurrentPageChanged: a page kept for Back no longer checks in); right Alt = AltGr (Services/AltKey.cs,
+also drops the letter AltGr may type); P&F row without overlap; Sharp text switch (Services/SharpTextLook.cs,
+ClientConfig.SharpText, FontSmall/FontTiny resources replace the literal 11 / 10.5 / 10 font sizes in the PC app's
+pages); Clear on approved quotations (#123, ShowClear / ClearCommand, Ctrl+N).
+
 Round 33 delivered the whole list (#97–#111), on PC, Mac and phone where it applies:
   * Themes renamed: Glass (Blue) → Frost, Glass (Maroon) → Hatims Maroon (ThemeNames only).
   * Quotation page heading: number "ticket" (TicketBrush = AccentBrush, or ActionBrush on dark themes), status chip,
@@ -184,7 +192,7 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 
 8. ON THE LIST — NOT BUILT YET
 ------------------------------
- (nothing — the list is empty after Round 33)
+ (nothing — the list is empty after Round 34; #123 Clear was built in Round 34)
 
 
 9. FIRST MESSAGE IN A NEW SESSION

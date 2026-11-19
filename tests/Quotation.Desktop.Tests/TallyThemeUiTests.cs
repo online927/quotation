@@ -126,7 +126,7 @@ public class TallyThemeUiTests
         editor.CommitEntryCommand.Execute(null);
         Dispatcher.UIThread.RunJobs();
         var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
-        Assert.Equal(new CornerRadius(0), view.FindControl<Border>("NumberTicket")!.CornerRadius); // a square dark box, like a voucher type
+        Assert.Equal(new CornerRadius(0), view.FindControl<Border>("NumberTicket")!.CornerRadius); // square, as in Tally
         Assert.True(ctx.Shell.KeyBar.First(k => k.Label == "Save").IsOn);
 
         ClickKey(shell, "F1");

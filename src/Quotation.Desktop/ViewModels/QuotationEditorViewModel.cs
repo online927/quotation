@@ -156,6 +156,25 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     }
 
 
+    /// <summary>
+    /// Another page is shown (this one is kept for Back): it no longer counts as open, so nobody is told "… also has this
+    /// quotation open" while it only waits in the history.
+    /// </summary>
+    public void PageHidden()
+    {
+        _presenceTimer.Stop();
+        AlsoOpenText = null;
+        if (Id is { } id) _ = LeaveQuietlyAsync(id);
+    }
+
+    /// <summary>Shown again (Back / Forward): open again for the others.</summary>
+    public void PageShown()
+    {
+        if (_presenceTimer.IsEnabled) return;
+        _presenceTimer.Start();
+        _ = CheckPresenceAsync();
+    }
+
     public void Dispose()
     {
         _recoveryTimer.Stop();
@@ -324,7 +343,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     // ---------------------------------------------------------------- header
     [ObservableProperty] private Guid? _id;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(DocTypeName))] [NotifyPropertyChangedFor(nameof(TicketLabel))] private DocumentType _docType;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(DocTypeName))] private DocumentType _docType;
 
     /// <summary>"Quotation" or "Proforma Invoice" (the Tally theme shows it in a dark box, like a voucher type).</summary>
     public string DocTypeName => DocType == DocumentType.ProformaInvoice ? "Proforma Invoice" : "Quotation";
@@ -745,7 +764,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool SealAvailable => CanSeal;
     public string SealHint => "Put your seal on the PDF (asks for your 4-digit seal PIN)";
     public bool CanSaveAsPdf => Status != QuotationStatus.Cancelled && (IsFinal || (Lines.Count > 0 && !IsLocked));
-    public string PackingLabel => WithoutGst ? "Packing & Forwarding - Without GST ₹" : "Packing & Forwarding ₹";
+    /// <summary>"Packing &amp; Forwarding ₹" ("Without GST" shows in small under it in Without GST mode).</summary>
+    public string PackingLabel => "Packing & Forwarding ₹";
     public bool IsFinal => Status is QuotationStatus.Approved or QuotationStatus.Generated;
     /// <summary>Regenerate PDF is only needed when making the PDF failed at approval (Open/Save as PDF are always fresh).</summary>
     public bool CanRegeneratePdf => IsFinal && !string.IsNullOrWhiteSpace(PdfError);
@@ -760,9 +780,20 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public bool IsProforma => DocType == DocumentType.ProformaInvoice;
     public string DocLabel => IsProforma ? "Proforma Invoice" : "Quotation";
     public string CancelTip => $"Cancel this {DocLabel.ToLowerInvariant()} (it is kept, marked CANCELLED)";
+
+    /// <summary>
+    /// Clear (an approved quotation, for those who make quotations): a new, empty one on the same screen; this one stays
+    /// approved (Back returns to it). Ctrl+N.
+    /// </summary>
+    public bool ShowClear => IsFinal && Id is not null && _session.MakesDocuments;
+    public string ClearTip => $"Clear: a new, empty {DocLabel.ToLowerInvariant()} (this one stays approved) (Ctrl+N)";
+
+    [RelayCommand]
+    private void Clear()
+    {
+        if (ShowClear) _navigator.Navigate(IsProforma ? "newproforma" : "new");
+    }
     public string NumberLabel => IsProforma ? "Invoice No." : "Quotation No.";
-    /// <summary>Over the number in the heading's ticket: "QUOTATION NO." / "INVOICE NO.".</summary>
-    public string TicketLabel => NumberLabel.ToUpperInvariant();
     /// <summary>The status chip in the heading: "Draft", "Approved", "Pending review" …</summary>
     public string StatusChipText => StatusText.Length == 0 ? "" : StatusText[0] + StatusText[1..].ToLowerInvariant();
     /// <summary>The number beside the date only while it is provisional; once saved it is in the title.</summary>
@@ -976,6 +1007,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(CanEditContent));
         OnPropertyChanged(nameof(CanCancel));
         OnPropertyChanged(nameof(ShowCancel));
+        OnPropertyChanged(nameof(ShowClear));
         OnPropertyChanged(nameof(EverApproved));
         OnPropertyChanged(nameof(OwnerName));
         OnPropertyChanged(nameof(IsMine));

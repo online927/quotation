@@ -281,6 +281,28 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         _ => "Soft blue",
     };
 
+    /// <summary>Sharp text (this PC): ClearType-style letters and slightly bigger small text; off = the old look.</summary>
+    public bool SharpText
+    {
+        get => _session.Config.SharpText;
+        set
+        {
+            if (value == _session.Config.SharpText) return;
+            _session.Config.SharpText = value;
+            try
+            {
+                _session.Config.Save();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Kept for this session; only this PC's choice.
+            }
+            SharpTextLook.Apply(value);
+            OnPropertyChanged();
+            InfoMessage = value ? "Sharp text on for this PC." : "Sharp text off: the old look on this PC.";
+        }
+    }
+
     private bool IsSelection(string look) => TextSelectionLook.Normalize(_session.Config.TextSelection) == look;
 
     private void SetSelection(string look)

@@ -890,3 +890,22 @@ Server update needed (10: the finder and its firewall rule; 13).
 11. Gmail Connection page: the sign-in line says Gmail is read-only and Google Drive is used only for the backup copies.
 
 Server update needed (6: stars; 7: Google Drive backup; 8: reading photos; 10: the administrator's switch).
+
+### Round 34
+
+1. Quotation page heading, simpler: the number on one line in a small light box in the theme's colour (no "QUOTATION
+   NO." over it; pointing at it still says "Quotation No."); the status chip and the date pill a little smaller. Square
+   in the Tally theme.
+2. Top bar: the user is one round icon with the initial (pointing at it shows "ravi · Standard"); clicking it opens the
+   same menu (Change my password, My Settings, Log out).
+3. Top bar: the connection is a round button with signal bars: three green = connected, two orange = a warning (old data,
+   Tally busy, a slow server), one red = not connected; the details when pointing at it or clicking.
+4. Fixed: "… also has this quotation open. Changes by both of you can clash" for quotations nobody had open. A quotation
+   left for another page (kept for Back) kept counting as open; now it counts only while it is on someone's screen.
+5. The right Alt key works for Alt+P (P&F), Alt+C, Alt+I and Alt+← / → (on many keyboard layouts the right Alt is
+   "AltGr", which Windows reports as Ctrl+Alt).
+6. P&F row in Without GST mode: no more overlapping text ("Packing & Forwarding ₹" with "Without GST" in small under it).
+7. My Settings → Sharp text (this PC, on at first): sharper ClearType-style letters on Windows and the small text half a
+   point bigger; Off = the old look.
+8. Approved quotation: "Clear" on the right (where Cancel was) starts a new, empty quotation; the approved one stays as it
+   is (Back returns to it). Also Ctrl+N. Drafts keep Cancel; administrators keep Cancel and Delete.

@@ -38,7 +38,7 @@
       <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
     </Style>
     <Style Selector="Border.tag TextBlock">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSmall}" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
     </Style>
@@ -141,10 +141,10 @@
                   <TextBlock Grid.Row="3" Text="Check with your phone" VerticalAlignment="Center" />
                   <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="10">
                     <Button ctl:ButtonIcon.Kind="qr" Name="TestQrButton" Classes="primary" Content="Test QR (₹1)" Command="{Binding ShowTestQrCommand}" />
-                    <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="Uses what is typed above, before Save." />
+                    <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="Uses what is typed above, before Save." />
                   </StackPanel>
                 </Grid>
-                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" TextWrapping="Wrap"
                            Text="Press Save (top right), then Preview or Open PDF on a quotation to see it." />
               </StackPanel>
             </Border>
@@ -163,7 +163,7 @@
             </Grid>
             <TextBlock Grid.Row="1" Text="Example" />
             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ExampleNumber}" FontWeight="SemiBold" />
-            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" FontSize="11" TextWrapping="Wrap"
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" FontSize="{DynamicResource FontSmall}" TextWrapping="Wrap"
                        Text="Tokens: {FY}=2526, {FY_LABEL}=2025-26, {FYS2}/{FYE2}=25/26, {FYS4}/{FYE4}=2025/2026, {SEQ} or {SEQ:4} (zero-padded)." />
             <TextBlock Grid.Row="3" Text="First number of a new financial year" />
             <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultStartSequence}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
@@ -186,16 +186,16 @@
             <TextBlock Grid.Row="16" Text="Users can edit for (days)" />
             <StackPanel Grid.Row="16" Grid.Column="1" Orientation="Horizontal" Spacing="8">
               <NumericUpDown Value="{Binding Settings.Quotation.UserEditDays}" Minimum="0" Maximum="365" FormatString="0" Width="120" />
-              <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="after a quotation is first saved; administrators can always edit." />
+              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="after a quotation is first saved; administrators can always edit." />
             </StackPanel>
             <TextBlock Grid.Row="17" Text="Title Case while typing" />
             <CheckBox Grid.Row="17" Grid.Column="1" IsChecked="{Binding Settings.Quotation.TitleCase}"
                       Content="Capital first letter of each word in the quotation's text boxes (like Tally)" />
             <TextBlock Grid.Row="23" Text="PDF layout" VerticalAlignment="Top" Margin="0,8,12,4" />
             <StackPanel Grid.Row="23" Grid.Column="1" Spacing="4" Margin="0,3">
-              <TextBlock Classes="muted" FontSize="11" Text="Default for users who have not chosen one in My Settings" />
+              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Default for users who have not chosen one in My Settings" />
               <ComboBox ItemsSource="{Binding PdfLayoutChoices}" SelectedItem="{Binding Settings.Quotation.DefaultPdfLayout}" Width="200" />
-              <TextBlock Classes="muted" FontSize="11" Text="Zoho layout: heading" Margin="0,6,0,0" />
+              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Zoho layout: heading" Margin="0,6,0,0" />
               <TextBox Text="{Binding Settings.Quotation.ModernHeading}" Watermark="Quotation/Proforma" Width="300" HorizontalAlignment="Left" />
             </StackPanel>
             <TextBlock Grid.Row="22" Text="Part No. column" />
@@ -214,7 +214,7 @@
             <TextBlock Grid.Row="20" Text="Heading on proforma invoice PDF" />
             <StackPanel Grid.Row="20" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
               <TextBox Text="{Binding Settings.Quotation.ProformaHeading}" Watermark="PROFORMA INVOICE" Width="300" />
-              <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" Text="Printed exactly as typed; empty = the standard heading." />
+              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="Printed exactly as typed; empty = the standard heading." />
             </StackPanel>
             <TextBlock Grid.Row="13" Text="Proforma invoice number pattern" />
             <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding Settings.Quotation.ProformaNumberPattern}" Watermark="TSPI{FY}-{SEQ}" />
@@ -434,7 +434,7 @@
           <TextBlock Grid.Row="2" Text="API key" />
           <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
             <TextBox Text="{Binding NewApiKey}" PasswordChar="●" Watermark="Enter a new key to replace the stored one" />
-            <TextBlock FontSize="11" Text="A key is stored (encrypted on the server)." IsVisible="{Binding Settings.Ai.ApiKeyConfigured, FallbackValue=False}" Foreground="{DynamicResource OkBrush}" />
+            <TextBlock FontSize="{DynamicResource FontSmall}" Text="A key is stored (encrypted on the server)." IsVisible="{Binding Settings.Ai.ApiKeyConfigured, FallbackValue=False}" Foreground="{DynamicResource OkBrush}" />
           </StackPanel>
           <TextBlock Grid.Row="3" Text="Max product candidates sent to AI" />
           <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.Ai.MaxCandidates}" Minimum="3" Maximum="25" FormatString="0" Width="160" HorizontalAlignment="Left" />
@@ -454,7 +454,7 @@
           <TextBlock Grid.Row="3" Text="OAuth client JSON (Desktop app)" VerticalAlignment="Top" />
           <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
             <TextBox Text="{Binding NewGmailClientJson}" AcceptsReturn="True" Height="70" Watermark="Paste client_secret_….json contents to replace the stored one" />
-            <TextBlock FontSize="11" Text="OAuth client is stored (encrypted on the server)." IsVisible="{Binding Settings.Gmail.ClientSecretConfigured, FallbackValue=False}" Foreground="{DynamicResource OkBrush}" />
+            <TextBlock FontSize="{DynamicResource FontSmall}" Text="OAuth client is stored (encrypted on the server)." IsVisible="{Binding Settings.Gmail.ClientSecretConfigured, FallbackValue=False}" Foreground="{DynamicResource OkBrush}" />
           </StackPanel>
           <TextBlock Grid.Row="4" Text="Connected account" />
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Gmail.ConnectedAccount, FallbackValue='Not connected', TargetNullValue='Not connected'}" />
@@ -483,7 +483,7 @@
                       </Border>
                       <StackPanel Grid.Column="2" VerticalAlignment="Center">
                         <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{Binding Username}" Classes="muted" FontSize="11" />
+                        <TextBlock Text="{Binding Username}" Classes="muted" FontSize="{DynamicResource FontSmall}" />
                       </StackPanel>
                       <Panel Grid.Column="3" VerticalAlignment="Center">
                         <Border Classes="tag role" IsVisible="{Binding Converter={x:Static vm:SettingsViewModel.IsAdminUser}}"><TextBlock Text="Administrator" /></Border>
@@ -493,7 +493,7 @@
                   </DataTemplate>
                 </ListBox.ItemTemplate>
               </ListBox>
-              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" TextWrapping="Wrap"
                          Text="One administrator; everyone else is a Standard user who makes quotations." />
             </StackPanel>
           </Border>
@@ -507,11 +507,11 @@
               <StackPanel Name="AddUserForm" Spacing="12" IsVisible="{Binding IsAddingUser}">
                 <TextBlock Classes="h2" Text="New user" />
                 <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" MaxWidth="560">
-                  <StackPanel VerticalAlignment="Center"><TextBlock Text="Login name" /><TextBlock Classes="muted" FontSize="11" Text="printed as 'By:' on PDFs" /></StackPanel>
+                  <StackPanel VerticalAlignment="Center"><TextBlock Text="Login name" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="printed as 'By:' on PDFs" /></StackPanel>
                   <TextBox Grid.Column="1" Name="NewUsernameBox" Text="{Binding NewUsername}" Watermark="e.g. ravi" />
-                  <StackPanel Grid.Row="1" VerticalAlignment="Center"><TextBlock Text="Display name" /><TextBlock Classes="muted" FontSize="11" Text="'Prepared by'" /></StackPanel>
+                  <StackPanel Grid.Row="1" VerticalAlignment="Center"><TextBlock Text="Display name" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="'Prepared by'" /></StackPanel>
                   <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding NewDisplayName}" Watermark="e.g. Ravi Kumar" />
-                  <StackPanel Grid.Row="2" VerticalAlignment="Center"><TextBlock Text="First password" /><TextBlock Classes="muted" FontSize="11" Text="at least 4 characters" /></StackPanel>
+                  <StackPanel Grid.Row="2" VerticalAlignment="Center"><TextBlock Text="First password" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="at least 4 characters" /></StackPanel>
                   <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding NewUserPassword}" PasswordChar="●" />
                 </Grid>
                 <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="New users are Standard users: they make quotations and do not change Settings." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="New users are Standard users: they make quotations and do not change Settings. They choose their own password at their first sign-in."><Path Classes="infoicon" /></Border></StackPanel>
@@ -542,14 +542,14 @@
                   <TabItem Header="Account">
                     <StackPanel Spacing="10" Margin="0,12,0,0">
                       <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" MaxWidth="560">
-                        <StackPanel VerticalAlignment="Center"><TextBlock Text="Login name" /><TextBlock Classes="muted" FontSize="11" Text="printed as 'By:' on PDFs" /></StackPanel>
+                        <StackPanel VerticalAlignment="Center"><TextBlock Text="Login name" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="printed as 'By:' on PDFs" /></StackPanel>
                         <TextBox Grid.Column="1" Name="EditUsernameBox" Text="{Binding EditUsername}" />
-                        <StackPanel Grid.Row="1" VerticalAlignment="Center"><TextBlock Text="Display name" /><TextBlock Classes="muted" FontSize="11" Text="'Prepared by'" /></StackPanel>
+                        <StackPanel Grid.Row="1" VerticalAlignment="Center"><TextBlock Text="Display name" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="'Prepared by'" /></StackPanel>
                         <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditDisplayName}" />
                         <TextBlock Grid.Row="2" Text="Can sign in" VerticalAlignment="Center" />
                         <ToggleSwitch Grid.Row="2" Grid.Column="1" Name="EditActiveSwitch" IsChecked="{Binding EditIsActive}" OnContent="Active" OffContent="Inactive" />
                       </Grid>
-                      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left"
+                      <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left"
                                  Text="Old quotations and the history keep the name used at the time. The administrator cannot be made inactive." />
                     </StackPanel>
                   </TabItem>
@@ -625,13 +625,13 @@
             <Image Name="TestQrImage" Source="{Binding TestQrImage}" Width="190" Height="190" RenderOptions.BitmapInterpolationMode="None" />
           </Border>
           <StackPanel Grid.Column="1" Margin="18,0,0,0" Spacing="2" VerticalAlignment="Center">
-            <TextBlock Classes="muted" FontSize="11" Text="Paying to" />
+            <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Paying to" />
             <TextBlock Text="{Binding TestQrPayee}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,6" />
-            <TextBlock Classes="muted" FontSize="11" Text="UPI ID" />
+            <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="UPI ID" />
             <TextBlock Text="{Binding TestQrUpiId}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,6" />
-            <TextBlock Classes="muted" FontSize="11" Text="Amount" />
+            <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Amount" />
             <TextBlock Text="₹ 1.00" FontWeight="SemiBold" Margin="0,0,0,6" />
-            <TextBlock Classes="muted" FontSize="11" Text="Note" />
+            <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Note" />
             <TextBlock Text="{x:Static vm:SettingsViewModel.TestQrNote}" FontWeight="SemiBold" />
           </StackPanel>
         </Grid>

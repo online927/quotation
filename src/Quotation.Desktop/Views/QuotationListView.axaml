@@ -76,7 +76,7 @@
                   ItemsSource="{x:Static vm:QuotationListViewModel.OutcomeFilters}" SelectedItem="{Binding OutcomeFilter}" />
         <ComboBox Grid.Column="3" Name="TypeFilterBox" IsVisible="{Binding ShowTypeFilter}" ItemsSource="{x:Static vm:QuotationListViewModel.TypeFilters}" SelectedItem="{Binding TypeFilter}" HorizontalAlignment="Stretch" />
       </Grid>
-      <TextBlock Classes="muted" FontSize="11" Text="{Binding Summary}" />
+      <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="{Binding Summary}" />
       <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
     </StackPanel>
     <Border DockPanel.Dock="Top" Classes="tablehead">
@@ -127,7 +127,7 @@
             <TextBlock Grid.Column="4" Text="{Binding Total}" HorizontalAlignment="Right" />
             <Border Grid.Column="5" Classes="pill" Classes.ok="{Binding IsFinal}" Classes.pending="{Binding IsPending}" Classes.bad="{Binding IsCancelled}"
                     Margin="6,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center">
-              <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding Status}" FontSize="{DynamicResource FontSmall}" FontWeight="SemiBold" />
             </Border>
             <TextBlock Grid.Column="6" Text="{Binding Outcome}" FontSize="12" VerticalAlignment="Center" Width="90"
                        Foreground="{DynamicResource MutedBrush}" Classes.won="{Binding IsWon}" Classes.lost="{Binding IsLost}"

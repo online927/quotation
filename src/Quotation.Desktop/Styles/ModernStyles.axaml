@@ -409,10 +409,30 @@
   <Style Selector="Button.round.onbar /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource TopBarFieldBrush}" />
   </Style>
+  <!-- The connection's signal bars (top bar): all three green when connected, two orange for a warning, one red when not -->
+  <Style Selector="StackPanel.signal Border">
+    <Setter Property="Width" Value="3.5" />
+    <Setter Property="CornerRadius" Value="1.5" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Background" Value="{DynamicResource TopBarMutedBrush}" />
+    <Setter Property="Opacity" Value="0.45" />
+  </Style>
+  <Style Selector="StackPanel.signal.ok Border">
+    <Setter Property="Background" Value="{DynamicResource OkBrush}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="StackPanel.signal.warn Border.b1, StackPanel.signal.warn Border.b2">
+    <Setter Property="Background" Value="{DynamicResource WarnBrush}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="StackPanel.signal.bad Border.b1">
+    <Setter Property="Background" Value="{DynamicResource BadBrush}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
 
   <!-- ===== F1 shortcuts card ===== -->
   <Style Selector="TextBlock.kshead">
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSmall}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
     <Setter Property="Margin" Value="0,8,0,2" />

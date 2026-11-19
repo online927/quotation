@@ -186,6 +186,8 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     public string UserDisplay { get; }
     public string UserRole { get; }
     public string UserInitials { get; }
+    /// <summary>Pointing at the round initial in the top bar: "ravi · Standard".</summary>
+    public string UserTip => UserDisplay.Length == 0 ? "My account" : $"{UserDisplay} · {UserRole}";
 
     /// <summary>F1: the card with every keyboard shortcut.</summary>
     [ObservableProperty] private bool _showShortcuts;
@@ -736,6 +738,9 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     {
         if (oldValue is not null) oldValue.PropertyChanged -= OnPagePropertyChanged;
         if (newValue is not null) newValue.PropertyChanged += OnPagePropertyChanged;
+        // A quotation counts as open (for "… also has this open") only while it is on the screen, not while it waits for Back
+        if (oldValue is QuotationEditorViewModel hidden && !ReferenceEquals(hidden, newValue)) hidden.PageHidden();
+        if (newValue is QuotationEditorViewModel shown) shown.PageShown();
         UpdateKeyBar(newValue);
     }
 
@@ -766,6 +771,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
             new(alt + "+I", "Item", Avalonia.Input.Key.I, A, editor),
             new(alt + "+P", "P&F", Avalonia.Input.Key.P, A, editor || formater),
             new(ctrl + "+S", "Save", Avalonia.Input.Key.S, C, editor),
+            new(ctrl + "+N", "Clear", Avalonia.Input.Key.N, C, editor),
             new(ctrl + "+Enter", "Approve", Avalonia.Input.Key.Enter, C, editor || formater),
             new("F11", "Preview", Avalonia.Input.Key.F11, N, editor || formater),
             new(ctrl + "+Shift+S", "Save as PDF", Avalonia.Input.Key.S, C | S, editor),

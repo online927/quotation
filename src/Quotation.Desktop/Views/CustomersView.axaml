@@ -12,7 +12,7 @@
     <ctl:PageTitle Text="Customers" Icon="customers" Grid.ColumnSpan="3" Margin="0,0,0,10" />
     <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,0,8">
       <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search name, GSTIN, phone, e-mail, city…" />
-      <TextBlock Classes="muted" FontSize="11" Text="{Binding ResultInfo}" />
+      <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="{Binding ResultInfo}" />
       <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
     </StackPanel>
     <ListBox Grid.Row="2" Name="ResultList" ItemsSource="{Binding Results}" SelectedItem="{Binding Selected}">
@@ -20,7 +20,7 @@
         <DataTemplate x:DataType="c:CustomerSearchHitDto">
           <StackPanel Margin="0,1">
             <TextBlock Text="{Binding Customer.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-            <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis">
+            <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis">
               <Run Text="{Binding Customer.StateName, Mode=OneWay}" />
               <Run Text="  " />
               <Run Text="{Binding Customer.Gstin, Mode=OneWay}" />

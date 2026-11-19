@@ -46,10 +46,6 @@ public static class ThemeService
             _ => ThemeVariant.Light,
         };
         ColourThemes.Apply(shown);
-        // The quotation number's "ticket": the theme's own colour, or the button colour on dark themes (gold, too light
-        // for white letters)
-        var key = dark ? "ActionBrush" : "AccentBrush";
-        if (app.Resources.TryGetResource(key, app.ActualThemeVariant, out var ticket)) app.Resources["TicketBrush"] = ticket;
         ApplyShadow(app);
         ColoursChanged?.Invoke();
     }

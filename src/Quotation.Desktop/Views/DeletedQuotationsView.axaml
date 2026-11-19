@@ -37,7 +37,7 @@
           <Grid ColumnDefinitions="130,80,100,*,110,220,110,230">
             <StackPanel>
               <TextBlock Text="{Binding Number}" FontWeight="SemiBold" />
-              <TextBlock Text="{Binding NumberNote}" FontSize="10" Foreground="{DynamicResource WarnBrush}" TextWrapping="Wrap"
+              <TextBlock Text="{Binding NumberNote}" FontSize="{DynamicResource FontTiny}" Foreground="{DynamicResource WarnBrush}" TextWrapping="Wrap"
                          IsVisible="{Binding NumberNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             </StackPanel>
             <TextBlock Grid.Column="1" Text="{Binding Type}" />

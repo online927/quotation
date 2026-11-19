@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -326,5 +327,190 @@ public class Round33UiTests
         await Task.Delay(500);
         Dispatcher.UIThread.RunJobs();
         ctx.Window.CaptureRenderedFrame()?.Save(Path.Combine(dir, name + ".png"));
+    }
+
+    [AvaloniaFact]
+    public async Task The_top_bar_shows_the_user_as_one_round_initial()
+    {
+        using var ctx = await StartAsync();
+        var shell = ctx.Window.FindDescendantOfType<ShellView>()!;
+        var user = shell.FindControl<Button>("UserMenuButton")!;
+        Assert.Contains("round", user.Classes);
+        Assert.Equal(user.Bounds.Width, user.Bounds.Height, 1); // round: as wide as it is high
+        Assert.Equal("R", shell.FindControl<TextBlock>("UserInitialsText")!.Text);
+        Assert.Equal("ravi · Standard", ToolTip.GetTip(user));
+        // The name is no longer written in the top bar (it is in the menu and when pointing at the initial)
+        Assert.DoesNotContain(user.GetVisualDescendants().OfType<TextBlock>(), t => t.Text is "ravi" or "Standard");
+        Assert.NotNull(user.Flyout);
+    }
+
+    [AvaloniaFact]
+    public async Task The_connection_is_a_round_button_with_signal_bars()
+    {
+        using var ctx = await StartAsync();
+        var shell = ctx.Window.FindDescendantOfType<ShellView>()!;
+        var button = shell.FindControl<Button>("StatusChip")!;
+        var bars = shell.FindControl<StackPanel>("SignalBars")!;
+        Assert.Contains("round", button.Classes);
+        Assert.Equal(button.Bounds.Width, button.Bounds.Height, 1);
+        Assert.DoesNotContain(button.GetVisualDescendants().OfType<TextBlock>(), t => t.Text is "Connected" or "Disconnected");
+        int Lit() => bars.Children.OfType<Border>().Count(b => b.Opacity > 0.9);
+
+        await UiHelpers.WaitUntil(() => ctx.Shell.Status is not null);
+        ctx.Shell.Status = ctx.Shell.Status! with { DataIsStale = false, TallyBusy = false, TallyConnected = true };
+        ctx.Shell.ServerReachable = true;
+        Dispatcher.UIThread.RunJobs();
+        if (ctx.Shell.HealthOk) Assert.Equal(3, Lit()); // connected: three bars (orange two when something is slow or old)
+
+        ctx.Shell.Status = ctx.Shell.Status with { DataIsStale = true };
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(ctx.Shell.HealthWarn);
+        Assert.Contains("warn", bars.Classes);
+        Assert.Equal(2, Lit());
+
+        ctx.Shell.Status = ctx.Shell.Status with { TallyConnected = false };
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(ctx.Shell.HealthBad);
+        Assert.Equal(1, Lit());
+        Assert.Equal("Disconnected", ctx.Shell.HealthLabel); // shown in the details when clicked
+    }
+
+    [AvaloniaFact]
+    public async Task Right_alt_p_goes_to_the_packing_and_forwarding_box_too()
+    {
+        using var ctx = await StartAsync();
+        var (editor, view) = await NewQuotationAsync(ctx);
+        try
+        {
+            var packing = Inner(view.FindControl<NumericUpDown>("PackingBox")!);
+            foreach (var keys in new[] { RawInputModifiers.Alt, RawInputModifiers.Control | RawInputModifiers.Alt }) // left Alt; right Alt (AltGr)
+            {
+                view.FindControl<SearchPicker>("ProductBox")!.InputBox.Focus();
+                Dispatcher.UIThread.RunJobs();
+                Assert.False(packing.IsFocused);
+                ctx.Window.KeyPressQwerty(PhysicalKey.P, keys);
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(packing.IsFocused);
+                if (keys == RawInputModifiers.Alt) continue;
+                // A letter the AltGr key may still type (AltGr+P is "ö" on some layouts) does not land in the box
+                ctx.Window.KeyTextInput("ö");
+                Dispatcher.UIThread.RunJobs();
+                Assert.DoesNotContain("ö", packing.Text ?? "");
+            }
+        }
+        finally
+        {
+            editor.IsDirty = false;
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task The_packing_and_forwarding_row_does_not_overlap_without_gst()
+    {
+        using var ctx = await StartAsync();
+        var (editor, view) = await NewQuotationAsync(ctx);
+        try
+        {
+            var p = (await ctx.Session.Api.SearchProductsAsync("universal bevel")).First().Product;
+            editor.SelectProduct(p);
+            editor.EntryQuantity = 2;
+            editor.CommitEntryCommand.Execute(null);
+            editor.PackingForwarding = 500;
+            foreach (var without in new[] { false, true })
+            {
+                editor.WithoutGst = without;
+                await Task.Delay(200);
+                Dispatcher.UIThread.RunJobs();
+                Rect At(Control c) => new(c.TranslatePoint(new Point(0, 0), ctx.Window)!.Value, c.Bounds.Size);
+                var label = At(view.FindControl<TextBlock>("PackingLabelText")!);
+                var box = At(view.FindControl<NumericUpDown>("PackingBox")!);
+                var amount = At(view.FindControl<TextBlock>("PackingAmountText")!);
+                Assert.True(label.Right <= box.Left, $"label {label} runs into the box {box}");
+                Assert.True(box.Right <= amount.Left, $"box {box} runs into the amount {amount}");
+                Assert.Equal("Packing & Forwarding ₹", view.FindControl<TextBlock>("PackingLabelText")!.Text);
+                Assert.Equal(without, view.FindControl<TextBlock>("PackingNoGstText")!.IsVisible);
+            }
+        }
+        finally
+        {
+            editor.IsDirty = false;
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Sharp_text_is_a_switch_in_my_settings_and_off_is_the_old_look()
+    {
+        using var ctx = await StartAsync();
+        try
+        {
+            ctx.Shell.Navigate("mysettings");
+            var mine = Assert.IsType<MySettingsViewModel>(ctx.Shell.CurrentPage);
+            Dispatcher.UIThread.RunJobs();
+            var view = ctx.Window.FindDescendantOfType<MySettingsView>()!;
+            Assert.NotNull(view.FindControl<ToggleSwitch>("SharpTextSwitch"));
+            Assert.True(ctx.Session.Config.SharpText); // on at first
+            double Small() => (double)Application.Current!.Resources["FontSmall"]!;
+
+            mine.SharpText = false; // the old look
+            Assert.False(ctx.Session.Config.SharpText);
+            Assert.Equal(SharpTextLook.SmallOff, Small());
+            Assert.Equal(TextRenderingMode.Unspecified, RenderOptions.GetTextRenderingMode(ctx.Window));
+            Assert.False(ClientConfig.Load(ctx.Session.Config.FilePath).SharpText); // kept on this PC
+
+            mine.SharpText = true;
+            Assert.Equal(SharpTextLook.SmallOn, Small());
+            Assert.Equal(OperatingSystem.IsWindows() ? TextRenderingMode.SubpixelAntialias : TextRenderingMode.Unspecified,
+                RenderOptions.GetTextRenderingMode(ctx.Window));
+            Assert.Equal("Sharp text on for this PC.", mine.InfoMessage);
+        }
+        finally
+        {
+            SharpTextLook.Apply(true);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Clear_on_an_approved_quotation_starts_a_new_empty_one()
+    {
+        using var ctx = await StartAsync();
+        var product = (await ctx.Session.Api.SearchProductsAsync("universal bevel")).First().Product;
+        var q = await ctx.Session.Api.CreateQuotationAsync(new SaveQuotationRequest
+        {
+            Date = DateOnly.FromDateTime(DateTime.Today),
+            CustomerId = (await ctx.Session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id,
+            Lines = [new QuotationLineDto { ProductId = product.Id, Quantity = 2, Rate = product.Rate ?? 15600, TallyRate = product.Rate }],
+        });
+
+        // A draft: no Clear (Cancel as before)
+        ctx.Shell.OpenQuotation(q.Id);
+        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is QuotationEditorViewModel { Lines.Count: > 0, IsBusy: false });
+        var draft = (QuotationEditorViewModel)ctx.Shell.CurrentPage!;
+        Assert.False(draft.ShowClear);
+
+        // Approved: Clear on the right, where Cancel was
+        await ctx.Session.Api.ApproveQuotationAsync(q.Id);
+        ctx.Shell.OpenQuotation(q.Id);
+        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is QuotationEditorViewModel { IsFinal: true, IsBusy: false } e && e != draft);
+        var approved = (QuotationEditorViewModel)ctx.Shell.CurrentPage!;
+        Dispatcher.UIThread.RunJobs();
+        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        Assert.True(approved.ShowClear);
+        Assert.True(view.FindControl<Button>("ClearButton")!.IsVisible);
+        Assert.False(view.FindControl<Button>("CancelDocButton")!.IsVisible);
+
+        approved.ClearCommand.Execute(null);
+        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is QuotationEditorViewModel e && e != approved && e.Id is null);
+        var fresh = (QuotationEditorViewModel)ctx.Shell.CurrentPage!;
+        Assert.Empty(fresh.Lines);
+        Assert.False(fresh.ShowClear);
+
+        // Back: the approved one, unchanged; Ctrl+N clears again
+        ctx.Shell.GoBack();
+        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage == approved);
+        Assert.Contains((await ctx.Session.Api.QuotationAsync(q.Id)).Status, new[] { QuotationStatus.Approved, QuotationStatus.Generated }); // still approved
+        Dispatcher.UIThread.RunJobs();
+        ctx.Window.KeyPress(Key.N, RawInputModifiers.Control, PhysicalKey.N, null);
+        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is QuotationEditorViewModel e && e != approved && e.Id is null);
+        ((QuotationEditorViewModel)ctx.Shell.CurrentPage!).IsDirty = false;
     }
 }

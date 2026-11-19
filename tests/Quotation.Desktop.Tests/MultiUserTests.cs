@@ -90,6 +90,35 @@ public class MultiUserTests
     }
 
     [AvaloniaFact]
+    public async Task A_quotation_left_for_another_page_no_longer_counts_as_open()
+    {
+        using var server = new TestServer(products: 100, customers: 60, today: DateOnly.FromDateTime(DateTime.Today));
+        using var a = await PcAsync(server, "PC-A", sync: true);
+        using var b = await PcAsync(server, "PC-B");
+        var editor = await NewQuotationAsync(a);
+        Assert.True(await editor.SaveAsync());
+        var id = editor.Id!.Value;
+        await editor.CheckPresenceAsync();
+
+        // PC-A goes on to Today's Quotations (the quotation waits in the history for Back): not open any more
+        a.Shell.Navigate("today");
+        await UiHelpers.WaitUntil(() => a.Shell.CurrentPage is QuotationListViewModel);
+        Assert.True(a.Shell.CanGoBack);
+        var other = await OpenAsync(b, id);
+        await UiHelpers.WaitUntil(() => { _ = other.CheckPresenceAsync(); return other.AlsoOpenText is null; });
+        await Task.Delay(300);
+        await other.CheckPresenceAsync();
+        Assert.Null(other.AlsoOpenText);
+
+        // Back on PC-A: open again, and PC-B is told
+        a.Shell.GoBack();
+        await UiHelpers.WaitUntil(() => a.Shell.CurrentPage == editor);
+        await UiHelpers.WaitUntil(() => { _ = other.CheckPresenceAsync(); return other.AlsoOpenText?.Contains("(PC-A)") == true; });
+        editor.IsDirty = false;
+        other.IsDirty = false;
+    }
+
+    [AvaloniaFact]
     public async Task Save_clash_can_save_mine_as_a_new_quotation()
     {
         using var server = new TestServer(products: 100, customers: 60, today: DateOnly.FromDateTime(DateTime.Today));

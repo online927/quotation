@@ -7,6 +7,8 @@ using Quotation.Contracts;
 using Quotation.Desktop.Controls;
 using Quotation.Desktop.ViewModels;
 
+using Quotation.Desktop.Services;
+
 namespace Quotation.Desktop.Views;
 
 /// <summary>
@@ -67,16 +69,18 @@ public partial class QuotationEditorView : UserControl
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Source is not Control source) return;
-        if (e.Key == Key.P && e.KeyModifiers == KeyModifiers.Alt)
+        if (e.Key == Key.P && AltKey.IsAlt(e.KeyModifiers))
         {
-            // Alt+P: straight to Packing & Forwarding, its amount selected to type over.
+            // Alt+P (either Alt key): straight to Packing & Forwarding, its amount selected to type over.
             FocusPacking();
+            AltKey.SwallowTypedLetter(this, e.KeyModifiers);
             e.Handled = true;
             return;
         }
-        // Alt+C: the Customer box; Alt+I: the Product box to add an item.
-        if (e.KeyModifiers == KeyModifiers.Alt && e.Key is Key.C or Key.I)
+        // Alt+C: the Customer box; Alt+I: the Product box to add an item (either Alt key).
+        if (AltKey.IsAlt(e.KeyModifiers) && e.Key is Key.C or Key.I)
         {
+            AltKey.SwallowTypedLetter(this, e.KeyModifiers);
             var box = e.Key == Key.C ? CustomerBox : ProductBox;
             if (box.IsEffectivelyEnabled && box.IsEffectivelyVisible)
             {

@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 34 built and pushed (version in the next line once CI finishes). The list is empty.
+Last updated: Round 34 shipped as version 0.9.81 (run 81; run 79 stopped on one Windows-only Sharp text test, fixed in 2a266bb). The list is empty.
 
 
 1. THE PROJECT
@@ -150,7 +150,10 @@ StackPanel.signal styles in ModernStyles); presence fix (QuotationEditorViewMode
 ShellViewModel.OnCurrentPageChanged: a page kept for Back no longer checks in); right Alt = AltGr (Services/AltKey.cs,
 also drops the letter AltGr may type); P&F row without overlap; Sharp text switch (Services/SharpTextLook.cs,
 ClientConfig.SharpText, FontSmall/FontTiny resources replace the literal 11 / 10.5 / 10 font sizes in the PC app's
-pages); Clear on approved quotations (#123, ShowClear / ClearCommand, Ctrl+N).
+pages); Clear on approved quotations (#123, ShowClear / ClearCommand, Ctrl+N handled in ShellView's window-wide
+key handler so it works wherever the keyboard is). SharpTextLook.Hook() runs at app start and remembers every window
+that opens (the headless tests have no desktop window list); SharpTextLook.ClearTypeHere lets a test try the
+Windows letter look on Linux. Shipped as 0.9.81.
 
 Round 33 delivered the whole list (#97–#111), on PC, Mac and phone where it applies:
   * Themes renamed: Glass (Blue) → Frost, Glass (Maroon) → Hatims Maroon (ThemeNames only).

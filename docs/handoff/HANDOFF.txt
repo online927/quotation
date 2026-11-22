@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 34 shipped as version 0.9.81 (run 81; run 79 stopped on one Windows-only Sharp text test, fixed in 2a266bb). The list is empty.
+Last updated: Round 35 built in full (#124–#142 except the discarded #143) and shipped on "Do" (see 4.8 for the version). List: empty.
 
 
 1. THE PROJECT
@@ -16,7 +16,7 @@ Quotation system for T.SAIFUDDIN & CO., working with TallyPrime (TallyPrime Serv
     %ProgramData%\TSQuotation). It reads customers, items, rates, GST from Tally over Tally's XML/HTTP port (read
     only), numbers quotations (TSQ<yy><yy>-<n>, e.g. TSQ2627-1), makes PDFs (Tally layout or Zoho layout), keeps users,
     seals (with PIN), backups, Gmail + Claude AI (optional), and answers the phone/Mac "finder" (UDP 5080).
-  * PC app (Avalonia 11, .NET 10): Windows (installer TSQuotation-Setup) and Mac (.dmg). Connects to the server.
+  * PC app (Avalonia 11, .NET 10): Windows (installer Quotation-Setup) and Mac (.dmg). Connects to the server.
   * Phone app (Avalonia Android, APK). Connects to the server.
   * Repo: online927/quotation (PUBLIC). Work branch: claude/tallyprime-quotation-automation-agxx3n (only this
     branch; never another branch, no pull request unless the user asks).
@@ -185,7 +185,7 @@ Round 33 delivered the whole list (#97–#111), on PC, Mac and phone where it ap
     src/Quotation.Mobile.Android/*.cs against ~/.dotnet/packs/Microsoft.Android.Ref.36/*/ref/net10.0/*.dll and the
     compile dlls listed in src/Quotation.Mobile.Android/obj/project.assets.json (the SDK download is blocked here).
 
-Theme list now (visible names): Frost [start theme], Graphite, Grass Green, Hatims Maroon, Parchment, Forest & Gold,
+Theme list now (visible names): Frost [start theme], Grass Green, Hatims Maroon, Parchment, Forest & Gold,
 Hero Light, Ocean, Midnight Stars, Tally. (+ Eid / Diwali festival looks, by themselves on the festival days.)
 
 DISCARDED by the user (never propose again unless asked): Taj Mahal theme; Maroon Mahal theme; discount by brand;
@@ -195,7 +195,147 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 
 8. ON THE LIST — NOT BUILT YET
 ------------------------------
- (nothing — the list is empty after Round 34; #123 Clear was built in Round 34)
+ (Nothing open. Everything below was BUILT IN ROUND 35 on the user's "Do, for mac and Android too" → "Build all, then
+ ship" — the notes are kept for how each was made. Built choices that differ from the notes: #124's switch is per PC
+ (ClientConfig.DeliveryTimeOnItems / RecentDeliveryTimes, My Settings "Delivery time on items (this PC)") and the PDF
+ line comes from PdfQuotationRenderer.WithDelivery (added to the description lines, so all three layouts print it);
+ #131 = QuotationSettings.SealPin (default false), SealService.Authorize(..., pinRequired), editor CanSeal needs only a
+ picture when off; #135 = Services/ClickSound.cs (Assets/Sounds/click.wav, click-double.wav; Windows winmm PlaySound,
+ Mac afplay; ClientConfig.Silent default true; save quiet while approving); #136b = Button.primary.accentfill with
+ OnAccentBrush / AccentHoverBrush made in ThemeService.ApplyShadow from the accent's brightness; #137 =
+ Quotation.Pdf/MinimalPdfRenderer.cs, PdfLayouts.Minimal / All, PdfQuotationRenderer.RenderIn / RenderPreviewIn,
+ IQuotationDocumentRenderer.RenderMinimal (default = Tally); #141 = Settings tabs "PDF" and "Features".)
+
+ #124 Delivery time per line (1A, type-or-pick) — preview docs/handoff/previews/124-delivery-time-per-line.png.
+      My Settings first card "Delivery time on items" (per user, Off at first). On: a Delivery box right of the
+      Description box (Grid "3*,10,150,12,6*" in the entry's description row); type or pick Ex-stock / 1 week /
+      2–3 weeks / 4–6 weeks, often-typed values join the list. EMPTY BY DEFAULT on every new line (empty = nothing on
+      the line or the PDF); the list starts with a blank "(none)" entry to clear a chosen value. Enter never stops at Delivery (Product → Qty → Rate →
+      Disc → Description → Enter adds the line); Enter IN the Delivery box adds the line. Lines show a chip under the
+      item (green Ex-stock, orange weeks). PDF (Tally and Zoho): "Delivery: …" as the last small line under the item
+      name. Store it in the existing line field DueOn (still in the database, not printed since Round 4). A delivery
+      typed by someone else still shows and prints with the switch Off. Server update needed.
+ #131 Seal PIN On/Off (administrator switch in Settings, OFF BY DEFAULT): On = as now (the user's 4-digit PIN before sealing); Off = the
+      Seal switch seals without asking for a PIN (server's sealed-PDF endpoint must allow no PIN when Off). Server update
+      needed. Just added, not previewed, not built.
+ #132 Zoho PDF: the small bottom line "Printed on 21-Nov-26 at 10:15   By: ravi" (ModernPdfRenderer, doc.Printed)
+      becomes "Prepared by <Prepared by name>" (doc.PreparedBy). Tally layout unchanged. Server update needed. Not built.
+ #133 Gear menu (quotation screen; it stays open since #86): a small round ✕ at its top-right that closes it. PC/Mac
+      only, no server update. Not built.
+ #134 Zoho PDF: the gap between "Date :" and the date is too wide (label right-aligned at x 460, date right-aligned
+      at x 560 in ModernPdfRenderer): put the date right after the label (and "Terms :" the same way). Server update
+      needed. Not built.
+ #135 Sound effects (user: "Sound effects, add to list"; "Approve and save"; "Click sound for approve and save,
+      my settings - silent on/off, no description"): a short click sound when a quotation is saved and when it is
+      approved. My Settings: a switch named just "Silent" (On / Off, no grey explanation text); Silent On = no
+      sounds. Default ON (user: "Default on"), so new users hear nothing until they turn Silent off.
+      Sound picked (user: "A, double click for approve"): A Soft click (docs/handoff/previews/135-sound-A-soft-click.wav,
+      30 ms filtered noise + 1.8 kHz sine, 4 ms decay; made by a small script, ship the .wav in the app) — Save = one
+      click, Approve = two quick clicks (80 ms apart).
+      PC/Mac (maybe phone) only, no server update. Not built.
+ #137 More PDF layouts besides Tally and Zoho (user: "need few more layouts, preview"). Mock-ups (HTML pictures, same
+      sample quotation): docs/handoff/previews/137-new-pdf-layouts.png (+ 137-layout-A..D.png full size). A Letterhead
+      (classic letter: "To, … Sub: … Dear Sir", double rule, signature), B Minimal (white space, thin lines, small
+      grey labels), C Colour band (coloured top band, date/valid-till/ref/payment chips, bill-to/ship-to cards,
+      striped rows, totals box), D Compact (boxed like Tally but tighter, Part No. column, ~28 lines on one page).
+      User picked B ("Add b, don't build now"): only the Minimal layout goes on the list; A, C and D dropped.
+      When built: new renderers in Quotation.Pdf beside ModernPdfRenderer, a choice in
+      the per-user PDF layout setting (My Settings) and the Formater switch; SERVER UPDATE needed (PDFs are made by the
+      server).
+
+ #138 Zoho PDF misses details the Tally PDF prints (user: "find all and list all"; checked field by field in
+      ModernPdfRenderer vs QuotationPdfRenderer). Not yet printed on Zoho:
+      Quotation: 1 Dispatched through, 2 Destination, 3 Terms of Delivery, 4 Amount in words (INR … Only),
+      5 Total quantity (e.g. 3 NOS), 6 Prepared by / Verified by (see #132), 7 "for T.SAIFUDDIN & CO. / Authorised
+      Signatory" signature block (the seal is stamped, but there is no signatory line), 8 Company state and code
+      (Karnataka, 29), 9 Declaration ("We declare that this quotation shows the actual price…"), 10 Validity line
+      ("This quotation is valid for 30 days…"), 11 Jurisdiction line (when set in Settings), 12 Footer text and
+      Authorised signatory wording from Settings (Zoho always prints its own fixed "This is a Computer Generated
+      Document"). Proforma invoice: 13 Delivery Note and its date, 14 Dispatch Doc No., 15 HSN/SAC-wise tax table,
+      16 Tax amount in words, 17 Proforma declaration and footer text. Already printed on both: buyer, consignee,
+      buyer's order no./date, other references, payment terms, items, HSN, GST %, discount, P&F, taxes, total,
+      remarks, terms & conditions, PAN/MSME/IEC, bank, UPI QR, seal.
+      User picked 1, 2, 3, 8 ("Add 1 2 3 8, preview"). Preview docs/handoff/previews/138-zoho-dispatch-destination-
+      delivery-state.png (made by changing ModernPdfRenderer for a moment, then putting the file back): company
+      lines get "Karnataka, Code 29" after GSTIN; the right block under the references becomes rows "Date :",
+      "Terms :", "Dispatch :", "Destination :", "Delivery :" (labels right-aligned at x 452, values left-aligned at
+      456, wrapped at 104 pt; a row only when filled; HeaderBottom grows with the rows). This also brings the date next
+      to its label (#134). Others (4-7, 9-17) not chosen. User: "Add to list, don't build" — on the list as previewed,
+      not built. SERVER UPDATE needed when built.
+
+ #140 Cancel on a quotation that was never saved asks first: "Discard this quotation?" / "Nothing is saved; the number
+      is not used." with buttons "Discard" / "No" (user: "Discard or No"; No = back to the page, nothing lost). Only when something was typed (a
+      blank page just stays as it is, as now). Saved drafts keep today's Cancel (marks CANCELLED, number not reused).
+      User: "Yes, add to list" (they thought an unsaved quotation got cancelled; a test of their steps showed nothing
+      saved and no number used — the page just cleared without asking). PC/Mac only, no server update. Not built.
+
+ #141 Settings: a separate "Features" tab (user: "need a separate menu option, all settings are in Quotation").
+      Preview docs/handoff/previews/141-settings-quotation-pdf-features-tabs.png: the switches card moves out of the Quotation tab
+      into a new tab "Features" right after Quotation: Proforma invoices, Users and others' quotations, Won / Lost /
+      Follow-up (+ days), WhatsApp button (+ messages), Greet, Stars, Fest, XO, Seal PIN (#131). Quotation keeps
+      numbering, GST, P&F, rates, HSN, edit days, Title Case and the proforma number boxes. Also a "PDF" tab (user: "Yes,
+      add PDF tab too"): PDF layout (+ Zoho heading), Part No. column, Fit on one page, quotation / proforma headings.
+      Tab order: Company, Quotation, PDF, Features, Backup & updates, … On the list, build at the end. PC/Mac only, no
+      server update.
+
+ #143 Clearer connection error message: DISCARDED by the user after the preview (do not build).
+
+BUILT, WAITING FOR "Do" (Round 35; SERVER UPDATE NEEDED because of #126 and #130):
+ #125 Wrong GSTIN catch (6B) — preview docs/handoff/previews/125-gstin-check.png. Core Gstin.Problem (short screen
+      note) + TaxCheck now also checks the check letter (mod-36, weights 1,2 over the first 14 characters; Round 25 had
+      left it out only because the made-up test GSTINs failed it). Editor: BuyerGstinProblem → TextBox.bad red ring,
+      BuyerGstinProblemNote, FoldedGstinChip on the folded customer line. Approve asks through the existing GST question
+      (TaxLooksRightAsync). Tally.Simulator SampleDataset GSTINs now have correct check letters (WithCheckLetter; the
+      old random digit is still drawn so the rest of the data is unchanged); tests updated to the new values
+      (27AAACS1234F1ZS, 33AAACS1234F1ZZ, 29ABCPB1234K1ZZ). Tests: TaxCheckTests, Round35UiTests.
+ #127 Keys: Insert = Customer box (QuotationEditorView.FocusCustomerBox opens a folded buyer box; Alt+C uses it too);
+      Delete = Clear on an approved quotation only, not while typing in an editable TextBox. Both in ShellView's
+      window-wide OnPreviewKeyDown (like Ctrl+N), the F1 card (ShellView.axaml) and the key bar ("Ins", "Del").
+      Tests: Round35UiTests.
+ #128 Settings switch names: "Greet" (GreetingsSwitch), "Fest" (FestivalLooksSwitch), "XO" (XoGameSwitch), each only
+      On / Off (no explanation). Test: Round35UiTests.Settings_switches_are_named_greet_fest_and_xo_without_explanations.
+ #129 Graphite theme removed: AppTheme.Graphite kept only as a removed name (Normalize → Glass (Blue) = Frost), out of
+      AppTheme.All, ThemeNames and ColourThemes (its Palettes dictionary is now empty). Tests updated (next theme after
+      Frost is Grass Green).
+ #136 Clear button (user: "not clearly visible" → picked B; "don't appear on today quotations or history, only appear
+      on new quotation page"). Preview docs/handoff/previews/136-clear-button.png. ClearButton is now Classes="primary
+      bar" (solid, like Approve, white icon). ShowClear also needs _startedNew (editor created with no id = New quotation
+      / New proforma page, Formater hand-over, recovery of a new one); OpenQuotation(id) from a list never shows it, so
+      Ctrl+N and Delete do nothing there either. Tests: Round33UiTests.Clear_on_an_approved… (now approves on the New
+      page via ApprovedOnNewPageAsync and checks a list-opened one has no Clear), Round35UiTests Delete test. PC/Mac only.
+      NEXT (user: "want as theme based, preview and build later"): Clear in the theme's own colour (AccentBrush; text
+      and icon dark #1B1B1F when the colour is light, i.e. Forest & Gold and Midnight Stars gold, else white) instead of
+      the fixed blue ActionBrush. Preview docs/handoff/previews/136b-clear-button-theme-colour.png. Not built yet; Approve
+      stays blue.
+ #139 Names without "TS" (user: change the UPI example and "TSQuotation" names to Quotation). Done: UPI hints now
+      "e.g. yourcompany@okhdfcbank" (Settings box, its message, server check); Tally voucher hint "e.g. Sales,
+      Quotation"; files: Quotation-Export-…tsq, Quotation-backup-…tsq, update download Quotation-Setup-x.exe,
+      installers Quotation-Setup-x.y.z.exe / QuotationServer-Setup-x.y.z.exe (server hands out client\Quotation-
+      Setup.exe; its installer deletes the old client\TSQuotation-Setup.exe), Quotation-Mac-….dmg, Quotation-Phone-….apk;
+      docs/SETUP.md. KEPT ON PURPOSE (renaming loses data on update): C:\ProgramData\TSQuotation (database),
+      %AppData%\TSQuotation\client.json, program/exe names TSQuotation(.Server).exe, Windows service TSQuotationServer,
+      install folders, the secret key "TSQuotation.v1.secrets" (saved passwords), the app's running-check name, the phone
+      app's inner name, the Google Drive folder "TS Quotations" (offered to the user). Test data "TS Quotation" is the
+      Tally voucher type and stays. Server update: yes (backup file name, setup file name).
+ #142 Eye icons centred in their circles (user: "eye icon is not exactly in the centre"): the eye Paths
+      (ShowHeader/HideHeader/ShowFooter/HideFooter buttons, login ShowPasswordButton) had Width = Height with
+      Stretch=Uniform, so the wide eye was drawn at the top of a square box (show-eye 3 px high). Now only Width is set,
+      centred both ways (measured: 3 px → about 1 px, pixel rounding). PC/Mac only.
+ #130 Delete user (Settings → Users → Account → "Delete user", users only): DELETE api/users/{id} (AuthService.
+      DeleteUserAsync: not yourself, not the administrator; sessions deleted), seal picture and stars (SettingsService.
+      RemoveAsync via StarsService.ForgetAsync) removed, audit "UserDeleted". Quotations keep the name (they store the
+      username as text). SettingsViewModel now takes the INavigator for the question. Tests: server Round35Tests,
+      Round35UiTests. Picture: docs/handoff/previews/130-delete-user.png.
+ #126 GST by the buyer's or the ship-to state (B) — preview docs/handoff/previews/126-gst-buyer-or-ship-to-state.png.
+      Core/Gst/PlaceOfSupply.cs (Code, IsInterState, ChoiceMatters, GstName) used by the server (CalcInputOf), the
+      editor (RecalculateTotals, TaxLooksRightAsync via PlaceOfSupplyCode). New column Quotations.GstByBuyer (migration
+      QuotationGstByBuyer, old rows false = ship-to as before); SaveQuotationRequest.GstByBuyer is bool? (null = keep;
+      a new quotation from an older app = ship-to); QuotationDto.GstByBuyer. Editor: GstByBuyer (true on new, also
+      Formater hand-over), GstByShipTo, ShowGstByChoice, GstByBuyerText/Tax, GstByShipToText/Tax; view GstByChoice
+      with RadioButton.gstby (DocumentStyles). NO GroupName on those RadioButtons: a GroupName is window-wide, and while
+      pages change two editor views exist at once, so the two pages' choices untick each other forever (the app froze;
+      test Two_quotation_screens_at_once_keep_their_own_gst_choice). Tests: TaxCheckTests, server Round35Tests,
+      Round35UiTests. A test that hangs: run with --blame-hang-timeout 4m to see which one.
 
 
 9. FIRST MESSAGE IN A NEW SESSION

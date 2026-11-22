@@ -23,6 +23,7 @@ public partial class App : Application
             ThemeService.Apply(Quotation.Contracts.AppTheme.Normalize(session.Config.Theme));
             TextSelectionLook.Apply(session.Config.TextSelection);
             SharpTextLook.Apply(session.Config.SharpText);
+            ClickSound.Silent = session.Config.Silent;
             // Always opens maximised (fills the screen; taskbar and title bar stay visible).
             desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel(session), WindowState = Avalonia.Controls.WindowState.Maximized };
         }

@@ -1,5 +1,6 @@
 ; Quotations Server — installs the central Quotation Server as a Windows Service (files, folders and the service
-; keep the TSQuotation names).
+; keep the TSQuotation names, so an update finds the same database, settings and service; the installer files are
+; named Quotation-…).
 ; Build: ISCC.exe /DAppVersion=0.9.0 TSQuotationServer.iss   (after installer\publish.ps1)
 #ifndef AppVersion
   #define AppVersion "0.9.0"
@@ -17,7 +18,7 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\publish\installers
-OutputBaseFilename=TSQuotationServer-Setup-{#AppVersion}
+OutputBaseFilename=QuotationServer-Setup-{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -32,7 +33,11 @@ Source: "..\publish\server\appsettings.json"; DestDir: "{app}"; Flags: onlyifdoe
 Source: "..\publish\simulator\TallySimulator.exe"; DestDir: "{app}\tools"; Flags: ignoreversion
 Source: "..\docs\SETUP.md"; DestDir: "{app}"; Flags: ignoreversion isreadme
 ; The client installer of the same version: client PCs download it from the server and update themselves.
-Source: "..\publish\installers\TSQuotation-Setup-{#AppVersion}.exe"; DestDir: "{app}\client"; DestName: "TSQuotation-Setup.exe"; Flags: ignoreversion
+Source: "..\publish\installers\Quotation-Setup-{#AppVersion}.exe"; DestDir: "{app}\client"; DestName: "Quotation-Setup.exe"; Flags: ignoreversion
+
+[InstallDelete]
+; The client installer had the old name before; only the new "Quotation-Setup.exe" is handed out now.
+Type: files; Name: "{app}\client\TSQuotation-Setup.exe"
 
 [Dirs]
 ; Database, PDFs, logs and backups. Never removed on uninstall.

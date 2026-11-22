@@ -33,7 +33,7 @@
         <TextBox.InnerRightContent>
           <ToggleButton Name="ShowPasswordButton" Classes="eye" ToolTip.Tip="Show the password" Focusable="False">
             <Path Data="M2,12 C2,12 5.5,5 12,5 C18.5,5 22,12 22,12 C22,12 18.5,19 12,19 C5.5,19 2,12 2,12 Z M12,9 A3,3 0 1 0 12.01,9 Z"
-                  Stroke="{DynamicResource TextBrush}" StrokeThickness="1.8" Width="17" Height="17" Stretch="Uniform" />
+                  Stroke="{DynamicResource TextBrush}" StrokeThickness="1.8" Width="17" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
           </ToggleButton>
         </TextBox.InnerRightContent>
         <TextBox.KeyBindings>

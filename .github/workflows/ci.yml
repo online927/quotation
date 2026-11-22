@@ -109,7 +109,7 @@ jobs:
             -p:ApplicationVersion=${{ github.run_number }} -p:ApplicationDisplayVersion=0.9.${{ github.run_number }} \
             -p:Version=0.9.${{ github.run_number }} $SIGN -o publish/android
           mkdir -p publish/android-app
-          cp publish/android/*-Signed.apk "publish/android-app/TSQuotation-Phone-0.9.${{ github.run_number }}.apk"
+          cp publish/android/*-Signed.apk "publish/android-app/Quotation-Phone-0.9.${{ github.run_number }}.apk"
           ls -la publish/android-app
       - uses: actions/upload-artifact@v4
         with:

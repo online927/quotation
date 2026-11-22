@@ -84,6 +84,9 @@ public class OfficeFeaturesUiTests
         var ravi = await ctx.Session.Api.CreateUserAsync(new CreateUserRequest("ravi", "Ravi", "ravi-pass", UserRole.User));
         await ctx.Session.Api.UploadUserSealAsync(ravi.Id, Convert.FromBase64String(Png));
         await ctx.Session.Api.SetUserSealPinAsync(ravi.Id, "2020");
+        var all = await ctx.Session.Api.SettingsAsync();
+        all.Quotation.SealPin = true; // Round 35: the PIN is asked only with Settings → Features → Seal PIN on
+        await ctx.Session.Api.SaveSettingsAsync(all);
         await ctx.Session.Api.LoginAsync("ravi", "ravi-pass");
         ctx.Session.Settings = null;
 
@@ -124,15 +127,16 @@ public class OfficeFeaturesUiTests
             // Round 32: Glass (Blue) is the start theme; Default Light, Default Dark and Same as Windows are gone.
             Assert.Equal(AppTheme.GlassBlue, ThemeService.Current);
             Assert.False(ThemeService.IsDark);
-            Assert.Equal("Next theme: Graphite", ctx.Shell.ThemeTip);
+            Assert.Equal("Next theme: Grass Green", ctx.Shell.ThemeTip); // Graphite was removed in Round 35
             await ctx.Shell.ToggleThemeCommand.ExecuteAsync(null);
-            Assert.Equal(AppTheme.Graphite, (await ctx.Session.Api.MeAsync()).Theme);
-            Assert.Equal(AppTheme.Graphite, ctx.Session.Config.Theme); // the login screen on this PC follows it
+            Assert.Equal(AppTheme.GlassGreen, (await ctx.Session.Api.MeAsync()).Theme);
+            Assert.Equal(AppTheme.GlassGreen, ctx.Session.Config.Theme); // the login screen on this PC follows it
             // Each click is the next theme in the list, back to Glass (Blue) after the last.
             Assert.Equal(AppTheme.Tally, ShellViewModel.NextTheme(AppTheme.Midnight)); // Maroon Mahal was removed
-            Assert.DoesNotContain(ThemeNames.All, t => t.Name is "Maroon Mahal" or "Default Light" or "Default Dark" or "Same as Windows");
+            Assert.DoesNotContain(ThemeNames.All, t => t.Name is "Maroon Mahal" or "Default Light" or "Default Dark" or "Same as Windows" or "Graphite");
+            Assert.Equal(AppTheme.GlassBlue, AppTheme.Normalize(AppTheme.Graphite)); // users who had Graphite get Frost
             Assert.Equal(AppTheme.GlassBlue, ShellViewModel.NextTheme(AppTheme.Tally));
-            Assert.Equal(AppTheme.Graphite, ShellViewModel.NextTheme(AppTheme.Light)); // an old Default Light counts as Glass (Blue)
+            Assert.Equal(AppTheme.GlassGreen, ShellViewModel.NextTheme(AppTheme.Light)); // an old Default Light counts as Glass (Blue)
             Assert.Equal(AppTheme.Tally, ShellViewModel.NextTheme(AppTheme.Dark)); // an old Default Dark counts as Midnight Stars
             await ctx.Session.SetThemeAsync(AppTheme.Midnight);
             Assert.True(ThemeService.IsDark);

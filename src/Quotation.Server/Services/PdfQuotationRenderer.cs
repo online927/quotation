@@ -37,6 +37,31 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
         PrintStamp? printed = null, PartyMaster? master = null) =>
         _modern.Render(ToDocument(q, company, settings, watermark: "DRAFT", provisionalNumber, printed, master));
 
+    private readonly MinimalPdfRenderer _minimal = new();
+
+    /// <summary>The Minimal layout (Round 35, chosen per user in My Settings).</summary>
+    public byte[] RenderMinimal(QuotationHeader q, CompanySettings company, QuotationSettings settings, PrintStamp? printed = null,
+        byte[]? seal = null, PartyMaster? master = null) =>
+        _minimal.Render(ToDocument(q, company, settings, watermark: null, printed: printed, master: master) with { Seal = seal });
+
+    /// <summary>An approved quotation in <paramref name="layout"/> (Tally, Zoho or Minimal).</summary>
+    public byte[] RenderIn(string layout, QuotationHeader q, CompanySettings company, QuotationSettings settings, PrintStamp? printed = null,
+        byte[]? seal = null, PartyMaster? master = null) => layout switch
+    {
+        PdfLayouts.Zoho => RenderModern(q, company, settings, printed, seal, master),
+        PdfLayouts.Minimal => RenderMinimal(q, company, settings, printed, seal, master),
+        _ => Render(q, company, settings, printed, seal, master),
+    };
+
+    /// <summary>A preview with a DRAFT watermark in <paramref name="layout"/> (Tally, Zoho or Minimal).</summary>
+    public byte[] RenderPreviewIn(string layout, QuotationHeader q, CompanySettings company, QuotationSettings settings, string provisionalNumber,
+        PrintStamp? printed = null, PartyMaster? master = null) => layout switch
+    {
+        PdfLayouts.Zoho => RenderModernPreview(q, company, settings, provisionalNumber, printed, master),
+        PdfLayouts.Minimal => _minimal.Render(ToDocument(q, company, settings, watermark: "DRAFT", provisionalNumber, printed, master)),
+        _ => RenderPreview(q, company, settings, provisionalNumber, printed, master),
+    };
+
     public byte[] RenderPreview(QuotationHeader q, CompanySettings company, QuotationSettings settings, string provisionalNumber,
         PrintStamp? printed = null, PartyMaster? master = null) =>
         _renderer.Render(ToDocument(q, company, settings, watermark: "DRAFT", provisionalNumber, printed, master));
@@ -47,7 +72,7 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
         var lines = q.Lines.OrderBy(l => l.LineNo).Select(l => new PdfLine(
             l.LineNo,
             l.ItemName,
-            SplitLines(l.Description),
+            WithDelivery(SplitLines(l.Description), l.DueOn),
             l.Hsn,
             q.WithoutGst ? 0m : l.GstRate,
             l.DueOn,
@@ -253,6 +278,13 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
     internal static string Heading(DocumentType type, QuotationSettings settings) => type == DocumentType.ProformaInvoice
         ? (string.IsNullOrWhiteSpace(settings.ProformaHeading) ? QuotationSettings.DefaultProformaHeading : settings.ProformaHeading.Trim())
         : (string.IsNullOrWhiteSpace(settings.QuotationHeading) ? QuotationSettings.DefaultQuotationHeading : settings.QuotationHeading.Trim());
+
+    /// <summary>Round 35: a line's delivery time ("Ex-stock", "2–3 weeks") is printed as the last small line under the item.</summary>
+    private static List<string> WithDelivery(List<string> description, string? dueOn)
+    {
+        if (!string.IsNullOrWhiteSpace(dueOn)) description.Add("Delivery: " + dueOn.Trim());
+        return description;
+    }
 
     private static List<string> SplitLines(string? s) =>
         string.IsNullOrWhiteSpace(s) ? [] : s.Replace("\r", "").Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();

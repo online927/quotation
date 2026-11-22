@@ -2,7 +2,7 @@ namespace Quotation.Core.Gst;
 
 /// <summary>
 /// Checks made before a quotation is approved, so it never goes out with the wrong kind of GST: a GSTIN that does not
-/// belong to the party's state, a GSTIN that is mistyped, or no state at all (then IGST cannot be told from CGST + SGST).
+/// belong to the party's state, a GSTIN that is mistyped (wrong shape or wrong check letter), or no state at all (then IGST cannot be told from CGST + SGST).
 /// </summary>
 public static class TaxCheck
 {
@@ -16,17 +16,24 @@ public static class TaxCheck
         {
             var gstin = (p.Gstin ?? "").Trim().ToUpperInvariant();
             var code = (p.StateCode ?? "").Trim();
-            // The format only (15 characters: state code, PAN, …); the check digit is not used, so a GSTIN copied from Tally is
-            // never questioned for it.
+            // The format (15 characters: state code, PAN, …), then the state code and the check letter (the 15th character,
+            // worked out from the other 14: one typing mistake in Tally changes it).
             if (gstin.Length > 0 && !Gstin.IsWellFormed(gstin))
             {
                 problems.Add($"{p.Caption}'s GSTIN {gstin} looks mistyped (a GSTIN has 15 characters, e.g. 29ABCDE1234F1Z5).");
             }
-            else if (gstin.Length > 0 && code.Length > 0 && gstin[..2] != code)
+            else if (gstin.Length > 0)
             {
-                var gstinState = IndianStates.NameForCode(gstin[..2]) ?? "code " + gstin[..2];
-                var state = string.IsNullOrWhiteSpace(p.StateName) ? "code " + code : p.StateName.Trim();
-                problems.Add($"{p.Caption}'s GSTIN {gstin} is from {gstinState} ({gstin[..2]}), but the state is {state} ({code}).");
+                if (code.Length > 0 && gstin[..2] != code)
+                {
+                    var gstinState = IndianStates.NameForCode(gstin[..2]) ?? "code " + gstin[..2];
+                    var state = string.IsNullOrWhiteSpace(p.StateName) ? "code " + code : p.StateName.Trim();
+                    problems.Add($"{p.Caption}'s GSTIN {gstin} is from {gstinState} ({gstin[..2]}), but the state is {state} ({code}).");
+                }
+                if (Gstin.Problem(gstin) is { } mistake)
+                {
+                    problems.Add($"{p.Caption}'s GSTIN {gstin} " + mistake.Replace("Looks mistyped: the", "looks mistyped: its") + ".");
+                }
             }
             if (code.Length == 0)
             {

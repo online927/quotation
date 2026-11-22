@@ -15,7 +15,7 @@ public class HistoryTests : QuotationTestBase
         var q = await Api.CreateQuotationAsync(r);
         var today = Today;
 
-        foreach (var term in new[] { q.Number!, "sonepar", "bevel protractor", "27AAACS1234F1Z3", "ENQ-7781", today.ToString("dd-MM-yyyy"), today.ToString("d-MMM-yyyy") })
+        foreach (var term in new[] { q.Number!, "sonepar", "bevel protractor", "27AAACS1234F1ZS", "ENQ-7781", today.ToString("dd-MM-yyyy"), today.ToString("d-MMM-yyyy") })
         {
             Assert.Contains(await Api.QuotationsAsync(term), s => s.Id == q.Id);
         }

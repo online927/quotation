@@ -100,9 +100,40 @@ public class ModernLayoutTests
         Assert.Contains("Packing & Forwarding", last);
         Assert.Contains("(-)0.40", last);
         Assert.Contains("Remarks: Delivery in two weeks", last);
-        Assert.Contains("Printed on 03-Nov-26 at 10:05", last);
+        Assert.Contains("Prepared by " + (doc.PreparedBy.Length > 0 ? doc.PreparedBy : "keerthana"), last); // not "Printed on … By:" (Round 35)
+        Assert.DoesNotContain("Printed on", last);
         var all = Enumerable.Range(1, p.NumberOfPages).Select(i => Text(p.GetPage(i))).ToList();
         for (var i = 1; i <= 14; i++) Assert.Single(all, t => t.Contains($"Part No. P-{i} ", StringComparison.Ordinal) || t.EndsWith($"Part No. P-{i}", StringComparison.Ordinal));
+    }
+}
+
+/// <summary>Round 35: the Zoho layout prints our state, Dispatch / Destination / Delivery (only when filled) and "Prepared by".</summary>
+public class ZohoRound35Tests
+{
+    private static string Words(byte[] pdf)
+    {
+        using var p = PdfDocument.Open(pdf);
+        return string.Join(" ", p.GetPage(1).GetWords().Select(w => w.Text));
+    }
+
+    [Fact]
+    public void State_dispatch_destination_delivery_and_prepared_by()
+    {
+        var doc = SampleDocuments.Build([SampleDocuments.Bevel()]) with { Printed = new PrintStamp(new DateTime(2026, 11, 21, 10, 15, 0), "ravi") };
+        var text = Words(new ModernPdfRenderer().Render(doc));
+        Assert.Contains("Karnataka, Code 29", text);
+        Assert.Contains("By Road Dispatch :", text); // value, then its label (drawn right-aligned)
+        Assert.Contains("Pune Destination :", text);
+        Assert.Contains("Ex-godown Bangalore. Delivery :", text);
+        Assert.Contains("30 Sep 2026 Date :", text);
+        Assert.Contains("Prepared by Imran", text);
+        Assert.DoesNotContain("Printed on", text);
+
+        var empty = Words(new ModernPdfRenderer().Render(doc with { DispatchedThrough = "", Destination = " ", TermsOfDelivery = "", PreparedBy = "" }));
+        Assert.DoesNotContain("Dispatch :", empty);
+        Assert.DoesNotContain("Destination :", empty);
+        Assert.DoesNotContain("Delivery :", empty);
+        Assert.Contains("Prepared by ravi", empty); // nobody typed a name: the person who printed it
     }
 }
 

@@ -477,33 +477,32 @@ public class Round33UiTests
         }
     }
 
+    /// <summary>A quotation made and approved on the New quotation page (where Clear shows).</summary>
+    internal static async Task<(QuotationEditorViewModel Editor, QuotationEditorView View)> ApprovedOnNewPageAsync(Ctx ctx)
+    {
+        var (editor, view) = await NewQuotationAsync(ctx);
+        editor.SelectProduct((await ctx.Session.Api.SearchProductsAsync("universal bevel")).First().Product);
+        editor.EntryQuantity = 2;
+        editor.CommitEntryCommand.Execute(null);
+        Assert.False(editor.ShowClear); // a draft: no Clear
+        await editor.ApproveCommand.ExecuteAsync(null);
+        await UiHelpers.WaitUntil(() => editor is { IsFinal: true, IsBusy: false });
+        Dispatcher.UIThread.RunJobs();
+        return (editor, view);
+    }
+
     [AvaloniaFact]
     public async Task Clear_on_an_approved_quotation_starts_a_new_empty_one()
     {
         using var ctx = await StartAsync();
-        var product = (await ctx.Session.Api.SearchProductsAsync("universal bevel")).First().Product;
-        var q = await ctx.Session.Api.CreateQuotationAsync(new SaveQuotationRequest
-        {
-            Date = DateOnly.FromDateTime(DateTime.Today),
-            CustomerId = (await ctx.Session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id,
-            Lines = [new QuotationLineDto { ProductId = product.Id, Quantity = 2, Rate = product.Rate ?? 15600, TallyRate = product.Rate }],
-        });
+        var (approved, view) = await ApprovedOnNewPageAsync(ctx);
+        var id = approved.Id!.Value;
 
-        // A draft: no Clear (Cancel as before)
-        ctx.Shell.OpenQuotation(q.Id);
-        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is QuotationEditorViewModel { Lines.Count: > 0, IsBusy: false });
-        var draft = (QuotationEditorViewModel)ctx.Shell.CurrentPage!;
-        Assert.False(draft.ShowClear);
-
-        // Approved: Clear on the right, where Cancel was
-        await ctx.Session.Api.ApproveQuotationAsync(q.Id);
-        ctx.Shell.OpenQuotation(q.Id);
-        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is QuotationEditorViewModel { IsFinal: true, IsBusy: false } e && e != draft);
-        var approved = (QuotationEditorViewModel)ctx.Shell.CurrentPage!;
-        Dispatcher.UIThread.RunJobs();
-        var view = ctx.Window.FindDescendantOfType<QuotationEditorView>()!;
+        // Approved on the New quotation page: a solid Clear on the right, where Cancel was
         Assert.True(approved.ShowClear);
-        Assert.True(view.FindControl<Button>("ClearButton")!.IsVisible);
+        var clear = view.FindControl<Button>("ClearButton")!;
+        Assert.True(clear.IsVisible);
+        Assert.Contains("primary", clear.Classes);
         Assert.False(view.FindControl<Button>("CancelDocButton")!.IsVisible);
 
         approved.ClearCommand.Execute(null);
@@ -515,10 +514,22 @@ public class Round33UiTests
         // Back: the approved one, unchanged; Ctrl+N clears again
         ctx.Shell.GoBack();
         await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage == approved);
-        Assert.Contains((await ctx.Session.Api.QuotationAsync(q.Id)).Status, new[] { QuotationStatus.Approved, QuotationStatus.Generated }); // still approved
+        Assert.Contains((await ctx.Session.Api.QuotationAsync(id)).Status, new[] { QuotationStatus.Approved, QuotationStatus.Generated }); // still approved
         Dispatcher.UIThread.RunJobs();
         ctx.Window.KeyPress(Key.N, RawInputModifiers.Control, PhysicalKey.N, null);
         await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is QuotationEditorViewModel e && e != approved && e.Id is null);
-        ((QuotationEditorViewModel)ctx.Shell.CurrentPage!).IsDirty = false;
+        var second = (QuotationEditorViewModel)ctx.Shell.CurrentPage!;
+        second.IsDirty = false;
+
+        // The same approved quotation opened from Today's Quotations or History: no Clear, and Ctrl+N does nothing
+        ctx.Shell.OpenQuotation(id);
+        await UiHelpers.WaitUntil(() => ctx.Shell.CurrentPage is QuotationEditorViewModel { IsFinal: true, IsBusy: false } e && e != approved);
+        var opened = (QuotationEditorViewModel)ctx.Shell.CurrentPage!;
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(opened.ShowClear);
+        Assert.False(ctx.Window.FindDescendantOfType<QuotationEditorView>()!.FindControl<Button>("ClearButton")!.IsVisible);
+        ctx.Window.KeyPress(Key.N, RawInputModifiers.Control, PhysicalKey.N, null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Same(opened, ctx.Shell.CurrentPage);
     }
 }

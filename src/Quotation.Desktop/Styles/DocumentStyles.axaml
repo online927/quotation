@@ -132,6 +132,56 @@
     <Style Selector="Border.pill.status">
       <Setter Property="Padding" Value="13,4" />
     </Style>
+    <!-- Buyer box: a GSTIN that looks mistyped gets a red ring and a red note -->
+    <Style Selector="TextBox.bad /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="{DynamicResource BadBrush}" />
+      <Setter Property="BorderThickness" Value="1.5" />
+    </Style>
+    <Style Selector="TextBlock.gstinbad">
+      <Setter Property="Foreground" Value="{DynamicResource BadBrush}" />
+      <Setter Property="FontSize" Value="{DynamicResource FontSmall}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <!-- Consignee: "GST by" the buyer's state or the ship-to state, two rows with a dot -->
+    <Style Selector="RadioButton.gstby">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Name="row" Background="Transparent" CornerRadius="8" Padding="9,6" Cursor="Hand">
+            <StackPanel Orientation="Horizontal">
+              <Border Name="dot" Width="14" Height="14" CornerRadius="7" BorderThickness="1.5" Margin="0,0,8,0"
+                      VerticalAlignment="Center" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource MutedBrush}" />
+              <ContentPresenter Content="{TemplateBinding Content}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Setter Property="FontSize" Value="12.5" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+    </Style>
+    <Style Selector="RadioButton.gstby:checked">
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="RadioButton.gstby:checked /template/ Border#row">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    </Style>
+    <Style Selector="RadioButton.gstby:checked /template/ Border#dot">
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="BorderThickness" Value="4" />
+    </Style>
+    <Style Selector="RadioButton.gstby:pointerover:not(:checked) /template/ Border#row">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
+    </Style>
+    <Style Selector="RadioButton.gstby:focus-visible /template/ Border#row">
+      <Setter Property="BoxShadow" Value="{DynamicResource FocusRingInset}" />
+    </Style>
+    <Style Selector="RadioButton.gstby Run.gsttax">
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="RadioButton.gstby:checked Run.gsttax">
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    </Style>
     <!-- Pasted list: a rate that came from the Excel rows -->
     <Style Selector="NumericUpDown.fromexcel TextBox /template/ Border#PART_BorderElement">
       <Setter Property="Background" Value="{DynamicResource PillOkBrush}" />

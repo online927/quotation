@@ -693,6 +693,9 @@ namespace Quotation.Data.Migrations
                     b.Property<decimal>("GrandTotal")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("GstByBuyer")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("LostReason")
                         .IsRequired()
                         .HasColumnType("TEXT");

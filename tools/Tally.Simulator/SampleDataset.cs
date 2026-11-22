@@ -262,6 +262,22 @@ public sealed class SampleDataset
         AddVoucher("TS Quotation", t.AddDays(-10), "TSQ-3390", "SONEPAR INDIA PRIVATE LIMITED", "187-901-10-UNIVERSAL BEVEL PROTRACTOR", 15000m);
     }
 
+    /// <summary>
+    /// A GSTIN with the right check letter (the 15th character, mod 36 over the first 14), like a real one. The random
+    /// number the old sample last digit used is still drawn, so the rest of the sample data stays the same.
+    /// </summary>
+    private static string WithCheckLetter(string first14, int unusedOldDigit)
+    {
+        const string chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        var sum = 0;
+        for (var i = 0; i < 14; i++)
+        {
+            var product = chars.IndexOf(first14[i]) * (i % 2 == 0 ? 1 : 2);
+            sum += product / 36 + product % 36;
+        }
+        return first14 + chars[(36 - sum % 36) % 36];
+    }
+
     private void BuildKnownLedgers()
     {
         Ledgers.Add(new SimLedger
@@ -270,7 +286,7 @@ public sealed class SampleDataset
             Name = "SONEPAR INDIA PRIVATE LIMITED", MailingName = "Sonepar India Private Limited",
             Parent = "Debtors - Outstation",
             Address = ["Plot No. 12, MIDC Industrial Area", "Chakan, Pune"], State = "Maharashtra", Pincode = "410501",
-            Gstin = "27AAACS1234F1Z3", Pan = "AAACS1234F", Contact = "Mr. Rahul Deshmukh",
+            Gstin = "27AAACS1234F1ZS", Pan = "AAACS1234F", Contact = "Mr. Rahul Deshmukh",
             Phone = "020-66112233", Mobile = "9822012345", Email = "purchase.pune@sonepar.example",
             ShipTo = [("Sonepar India Pvt Ltd - Bangalore Warehouse", ["No. 5, Peenya Industrial Area", "Bangalore"], "Karnataka", "560058")],
         });
@@ -280,14 +296,14 @@ public sealed class SampleDataset
             Name = "SONEPAR INDIA PVT LTD - CHENNAI", MailingName = "Sonepar India Private Limited",
             Parent = "Debtors - Outstation",
             Address = ["45, Guindy Industrial Estate", "Chennai"], State = "Tamil Nadu", Pincode = "600032",
-            Gstin = "33AAACS1234F1Z9", Pan = "AAACS1234F", Email = "purchase.chennai@sonepar.example", LegacyFormat = true,
+            Gstin = "33AAACS1234F1ZZ", Pan = "AAACS1234F", Email = "purchase.chennai@sonepar.example", LegacyFormat = true,
         });
         Ledgers.Add(new SimLedger
         {
             Guid = NewGuid(), AlterId = NextAlterId(),
             Name = "BHARAT PRECISION ENGINEERING", Parent = "Debtors - Bangalore",
             Address = ["No. 18, 2nd Cross, Peenya 2nd Stage", "Bangalore"], State = "Karnataka", Pincode = "560058",
-            Gstin = "29ABCPB1234K1Z2", Contact = "Mr. Suresh", Mobile = "9845098450", Email = "suresh@bharatprecision.example",
+            Gstin = "29ABCPB1234K1ZZ", Contact = "Mr. Suresh", Mobile = "9845098450", Email = "suresh@bharatprecision.example",
         });
         Ledgers.Add(new SimLedger
         {
@@ -297,7 +313,7 @@ public sealed class SampleDataset
         Ledgers.Add(new SimLedger
         {
             Guid = NewGuid(), AlterId = NextAlterId(),
-            Name = "ABC STEEL SUPPLIERS", Parent = "Sundry Creditors", State = "Karnataka", Gstin = "29AABCA1111A1Z1",
+            Name = "ABC STEEL SUPPLIERS", Parent = "Sundry Creditors", State = "Karnataka", Gstin = "29AABCA1111A1ZN",
         });
         Ledgers.Add(new SimLedger { Guid = NewGuid(), AlterId = NextAlterId(), Name = "Sales - GST 18%", Parent = "Sales Accounts" });
     }
@@ -344,7 +360,7 @@ public sealed class SampleDataset
                 Address = [$"No. {_rng.Next(1, 500)}, {new[] { "1st", "2nd", "3rd", "4th" }[_rng.Next(4)]} Main Road", $"{place.City} Industrial Area", place.City],
                 State = place.State,
                 Pincode = place.Pin + _rng.Next(10, 99),
-                Gstin = registered ? $"{place.Code}{pan}1Z{_rng.Next(0, 10)}" : "",
+                Gstin = registered ? WithCheckLetter($"{place.Code}{pan}1Z", _rng.Next(0, 10)) : "",
                 RegistrationType = registered ? "Regular" : "Unregistered/Consumer",
                 Pan = pan,
                 Contact = _rng.NextDouble() < 0.6 ? $"Mr. {new[] { "Ravi", "Kumar", "Prakash", "Anil", "Mahesh", "Imran", "Joseph" }[_rng.Next(7)]}" : "",

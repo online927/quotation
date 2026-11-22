@@ -33,7 +33,7 @@ for RID in osx-arm64 osx-x64; do
   # right-click → Open, or System Settings → Privacy & Security → Open Anyway).
   codesign --force --deep --sign - "$APP"
   ln -s /Applications "$OUT/$NAME/Applications"
-  hdiutil create -volname "Quotations" -srcfolder "$OUT/$NAME" -ov -format UDZO "$OUT/TSQuotation-Mac-$NAME-$VERSION.dmg"
+  hdiutil create -volname "Quotations" -srcfolder "$OUT/$NAME" -ov -format UDZO "$OUT/Quotation-Mac-$NAME-$VERSION.dmg"
 done
 mkdir -p "$ROOT/publish/mac-app"
 mv "$OUT"/*.dmg "$ROOT/publish/mac-app/"

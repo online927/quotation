@@ -123,7 +123,7 @@
                 <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="A QR code on quotations (not proforma invoices)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="A QR code on quotations (not proforma invoices): in the Tally layout in the right half of 'Terms of Delivery', in the Zoho layout at the bottom right. Only 'Pay by UPI' and the UPI ID are printed. Scanning it opens the customer's UPI app with your UPI ID, company name, the quotation total and the note below filled in."><Path Classes="infoicon" /></Border></StackPanel>
                 <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
                   <TextBlock Text="UPI ID" VerticalAlignment="Center" />
-                  <TextBox Name="UpiIdBox" Grid.Column="1" Text="{Binding Settings.Company.UpiId}" Watermark="e.g. tsaifuddin@okhdfcbank" Width="300" HorizontalAlignment="Left" />
+                  <TextBox Name="UpiIdBox" Grid.Column="1" Text="{Binding Settings.Company.UpiId}" Watermark="e.g. yourcompany@okhdfcbank" Width="300" HorizontalAlignment="Left" />
                   <TextBlock Grid.Row="1" Text="QR on quotations" VerticalAlignment="Center" />
                   <ToggleSwitch Name="UpiQrSwitch" Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.Company.UpiQrOnQuotations}"
                                 OnContent="On (when a UPI ID is set)" OffContent="Off" />
@@ -191,31 +191,6 @@
             <TextBlock Grid.Row="17" Text="Title Case while typing" />
             <CheckBox Grid.Row="17" Grid.Column="1" IsChecked="{Binding Settings.Quotation.TitleCase}"
                       Content="Capital first letter of each word in the quotation's text boxes (like Tally)" />
-            <TextBlock Grid.Row="23" Text="PDF layout" VerticalAlignment="Top" Margin="0,8,12,4" />
-            <StackPanel Grid.Row="23" Grid.Column="1" Spacing="4" Margin="0,3">
-              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Default for users who have not chosen one in My Settings" />
-              <ComboBox ItemsSource="{Binding PdfLayoutChoices}" SelectedItem="{Binding Settings.Quotation.DefaultPdfLayout}" Width="200" />
-              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Zoho layout: heading" Margin="0,6,0,0" />
-              <TextBox Text="{Binding Settings.Quotation.ModernHeading}" Watermark="Quotation/Proforma" Width="300" HorizontalAlignment="Left" />
-            </StackPanel>
-            <TextBlock Grid.Row="22" Text="Part No. column" />
-            <StackPanel Grid.Row="22" Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,3">
-              <CheckBox IsChecked="{Binding Settings.Quotation.PartNumberOnQuotations}" Content="On quotations" />
-              <CheckBox IsChecked="{Binding Settings.Quotation.PartNumberOnProforma}" Content="On proforma invoices" />
-            </StackPanel>
-            <TextBlock Grid.Row="21" Text="Fit on one page" />
-            <CheckBox Grid.Row="21" Grid.Column="1" IsChecked="{Binding Settings.Quotation.ShrinkToFitOnePage}"
-                      Content="Shrink slightly (up to 10 %) when a document is just over one page" />
-            <TextBlock Grid.Row="19" Text="Heading on quotation PDF" />
-            <StackPanel Grid.Row="19" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
-              <TextBox Text="{Binding Settings.Quotation.QuotationHeading}" Watermark="QUOTATION" Width="300" />
-              <Button ctl:ButtonIcon.Kind="eye" Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
-            </StackPanel>
-            <TextBlock Grid.Row="20" Text="Heading on proforma invoice PDF" />
-            <StackPanel Grid.Row="20" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
-              <TextBox Text="{Binding Settings.Quotation.ProformaHeading}" Watermark="PROFORMA INVOICE" Width="300" />
-              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="Printed exactly as typed; empty = the standard heading." />
-            </StackPanel>
             <TextBlock Grid.Row="13" Text="Proforma invoice number pattern" />
             <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding Settings.Quotation.ProformaNumberPattern}" Watermark="TSPI{FY}-{SEQ}" />
             <TextBlock Grid.Row="14" Text="First proforma number of a new year" />
@@ -242,46 +217,88 @@
                 </StackPanel>
               </StackPanel>
             </Border>
-            <!-- Administrator switches: Won / Lost / Follow-up and the WhatsApp button (both off by default) -->
-            <Border Grid.Row="24" Grid.ColumnSpan="2" Classes="card" Margin="0,12,0,0" IsVisible="{Binding IsAdmin}">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h2" Text="Proforma invoices" />
-                <ToggleSwitch Name="ProformaSwitch" IsChecked="{Binding Settings.Quotation.ProformaEnabled}"
-                              OnContent="On: New Proforma Invoice, the Proforma Invoices list and 'Make proforma'"
-                              OffContent="Off: nobody makes proforma invoices (those already made stay in Quotation History)" />
-                <TextBlock Classes="h2" Text="Users and others' quotations" Margin="0,8,0,0" />
-                <ToggleSwitch Name="OwnOnlySwitch" IsChecked="{Binding Settings.Quotation.UsersChangeOnlyTheirOwn}"
-                              OnContent="On: users see everyone's quotations but change, approve, cancel, duplicate and print only their own"
-                              OffContent="Off: users can work on each other's quotations" />
-                <TextBlock Classes="h2" Text="Won / Lost / Follow-up" Margin="0,8,0,0" />
-                <ToggleSwitch Name="TrackOutcomesSwitch" IsChecked="{Binding Settings.Quotation.TrackOutcomes}"
-                              OnContent="On: approved quotations get Open / Won / Lost and a follow-up date" OffContent="Off" />
-                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Settings.Quotation.TrackOutcomes}">
-                  <TextBlock VerticalAlignment="Center" Text="Follow up after (days from approval)" />
-                  <NumericUpDown Value="{Binding Settings.Quotation.FollowUpDays}" Minimum="0" Maximum="90" FormatString="0" Width="90" />
-                </StackPanel>
-                <TextBlock Classes="h2" Text="WhatsApp button" Margin="0,8,0,0" />
-                <ToggleSwitch Name="WhatsAppSwitch" IsChecked="{Binding Settings.Quotation.WhatsAppButton}"
-                              OnContent="On: approved quotations and proforma invoices get a WhatsApp button" OffContent="Off" />
-                <StackPanel Spacing="4" IsVisible="{Binding Settings.Quotation.WhatsAppButton}">
-                  <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Message typed into WhatsApp ({number} = the number, {customer} = the customer)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Message typed into WhatsApp ({number} = the number, {customer} = the customer). WhatsApp Desktop must be installed on the PC."><Path Classes="infoicon" /></Border></StackPanel>
-                  <TextBox Text="{Binding Settings.Quotation.WhatsAppMessage}" />
-                  <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" Margin="0,4,0,0"><TextBlock Text="Follow-up message (WhatsApp button in the To Follow Up list)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Follow-up message (WhatsApp button in the To Follow Up list, when Won / Lost is on; {date} = the quotation date):"><Path Classes="infoicon" /></Border></StackPanel>
-                  <TextBox Name="WhatsAppFollowUpBox" Text="{Binding Settings.Quotation.WhatsAppFollowUpMessage}" />
-                </StackPanel>
-                <TextBlock Classes="h2" Text="Greetings" Margin="0,8,0,0" />
-                <ToggleSwitch Name="GreetingsSwitch" IsChecked="{Binding Settings.Quotation.Greetings}" OnContent="On" OffContent="Off" />
-                <TextBlock Classes="h2" Text="Stars" Margin="0,8,0,0" />
-                <ToggleSwitch Name="StarsSwitch" IsChecked="{Binding Settings.Quotation.Stars}"
-                              OnContent="On: everyone can star items and customers; starred ones come first in their searches" OffContent="Off" />
-                <TextBlock Classes="h2" Text="Festival looks" Margin="0,8,0,0" />
-                <ToggleSwitch Name="FestivalLooksSwitch" IsChecked="{Binding Settings.Quotation.FestivalLooks}"
-                              OnContent="On: Eid and Diwali looks and greetings on the festival days (PC, Mac and phone)" OffContent="Off" />
-                <TextBlock Classes="h2" Text="XO game" Margin="0,8,0,0" />
-                <ToggleSwitch Name="XoGameSwitch" IsChecked="{Binding Settings.Quotation.XoGame}" OnContent="On" OffContent="Off" />
-              </StackPanel>
-            </Border>
           </Grid>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Round 35: the PDF choices have their own tab -->
+      <TabItem Header="PDF">
+        <ScrollViewer>
+          <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Text="PDF layout" VerticalAlignment="Top" Margin="0,8,12,4" />
+            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" Margin="0,3">
+              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Default for users who have not chosen one in My Settings" />
+              <ComboBox ItemsSource="{Binding PdfLayoutChoices}" SelectedItem="{Binding Settings.Quotation.DefaultPdfLayout}" Width="200" />
+              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Zoho layout: heading" Margin="0,6,0,0" />
+              <TextBox Text="{Binding Settings.Quotation.ModernHeading}" Watermark="Quotation/Proforma" Width="300" HorizontalAlignment="Left" />
+            </StackPanel>
+            <TextBlock Grid.Row="1" Text="Part No. column" />
+            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,3">
+              <CheckBox IsChecked="{Binding Settings.Quotation.PartNumberOnQuotations}" Content="On quotations" />
+              <CheckBox IsChecked="{Binding Settings.Quotation.PartNumberOnProforma}" Content="On proforma invoices" />
+            </StackPanel>
+            <TextBlock Grid.Row="2" Text="Fit on one page" />
+            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.Quotation.ShrinkToFitOnePage}"
+                      Content="Shrink slightly (up to 10 %) when a document is just over one page" />
+            <TextBlock Grid.Row="3" Text="Heading on quotation PDF" />
+            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
+              <TextBox Text="{Binding Settings.Quotation.QuotationHeading}" Watermark="QUOTATION" Width="300" />
+              <Button ctl:ButtonIcon.Kind="eye" Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
+            </StackPanel>
+            <TextBlock Grid.Row="4" Text="Heading on proforma invoice PDF" />
+            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
+              <TextBox Text="{Binding Settings.Quotation.ProformaHeading}" Watermark="PROFORMA INVOICE" Width="300" />
+              <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="Printed exactly as typed; empty = the standard heading." />
+            </StackPanel>
+          </Grid>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Round 35: the On / Off switches have their own tab -->
+      <TabItem Header="Features" IsVisible="{Binding IsAdmin}">
+        <ScrollViewer>
+          <StackPanel Margin="4,8" MaxWidth="900" HorizontalAlignment="Left">
+                <!-- Administrator switches (Round 35: their own tab) -->
+                <Border Classes="card" IsVisible="{Binding IsAdmin}">
+                  <StackPanel Spacing="10">
+                    <TextBlock Classes="h2" Text="Proforma invoices" />
+                    <ToggleSwitch Name="ProformaSwitch" IsChecked="{Binding Settings.Quotation.ProformaEnabled}"
+                                  OnContent="On: New Proforma Invoice, the Proforma Invoices list and 'Make proforma'"
+                                  OffContent="Off: nobody makes proforma invoices (those already made stay in Quotation History)" />
+                    <TextBlock Classes="h2" Text="Users and others' quotations" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="OwnOnlySwitch" IsChecked="{Binding Settings.Quotation.UsersChangeOnlyTheirOwn}"
+                                  OnContent="On: users see everyone's quotations but change, approve, cancel, duplicate and print only their own"
+                                  OffContent="Off: users can work on each other's quotations" />
+                    <TextBlock Classes="h2" Text="Won / Lost / Follow-up" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="TrackOutcomesSwitch" IsChecked="{Binding Settings.Quotation.TrackOutcomes}"
+                                  OnContent="On: approved quotations get Open / Won / Lost and a follow-up date" OffContent="Off" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Settings.Quotation.TrackOutcomes}">
+                      <TextBlock VerticalAlignment="Center" Text="Follow up after (days from approval)" />
+                      <NumericUpDown Value="{Binding Settings.Quotation.FollowUpDays}" Minimum="0" Maximum="90" FormatString="0" Width="90" />
+                    </StackPanel>
+                    <TextBlock Classes="h2" Text="WhatsApp button" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="WhatsAppSwitch" IsChecked="{Binding Settings.Quotation.WhatsAppButton}"
+                                  OnContent="On: approved quotations and proforma invoices get a WhatsApp button" OffContent="Off" />
+                    <StackPanel Spacing="4" IsVisible="{Binding Settings.Quotation.WhatsAppButton}">
+                      <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Message typed into WhatsApp ({number} = the number, {customer} = the customer)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Message typed into WhatsApp ({number} = the number, {customer} = the customer). WhatsApp Desktop must be installed on the PC."><Path Classes="infoicon" /></Border></StackPanel>
+                      <TextBox Text="{Binding Settings.Quotation.WhatsAppMessage}" />
+                      <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" Margin="0,4,0,0"><TextBlock Text="Follow-up message (WhatsApp button in the To Follow Up list)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Follow-up message (WhatsApp button in the To Follow Up list, when Won / Lost is on; {date} = the quotation date):"><Path Classes="infoicon" /></Border></StackPanel>
+                      <TextBox Name="WhatsAppFollowUpBox" Text="{Binding Settings.Quotation.WhatsAppFollowUpMessage}" />
+                    </StackPanel>
+                    <TextBlock Classes="h2" Text="Greet" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="GreetingsSwitch" IsChecked="{Binding Settings.Quotation.Greetings}" OnContent="On" OffContent="Off" />
+                    <TextBlock Classes="h2" Text="Stars" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="StarsSwitch" IsChecked="{Binding Settings.Quotation.Stars}"
+                                  OnContent="On: everyone can star items and customers; starred ones come first in their searches" OffContent="Off" />
+                    <TextBlock Classes="h2" Text="Fest" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="FestivalLooksSwitch" IsChecked="{Binding Settings.Quotation.FestivalLooks}" OnContent="On" OffContent="Off" />
+                    <TextBlock Classes="h2" Text="XO" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="XoGameSwitch" IsChecked="{Binding Settings.Quotation.XoGame}" OnContent="On" OffContent="Off" />
+                    <TextBlock Classes="h2" Text="Seal PIN" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="SealPinSwitch" IsChecked="{Binding Settings.Quotation.SealPin}" OnContent="On" OffContent="Off" />
+                  </StackPanel>
+                </Border>
+          </StackPanel>
         </ScrollViewer>
       </TabItem>
 
@@ -412,7 +429,7 @@
             </StackPanel>
             <TextBlock Grid.Row="11" Text="Voucher types for last rate (one per line)" VerticalAlignment="Top" />
             <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding LastRateVoucherTypes}" AcceptsReturn="True" Height="60"
-                     Watermark="Blank = all Sales and Quotation types (e.g. Sales, TS Quotation)" />
+                     Watermark="Blank = all Sales and Quotation types (e.g. Sales, Quotation)" />
             <TextBlock Grid.Row="12" Text="Look back for last rate (months)" />
             <NumericUpDown Grid.Row="12" Grid.Column="1" Value="{Binding Settings.Tally.LastRateMonths}" Minimum="1" Maximum="120" FormatString="0" Width="160" HorizontalAlignment="Left" />
             <TextBlock Grid.Row="13" Text="'Do not use' marks in item description" VerticalAlignment="Top" />
@@ -551,6 +568,8 @@
                       </Grid>
                       <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left"
                                  Text="Old quotations and the history keep the name used at the time. The administrator cannot be made inactive." />
+                      <Button Name="DeleteUserButton" ctl:ButtonIcon.Kind="trash" Classes="danger" Content="Delete user" HorizontalAlignment="Left"
+                              Command="{Binding DeleteUserCommand}" IsVisible="{Binding CanDeleteEditingUser}" />
                     </StackPanel>
                   </TabItem>
                   <TabItem Header="Seal" Name="UserSealTab" IsVisible="{Binding EditingUserCanHaveSeal}">

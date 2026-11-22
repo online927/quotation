@@ -132,13 +132,13 @@ public static class QuotationEndpoints
 
         // The PDF with the user's own seal and their 4-digit seal PIN (administrators do not seal).
         g.MapPost("/{id:guid}/pdf/sealed", async (Guid id, string? layout, SealedPdfRequest r, QuotationService svc, SealService seal,
-            QuotationDbContext db, HttpContext ctx, CancellationToken ct) =>
+            SettingsService settings, QuotationDbContext db, HttpContext ctx, CancellationToken ct) =>
         {
             try
             {
                 var user = User(ctx);
                 var account = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == user.UserName, ct);
-                var image = seal.Authorize(user, account, r.Pin);
+                var image = seal.Authorize(user, account, r.Pin, settings.Quotation.SealPin);
                 var bytes = await svc.PrintPdfAsync(id, user, ct, image, Layout(layout));
                 return bytes is null
                     ? Results.Json(new ApiError("Only an approved quotation can be sealed: approve it first.", null, ApiErrorCodes.InvalidState), statusCode: 409)
@@ -245,6 +245,7 @@ public static class QuotationEndpoints
         layout is null ? null
         : layout.Equals(PdfLayouts.Zoho, StringComparison.OrdinalIgnoreCase) ? PdfLayouts.Zoho
         : layout.Equals(PdfLayouts.Tally, StringComparison.OrdinalIgnoreCase) ? PdfLayouts.Tally
+        : layout.Equals(PdfLayouts.Minimal, StringComparison.OrdinalIgnoreCase) ? PdfLayouts.Minimal
         : null;
 
     internal static UserContext User(HttpContext ctx) => new(ctx.User.UserName(), ctx.User.DisplayName(), ctx.Machine(), ctx.User.IsInRole("Admin"));

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Quotation.Contracts;
 using Quotation.Core.Calculation;
 using Quotation.Core.Domain;
+using Quotation.Core.Gst;
 using Quotation.Core.Validation;
 using Quotation.Data;
 using Quotation.Data.Entities;
@@ -28,6 +29,10 @@ public interface IQuotationDocumentRenderer
     /// <summary>The Zoho layout (chosen per user in My Settings).</summary>
     byte[] RenderModern(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
         byte[]? seal = null, PartyMaster? master = null);
+
+    /// <summary>The Minimal layout (Round 35); a renderer without it prints the Tally layout.</summary>
+    byte[] RenderMinimal(QuotationHeader quotation, CompanySettings company, QuotationSettings settings, Quotation.Pdf.PrintStamp? printed = null,
+        byte[]? seal = null, PartyMaster? master = null) => Render(quotation, company, settings, printed, seal, master);
 }
 
 public sealed record UserContext(string UserName, string DisplayName, string Machine, bool IsAdmin = false);
@@ -473,26 +478,23 @@ public sealed class QuotationService(
         PdfLayouts.IsValid(q.PdfLayout) ? q.PdfLayout : q.Source == QuotationSource.Formater ? PdfLayouts.Zoho : null;
 
     private byte[] RenderAs(string layout, QuotationHeader q, Quotation.Pdf.PrintStamp? stamp, byte[]? seal = null) =>
-        (FixedLayout(q) ?? layout) == PdfLayouts.Zoho
-            ? renderer.RenderModern(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q))
-            : renderer.Render(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q));
+        (FixedLayout(q) ?? layout) switch
+        {
+            PdfLayouts.Zoho => renderer.RenderModern(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q)),
+            PdfLayouts.Minimal => renderer.RenderMinimal(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q)),
+            _ => renderer.Render(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q)),
+        };
 
     /// <summary>Renders the current state with a DRAFT watermark (unapproved) without saving anything, in the user's layout.</summary>
     public async Task<byte[]> PreviewPdfAsync(Guid id, PdfQuotationRenderer pdf, CancellationToken ct, UserContext? user = null)
     {
         var q = await LoadAsync(id, ct);
         var stamp = user is null ? null : Stamp(user);
-        var zoho = (FixedLayout(q) ?? (user is not null ? await LayoutOfAsync(user, ct) : PdfLayouts.Tally)) == PdfLayouts.Zoho;
+        var layout = FixedLayout(q) ?? (user is not null ? await LayoutOfAsync(user, ct) : PdfLayouts.Tally);
         if (q.Status is QuotationStatus.Generated or QuotationStatus.Approved)
-        {
-            return zoho
-                ? pdf.RenderModern(q, settings.Company, settings.Quotation, stamp, master: MasterOf(q))
-                : pdf.Render(q, settings.Company, settings.Quotation, stamp, master: MasterOf(q));
-        }
+            return pdf.RenderIn(layout, q, settings.Company, settings.Quotation, stamp, master: MasterOf(q));
         var provisional = q.Number ?? (await numbering.PreviewAsync(db, fy.GetActive().Year, ct, q.DocType)).Number + " (provisional)";
-        return zoho
-            ? pdf.RenderModernPreview(q, settings.Company, settings.Quotation, provisional, stamp, MasterOf(q))
-            : pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional, stamp, MasterOf(q));
+        return pdf.RenderPreviewIn(layout, q, settings.Company, settings.Quotation, provisional, stamp, MasterOf(q));
     }
 
     /// <summary>
@@ -615,10 +617,8 @@ public sealed class QuotationService(
         };
         await ApplyAsync(q, r, isNew: true, ct, remember: false);
         var provisional = (await numbering.PreviewAsync(db, fy.GetActive().Year, ct, q.DocType)).Number + " (provisional)";
-        var zoho = (FixedLayout(q) ?? await LayoutOfAsync(user, ct)) == PdfLayouts.Zoho;
-        return zoho
-            ? pdf.RenderModernPreview(q, settings.Company, settings.Quotation, provisional, Stamp(user), MasterOf(q))
-            : pdf.RenderPreview(q, settings.Company, settings.Quotation, provisional, Stamp(user), MasterOf(q));
+        var layout = FixedLayout(q) ?? await LayoutOfAsync(user, ct);
+        return pdf.RenderPreviewIn(layout, q, settings.Company, settings.Quotation, provisional, Stamp(user), MasterOf(q));
     }
 
     private async Task ApplyAsync(QuotationHeader q, SaveQuotationRequest r, bool isNew, CancellationToken ct, bool remember = true)
@@ -641,6 +641,7 @@ public sealed class QuotationService(
         q.VerifiedBy = Trim(r.VerifiedBy, 100);
         q.PackingForwardingPercent = r.PackingForwardingPercent is > 0 ? r.PackingForwardingPercent : null;
         q.PackingForwarding = r.PackingForwarding;
+        if (r.GstByBuyer is { } byBuyer) q.GstByBuyer = byBuyer;
         // The GST presentation in force when the quotation is saved; reprints use the same, so totals never change.
         q.TaxPresentation = settings.Quotation.TaxPresentation;
         q.RoundOffTotal = settings.Quotation.RoundOffTotal;
@@ -751,8 +752,9 @@ public sealed class QuotationService(
     /// <summary>The calculation input of a saved quotation: its own GST presentation, round off and "Without GST".</summary>
     public static CalcInput CalcInputOf(QuotationHeader q, string companyStateCode, bool usePercent = true)
     {
-        var placeOfSupply = q.Consignee.StateCode.Length > 0 ? q.Consignee.StateCode : q.Buyer.StateCode;
-        var interState = companyStateCode.Length > 0 && placeOfSupply.Length > 0 && companyStateCode != placeOfSupply;
+        // The buyer's state or the ship-to state, as chosen on the quotation (older quotations: the ship-to state)
+        var placeOfSupply = PlaceOfSupply.Code(q.Buyer.StateCode, q.Consignee.StateCode, q.GstByBuyer);
+        var interState = PlaceOfSupply.IsInterState(companyStateCode, placeOfSupply);
         return new CalcInput(
             q.Lines.OrderBy(l => l.LineNo).Select(l => new CalcLine(l.Quantity, l.Rate, l.DiscountPercent, l.GstRate ?? 0, l.Unit)).ToList(),
             q.PackingForwarding, usePercent ? q.PackingForwardingPercent : null, q.TaxPresentation, q.RoundOffTotal, interState, q.WithoutGst);
@@ -913,6 +915,7 @@ public sealed class QuotationService(
         PreparedBy = q.PreparedBy,
         VerifiedBy = q.VerifiedBy,
         WithoutGst = q.WithoutGst,
+        GstByBuyer = q.GstByBuyer,
         PdfLayout = q.PdfLayout,
         Lines = q.Lines.OrderBy(l => l.LineNo).Select(ToDto).ToList(),
     };
@@ -960,6 +963,7 @@ public sealed class QuotationService(
             PreparedBy = q.PreparedBy,
             VerifiedBy = q.VerifiedBy,
             WithoutGst = q.WithoutGst,
+            GstByBuyer = q.GstByBuyer,
             PdfLayout = q.PdfLayout,
             Lines = request.Lines,
             Subtotal = q.Subtotal,

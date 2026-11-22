@@ -37,7 +37,7 @@ public class PageFillTests
         using var z = UglyToad.PdfPig.PdfDocument.Open(zoho);
         var zFirst = string.Join(" ", z.GetPage(1).GetWords().Select(w => w.Text));
         var zLast = string.Join(" ", z.GetPage(z.NumberOfPages).GetWords().Select(w => w.Text));
-        Assert.Contains("GS File", zFirst);
+        Assert.Contains("Allen Bolt 10x75", zFirst); // item 9 (the Dispatch / Destination / Delivery rows of Round 35 take some room)
         Assert.Contains("Master Jaw", zLast);
     }
 }

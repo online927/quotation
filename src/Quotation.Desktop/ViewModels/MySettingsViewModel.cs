@@ -39,7 +39,7 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
 
     /// <summary>The layout of the PDFs this user makes (saved with the login).</summary>
     [ObservableProperty] private string _pdfLayout = Core.Domain.PdfLayouts.Tally;
-    public IReadOnlyList<string> PdfLayoutChoices { get; } = [Core.Domain.PdfLayouts.Tally, Core.Domain.PdfLayouts.Zoho];
+    public IReadOnlyList<string> PdfLayoutChoices { get; } = Core.Domain.PdfLayouts.All;
     private static readonly string[] Themes = ThemeNames.All.Select(t => t.Theme).ToArray();
 
     // Background picture (this PC)
@@ -280,6 +280,49 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         TextSelectionLook.ThemeColour => "Theme colour",
         _ => "Soft blue",
     };
+
+    /// <summary>Delivery time on items (this PC, Round 35): the Delivery box next to Description. Off at first.</summary>
+    public bool DeliveryTimeOnItems
+    {
+        get => _session.Config.DeliveryTimeOnItems;
+        set
+        {
+            if (value == _session.Config.DeliveryTimeOnItems) return;
+            _session.Config.DeliveryTimeOnItems = value;
+            try
+            {
+                _session.Config.Save();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Kept for this session; only this PC's choice.
+            }
+            OnPropertyChanged();
+            InfoMessage = value ? "Delivery box on: new quotation screens show it next to Description." : "Delivery box off.";
+        }
+    }
+
+    /// <summary>Silent (this PC, Round 35): on = no click when a quotation is saved or approved. On at first.</summary>
+    public bool Silent
+    {
+        get => _session.Config.Silent;
+        set
+        {
+            if (value == _session.Config.Silent) return;
+            _session.Config.Silent = value;
+            try
+            {
+                _session.Config.Save();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Kept for this session; only this PC's choice.
+            }
+            ClickSound.Silent = value;
+            OnPropertyChanged();
+            if (!value) ClickSound.Saved(); // hear it once
+        }
+    }
 
     /// <summary>Sharp text (this PC): ClearType-style letters and slightly bigger small text; off = the old look.</summary>
     public bool SharpText

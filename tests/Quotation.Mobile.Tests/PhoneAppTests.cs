@@ -291,7 +291,7 @@ public class PhoneAppTests
         Assert.Equal("Frost", more.Themes[0].Name); // Glass (Blue) is called Frost since Round 33
         try
         {
-            foreach (var theme in new[] { AppTheme.Graphite, AppTheme.Ocean, AppTheme.Midnight, AppTheme.GlassMaroon, AppTheme.ForestGold })
+            foreach (var theme in new[] { AppTheme.GlassGreen, AppTheme.Ocean, AppTheme.Midnight, AppTheme.GlassMaroon, AppTheme.ForestGold })
             {
                 more.Theme = more.Themes.First(t => t.Key == theme);
                 await Ui.WaitUntil(() => !more.IsBusy);

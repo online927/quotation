@@ -30,6 +30,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public QuotationEditorViewModel(AppSession session, INavigator navigator, Guid? id = null, DocumentType docType = DocumentType.Quotation)
     {
         _session = session;
+        _startedNew = id is null;
         _stepMode = CleanStepMode(session.Config.LineStepMode);
         foreach (var o in StepModes) o.IsSelected = StepKeys(_stepMode).Contains(o.Key);
         _stepUp = session.Config.LineStepUp;
@@ -106,7 +107,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             PaymentTerms = r.PaymentTerms, OtherReferences = r.OtherReferences, Destination = r.Destination, TermsOfDelivery = r.TermsOfDelivery,
             DeliveryNote = r.DeliveryNote, DispatchDocNo = r.DispatchDocNo, DeliveryNoteDate = r.DeliveryNoteDate, Remarks = r.Remarks,
             TermsAndConditions = r.TermsAndConditions, PackingForwarding = r.PackingForwarding, PackingForwardingPercent = r.PackingForwardingPercent,
-            PreparedBy = r.PreparedBy, VerifiedBy = r.VerifiedBy, WithoutGst = r.WithoutGst, Lines = r.Lines,
+            PreparedBy = r.PreparedBy, VerifiedBy = r.VerifiedBy, WithoutGst = r.WithoutGst, GstByBuyer = r.GstByBuyer ?? true, Lines = r.Lines,
             HasPdf = HasPdf, PdfError = PdfError, DataFreshnessWarning = DataWarning, EditableUntil = EditableUntil ?? default,
             CreatedBy = _loaded?.CreatedBy ?? "", CreatedUtc = _loaded?.CreatedUtc ?? default, UpdatedBy = _loaded?.UpdatedBy,
             UpdatedUtc = _loaded?.UpdatedUtc, ApprovedBy = _loaded?.ApprovedBy, ApprovedUtc = _loaded?.ApprovedUtc,
@@ -424,6 +425,38 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     partial void OnBuyerStateChanged(string value) => OnPropertyChanged(nameof(BuyerStateDisplay));
     partial void OnBuyerStateCodeChanged(string value) => OnPropertyChanged(nameof(BuyerStateDisplay));
 
+    /// <summary>
+    /// The red note under the buyer's GSTIN when it looks mistyped (wrong shape or wrong check letter), e.g. "Looks
+    /// mistyped: the last letter should be S"; null when it is right or there is none. Approve also asks about it.
+    /// </summary>
+    public string? BuyerGstinProblem => Quotation.Core.Gst.Gstin.Problem(BuyerGstin);
+    partial void OnBuyerGstinChanged(string value) => OnPropertyChanged(nameof(BuyerGstinProblem));
+
+    // ---- GST by the buyer's state or the ship-to state (only asked when the two give a different GST) ----
+
+    /// <summary>
+    /// GST follows the buyer's state (the usual "bill to – ship to" rule; new quotations start here) or, when false, the
+    /// ship-to state (quotations made before this choice existed). Saved with the quotation, so reprints stay the same.
+    /// </summary>
+    [ObservableProperty] private bool _gstByBuyer = true;
+    public bool GstByShipTo { get => !GstByBuyer; set => GstByBuyer = !value; }
+    partial void OnGstByBuyerChanged(bool value) => OnPropertyChanged(nameof(GstByShipTo));
+
+    /// <summary>The choice under the consignee: only when the ship-to is in another state and that changes the GST.</summary>
+    public bool ShowGstByChoice => !ConsigneeSameAsBuyer
+                                   && Quotation.Core.Gst.PlaceOfSupply.ChoiceMatters(_settings.Company.StateCode, BuyerStateCode, ConsigneeStateCode);
+    public string GstByBuyerText => "Buyer's state · " + StateLabel(BuyerState, BuyerStateCode);
+    public string GstByShipToText => "Ship-to state · " + StateLabel(ConsigneeState, ConsigneeStateCode);
+    public string GstByBuyerTax => Quotation.Core.Gst.PlaceOfSupply.GstName(_settings.Company.StateCode, BuyerStateCode);
+    public string GstByShipToTax => Quotation.Core.Gst.PlaceOfSupply.GstName(_settings.Company.StateCode, ConsigneeStateCode);
+
+    private static string StateLabel(string name, string code) =>
+        name.Trim().Length > 0 ? name.Trim() : Quotation.Core.Gst.IndianStates.NameForCode(code) ?? "code " + code;
+
+    /// <summary>The state whose GST this quotation gets (the same rule as the server).</summary>
+    private string PlaceOfSupplyCode =>
+        Quotation.Core.Gst.PlaceOfSupply.Code(BuyerStateCode, ConsigneeSameAsBuyer ? "" : ConsigneeStateCode, GstByBuyer);
+
     public ObservableCollection<ShipToOption> ShipToOptions { get; } = [new("Same as buyer", null, true)];
     [ObservableProperty] private ShipToOption? _selectedShipTo;
     [ObservableProperty] private bool _consigneeSameAsBuyer = true;
@@ -491,6 +524,31 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [ObservableProperty] private string _entryDescription = "";
     [ObservableProperty] private string _entryDueOn = "";
     [ObservableProperty] private QuotationLineViewModel? _editingLine;
+
+    /// <summary>My Settings → Delivery time on items (this PC, Round 35): the Delivery box next to Description.</summary>
+    public bool ShowDeliveryBox => _session.Config.DeliveryTimeOnItems;
+
+    /// <summary>The Delivery box's list: "(none)" to clear it, the usual times, then the times typed most on this PC.</summary>
+    public IReadOnlyList<string> DeliveryChoices =>
+        [NoDelivery, .. StandardDeliveryTimes, .. _session.Config.RecentDeliveryTimes.Where(t => !StandardDeliveryTimes.Contains(t, StringComparer.OrdinalIgnoreCase)).Take(6)];
+
+    public const string NoDelivery = "(none)";
+    public static readonly string[] StandardDeliveryTimes = ["Ex-stock", "1 week", "2–3 weeks", "4–6 weeks"];
+
+    [RelayCommand]
+    private void PickDelivery(string? value) => EntryDueOn = value is null or NoDelivery ? "" : value;
+
+    /// <summary>Typed delivery times join the list (most recent first, at most 10 kept).</summary>
+    private void RememberDelivery(string value)
+    {
+        if (value.Length == 0 || StandardDeliveryTimes.Contains(value, StringComparer.OrdinalIgnoreCase)) return;
+        var list = _session.Config.RecentDeliveryTimes;
+        list.RemoveAll(t => string.Equals(t, value, StringComparison.OrdinalIgnoreCase));
+        list.Insert(0, value);
+        if (list.Count > 10) list.RemoveRange(10, list.Count - 10);
+        try { _session.Config.Save(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        OnPropertyChanged(nameof(DeliveryChoices));
+    }
 
     // ---------------------------------------------------------------- gear next to Items: line by line / column by column
 
@@ -760,9 +818,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// The Seal tick-box shows only for a user (not an administrator) who has their own seal picture and PIN
     /// (set by an administrator in Settings → Users).
     /// </summary>
-    public bool CanSeal => _session.Api.CurrentUser?.CanSeal == true && IsMine;
+    public bool CanSeal => _session.Api.CurrentUser is { Role: not UserRole.Admin, HasSealImage: true } me
+                           && (me.HasSealPin || !SealPinOn) && IsMine;
     public bool SealAvailable => CanSeal;
-    public string SealHint => "Put your seal on the PDF (asks for your 4-digit seal PIN)";
+    /// <summary>Settings → Features → Seal PIN (off by default): only then is the 4-digit PIN asked before sealing.</summary>
+    private bool SealPinOn => _settings.Quotation.SealPin;
+    public string SealHint => SealPinOn ? "Put your seal on the PDF (asks for your 4-digit seal PIN)" : "Put your seal on the PDF";
     public bool CanSaveAsPdf => Status != QuotationStatus.Cancelled && (IsFinal || (Lines.Count > 0 && !IsLocked));
     /// <summary>"Packing &amp; Forwarding ₹" ("Without GST" shows in small under it in Without GST mode).</summary>
     public string PackingLabel => "Packing & Forwarding ₹";
@@ -782,10 +843,14 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public string CancelTip => $"Cancel this {DocLabel.ToLowerInvariant()} (it is kept, marked CANCELLED)";
 
     /// <summary>
-    /// Clear (an approved quotation, for those who make quotations): a new, empty one on the same screen; this one stays
-    /// approved (Back returns to it). Ctrl+N.
+    /// Clear (a quotation approved on the New quotation page, for those who make quotations): a new, empty one on the same
+    /// screen; this one stays approved (Back returns to it). Ctrl+N / Delete. Not on one opened from Today's Quotations or
+    /// History.
     /// </summary>
-    public bool ShowClear => IsFinal && Id is not null && _session.MakesDocuments;
+    public bool ShowClear => IsFinal && Id is not null && _startedNew && _session.MakesDocuments;
+
+    /// <summary>This screen began as a new, empty quotation (the New quotation page), not one opened from a list.</summary>
+    private readonly bool _startedNew;
     public string ClearTip => $"Clear: a new, empty {DocLabel.ToLowerInvariant()} (this one stays approved) (Ctrl+N)";
 
     [RelayCommand]
@@ -925,6 +990,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         Id = q.Id;
         DocType = q.DocType;
         WithoutGst = q.WithoutGst;
+        GstByBuyer = q.GstByBuyer;
         EditableUntil = q.EditableUntil;
         DoNotUseWarning = q.DoNotUseItems.Count == 0 ? null
             : "Marked DNU (do not use) in Tally — replace before sending: " + string.Join(", ", q.DoNotUseItems);
@@ -1080,6 +1146,15 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     protected override void OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
+        if (e.PropertyName is nameof(BuyerState) or nameof(BuyerStateCode) or nameof(ConsigneeState) or nameof(ConsigneeStateCode)
+            or nameof(ConsigneeSameAsBuyer))
+        {
+            OnPropertyChanged(nameof(ShowGstByChoice));
+            OnPropertyChanged(nameof(GstByBuyerText));
+            OnPropertyChanged(nameof(GstByShipToText));
+            OnPropertyChanged(nameof(GstByBuyerTax));
+            OnPropertyChanged(nameof(GstByShipToTax));
+        }
         if (_loading) return;
         switch (e.PropertyName)
         {
@@ -1091,8 +1166,13 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 or nameof(TermsAndConditions) or nameof(PreparedBy) or nameof(VerifiedBy):
                 MarkDirty();
                 break;
-            case nameof(PackingForwarding) or nameof(PackingForwardingPercent) or nameof(ConsigneeStateCode) or nameof(ConsigneeSameAsBuyer):
+            case nameof(PackingForwarding) or nameof(PackingForwardingPercent) or nameof(ConsigneeStateCode) or nameof(ConsigneeSameAsBuyer)
+                or nameof(GstByBuyer):
                 MarkDirty();
+                RecalculateTotals();
+                break;
+            case nameof(BuyerStateCode):
+                // GST follows the buyer's state on new quotations: a new customer can change it
                 RecalculateTotals();
                 break;
         }
@@ -1248,7 +1328,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         line.Rate = EntryRate ?? 0;
         line.DiscountPercent = EntryDiscount ?? 0;
         line.Description = EntryDescription.Trim();
-        line.DueOn = EntryDueOn.Trim();
+        line.DueOn = EntryDueOn.Trim() == NoDelivery ? "" : EntryDueOn.Trim();
+        RememberDelivery(line.DueOn);
         line.ZeroGst = WithoutGst;
         if (EditingLine is null) Lines.Add(line);
         line.IsEditing = false;
@@ -1548,7 +1629,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public void RecalculateTotals()
     {
         var company = _settings.Company.StateCode;
-        var pos = !ConsigneeSameAsBuyer && ConsigneeStateCode.Length > 0 ? ConsigneeStateCode : BuyerStateCode;
+        var pos = PlaceOfSupplyCode;
         Totals = QuotationCalculator.Calculate(new CalcInput(
             Lines.Select(l => new CalcLine(l.Quantity, l.Rate, l.DiscountPercent, l.GstRate ?? 0, l.Unit)).ToList(),
             PackingForwarding ?? 0,
@@ -1605,6 +1686,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         PreparedBy = PreparedBy,
         VerifiedBy = VerifiedBy,
         WithoutGst = WithoutGst,
+        GstByBuyer = GstByBuyer,
         FromFormater = Source == QuotationSource.Formater,
         PdfLayout = _pdfLayout,
         Lines = Lines.Select(l => l.ToDto()).ToList(),
@@ -1643,8 +1725,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 : $"Saved {dto.Number ?? "draft"} at {DateTime.Now:HH:mm}.";
         });
         if (clash is not null) return await ResolveClashAsync(clash);
+        if (ok && !_quietSave) ClickSound.Saved(); // Round 35: a soft click (not when it is part of approving)
         return ok;
     }
+
+    /// <summary>Saving as part of approving: the approval's double click is heard instead of the save's single one.</summary>
+    private bool _quietSave;
 
     [RelayCommand]
     private async Task ApproveAsync() => await ApproveCoreAsync(overrideStale: false, openPdf: true);
@@ -1667,7 +1753,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             parties.Add(new("The consignee", ConsigneeGstin, ConsigneeState, ConsigneeStateCode));
         var problems = Quotation.Core.Gst.TaxCheck.Problems([.. parties]);
         if (problems.Count == 0) return true;
-        var placeOfSupply = !ConsigneeSameAsBuyer && ConsigneeStateCode.Length > 0 ? ConsigneeStateCode : BuyerStateCode;
+        var placeOfSupply = PlaceOfSupplyCode;
         var message = string.Join(Environment.NewLine, problems.Select(p => "• " + p)) + Environment.NewLine + Environment.NewLine +
                       "GST on this quotation: " + Quotation.Core.Gst.TaxCheck.Describe(_settings.Company.StateCode, placeOfSupply) + ".";
         return await _navigator.ConfirmAsync("Check the GST before approving", message, "Approve anyway", "Go back");
@@ -1681,7 +1767,15 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         if (!overrideStale && ThemeService.Current == AppTheme.Tally
             && !await _navigator.ConfirmAsync("Approve ?", "Yes or No", "Yes", "No")) return false;
         if (!overrideStale && !await TaxLooksRightAsync()) return false;
-        if ((IsDirty || Id is null) && !await SaveAsync()) return false;
+        _quietSave = true;
+        try
+        {
+            if ((IsDirty || Id is null) && !await SaveAsync()) return false;
+        }
+        finally
+        {
+            _quietSave = false;
+        }
         ValidationMessages.Clear();
         NeedsStaleOverride = false;
         InfoMessage = null;
@@ -1691,6 +1785,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             var dto = await _session.Api.ApproveQuotationAsync(Id!.Value, overrideStale, Revision);
             Load(dto);
+            ClickSound.Approved(); // Round 35: two quick clicks
             if (_settings.Quotation.Greetings) _navigator.Toast("Alhamdulillah  الحمد لله", $"{dto.Number} approved.");
             if (dto.HasPdf)
             {
@@ -1766,7 +1861,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     {
         if (Id is null) return;
         string? pin = null;
-        if (SealPdf && CanSeal && SealAvailable)
+        if (SealPdf && CanSeal && SealAvailable && !SealPinOn) pin = ""; // Seal PIN switch off: sealed without asking
+        else if (SealPdf && CanSeal && SealAvailable)
         {
             pin = await _navigator.AskAsync("Your seal", $"Enter your 4-digit seal PIN to seal {Number}.", "Seal PIN", secret: true, ok: "Seal & Save",
                 stamp: true);
@@ -1936,6 +2032,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             // Nothing saved yet: stay on this page. Nothing typed: nothing to do; otherwise it starts again blank
             // (no number is used; the copy kept for a crash is thrown away).
             if (!IsDirty && Lines.Count == 0 && EntryProduct is null && string.IsNullOrWhiteSpace(ProductSearchText)) return;
+            // Something typed: ask first (Round 35), so typed work is never thrown away by mistake
+            if (!await _navigator.ConfirmAsync("Discard this quotation?", "Nothing is saved; the number is not used.", "Discard", "No")) return;
             ClearEntry();
             IsDirty = false;
             DropRecoveryCopy();

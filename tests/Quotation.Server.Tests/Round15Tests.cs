@@ -117,7 +117,7 @@ public class Round15Tests : QuotationTestBase
     {
         Assert.Null((await Api.ClientUpdateAsync()).Version); // no installer on this test server yet
         Directory.CreateDirectory(Server.ClientUpdateFolder);
-        File.WriteAllBytes(Path.Combine(Server.ClientUpdateFolder, "TSQuotation-Setup.exe"), [1, 2, 3, 4]);
+        File.WriteAllBytes(Path.Combine(Server.ClientUpdateFolder, "Quotation-Setup.exe"), [1, 2, 3, 4]);
         File.WriteAllText(Path.Combine(Server.ClientUpdateFolder, "version.txt"), "0.9.77\r\n");
         var update = await Api.ClientUpdateAsync();
         Assert.Equal("0.9.77", update.Version);

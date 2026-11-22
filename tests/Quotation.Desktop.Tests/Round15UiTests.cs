@@ -207,7 +207,7 @@ public class Round15UiTests
             using var ctx = await SetupAsync(before: server =>
             {
                 Directory.CreateDirectory(server.ClientUpdateFolder);
-                File.WriteAllBytes(Path.Combine(server.ClientUpdateFolder, "TSQuotation-Setup.exe"), new byte[2048]);
+                File.WriteAllBytes(Path.Combine(server.ClientUpdateFolder, "Quotation-Setup.exe"), new byte[2048]);
                 File.WriteAllText(Path.Combine(server.ClientUpdateFolder, "version.txt"), "0.9.77");
             });
             await UiHelpers.WaitUntil(() => ctx.Shell.PendingDialog is not null);

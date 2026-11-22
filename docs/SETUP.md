@@ -26,7 +26,7 @@ The Quotation Server only **reads** from Tally. It never creates or changes vouc
 
 ## 2. Install the Quotation Server (once, on the server PC)
 
-1. Run **`TSQuotationServer-Setup-x.y.z.exe`** as administrator and accept the defaults.
+1. Run **`QuotationServer-Setup-x.y.z.exe`** as administrator and accept the defaults.
    The installer:
    * installs to `C:\Program Files\TSQuotation\Server`,
    * registers and starts the Windows Service **Quotations Server** (starts automatically, restarts on failure),
@@ -82,9 +82,9 @@ voucher, company setting or anything else in Tally.
 
 ## 4. Install the desktop app (each client PC)
 
-1. Run **`TSQuotation-Setup-x.y.z.exe`**. When asked for the **Server address**, enter `http://SERVER-PC-NAME:5080`
+1. Run **`Quotation-Setup-x.y.z.exe`**. When asked for the **Server address**, enter `http://SERVER-PC-NAME:5080`
    (or its IP, e.g. `http://192.168.1.10:5080`).
-   For silent roll-out: `TSQuotation-Setup-x.y.z.exe /VERYSILENT /SERVER=http://192.168.1.10:5080`.
+   For silent roll-out: `Quotation-Setup-x.y.z.exe /VERYSILENT /SERVER=http://192.168.1.10:5080`.
 2. Start **Quotations**. The server address is under **Server settings** on the sign-in screen (it opens by itself
    when the server cannot be reached) — press **Test** to check the connection.
 3. First login: user **`admin`**, password **`admin`**. You must set a new password immediately.
@@ -97,15 +97,15 @@ voucher, company setting or anything else in Tally.
 
 ### 4a. On a Mac
 
-CI → **Run workflow** with **Build the Mac app** ticked makes `TSQuotation-Mac-AppleSilicon-x.y.z.dmg` (M1/M2/M3/M4) and
-`TSQuotation-Mac-Intel-x.y.z.dmg`. Open the .dmg and drag **Quotations** to Applications. The first time, right-click
+CI → **Run workflow** with **Build the Mac app** ticked makes `Quotation-Mac-AppleSilicon-x.y.z.dmg` (M1/M2/M3/M4) and
+`Quotation-Mac-Intel-x.y.z.dmg`. Open the .dmg and drag **Quotations** to Applications. The first time, right-click
 the app → **Open** → **Open** (it is not from the App Store). It connects to the same Quotation Server; Ctrl shortcuts
 are ⌘ on the Mac, and Ctrl+P prints to the Mac's default printer. A newer version is announced at sign-in; download it
 the same way.
 
 ### 4b. On an Android phone
 
-CI → **Run workflow** with **Build the phone app** ticked makes `TSQuotation-Phone-x.y.z.apk`. Copy it to the phone and
+CI → **Run workflow** with **Build the phone app** ticked makes `Quotation-Phone-x.y.z.apk`. Copy it to the phone and
 open it (allow **Install unknown apps** for the Files app or browser when Android asks). The phone must be on the office
 Wi-Fi: type the server's address once (e.g. `192.168.1.10`; `:5080` is added) and sign in with the same username and
 password as on the PC. The phone shows the dashboard, today's / past quotations and drafts, product rates and customer

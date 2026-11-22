@@ -118,6 +118,22 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
         return (user, null);
     }
 
+    /// <summary>
+    /// Deletes a user: they are signed out on every PC and can no longer sign in. Their quotations and the history keep
+    /// their name (quotations store the name, not the user). The administrator cannot be deleted (there is only one).
+    /// </summary>
+    public async Task<(AppUser? User, string? Error)> DeleteUserAsync(int id, string actingUser, CancellationToken ct)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+        if (user is null) return (null, "User not found.");
+        if (string.Equals(user.Username, actingUser, StringComparison.OrdinalIgnoreCase)) return (null, "You cannot delete yourself.");
+        if (user.Role == UserRole.Admin) return (null, "The administrator cannot be deleted.");
+        await db.ApiSessions.Where(s => s.UserId == id).ExecuteDeleteAsync(ct);
+        db.Users.Remove(user);
+        await db.SaveChangesAsync(ct);
+        return (user, null);
+    }
+
     /// <summary>Sets a temporary password (changed at the next login) and logs the user out on every PC.</summary>
     public async Task ResetPasswordAsync(AppUser user, string password, CancellationToken ct)
     {

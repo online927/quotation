@@ -39,7 +39,7 @@ public class AiApiTests : QuotationTestBase
         Assert.Equal(QuotationStatus.PendingReview, q.Status);
         Assert.Equal(QuotationSource.Ai, q.Source);
         Assert.Null(q.Number);                            // AI never consumes a number
-        Assert.Equal("29ABCPB1234K1Z2", q.Buyer.Gstin);   // from Tally
+        Assert.Equal("29ABCPB1234K1ZZ", q.Buyer.Gstin);   // from Tally
         Assert.Equal("90172020", q.Lines[0].Hsn);
         Assert.Equal(18m, q.Lines[0].GstRate);
         Assert.Equal(15600m, q.Lines[0].Rate);

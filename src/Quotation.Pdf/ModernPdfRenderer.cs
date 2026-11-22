@@ -309,6 +309,7 @@ public sealed class ModernPdfRenderer
         if (!string.IsNullOrWhiteSpace(c.Phone)) lines.Add(c.Phone);
         if (!string.IsNullOrWhiteSpace(c.Email)) lines.Add(c.Email);
         if (!string.IsNullOrWhiteSpace(c.Gstin)) lines.Add("GSTIN " + c.Gstin);
+        if (!string.IsNullOrWhiteSpace(c.StateName)) lines.Add(c.StateName.Trim() + (string.IsNullOrWhiteSpace(c.StateCode) ? "" : ", Code " + c.StateCode.Trim()));
         return lines;
     }
 
@@ -356,7 +357,9 @@ public sealed class ModernPdfRenderer
         var buyer = top + 21.9 + 10.5 * (name - 1) + LineStep * Math.Max(0, PartyLines(g, doc.Buyer, w).Count - 1);
         var consignee = doc.Consignee is null ? 0
             : top + 21.9 + 10.5 * (Wrap(g, doc.Consignee.Name, F(9, true), w).Count - 1) + LineStep * Math.Max(0, PartyLines(g, doc.Consignee, w).Count - 1);
-        var dateBlock = top + (string.IsNullOrWhiteSpace(doc.PaymentTerms) ? 53.2 : 72.3);
+        var rows = RightRows(doc);
+        var dateBlock = top + 53.2 + RightRowStep * (rows.Count - 1)
+                        + LineStep * rows.Sum(r => Wrap(g, r.Value, F(8), RightValueWidth).Count - 1);
         return Math.Max(Math.Max(buyer, consignee), dateBlock);
     }
 
@@ -387,15 +390,29 @@ public sealed class ModernPdfRenderer
         DrawParty(g, buyerCaption, doc.Buyer, LeftX, top, w);
         if (doc.Consignee is not null) DrawParty(g, "Consignee", doc.Consignee, LeftX + w + 14, top, w);
 
-        // Date and payment terms (right).
-        var dateTop = top + 52.4;
-        Text(g, 460.3, dateTop, "Date :", 10, align: Right);
-        Text(g, 559.9, dateTop + 0.8, doc.Date.ToString("dd MMM yyyy", CultureInfo.InvariantCulture), 8, align: Right);
-        if (!string.IsNullOrWhiteSpace(doc.PaymentTerms))
+        // Date, payment terms, dispatch, destination and delivery (right): each label right next to its value; a row only
+        // when it is filled; a long value wraps under itself.
+        var y = top + 52.4;
+        foreach (var (label, value) in RightRows(doc))
         {
-            Text(g, 460.3, dateTop + 19, "Terms :", 10, align: Right);
-            Text(g, 559.8, dateTop + 19.9, doc.PaymentTerms, 8, align: Right);
+            Text(g, RightLabelX, y, label + " :", 9, align: Right);
+            var valueLines = Wrap(g, value, F(8), RightValueWidth);
+            for (var i = 0; i < valueLines.Count; i++) Text(g, RightLabelX + 4, y + 0.8 + i * LineStep, valueLines[i], 8);
+            y += RightRowStep + LineStep * (valueLines.Count - 1);
         }
+    }
+
+    private const double RightLabelX = 452, RightValueWidth = 104, RightRowStep = 17;
+
+    /// <summary>Date (always), then payment terms, dispatched through, destination and terms of delivery when filled.</summary>
+    internal static List<(string Label, string Value)> RightRows(QuotationDocument doc)
+    {
+        var rows = new List<(string, string)> { ("Date", doc.Date.ToString("dd MMM yyyy", CultureInfo.InvariantCulture)) };
+        if (!string.IsNullOrWhiteSpace(doc.PaymentTerms)) rows.Add(("Terms", doc.PaymentTerms.Trim()));
+        if (!string.IsNullOrWhiteSpace(doc.DispatchedThrough)) rows.Add(("Dispatch", doc.DispatchedThrough.Trim()));
+        if (!string.IsNullOrWhiteSpace(doc.Destination)) rows.Add(("Destination", doc.Destination.Trim()));
+        if (!string.IsNullOrWhiteSpace(doc.TermsOfDelivery)) rows.Add(("Delivery", doc.TermsOfDelivery.Trim()));
+        return rows;
     }
 
     private void DrawParty(XGraphics g, string caption, PdfParty p, double x, double top, double width)
@@ -462,11 +479,9 @@ public sealed class ModernPdfRenderer
             Text(g, AmountRight, 778, "continued ...", 7, align: Right);
         }
 
-        if (doc.Printed is { } p)
-        {
-            Text(g, LeftX, 801, $"Printed on {p.LocalTime.ToString("dd-MMM-yy", CultureInfo.InvariantCulture)} at " +
-                $"{p.LocalTime.ToString("HH:mm", CultureInfo.InvariantCulture)}   By: {p.User}", 6, color: PageNo);
-        }
+        // Who prepared it (the Tally layout keeps its "Printed on … By:" line)
+        var preparedBy = !string.IsNullOrWhiteSpace(doc.PreparedBy) ? doc.PreparedBy.Trim() : doc.Printed?.User;
+        if (!string.IsNullOrWhiteSpace(preparedBy)) Text(g, LeftX, 801, "Prepared by " + preparedBy, 6, color: PageNo);
         var pageText = layout.Pages.Count == 1
             ? "1"
             : $"Page {(index + 1).ToString(CultureInfo.InvariantCulture)} of {layout.Pages.Count.ToString(CultureInfo.InvariantCulture)}";

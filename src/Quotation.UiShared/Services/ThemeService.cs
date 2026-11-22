@@ -155,6 +155,11 @@ public static class ThemeService
         app.Resources["FocusRingInset"] = BoxShadows.Parse($"inset 0 0 0 2 #B3{accent.R:X2}{accent.G:X2}{accent.B:X2}");
         // Typing boxes: a thin soft ring in the accent colour (with the 1 px accent edge it reads as one clean outline).
         app.Resources["InputRing"] = BoxShadows.Parse($"0 0 0 3 #2E{accent.R:X2}{accent.G:X2}{accent.B:X2}");
+        // Text on a button filled with the accent colour (Round 35, the Clear button): dark on light accents (the gold of
+        // Forest & Gold and Midnight Stars), white on the others.
+        var light = (0.299 * accent.R + 0.587 * accent.G + 0.114 * accent.B) / 255 > 0.6;
+        app.Resources["OnAccentBrush"] = new SolidColorBrush(light ? Color.Parse("#1B1B1F") : Colors.White);
+        app.Resources["AccentHoverBrush"] = new SolidColorBrush(Color.FromRgb((byte)(accent.R * 0.88), (byte)(accent.G * 0.88), (byte)(accent.B * 0.88)));
         // Main (blue) buttons lift a little under the mouse; none with "Reduce animations".
         app.Resources["PrimaryGlow"] = BoxShadows.Parse(_reduceMotion || ColourThemes.IsFlat ? "0 0 0 0 #00000000" : $"0 4 12 0 #59{accent.R:X2}{accent.G:X2}{accent.B:X2}");
     }

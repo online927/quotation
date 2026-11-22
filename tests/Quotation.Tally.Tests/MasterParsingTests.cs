@@ -120,7 +120,7 @@ public class MasterParsingTests
         Assert.Equal(["Plot No. 12, MIDC Industrial Area", "Chakan, Pune"], sonepar.Address);
         Assert.Equal("Maharashtra", sonepar.State);
         Assert.Equal("410501", sonepar.Pincode);
-        Assert.Equal("27AAACS1234F1Z3", sonepar.Gstin);
+        Assert.Equal("27AAACS1234F1ZS", sonepar.Gstin);
         Assert.Equal("Regular", sonepar.RegistrationType);
         Assert.Equal("purchase.pune@sonepar.example", sonepar.Email);
         Assert.Single(sonepar.ShipToAddresses);
@@ -128,7 +128,7 @@ public class MasterParsingTests
 
         var chennai = ledgers.Single(l => l.Name == "SONEPAR INDIA PVT LTD - CHENNAI"); // legacy layout
         Assert.Equal("Tamil Nadu", chennai.State);
-        Assert.Equal("33AAACS1234F1Z9", chennai.Gstin);
+        Assert.Equal("33AAACS1234F1ZZ", chennai.Gstin);
         Assert.Equal("600032", chennai.Pincode);
         Assert.Equal(2, chennai.Address.Count);
     }

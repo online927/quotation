@@ -82,6 +82,8 @@
           <SolidColorBrush x:Key="SubtleFillBrush">#F5F6FA</SolidColorBrush>
           <SolidColorBrush x:Key="AccentBrush">#0071E3</SolidColorBrush>
           <SolidColorBrush x:Key="ActionBrush">#0071E3</SolidColorBrush>
+          <SolidColorBrush x:Key="OnAccentBrush">White</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentHoverBrush">#0A55B8</SolidColorBrush>
           <SolidColorBrush x:Key="AccentSoftBrush">#EBF2FE</SolidColorBrush>
           <SolidColorBrush x:Key="OkBrush">#248A3D</SolidColorBrush>
           <SolidColorBrush x:Key="WarnBrush">#B25000</SolidColorBrush>
@@ -218,6 +220,8 @@
           <SolidColorBrush x:Key="SubtleFillBrush">#262628</SolidColorBrush>
           <SolidColorBrush x:Key="AccentBrush">#0A84FF</SolidColorBrush>
           <SolidColorBrush x:Key="ActionBrush">#0A84FF</SolidColorBrush>
+          <SolidColorBrush x:Key="OnAccentBrush">White</SolidColorBrush>
+          <SolidColorBrush x:Key="AccentHoverBrush">#0A55B8</SolidColorBrush>
           <SolidColorBrush x:Key="AccentSoftBrush">#1E3A5F</SolidColorBrush>
           <SolidColorBrush x:Key="OkBrush">#32D74B</SolidColorBrush>
           <SolidColorBrush x:Key="WarnBrush">#FF9F0A</SolidColorBrush>

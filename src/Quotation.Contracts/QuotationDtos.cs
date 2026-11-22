@@ -64,6 +64,9 @@ public sealed class SaveQuotationRequest
     public string VerifiedBy { get; set; } = "";
     /// <summary>"Without GST" (0 % on all lines and P&amp;F, no tax lines). Set on create; the document keeps it.</summary>
     public bool WithoutGst { get; set; }
+    /// <summary>GST by the buyer's state (true) or the ship-to state (false) when the two differ; null keeps the
+    /// quotation's own choice (a new one follows the ship-to state, as before this choice existed).</summary>
+    public bool? GstByBuyer { get; set; }
     /// <summary>The PDF layout chosen for this quotation (Formater page: Tally or Zoho); null = the user's own layout.</summary>
     public string? PdfLayout { get; set; }
     /// <summary>Made on the Formater page (set on create): the customer and items may be typed instead of picked from Tally.</summary>
@@ -104,6 +107,8 @@ public sealed class QuotationDto
     public string PreparedBy { get; set; } = "";
     public string VerifiedBy { get; set; } = "";
     public bool WithoutGst { get; set; }
+    /// <summary>GST by the buyer's state (true) or the ship-to state (false) when the two differ.</summary>
+    public bool GstByBuyer { get; set; }
     /// <summary>The PDF layout chosen for this quotation (Formater page: Tally or Zoho); null = the user's own layout.</summary>
     public string? PdfLayout { get; set; }
     public List<QuotationLineDto> Lines { get; set; } = [];

@@ -105,7 +105,7 @@ public class QuotationEditorTests
         var customer = (await ctx.Session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First();
         await editor.SelectCustomerAsync(customer.Customer.Id);
         Assert.Equal("Sonepar India Private Limited", editor.BuyerName);
-        Assert.Equal("27AAACS1234F1Z3", editor.BuyerGstin);
+        Assert.Equal("27AAACS1234F1ZS", editor.BuyerGstin);
         Assert.Equal(3, editor.ShipToOptions.Count); // same as buyer, Bangalore warehouse, other
 
         var product = (await ctx.Session.Api.SearchProductsAsync("universal bevel")).First().Product;

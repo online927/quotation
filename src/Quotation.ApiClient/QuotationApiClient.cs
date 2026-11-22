@@ -85,6 +85,8 @@ public partial class QuotationApiClient
         PostAsync<UserDto>($"api/users/{id}/active/{active.ToString().ToLowerInvariant()}", null, ct);
     public Task ResetPasswordAsync(int id, string password, CancellationToken ct = default) =>
         SendAsync(HttpMethod.Post, $"api/users/{id}/reset-password", new CreateUserRequest("", "", password, default), ct);
+    /// <summary>Deletes a user (administrators; not the administrator): their quotations keep their name.</summary>
+    public Task DeleteUserAsync(int id, CancellationToken ct = default) => SendAsync(HttpMethod.Delete, $"api/users/{id}", null, ct);
     public Task<UserDto> UpdateUserAsync(int id, UpdateUserRequest req, CancellationToken ct = default) =>
         SendAsync<UserDto>(HttpMethod.Put, $"api/users/{id}", req, ct);
     /// <summary>Claude reads the enquiry in a photo (phone camera) into text for the message box.</summary>
@@ -440,7 +442,7 @@ public partial class QuotationApiClient
     {
         using var r = await SendRawAsync(HttpMethod.Get, "api/diagnostics/export", null, ct);
         await (await r.Content.ReadAsStreamAsync(ct)).CopyToAsync(destination, ct);
-        return r.Content.Headers.ContentDisposition?.FileNameStar ?? r.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "TSQuotation-backup.tsq";
+        return r.Content.Headers.ContentDisposition?.FileNameStar ?? r.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "Quotation-backup.tsq";
     }
 
     /// <summary>Administrators: restore from an export (.tsq) or a database backup (.db).</summary>

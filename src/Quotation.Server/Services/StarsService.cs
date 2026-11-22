@@ -26,6 +26,9 @@ public sealed class StarsService(SettingsService settings)
         return new StarsDto(s.Products, s.Customers, Enabled);
     }
 
+    /// <summary>A deleted user's stars go with them.</summary>
+    public Task ForgetAsync(string user, CancellationToken ct) => settings.RemoveAsync(Key(user), ct);
+
     public HashSet<int> Products(string user) => Enabled ? [.. settings.Get<UserStars>(Key(user)).Products] : [];
     public HashSet<int> Customers(string user) => Enabled ? [.. settings.Get<UserStars>(Key(user)).Customers] : [];
 

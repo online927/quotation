@@ -65,6 +65,16 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
         Changed?.Invoke(key);
     }
 
+    /// <summary>Removes a stored entry (e.g. the stars of a deleted user).</summary>
+    public async Task RemoveAsync(string key, CancellationToken ct = default)
+    {
+        using var scope = scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
+        await db.Settings.Where(s => s.Key == key).ExecuteDeleteAsync(ct);
+        lock (_gate) _cache.Remove(key);
+        Changed?.Invoke(key);
+    }
+
     public string? GetSecret(string key)
     {
         using var scope = scopes.CreateScope();

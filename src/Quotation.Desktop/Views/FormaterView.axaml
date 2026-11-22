@@ -135,6 +135,8 @@
                               Command="{Binding SetLayoutCommand}" CommandParameter="Tally" ToolTip.Tip="Print this quotation in the Tally layout" />
                 <ToggleButton Name="ZohoLayoutButton" Classes="seg" Content="Zoho" IsChecked="{Binding IsZohoLayout, Mode=OneWay}"
                               Command="{Binding SetLayoutCommand}" CommandParameter="Zoho" ToolTip.Tip="Print this quotation in the Zoho layout" />
+                <ToggleButton Name="MinimalLayoutButton" Classes="seg" Content="Minimal" IsChecked="{Binding IsMinimalLayout, Mode=OneWay}"
+                              Command="{Binding SetLayoutCommand}" CommandParameter="Minimal" ToolTip.Tip="Print this quotation in the Minimal layout" />
               </StackPanel>
             </Border>
           </StackPanel>

@@ -15,7 +15,7 @@ public sealed class TestServer : WebApplicationFactory<Program>
 
     public Action<IServiceCollection>? ConfigureServicesHook { get; set; }
 
-    /// <summary>Where this test server looks for the client installer (TSQuotation-Setup.exe + version.txt).</summary>
+    /// <summary>Where this test server looks for the client installer (Quotation-Setup.exe + version.txt).</summary>
     public string ClientUpdateFolder => Path.Combine(DataDirectory, "client-update");
 
     /// <summary>When set, replaces the Claude provider (scripted model for tests).</summary>

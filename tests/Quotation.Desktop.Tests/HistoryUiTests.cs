@@ -36,7 +36,7 @@ public class HistoryUiTests
         var e2 = (QuotationEditorViewModel)shell.CurrentPage!;
         await UiHelpers.WaitUntil(() => e2.NumberText.Contains("provisional"));
         await e2.SelectCustomerAsync((await session.Api.SearchCustomersAsync("SONEPAR INDIA PRIVATE")).First().Customer.Id);
-        Assert.Equal("27AAACS1234F1Z3", e2.BuyerGstin);
+        Assert.Equal("27AAACS1234F1ZS", e2.BuyerGstin);
 
         // Global search by the quotation number opens it straight away (the half-filled second quotation is not kept).
         shell.GlobalSearch = e1.Number!;

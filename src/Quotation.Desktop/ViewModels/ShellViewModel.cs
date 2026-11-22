@@ -327,7 +327,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         items.Add(new NavItem("tally", "Tally Connection", "", () => new TallyViewModel(_session), "System"));
         items.Add(new NavItem("gmail", "Gmail Connection", "", () => new GmailViewModel(_session, this)));
         items.Add(new NavItem("mysettings", "My Settings", "", () => new MySettingsViewModel(_session)));
-        items.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session)));
+        items.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session, this)));
         if (_session.IsAdmin) items.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session, this, () => _onLogout())));
 
         NavItem.AssignHotKeys(items);
@@ -408,7 +408,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
             return;
         }
         Toast("Downloading the update…", 30);
-        var path = Path.Combine(Path.GetTempPath(), $"TSQuotation-Setup-{Normal(offered)}.exe");
+        var path = Path.Combine(Path.GetTempPath(), $"Quotation-Setup-{Normal(offered)}.exe");
         try
         {
             await using (var file = File.Create(path)) await _session.Api.DownloadClientAsync(file, _cts.Token);
@@ -768,10 +768,12 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
             new(alt + "+→", "Forward", Avalonia.Input.Key.Right, A, CanGoForward),
             new(ctrl + "+P", "Print", Avalonia.Input.Key.P, C, editor || formater || page is QuotationListViewModel),
             new(alt + "+C", "Customer", Avalonia.Input.Key.C, A, editor),
+            new("Ins", "Customer", Avalonia.Input.Key.Insert, N, editor),
             new(alt + "+I", "Item", Avalonia.Input.Key.I, A, editor),
             new(alt + "+P", "P&F", Avalonia.Input.Key.P, A, editor || formater),
             new(ctrl + "+S", "Save", Avalonia.Input.Key.S, C, editor),
             new(ctrl + "+N", "Clear", Avalonia.Input.Key.N, C, editor),
+            new("Del", "Clear", Avalonia.Input.Key.Delete, N, editor),
             new(ctrl + "+Enter", "Approve", Avalonia.Input.Key.Enter, C, editor || formater),
             new("F11", "Preview", Avalonia.Input.Key.F11, N, editor || formater),
             new(ctrl + "+Shift+S", "Save as PDF", Avalonia.Input.Key.S, C | S, editor),

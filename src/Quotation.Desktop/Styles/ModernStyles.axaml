@@ -23,6 +23,17 @@
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
   </Style>
+  <!-- A main button in the theme's own colour (Round 35: Clear), text dark or white so it can be read on every theme -->
+  <Style Selector="Button.primary.accentfill /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+  </Style>
+  <Style Selector="Button.primary.accentfill:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.primary.accentfill:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+  </Style>
   <Style Selector="Button.primary:disabled Path, Button.save:disabled Path">
     <Setter Property="Stroke" Value="{DynamicResource DisabledTextBrush}" />
   </Style>

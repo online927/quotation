@@ -29,15 +29,15 @@ public static class DiagnosticsEndpoints
         app.MapGet("/api/update/client", (IOptions<ServerOptions> options, SettingsService settings) =>
         {
             var folder = options.Value.ResolveClientUpdateFolder();
-            var setup = Path.Combine(folder, "TSQuotation-Setup.exe");
+            var setup = Path.Combine(folder, "Quotation-Setup.exe");
             var versionFile = Path.Combine(folder, "version.txt");
             if (!File.Exists(setup) || !File.Exists(versionFile)) return Results.Ok(new ClientUpdateDto(null, false, 0));
             return Results.Ok(new ClientUpdateDto(File.ReadAllText(versionFile).Trim(), settings.Backup.ClientsMustUpdate, new FileInfo(setup).Length));
         }).RequireAuthorization();
         app.MapGet("/api/update/client/download", (IOptions<ServerOptions> options) =>
         {
-            var setup = Path.Combine(options.Value.ResolveClientUpdateFolder(), "TSQuotation-Setup.exe");
-            return File.Exists(setup) ? Results.File(setup, "application/octet-stream", "TSQuotation-Setup.exe") : Results.NotFound();
+            var setup = Path.Combine(options.Value.ResolveClientUpdateFolder(), "Quotation-Setup.exe");
+            return File.Exists(setup) ? Results.File(setup, "application/octet-stream", "Quotation-Setup.exe") : Results.NotFound();
         }).RequireAuthorization();
 
         var g = app.MapGroup("/api/diagnostics").RequireAuthorization(SystemEndpoints.AdminPolicy);

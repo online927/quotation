@@ -180,6 +180,18 @@ public static class SystemEndpoints
             return Results.Ok(AuthService.ToDto(user));
         });
 
+        // Delete a user (administrators): signed out everywhere, their seal and stars removed; quotations keep their name.
+        users.MapDelete("/{id:int}", async (int id, AuthService svc, SealService seal, StarsService stars, AuditService audit,
+            HttpContext ctx, CancellationToken ct) =>
+        {
+            var (user, error) = await svc.DeleteUserAsync(id, ctx.User.UserName(), ct);
+            if (error is not null) return user is null && error == "User not found." ? Results.NotFound(new ApiError(error)) : Results.BadRequest(new ApiError(error));
+            seal.DeleteImage(user!.Id);
+            await stars.ForgetAsync(user.Username, ct);
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "UserDeleted", "User", user.Username, user.DisplayName, ct);
+            return Results.NoContent();
+        });
+
         // The current user's starred items and customers (first in their searches while the Stars switch is on).
         app.MapGet("/api/me/stars", (HttpContext ctx, StarsService stars) => stars.Get(ctx.User.UserName())).RequireAuthorization();
         app.MapPut("/api/me/stars", async (StarRequest req, HttpContext ctx, StarsService stars, CancellationToken ct) =>
@@ -294,9 +306,7 @@ public static class SystemEndpoints
             // In the layout this administrator prints with (My Settings), or the default layout on screen.
             var stamp = new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName());
             var layout = await quotations.LayoutOfAsync(QuotationEndpoints.User(ctx), ct);
-            var bytes = layout == PdfLayouts.Zoho
-                ? pdf.RenderModernPreview(q, s.Company, options, q.Number ?? "PREVIEW", stamp, quotations.MasterOf(q))
-                : pdf.RenderPreview(q, s.Company, options, q.Number ?? "PREVIEW", stamp, quotations.MasterOf(q));
+            var bytes = pdf.RenderPreviewIn(layout, q, s.Company, options, q.Number ?? "PREVIEW", stamp, quotations.MasterOf(q));
             return Results.File(bytes, "application/pdf");
         }).RequireAuthorization(AdminPolicy);
 
@@ -329,7 +339,7 @@ public static class SystemEndpoints
         if (dto.Company.QuotationValidityDays < 0) errors.Add("Validity days cannot be negative.");
         var upi = (dto.Company.UpiId ?? "").Trim();
         if (upi.Length > 0 && !System.Text.RegularExpressions.Regex.IsMatch(upi, @"^[A-Za-z0-9._-]{2,256}@[A-Za-z0-9.-]{2,64}$"))
-            errors.Add("The UPI ID must look like name@bank (e.g. tsaifuddin@okhdfcbank).");
+            errors.Add("The UPI ID must look like name@bank (e.g. yourcompany@okhdfcbank).");
         if (dto.Company.UpiQrOnQuotations && upi.Length == 0) errors.Add("Enter the UPI ID to print the Pay by UPI QR code.");
         if (!string.IsNullOrWhiteSpace(dto.Gmail.ClientSecretJson) && Quotation.Gmail.GmailOAuth.ValidateClientSecret(dto.Gmail.ClientSecretJson) is { } gmailError)
             errors.Add(gmailError);

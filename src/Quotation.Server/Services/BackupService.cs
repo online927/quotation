@@ -140,7 +140,7 @@ public sealed class BackupService(
     public async Task<string> ExportAsync(CancellationToken ct)
     {
         var database = await BackupNowAsync(ct);
-        var file = Path.Combine(Path.GetTempPath(), $"TSQuotation-backup-{clock.GetLocalNow():dd-MMM-yyyy-HHmm}.tsq");
+        var file = Path.Combine(Path.GetTempPath(), $"Quotation-backup-{clock.GetLocalNow():dd-MMM-yyyy-HHmm}.tsq");
         if (File.Exists(file)) File.Delete(file);
         using (var zip = ZipFile.Open(file, ZipArchiveMode.Create))
         {

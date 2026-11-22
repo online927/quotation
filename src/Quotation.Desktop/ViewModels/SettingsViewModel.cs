@@ -40,7 +40,11 @@ public sealed partial class SettingsViewModel : ViewModelBase
         IsAddingUser = false;
         if (EditingUser?.Id != value.Id || EditingUser != value) EditUser(value);
     }
-    partial void OnIsAddingUserChanged(bool value) => OnPropertyChanged(nameof(ShowUserHint));
+    partial void OnIsAddingUserChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowUserHint));
+        OnPropertyChanged(nameof(CanDeleteEditingUser));
+    }
 
     private void FilterUsers()
     {
@@ -95,6 +99,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsEditingUser));
         OnPropertyChanged(nameof(ShowUserHint));
         OnPropertyChanged(nameof(EditingUserCanHaveSeal));
+        OnPropertyChanged(nameof(CanDeleteEditingUser));
         OnPropertyChanged(nameof(UserSealState));
         OnPropertyChanged(nameof(UserHasAnySeal));
         OnPropertyChanged(nameof(UserSealReady));
@@ -106,6 +111,29 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public bool HasUserSealImage => UserSealImage is not null;
     partial void OnUserSealImageChanged(Avalonia.Media.Imaging.Bitmap? value) => OnPropertyChanged(nameof(HasUserSealImage));
     public bool EditingUserCanHaveSeal => EditingUser is { Role: not UserRole.Admin };
+
+    /// <summary>Users (not the administrator) can be deleted; not while adding a new one.</summary>
+    public bool CanDeleteEditingUser => EditingUser is { Role: not UserRole.Admin } && !IsAddingUser;
+
+    /// <summary>Deletes the user after asking: signed out everywhere; their quotations keep their name.</summary>
+    [RelayCommand]
+    private async Task DeleteUserAsync()
+    {
+        if (EditingUser is not { Role: not UserRole.Admin } user || IsAddingUser) return;
+        var name = user.DisplayName.Length > 0 && user.DisplayName != user.Username ? $"{user.Username} ({user.DisplayName})" : user.Username;
+        if (_navigator is not null && !await _navigator.ConfirmAsync("Delete user",
+                $"Delete {name}? They can no longer sign in. Their quotations stay, with their name.", "Delete", "Cancel"))
+            return;
+        InfoMessage = null;
+        if (await RunAsync(async () =>
+            {
+                await _session.Api.DeleteUserAsync(user.Id);
+                EditingUser = null;
+                SelectedUser = null;
+                await LoadUsersAsync();
+            }))
+            InfoMessage = $"User '{user.Username}' deleted.";
+    }
     public bool UserHasAnySeal => EditingUser is { } u && (u.HasSealImage || u.HasSealPin);
     public bool UserSealReady => EditingUser is { HasSealImage: true, HasSealPin: true };
     public string UserSealState => EditingUser switch
@@ -159,7 +187,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    public IReadOnlyList<string> PdfLayoutChoices { get; } = [PdfLayouts.Tally, PdfLayouts.Zoho];
+    public IReadOnlyList<string> PdfLayoutChoices { get; } = PdfLayouts.All;
 
     /// <summary>"Show Consignee details", in the order of <see cref="ConsigneePrint"/>.</summary>
     public IReadOnlyList<string> ConsigneeChoices { get; } = ["Yes", "No", "Only when different from Buyer", "Buyer/Consignee when same"];
@@ -217,7 +245,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         var upi = (Settings.Company.UpiId ?? "").Trim();
         if (!System.Text.RegularExpressions.Regex.IsMatch(upi, @"^[A-Za-z0-9._-]{2,256}@[A-Za-z0-9.-]{2,64}$"))
         {
-            ErrorMessage = "Type the UPI ID first (like name@bank, e.g. tsaifuddin@okhdfcbank).";
+            ErrorMessage = "Type the UPI ID first (like name@bank, e.g. yourcompany@okhdfcbank).";
             return;
         }
         ErrorMessage = null;
@@ -252,9 +280,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    public SettingsViewModel(AppSession session)
+    private readonly INavigator? _navigator;
+
+    public SettingsViewModel(AppSession session, INavigator? navigator = null)
     {
         _session = session;
+        _navigator = navigator;
         _ = LoadAsync();
     }
 

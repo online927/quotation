@@ -118,10 +118,11 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
     [ObservableProperty] private decimal? _packingForwarding;
     /// <summary>What was taken out of the pasted text (WhatsApp times and names, greetings); empty when nothing.</summary>
     [ObservableProperty] private string _pasteNote = "";
-    /// <summary>The PDF layout of this quotation (Tally or Zoho); at first the user's own (My Settings).</summary>
+    /// <summary>The PDF layout of this quotation (Tally, Zoho or Minimal); at first the user's own (My Settings).</summary>
     [ObservableProperty] private string _pdfLayout;
     public bool IsTallyLayout => PdfLayout == PdfLayouts.Tally;
     public bool IsZohoLayout => PdfLayout == PdfLayouts.Zoho;
+    public bool IsMinimalLayout => PdfLayout == PdfLayouts.Minimal;
 
     [RelayCommand]
     private void SetLayout(string? layout)
@@ -130,6 +131,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         // A click on the one already chosen must not leave it looking unchosen.
         OnPropertyChanged(nameof(IsTallyLayout));
         OnPropertyChanged(nameof(IsZohoLayout));
+        OnPropertyChanged(nameof(IsMinimalLayout));
     }
 
     partial void OnPdfLayoutChanged(string value)
@@ -137,6 +139,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
         _keptLayout = value;
         OnPropertyChanged(nameof(IsTallyLayout));
         OnPropertyChanged(nameof(IsZohoLayout));
+        OnPropertyChanged(nameof(IsMinimalLayout));
     }
 
     public ObservableCollection<FormaterLineViewModel> Lines { get; } = [];
@@ -501,7 +504,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
             PaymentTerms = _settings.Company.DefaultPaymentTerms, TermsOfDelivery = _settings.Company.DefaultTermsOfDelivery,
             TermsAndConditions = string.Join(Environment.NewLine, _settings.Company.TermsAndConditions),
             PreparedBy = preparedBy, VerifiedBy = _settings.Company.DefaultVerifiedBy,
-            WithoutGst = p.GstMode == FormaterGst.None,
+            WithoutGst = p.GstMode == FormaterGst.None, GstByBuyer = true,
             PackingForwarding = PackingForwarding is > 0 and var pf ? pf : 0,
             PdfLayout = PdfLayout,
             Lines = Lines.Select(l => new QuotationLineDto
@@ -522,6 +525,7 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
             ConsigneeSameAsBuyer = true, BuyersReference = q.BuyersReference, BuyersReferenceDate = q.BuyersReferenceDate,
             OtherReferences = q.OtherReferences, PaymentTerms = q.PaymentTerms, TermsOfDelivery = q.TermsOfDelivery,
             TermsAndConditions = q.TermsAndConditions, PreparedBy = q.PreparedBy, VerifiedBy = q.VerifiedBy, WithoutGst = q.WithoutGst,
+            GstByBuyer = true,
             PackingForwarding = q.PackingForwarding, PdfLayout = q.PdfLayout, FromFormater = true, Lines = q.Lines,
         };
     }

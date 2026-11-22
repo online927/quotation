@@ -73,22 +73,26 @@ public sealed class SealService(IOptions<ServerOptions> options, TimeProvider cl
 
     public static string HashPin(string pin) => PasswordHasher.Hash(pin);
 
-    /// <summary>Checks that this user has a seal and typed its PIN; returns their seal picture, or throws with the reason.</summary>
-    public byte[] Authorize(UserContext user, AppUser? account, string? pin)
+    /// <summary>
+    /// Checks that this user has a seal and, when the Seal PIN switch is on (<paramref name="pinRequired"/>), typed its PIN;
+    /// returns their seal picture, or throws with the reason.
+    /// </summary>
+    public byte[] Authorize(UserContext user, AppUser? account, string? pin, bool pinRequired = true)
     {
         if (user.IsAdmin)
             throw new QuotationException(403, ApiErrorCodes.Forbidden, "Administrators do not seal PDFs.");
         var image = account is { HasSealImage: true } ? ReadImage(account.Id) : null;
-        if (account is null || image is null || account.SealPinHash is null)
+        if (account is null || image is null || (pinRequired && account.SealPinHash is null))
             throw new QuotationException(409, ApiErrorCodes.InvalidState,
                 "You have no seal yet: an administrator adds your seal picture and PIN in Settings → Users.");
+        if (!pinRequired) return image; // Seal PIN switch off: no PIN asked
 
         var now = clock.GetUtcNow().UtcDateTime;
         var state = _attempts.GetValueOrDefault(user.UserName);
         if (state.BlockedUntilUtc is { } until && until > now)
             throw new QuotationException(429, ApiErrorCodes.SealBlocked,
                 $"Too many wrong seal PINs. Try again after {TimeZoneInfo.ConvertTimeFromUtc(until, clock.LocalTimeZone):HH:mm}.");
-        if (pin is null || !PasswordHasher.Verify(pin, account.SealPinHash))
+        if (pin is null || !PasswordHasher.Verify(pin, account.SealPinHash!))
         {
             var failures = (state.BlockedUntilUtc is null ? state.Failures : 0) + 1;
             var blocked = failures >= MaxAttempts ? now + BlockTime : (DateTime?)null;

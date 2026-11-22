@@ -167,11 +167,12 @@
                   Background="{DynamicResource WarnSoftBrush}" BorderBrush="{DynamicResource WarnBorderBrush}" BorderThickness="1">
             <TextBlock FontSize="{DynamicResource FontSmall}" FontWeight="SemiBold" Text="● Unsaved changes" Foreground="{DynamicResource WarnBrush}" />
           </Border>
-          <!-- Approved: Clear starts a new, empty quotation (the user's Cancel is gone by then; an administrator keeps Cancel) -->
-          <Button Name="ClearButton" Classes="bar tile" ctl:ActionBar.Right="True" ctl:ActionBar.CollapseOrder="2"
+          <!-- Approved on the New quotation page: Clear starts a new, empty quotation; a solid button in the theme's own colour
+               (Round 35) so it is easy to see (the user's Cancel is gone by then; an administrator keeps Cancel). Not on one opened from a list. -->
+          <Button Name="ClearButton" Classes="primary bar accentfill" ctl:ActionBar.Right="True"
                   Command="{Binding ClearCommand}" IsVisible="{Binding ShowClear}" ToolTip.Tip="{Binding ClearTip}">
-            <StackPanel Orientation="Horizontal" Spacing="7">
-              <Path Classes="bi" Data="M14,4 L20,10 L11,19 L6,19 L3,16 Z M9,9 L15,15 M11,20 L21,20" Stroke="{DynamicResource TextBrush}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Path Classes="bi" Data="M14,4 L20,10 L11,19 L6,19 L3,16 Z M9,9 L15,15 M11,20 L21,20" Stroke="{DynamicResource OnAccentBrush}" />
               <TextBlock Classes="lbl" Text="Clear" />
             </StackPanel>
           </Button>
@@ -203,10 +204,18 @@
             <TextBlock Classes="fl" Text="Customer" VerticalAlignment="Center" Margin="0,0,10,0" />
             <TextBlock Grid.Column="1" Text="{Binding BuyerName}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             <TextBlock Grid.Column="2" Classes="fl" Text="Other ref." VerticalAlignment="Center" Margin="18,0,10,0" />
-            <TextBlock Grid.Column="3" Text="{Binding HeaderSummaryOtherRef}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <DockPanel Grid.Column="3">
+              <!-- The buyer box is folded: a mistyped GSTIN still shows on this line (on the right, so the name keeps its room) -->
+              <Border Name="FoldedGstinChip" DockPanel.Dock="Right" Classes="chip bad" Margin="10,0,8,0" VerticalAlignment="Center"
+                      IsVisible="{Binding BuyerGstinProblem, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                      ToolTip.Tip="{Binding BuyerGstinProblem}">
+                <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="GSTIN looks mistyped" /></StackPanel>
+              </Border>
+              <TextBlock Text="{Binding HeaderSummaryOtherRef}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
             <Button Grid.Column="4" Name="ShowHeaderButton" Classes="round" Command="{Binding ToggleHeaderCommand}" ToolTip.Tip="Show buyer, consignee and references">
               <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z"
-                    Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="17" Height="17" Stretch="Uniform" />
+                    Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="17" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Button>
           </Grid>
         </Border>
@@ -219,7 +228,7 @@
                   <Button Grid.Column="1" Name="HideHeaderButton" Classes="round" Width="26" Height="26" Command="{Binding ToggleHeaderCommand}"
                           IsVisible="{Binding CanCollapseHeader}" ToolTip.Tip="Hide: show only the customer and other references">
                     <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z M3,3 L21,21"
-                          Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.6" Width="15" Height="15" Stretch="Uniform" />
+                          Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.6" Width="15" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
                   </Button>
                 </Grid>
               </Border>
@@ -256,7 +265,15 @@
               <Grid ColumnDefinitions="*,6,*">
                 <StackPanel>
                   <TextBlock Classes="fl" Text="GSTIN" />
-                  <TextBox Text="{Binding BuyerGstin}" IsReadOnly="True" />
+                  <TextBox Name="BuyerGstinBox" Text="{Binding BuyerGstin}" IsReadOnly="True"
+                           Classes.bad="{Binding BuyerGstinProblem, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <!-- A mistyped GSTIN in Tally (wrong shape or wrong check letter): fixed in Tally, back at the next sync -->
+                  <StackPanel Name="BuyerGstinProblemNote" Margin="2,4,0,0" Spacing="1"
+                              IsVisible="{Binding BuyerGstinProblem, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Classes="gstinbad" Text="{Binding BuyerGstinProblem, StringFormat='⚠ {0}'}" TextWrapping="Wrap" />
+                    <TextBlock Text="Correct it in Tally; the app picks it up at the next sync." TextWrapping="Wrap"
+                               FontSize="{DynamicResource FontTiny}" Foreground="{DynamicResource MutedBrush}" />
+                  </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                   <TextBlock Classes="fl" Text="State" />
@@ -308,6 +325,25 @@
                     <TextBox Text="{Binding ConsigneeStateCode}" />
                   </StackPanel>
                 </Grid>
+                <!-- Buyer and ship-to in states that give a different GST: which one the quotation follows. The two choices are
+                     grouped by their panel (no GroupName): a window-wide group would tie them to the page that is leaving. -->
+                <StackPanel Name="GstByChoice" Spacing="3" Margin="0,10,0,0" IsVisible="{Binding ShowGstByChoice}">
+                  <TextBlock Classes="fl" Text="GST by (buyer and ship-to are in different states)" />
+                  <RadioButton Name="GstByBuyerOption" Classes="gstby" IsChecked="{Binding GstByBuyer}">
+                    <TextBlock>
+                      <Run Text="{Binding GstByBuyerText, Mode=OneWay}" />
+                      <Run Classes="gsttax" Text="{Binding GstByBuyerTax, StringFormat='  →  {0}', Mode=OneWay}" />
+                    </TextBlock>
+                  </RadioButton>
+                  <RadioButton Name="GstByShipToOption" Classes="gstby" IsChecked="{Binding GstByShipTo}">
+                    <TextBlock>
+                      <Run Text="{Binding GstByShipToText, Mode=OneWay}" />
+                      <Run Classes="gsttax" Text="{Binding GstByShipToTax, StringFormat='  →  {0}', Mode=OneWay}" />
+                    </TextBlock>
+                  </RadioButton>
+                  <TextBlock Text="Bill to – ship to: GST normally follows the buyer's state." TextWrapping="Wrap"
+                             FontSize="{DynamicResource FontTiny}" Foreground="{DynamicResource MutedBrush}" />
+                </StackPanel>
               </StackPanel>
               <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Margin="0,6,0,0" Text="Consignee is the same as the buyer." IsVisible="{Binding ConsigneeSameAsBuyer}" />
             </StackPanel>
@@ -399,7 +435,15 @@
                 <Button.Flyout>
                   <Flyout Placement="BottomEdgeAlignedRight">
                     <StackPanel Name="StepMenu" Spacing="1" Width="300" Margin="2">
-                      <TextBlock Text="After changing a line, go on to" FontWeight="Bold" FontSize="14" Margin="10,4,10,6" />
+                      <!-- Round 35: a small ✕ closes the menu (it stays open while switching) -->
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="After changing a line, go on to" FontWeight="Bold" FontSize="14" Margin="10,4,10,6" VerticalAlignment="Center" />
+                        <Button Grid.Column="1" Name="StepMenuCloseButton" Classes="round" Width="24" Height="24" Margin="0,0,4,2"
+                                ToolTip.Tip="Close" Click="OnStepMenuClose">
+                          <Path Data="M6,6 L18,18 M18,6 L6,18" Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.8" Width="9" Stretch="Uniform"
+                                HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Button>
+                      </Grid>
                       <ItemsControl ItemsSource="{Binding StepModes}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:LineStepOption">
@@ -480,6 +524,11 @@
                         <TextBlock Classes="td" Text="{Binding PartNumber, StringFormat='Part No. {0}'}" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}"
                                    IsVisible="{Binding HasPartNumber}" />
                         <TextBlock Classes="td" Text="{Binding Description}" FontSize="{DynamicResource FontSmall}" FontStyle="Italic" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
+                        <!-- Round 35: delivery time as a chip (green in stock, orange a waiting time) -->
+                        <Border Name="DueOnChip" Classes="chip" Classes.ok="{Binding DueOnInStock}" Classes.warn="{Binding !DueOnInStock}"
+                                HorizontalAlignment="Left" Margin="0,3,0,0" IsVisible="{Binding HasDueOn}">
+                          <TextBlock Text="{Binding DueOnText}" FontSize="{DynamicResource FontSmall}" />
+                        </Border>
                       </StackPanel>
                       <TextBlock Classes="td" Grid.Column="2" Text="{Binding Hsn}" Width="80"
                                  IsVisible="{Binding $parent[ItemsControl].((vm:QuotationEditorViewModel)DataContext).ShowHsnGst}" />
@@ -564,13 +613,42 @@
                     <Button ctl:ButtonIcon.Kind="eraser" Content="Clear" Command="{Binding CancelEntryCommand}" />
                   </StackPanel>
                 </Grid>
-                <!-- Description box: 30 % of the line (was 25 %) -->
-                <Grid ColumnDefinitions="3*,12,7*">
+                <!-- Description box: 30 % of the line (was 25 %); Round 35: the Delivery box beside it (My Settings switch) -->
+                <Grid ColumnDefinitions="3*,10,Auto,12,6*">
                   <StackPanel>
                     <TextBlock Classes="fl" Text="Description (Shift + Enter for next line)" />
                     <TextBox Name="DescriptionBox" Text="{Binding EntryDescription}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" />
                   </StackPanel>
-                  <StackPanel Grid.Column="2" VerticalAlignment="Bottom" HorizontalAlignment="Right" IsVisible="{Binding EntryProduct, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <!-- Type or pick; empty = nothing on the line or the PDF. Enter never stops here; Enter in it adds the line. -->
+                  <StackPanel Grid.Column="2" Width="150" IsVisible="{Binding ShowDeliveryBox}">
+                    <TextBlock Classes="fl" Text="Delivery" />
+                    <TextBox Name="DeliveryBox" Text="{Binding EntryDueOn}" Watermark="(none)" Height="44" VerticalContentAlignment="Center"
+                             IsTabStop="True">
+                      <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter" Command="{Binding SaveLineCommand}" />
+                      </TextBox.KeyBindings>
+                      <TextBox.InnerRightContent>
+                        <Button Name="DeliveryPickButton" Classes="round" Width="24" Height="24" Margin="0,0,4,0" Focusable="False" ToolTip.Tip="Pick a delivery time">
+                          <Path Data="M6,9 L12,15 L18,9" Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.8" Width="10" Stretch="Uniform"
+                                HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                              <ItemsControl Name="DeliveryChoiceList" ItemsSource="{Binding DeliveryChoices}" MinWidth="150">
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="x:String">
+                                    <Button Classes="link" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Content="{Binding}"
+                                            Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).PickDeliveryCommand}"
+                                            CommandParameter="{Binding}" Click="OnDeliveryPicked" />
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </Flyout>
+                          </Button.Flyout>
+                        </Button>
+                      </TextBox.InnerRightContent>
+                    </TextBox>
+                  </StackPanel>
+                  <StackPanel Grid.Column="4" VerticalAlignment="Bottom" HorizontalAlignment="Right" IsVisible="{Binding EntryProduct, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}">
                       <Run Text="From Tally — HSN " />
                       <Run Text="{Binding EntryProduct.Hsn, FallbackValue='', Mode=OneWay}" />
@@ -599,7 +677,7 @@
               <Button Grid.Column="2" Name="ShowFooterButton" Classes="round" Command="{Binding ToggleFooterCommand}"
                       ToolTip.Tip="Show remarks, terms and prepared / verified by">
                 <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z"
-                      Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="17" Height="17" Stretch="Uniform" />
+                      Stroke="{DynamicResource TextBrush}" StrokeThickness="1.6" Width="17" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Button>
             </Grid>
           </Border>
@@ -613,7 +691,7 @@
                 <Button Grid.Column="1" Name="HideFooterButton" Classes="round" Width="26" Height="26" Command="{Binding ToggleFooterCommand}"
                         ToolTip.Tip="Hide: show one line">
                   <Path Data="M1.5,12 C4.5,6.5 8,4.5 12,4.5 C16,4.5 19.5,6.5 22.5,12 C19.5,17.5 16,19.5 12,19.5 C8,19.5 4.5,17.5 1.5,12 Z M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z M3,3 L21,21"
-                        Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.6" Width="15" Height="15" Stretch="Uniform" />
+                        Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.6" Width="15" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Button>
               </Grid>
               <Grid ColumnDefinitions="*,*">

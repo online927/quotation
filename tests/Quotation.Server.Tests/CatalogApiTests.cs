@@ -49,7 +49,7 @@ public class CatalogApiTests : IAsyncLifetime
         Assert.Equal(2, hits.Count);
         Assert.All(hits, h => Assert.Contains("SONEPAR", h.Customer.Name));
 
-        var byGstin = await _api.SearchCustomersAsync("27AAACS1234F1Z3");
+        var byGstin = await _api.SearchCustomersAsync("27AAACS1234F1ZS");
         Assert.Equal("SONEPAR INDIA PRIVATE LIMITED", byGstin[0].Customer.Name);
 
         var detail = await _api.CustomerAsync(byGstin[0].Customer.Id);

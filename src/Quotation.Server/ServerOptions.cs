@@ -7,7 +7,7 @@ public sealed class ServerOptions
     public string DataDirectory { get; set; } = "";
     /// <summary>Session lifetime for desktop clients.</summary>
     public int SessionHours { get; set; } = 12;
-    /// <summary>Folder with the client installer the server hands out (TSQuotation-Setup.exe + version.txt). Default: "client" next to the server.</summary>
+    /// <summary>Folder with the client installer the server hands out (Quotation-Setup.exe + version.txt). Default: "client" next to the server.</summary>
     public string? ClientUpdateFolder { get; set; }
     public string ResolveClientUpdateFolder() =>
         string.IsNullOrWhiteSpace(ClientUpdateFolder) ? Path.Combine(AppContext.BaseDirectory, "client") : ClientUpdateFolder;

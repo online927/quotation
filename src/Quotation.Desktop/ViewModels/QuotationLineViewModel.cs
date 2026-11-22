@@ -33,6 +33,17 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     public decimal Amount => QuotationCalculator.LineAmount(Quantity, Rate, DiscountPercent);
     public bool RateOverridden => TallyRate is not null && Rate != TallyRate;
     public bool HasDescription => Description.Length > 0;
+    /// <summary>Round 35: the delivery time of this line ("Ex-stock", "2–3 weeks"), shown as a chip under the item.</summary>
+    public bool HasDueOn => DueOn.Trim().Length > 0;
+    public string DueOnText => "Delivery: " + DueOn.Trim();
+    /// <summary>Green for goods in stock, orange for a waiting time.</summary>
+    public bool DueOnInStock => DueOn.Contains("stock", StringComparison.OrdinalIgnoreCase);
+    partial void OnDueOnChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasDueOn));
+        OnPropertyChanged(nameof(DueOnText));
+        OnPropertyChanged(nameof(DueOnInStock));
+    }
     public bool HasPartNumber => PartNumber.Length > 0;
     partial void OnPartNumberChanged(string value) => OnPropertyChanged(nameof(HasPartNumber));
     public string QuantityText => IndianFormat.Quantity(Quantity);

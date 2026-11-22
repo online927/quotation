@@ -131,6 +131,12 @@ public sealed class QuotationSettings
     public bool XoGame { get; set; }
 
     /// <summary>
+    /// Seal PIN (administrator switch; off by default, Round 35): On = users type their 4-digit seal PIN before sealing a PDF;
+    /// Off = the Seal switch seals straight away (the seal picture is still needed).
+    /// </summary>
+    public bool SealPin { get; set; }
+
+    /// <summary>
     /// Stars (administrator switch; on by default): each user stars the items and customers they quote often (☆ / ★ in the
     /// search lists, PC and phone); starred ones come first in every search.
     /// </summary>
@@ -185,8 +191,12 @@ public static class PdfLayouts
     public const string Tally = "Tally";
     /// <summary>T.SAIFUDDIN &amp; CO's modern design (logo banner, maroon corners), docs/templates/modern-z.</summary>
     public const string Zoho = "Zoho";
+    /// <summary>Round 35: white space, thin lines, small grey labels (design B).</summary>
+    public const string Minimal = "Minimal";
 
-    public static bool IsValid(string? layout) => layout is Tally or Zoho;
+    public static readonly string[] All = [Tally, Zoho, Minimal];
+
+    public static bool IsValid(string? layout) => layout is Tally or Zoho or Minimal;
 }
 
 /// <summary>When the "Consignee (Ship to)" block is printed.</summary>

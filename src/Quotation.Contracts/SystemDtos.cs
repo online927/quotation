@@ -41,22 +41,23 @@ public static class AppTheme
     // (Lagoon, Cyberpunk and the colourful Glass were removed: users who had them get the start theme.
     //  More Maroon was removed in Round 19: its users get Glass (Maroon). Round 27 removed Sunset and Frost (→ the start
     //  theme) and Neon Night and Glass (Black) (→ Midnight Stars). Round 31 removed Maroon Mahal (→ Glass (Maroon)).
-    //  Round 32 removed Default Light and Same as Windows (→ Glass (Blue)) and Default Dark (→ Midnight Stars).)
-    public const string Graphite = "Graphite", GlassBlue = "GlassBlue", GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon",
+    //  Round 32 removed Default Light and Same as Windows (→ Glass (Blue)) and Default Dark (→ Midnight Stars).
+    //  Round 35 removed Graphite (→ Glass (Blue)).)
+    public const string GlassBlue = "GlassBlue", GlassGreen = "GlassGreen", GlassMaroon = "GlassMaroon",
         Parchment = "Parchment", ForestGold = "ForestGold", HeroLight = "HeroLight", Ocean = "Ocean", Midnight = "Midnight",
         Tally = "Tally";
     /// <summary>Removed themes (still read from older settings).</summary>
-    public const string Sunset = "Sunset", Frost = "Frost", GlassBlack = "GlassBlack", NeonNight = "NeonNight", MaroonMahal = "MaroonMahal";
+    public const string Sunset = "Sunset", Frost = "Frost", GlassBlack = "GlassBlack", NeonNight = "NeonNight", MaroonMahal = "MaroonMahal",
+        Graphite = "Graphite";
 
     /// <summary>The theme of new users and of the sign-in screen.</summary>
     public const string StartTheme = GlassBlue;
 
-    public static readonly string[] All = [GlassBlue, Graphite, GlassGreen, GlassMaroon, Parchment, ForestGold, HeroLight, Ocean, Midnight,
-        Tally];
+    public static readonly string[] All = [GlassBlue, GlassGreen, GlassMaroon, Parchment, ForestGold, HeroLight, Ocean, Midnight, Tally];
     public static bool IsValid(string? theme) => theme is not null && All.Contains(theme);
     /// <summary>
     /// A saved theme that still exists: More Maroon and Maroon Mahal → Glass (Maroon); Default Dark, Neon Night and Glass
-    /// (Black) → Midnight Stars; Default Light, Same as Windows and any other removed theme → Glass (Blue).
+    /// (Black) → Midnight Stars; Default Light, Same as Windows, Graphite and any other removed theme → Glass (Blue).
     /// </summary>
     public static string Normalize(string? theme) => theme switch
     {

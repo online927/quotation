@@ -240,6 +240,23 @@ public partial class ShellView : UserControl
             e.Handled = true;
             return;
         }
+        if (Vm is { PendingPrompt: null, CurrentPage: QuotationEditorViewModel quotation } && e.KeyModifiers == KeyModifiers.None)
+        {
+            // Insert: the cursor in the Customer box
+            if (e.Key == Key.Insert && this.FindDescendantOfType<QuotationEditorView>() is { } editorView)
+            {
+                editorView.FocusCustomerBox();
+                e.Handled = true;
+                return;
+            }
+            // Delete on an approved quotation, when not typing in a box: Clear, like Ctrl+N (drafts are never touched)
+            if (e.Key == Key.Delete && quotation.ShowClear && e.Source is not TextBox { IsReadOnly: false })
+            {
+                quotation.ClearCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+        }
         if (Vm is not { PendingPrompt: { } prompt }) return;
         // While the question is shown, keys answer it and never reach the page behind.
         var onPromptButton = e.Source is Visual v && PromptPanel.IsVisualAncestorOf(v);

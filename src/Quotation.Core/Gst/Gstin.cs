@@ -33,4 +33,18 @@ public static class Gstin
     }
 
     public static string Pan(string gstin) => IsWellFormed(gstin) ? gstin.Substring(2, 10).ToUpperInvariant() : "";
+
+    /// <summary>
+    /// What looks wrong with a GSTIN, in a few words for the screen ("Looks mistyped: the last letter should be S"), or
+    /// null when it is right or empty (a party without a GSTIN is fine).
+    /// </summary>
+    public static string? Problem(string? gstin)
+    {
+        var g = (gstin ?? "").Trim().ToUpperInvariant();
+        if (g.Length == 0) return null;
+        if (g.Length != 15) return $"Looks mistyped: a GSTIN has 15 characters, this has {g.Length}";
+        if (!IsWellFormed(g)) return "Looks mistyped: not in the GSTIN pattern (e.g. 29ABCDE1234F1Z5)";
+        var expected = ComputeCheckDigit(g[..14]);
+        return expected == g[14] ? null : $"Looks mistyped: the last {(char.IsDigit(expected) ? "digit" : "letter")} should be {expected}";
+    }
 }

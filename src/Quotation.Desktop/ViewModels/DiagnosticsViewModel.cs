@@ -58,7 +58,7 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
     private Task ExportAsync() => RunAsync(async () =>
     {
         Directory.CreateDirectory(ExportFolder);
-        var path = Path.Combine(ExportFolder, $"TSQuotation-Export-{DateTime.Now:yyyy-MM-dd-HHmm}.tsq");
+        var path = Path.Combine(ExportFolder, $"Quotation-Export-{DateTime.Now:yyyy-MM-dd-HHmm}.tsq");
         try
         {
             await using (var file = File.Create(path)) await _session.Api.ExportEverythingAsync(file);

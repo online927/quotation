@@ -107,6 +107,9 @@ public class Round16UiTests
         {
             await api.UploadUserSealAsync(ravi.Id, Convert.FromBase64String(Png));
             await api.SetUserSealPinAsync(ravi.Id, "2020");
+            var all = await api.SettingsAsync();
+            all.Quotation.SealPin = true; // Round 35: the PIN is asked only with Settings → Features → Seal PIN on
+            await api.SaveSettingsAsync(all);
         });
         var mine = await ApprovedAsync(ctx);
         Assert.True(mine.CanSeal);

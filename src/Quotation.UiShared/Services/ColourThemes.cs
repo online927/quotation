@@ -5,9 +5,9 @@ using Quotation.Contracts;
 namespace Quotation.Desktop.Services;
 
 /// <summary>
-/// Colour themes (My Settings > Appearance). Graphite changes the sidebar, highlights, links, icons and page tint (action
-/// buttons keep their colours); the Glass themes and the drawn ones (Parchment, Forest &amp; Gold, Hero Light, Ocean, Midnight
-/// Stars) change everything (buttons, cards, corners, shadows). Default Light / Dark use the standard colours.
+/// Colour themes (My Settings > Appearance). A simple palette theme (none left since Graphite was removed in Round 35) changes
+/// the sidebar, highlights, links, icons and page tint (action buttons keep their colours); the Glass themes and the drawn
+/// ones (Parchment, Forest &amp; Gold, Hero Light, Ocean, Midnight Stars) change everything (buttons, cards, corners, shadows).
 /// </summary>
 public static class ColourThemes
 {
@@ -15,11 +15,7 @@ public static class ColourThemes
     private sealed record Palette(string Accent, string AccentSoft, string Sidebar, string SidebarHover, string SidebarSelected,
         string Page, string ListSelected, string ListHover);
 
-    private static readonly Dictionary<string, Palette> Palettes = new()
-    {
-        // Graphite: a graphite-grey page with white boxes and a dark graphite sidebar.
-        [AppTheme.Graphite] = new("#3A3F4B", "#E4E6EA", "#1F2125", "#2E3137", "#4A505C", "#D4D7DC→#C6CAD0", "#C3C7CE", "#E9EBEE"),
-    };
+    private static readonly Dictionary<string, Palette> Palettes = new();
 
 
     /// <summary>

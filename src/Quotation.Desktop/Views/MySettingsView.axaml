@@ -12,6 +12,15 @@
       </StackPanel>
       <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
 
+      <!-- Round 35: a Delivery box next to Description on the quotation screen -->
+      <Border Classes="card" Name="DeliveryTimeCard">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Delivery time on items (this PC)" />
+          <ToggleSwitch Name="DeliveryTimeSwitch" IsChecked="{Binding DeliveryTimeOnItems}"
+                        OnContent="On: a Delivery box next to Description (Ex-stock, 2–3 weeks …), printed under the item" OffContent="Off" />
+        </StackPanel>
+      </Border>
+
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Without GST (next quotation only)" />
@@ -114,6 +123,13 @@
               <TextBlock Text="Your enquiry dated 02-Nov-2026" Foreground="{Binding SelectionSampleLetters}" />
             </Border>
           </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" Name="SilentCard">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Silent" />
+          <ToggleSwitch Name="SilentSwitch" IsChecked="{Binding Silent}" OnContent="On" OffContent="Off" />
         </StackPanel>
       </Border>
 

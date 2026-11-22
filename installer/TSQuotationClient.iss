@@ -1,6 +1,7 @@
-; Quotations — desktop application for client PCs (files and folders keep the TSQuotation names).
+; Quotations — desktop application for client PCs (program files and folders keep the TSQuotation names so updates find
+; the same settings; the installer file is named Quotation-Setup).
 ; Build: ISCC.exe /DAppVersion=0.9.0 TSQuotationClient.iss   (after installer\publish.ps1)
-; Silent install with server address:  TSQuotation-Setup.exe /VERYSILENT /SERVER=http://server-pc:5080
+; Silent install with server address:  Quotation-Setup.exe /VERYSILENT /SERVER=http://server-pc:5080
 #ifndef AppVersion
   #define AppVersion "0.9.0"
 #endif
@@ -18,7 +19,7 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\publish\installers
-OutputBaseFilename=TSQuotation-Setup-{#AppVersion}
+OutputBaseFilename=Quotation-Setup-{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

@@ -909,3 +909,59 @@ Server update needed (6: stars; 7: Google Drive backup; 8: reading photos; 10: t
    point bigger; Off = the old look.
 8. Approved quotation: "Clear" on the right (where Cancel was) starts a new, empty quotation; the approved one stays as it
    is (Back returns to it). Also Ctrl+N. Drafts keep Cancel; administrators keep Cancel and Delete.
+
+### Round 35
+
+1. Wrong GSTIN catch: a GSTIN whose last character (the check letter, worked out from the other 14) does not match gets a
+   red ring and a red note under the GSTIN in the Buyer box ("Looks mistyped: the last letter should be S. Correct it in
+   Tally; the app picks it up at the next sync."), and a red "GSTIN looks mistyped" chip on the folded customer line.
+   Approve (and Save as PDF, and Approve from the Formater page) asks first in the GST question: "Go back" or "Approve
+   anyway". Drafts are never stopped. Tally is only read; the GSTIN is corrected in Tally.
+   (The test Tally's made-up GSTINs now have correct check letters.)
+2. GST when the buyer and the ship-to (consignee) are in different states: a "GST by" choice under the consignee, shown
+   only when the two states give a different GST (e.g. buyer in Maharashtra, goods to Karnataka, our company in
+   Karnataka): "Buyer's state · Maharashtra → IGST" or "Ship-to state · Karnataka → CGST + SGST". New quotations start
+   on the buyer's state (the usual "bill to – ship to" rule); the totals change at once; the choice is saved with the
+   quotation (reprints and duplicates stay the same). Quotations made before keep the ship-to state, as before.
+3. Keys on the quotation screen: Insert puts the cursor in the Customer box (the buyer box opens when it is folded;
+   Alt+C does the same now); Delete on an approved quotation clears it like Ctrl+N (a new empty quotation, the approved
+   one stays as it is), but never on a draft and never while typing in a box. Both are on the F1 card and the key bar.
+   (Found while testing: the "GST by" choices of the page that is leaving and the one that comes in must not affect each
+   other, or the app froze; they are now grouped per page.)
+4. Settings: the switches are named "Greet", "Fest" and "XO" (were Greetings, Festival looks, XO game), each just On / Off
+   with no explanation text.
+5. The Graphite theme is removed (PC, Mac and phone); anyone who had it gets Frost.
+6. Settings → Users: "Delete user" (red, at the bottom of the Account tab) for users, not the administrator. It asks
+   first ("Delete ravi? They can no longer sign in. Their quotations stay, with their name."); the user is signed out on
+   every PC, their seal picture and stars are removed; their quotations and the history keep their name.
+7. Clear button (approved quotation): now a solid button like Approve, easy to see on every theme; and it shows only
+   on the New quotation page after approving there, not on a quotation opened from Today's Quotations or History
+   (Ctrl+N and Delete follow the same rule).
+8. Names without "TS": the UPI example in Settings is now "yourcompany@okhdfcbank"; files are named Quotation-…
+   (installers Quotation-Setup / QuotationServer-Setup, Mac .dmg, phone .apk, exports, backups). The data folders,
+   program and service keep their old names so an update finds the same database and saved passwords.
+9. The eye buttons (show / hide the buyer box and the remarks box, and the eye in the password box) now sit in the
+   middle of their circle (the eye was pinned to the top of its square box, about 3 dots too high).
+10. Delivery time per line: My Settings → "Delivery time on items (this PC)" (off at first) adds a Delivery box next to
+    Description. Type anything, or pick (none) / Ex-stock / 1 week / 2–3 weeks / 4–6 weeks from its ▾ list (times typed
+    often join the list). Empty by default; Enter never stops there, Enter in it adds the line. The line shows a chip
+    (green "Ex-stock", orange a waiting time) and the PDF (every layout) prints "Delivery: …" under the item.
+11. Seal PIN switch (Settings → Features, off by default): off = the Seal switch seals without asking a PIN (the seal
+    picture is still needed); on = the 4-digit PIN as before.
+12. Zoho PDF: "Prepared by <name>" at the bottom instead of "Printed on … By: <login>"; our state and code under the
+    GSTIN; Dispatch, Destination and Delivery next to Date and Terms (each only when filled), with each label right
+    next to its value (the wide gap after "Date :" is gone).
+13. Gear menu: a small ✕ at its top right closes it.
+14. Click sounds: a soft click when a quotation is saved, two quick clicks when it is approved. My Settings → "Silent"
+    (this PC) is on at first, so nothing is heard until it is turned off.
+15. The Clear button is filled with the theme's own colour (maroon, green, gold …), with dark text on the gold themes.
+16. New PDF layout "Minimal" (white space, thin lines, small grey labels) next to Tally and Zoho: My Settings, Settings
+    → PDF and the Formater page.
+17. Cancel on a quotation that was never saved asks "Discard this quotation? Nothing is saved; the number is not
+    used." (Discard / No).
+18. Settings has two new tabs: "PDF" (layout, Zoho heading, Part No. column, fit on one page, headings) and "Features"
+    (Proforma invoices, users and others' quotations, Won / Lost, WhatsApp, Greet, Stars, Fest, XO, Seal PIN).
+
+Server update needed (2: the server works out the GST by the chosen state; the database gets the new column by itself;
+6: deleting a user is done by the server; 10, 11, 12, 16: the delivery line, the seal without PIN, the Zoho changes and
+the Minimal layout are made by the server).

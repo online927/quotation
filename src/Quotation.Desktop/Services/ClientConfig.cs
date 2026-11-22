@@ -37,6 +37,15 @@ public sealed class ClientConfig
 
     /// <summary>Sharp text (My Settings, this PC): ClearType-style letters and slightly bigger small text; off = the old look.</summary>
     public bool SharpText { get; set; } = true;
+
+    /// <summary>My Settings → Silent (this PC, Round 35): on = no click sounds when saving or approving. On at first.</summary>
+    public bool Silent { get; set; } = true;
+
+    /// <summary>My Settings → Delivery time on items (this PC, Round 35): a Delivery box next to Description. Off at first.</summary>
+    public bool DeliveryTimeOnItems { get; set; }
+
+    /// <summary>Delivery times typed on this PC, most recent first (they join the Delivery box's list).</summary>
+    public List<string> RecentDeliveryTimes { get; set; } = [];
     /// <summary>A picture behind the pages on this PC (a copy kept next to this file); empty = none.</summary>
     public string BackgroundPicture { get; set; } = "";
 

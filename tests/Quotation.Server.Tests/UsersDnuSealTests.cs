@@ -11,7 +11,7 @@ namespace Quotation.Server.Tests;
 /// <summary>User management, "Do Not Use" items and the company seal.</summary>
 public class UsersDnuSealTests : QuotationTestBase
 {
-    private const string Png =
+    internal const string Png =
         "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAJUlEQVR4nGM4ICDwn5aYYdSCUQtGLRi1YNSCUQtGLRi1YGhYAAC4lDX9H0TkSwAAAABJRU5ErkJggg==";
 
     private async Task<(QuotationApiClient Api, UserDto User)> UserAsync(string name = "keerthana")
@@ -104,6 +104,9 @@ public class UsersDnuSealTests : QuotationTestBase
     [Fact]
     public async Task Each_user_seals_with_their_own_seal_and_pin_and_administrators_do_not_seal()
     {
+        var pinOn = await Api.SettingsAsync();
+        pinOn.Quotation.SealPin = true; // Round 35: the PIN is checked only with the Seal PIN switch on
+        await Api.SaveSettingsAsync(pinOn);
         var q = await Api.CreateQuotationAsync(await BevelRequest());
         await Api.ApproveQuotationAsync(q.Id);
         var plain = await Api.QuotationPdfAsync(q.Id);

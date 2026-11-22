@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Quotation.Contracts;
 using Quotation.Desktop.Controls;
@@ -66,6 +67,37 @@ public partial class QuotationEditorView : UserControl
         else ProductBox.Focus();
     }
 
+    /// <summary>Insert or Alt+C: the cursor in the Customer box (the buyer box opens first when it is folded).</summary>
+    /// <summary>A delivery time picked from the list: close it and go back to typing (Round 35).</summary>
+    private void OnDeliveryPicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        DeliveryPickButton.Flyout?.Hide();
+        DeliveryBox.Focus();
+        DeliveryBox.CaretIndex = DeliveryBox.Text?.Length ?? 0;
+    }
+
+    /// <summary>The ✕ at the top of the gear menu closes it (Round 35).</summary>
+    private void OnStepMenuClose(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => StepGearButton.Flyout?.Hide();
+
+    public void FocusCustomerBox()
+    {
+        if (Vm is { HeaderCollapsed: true } folded)
+        {
+            folded.HeaderCollapsed = false;
+            Dispatcher.UIThread.Post(() => FocusPicker(CustomerBox), DispatcherPriority.Loaded);
+            return;
+        }
+        FocusPicker(CustomerBox);
+    }
+
+    private static void FocusPicker(SearchPicker box)
+    {
+        if (!box.IsEffectivelyEnabled || !box.IsEffectivelyVisible) return; // e.g. an approved quotation
+        box.BringIntoView();
+        box.InputBox.Focus(NavigationMethod.Tab);
+        box.InputBox.SelectAll();
+    }
+
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Source is not Control source) return;
@@ -77,17 +109,12 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
             return;
         }
-        // Alt+C: the Customer box; Alt+I: the Product box to add an item (either Alt key).
+        // Alt+C: the Customer box (also Insert, anywhere in the window); Alt+I: the Product box to add an item (either Alt key).
         if (AltKey.IsAlt(e.KeyModifiers) && e.Key is Key.C or Key.I)
         {
             AltKey.SwallowTypedLetter(this, e.KeyModifiers);
-            var box = e.Key == Key.C ? CustomerBox : ProductBox;
-            if (box.IsEffectivelyEnabled && box.IsEffectivelyVisible)
-            {
-                box.BringIntoView();
-                box.InputBox.Focus(NavigationMethod.Tab);
-                box.InputBox.SelectAll();
-            }
+            if (e.Key == Key.C) FocusCustomerBox();
+            else FocusPicker(ProductBox);
             e.Handled = true;
             return;
         }

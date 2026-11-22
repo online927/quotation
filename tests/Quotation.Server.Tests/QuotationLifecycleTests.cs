@@ -18,7 +18,7 @@ public class QuotationLifecycleTests : QuotationTestBase
         request.Lines[0].Unit = "BOX";
         var q = await Api.CreateQuotationAsync(request);
 
-        Assert.Equal("27AAACS1234F1Z3", q.Buyer.Gstin);
+        Assert.Equal("27AAACS1234F1ZS", q.Buyer.Gstin);
         Assert.Equal("27", q.Buyer.StateCode);
         Assert.Equal("Sonepar India Private Limited", q.Buyer.Name);
         Assert.Contains("Chakan, Pune", q.Buyer.Address);
@@ -274,7 +274,7 @@ public class QuotationLifecycleTests : QuotationTestBase
         Assert.Contains(await Api.QuotationsAsync("sonepar"), s => s.Id == q.Id);
         Assert.Contains(await Api.QuotationsAsync(q.Number), s => s.Id == q.Id);
         Assert.Contains(await Api.QuotationsAsync("bevel"), s => s.Id == q.Id);
-        Assert.Contains(await Api.QuotationsAsync("27AAACS1234F1Z3"), s => s.Id == q.Id);
+        Assert.Contains(await Api.QuotationsAsync("27AAACS1234F1ZS"), s => s.Id == q.Id);
         Assert.DoesNotContain(await Api.QuotationsAsync("havells"), s => s.Id == q.Id);
         Assert.Contains(await Api.QuotationsAsync(status: QuotationStatus.Draft), s => s.Id == q.Id);
     }

@@ -55,7 +55,22 @@ public class Round17UiTests
         var copy = Path.Combine(server.DataDirectory, "recovery", "admin.json");
         Assert.True(File.Exists(copy));
 
-        await editor.CancelQuotationCommand.ExecuteAsync(null);
+        // Round 35: Cancel asks first; No keeps everything …
+        var cancel = editor.CancelQuotationCommand.ExecuteAsync(null);
+        await UiHelpers.WaitUntil(() => shell.PendingDialog is not null);
+        Assert.Equal("Discard this quotation?", shell.PendingDialog!.Title);
+        Assert.Equal("Discard", shell.PendingDialog.PrimaryText);
+        Assert.Equal("No", shell.PendingDialog.SecondaryText);
+        shell.PendingDialog.Choose(false);
+        await cancel;
+        Assert.Same(editor, shell.CurrentPage);
+        Assert.Single(editor.Lines);
+        Assert.True(File.Exists(copy));
+        // … Discard throws it away
+        cancel = editor.CancelQuotationCommand.ExecuteAsync(null);
+        await UiHelpers.WaitUntil(() => shell.PendingDialog is not null);
+        shell.PendingDialog!.Choose(true);
+        await cancel;
         Assert.False(File.Exists(copy)); // nothing comes back at the next start
 
         // Round 27: it stays on the page, which starts again blank; Cancel on a blank one does nothing.

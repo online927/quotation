@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 35 built in full (#124–#142 except the discarded #143) and shipped on "Do" (see 4.8 for the version). List: empty.
+Last updated: Round 35 built in full (#124–#142 except the discarded #143) and shipped on "Do" as version 0.9.84 (run 84, commit 028c34e; all 665 tests passed; Windows, Mac and Android built). List: empty.
 
 
 1. THE PROJECT

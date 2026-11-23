@@ -108,6 +108,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             DeliveryNote = r.DeliveryNote, DispatchDocNo = r.DispatchDocNo, DeliveryNoteDate = r.DeliveryNoteDate, Remarks = r.Remarks,
             TermsAndConditions = r.TermsAndConditions, PackingForwarding = r.PackingForwarding, PackingForwardingPercent = r.PackingForwardingPercent,
             PreparedBy = r.PreparedBy, VerifiedBy = r.VerifiedBy, WithoutGst = r.WithoutGst, GstByBuyer = r.GstByBuyer ?? true, Lines = r.Lines,
+            Currency = r.Currency ?? "", ExchangeRate = r.ExchangeRate,
             HasPdf = HasPdf, PdfError = PdfError, DataFreshnessWarning = DataWarning, EditableUntil = EditableUntil ?? default,
             CreatedBy = _loaded?.CreatedBy ?? "", CreatedUtc = _loaded?.CreatedUtc ?? default, UpdatedBy = _loaded?.UpdatedBy,
             UpdatedUtc = _loaded?.UpdatedUtc, ApprovedBy = _loaded?.ApprovedBy, ApprovedUtc = _loaded?.ApprovedUtc,
@@ -266,11 +267,10 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             .Replace("{number}", Number ?? "", StringComparison.OrdinalIgnoreCase)
             .Replace("{customer}", BuyerName, StringComparison.OrdinalIgnoreCase);
         var phone = DocumentLauncher.WhatsAppNumber(BuyerPhone);
-        var web = _session.Documents.WhatsAppOnWeb;
         if (_session.Documents.ShareOnWhatsApp(path, phone, message))
-            InfoMessage = DocumentLauncher.WhatsAppHint(web, phone is not null);
+            InfoMessage = _session.Documents.WhatsAppHintNow(phone is not null);
         else
-            ErrorMessage = DocumentLauncher.WhatsAppError(web, path);
+            ErrorMessage = _session.Documents.WhatsAppErrorNow(path);
     });
 
     // ---------------------------------------------------------------- who changed it (M3)
@@ -651,6 +651,40 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             ? "Discount cleared on all lines."
             : $"{percent:0.##} % discount put on {(Lines.Count == 1 ? "the line" : $"all {Lines.Count} lines")}.");
     }
+    /// <summary>Gear (Round 36): the % typed for "Raise all rates by" (a minus number lowers them).</summary>
+    [ObservableProperty] private string _raiseRatesText = "";
+
+    /// <summary>
+    /// Gear (Round 36): every line's rate goes up by the typed % (a minus number lowers it), rounded to paise, with Undo.
+    /// </summary>
+    [RelayCommand]
+    private void RaiseAllRates()
+    {
+        if (!CanEditContent || Lines.Count == 0) return;
+        var text = (RaiseRatesText ?? "").Trim().TrimEnd('%').Trim();
+        if (!decimal.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var percent)
+            || percent == 0 || percent <= -100 || percent > 1000)
+        {
+            _navigator.Toast("Type a % to raise the rates by (e.g. 5, or -5 to lower them).");
+            return;
+        }
+        var changed = new List<(QuotationLineViewModel Line, decimal Old)>();
+        foreach (var line in Lines)
+        {
+            if (line.Rate <= 0) continue;
+            changed.Add((line, line.Rate));
+            line.Rate = Math.Round(line.Rate * (100 + percent) / 100, 2, MidpointRounding.AwayFromZero);
+        }
+        if (changed.Count == 0) return;
+        AfterPricesChanged();
+        var what = changed.Count == 1 ? "1 rate" : $"{changed.Count} rates";
+        _navigator.Toast(percent > 0 ? $"{what} raised by {percent:0.##} %." : $"{what} lowered by {-percent:0.##} %.", "Undo", () =>
+        {
+            foreach (var (line, old) in changed) line.Rate = old;
+            AfterPricesChanged();
+        }, 12);
+    }
+
     public bool HasStepInfo => StepInfo.Length > 0;
 
     /// <summary>After a line is saved: the box the cursor goes to ("Product" for a new line; a column or "Quantity" for the next line).</summary>
@@ -775,7 +809,30 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public string TaxText => Totals is null || Totals.Taxes.Count == 0 ? "" :
         string.Join("   ", Totals.Taxes.Select(t => $"{t.Name} {t.RatePercent:0.##}%: {IndianFormat.Amount(t.Amount)}"));
     public string RoundOffText => Totals is null || Totals.RoundOff == 0 ? "" : IndianFormat.Amount(Totals.RoundOff);
-    public string GrandTotalText => "₹ " + IndianFormat.Amount(Totals?.GrandTotal ?? 0);
+    public string GrandTotalText => (IsUsd ? "$ " : "₹ ") + IndianFormat.Amount(Totals?.GrandTotal ?? 0);
+
+    /// <summary>Round 36: a USD quotation (My Settings → USD quotation, next quotation only): rates in US dollars, no GST.</summary>
+    [ObservableProperty] private bool _isUsd;
+    /// <summary>Round 36: 1 USD = this many rupees for this quotation.</summary>
+    [ObservableProperty] private decimal? _usdRate;
+    /// <summary>"$ USD · 1 USD = ₹ 84.20 · no GST".</summary>
+    public string UsdChipText => UsdRate is { } r ? $"$ USD · 1 USD = ₹ {r:0.00} · no GST" : "$ USD · no GST";
+
+    /// <summary>The "WITHOUT GST" pill (a USD quotation says "no GST" in its own chip).</summary>
+    public bool ShowWithoutGstPill => WithoutGst && !IsUsd;
+
+    partial void OnIsUsdChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowWithoutGstPill));
+        OnPropertyChanged(nameof(GrandTotalText));
+        OnPropertyChanged(nameof(PackingLabel));
+    }
+
+    partial void OnUsdRateChanged(decimal? value) => OnPropertyChanged(nameof(UsdChipText));
+
+    /// <summary>A Tally rate (rupees) as this quotation shows it: in dollars on a USD quotation (2 decimals).</summary>
+    public decimal? InQuotationCurrency(decimal? rupees) =>
+        rupees is not { } r ? null : IsUsd && UsdRate is > 0 ? Math.Round(r / UsdRate.Value, 2, MidpointRounding.AwayFromZero) : r;
     public string TotalQuantityText => Totals is null ? "" : $"{IndianFormat.Quantity(Totals.TotalQuantity)} {Totals.TotalQuantityUnit}".Trim();
     public string AmountInWords => IndianFormat.AmountInWords(Totals?.GrandTotal ?? 0, _settings.Quotation.CurrencyWordsPrefix);
     public bool ShowsTaxes => _settings.Quotation.TaxPresentation == TaxPresentation.ComputeTax && !WithoutGst;
@@ -826,7 +883,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public string SealHint => SealPinOn ? "Put your seal on the PDF (asks for your 4-digit seal PIN)" : "Put your seal on the PDF";
     public bool CanSaveAsPdf => Status != QuotationStatus.Cancelled && (IsFinal || (Lines.Count > 0 && !IsLocked));
     /// <summary>"Packing &amp; Forwarding ₹" ("Without GST" shows in small under it in Without GST mode).</summary>
-    public string PackingLabel => "Packing & Forwarding ₹";
+    public string PackingLabel => IsUsd ? "Packing & Forwarding $" : "Packing & Forwarding ₹";
     public bool IsFinal => Status is QuotationStatus.Approved or QuotationStatus.Generated;
     /// <summary>Regenerate PDF is only needed when making the PDF failed at approval (Open/Save as PDF are always fresh).</summary>
     public bool CanRegeneratePdf => IsFinal && !string.IsNullOrWhiteSpace(PdfError);
@@ -947,6 +1004,12 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             {
                 _loading = true;
                 WithoutGst = _session.Api.CurrentUser?.WithoutGstNext == true;
+                if (_session.Api.CurrentUser is { UsdNext: true, UsdRate: > 0 } usdUser && DocType == DocumentType.Quotation)
+                {
+                    UsdRate = usdUser.UsdRate;
+                    IsUsd = true;
+                    WithoutGst = true; // a USD quotation is without GST
+                }
                 PaymentTerms = _settings.Company.DefaultPaymentTerms;
                 TermsOfDelivery = _settings.Company.DefaultTermsOfDelivery;
                 TermsAndConditions = string.Join(Environment.NewLine, _settings.Company.TermsAndConditions);
@@ -991,6 +1054,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         DocType = q.DocType;
         WithoutGst = q.WithoutGst;
         GstByBuyer = q.GstByBuyer;
+        UsdRate = q.ExchangeRate;
+        IsUsd = q.IsUsd;
         EditableUntil = q.EditableUntil;
         DoNotUseWarning = q.DoNotUseItems.Count == 0 ? null
             : "Marked DNU (do not use) in Tally — replace before sending: " + string.Join(", ", q.DoNotUseItems);
@@ -1069,6 +1134,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     private void NotifyState()
     {
+        OnPropertyChanged(nameof(ShowCopyInvoice));
         OnPropertyChanged(nameof(IsEditable));
         OnPropertyChanged(nameof(CanEditContent));
         OnPropertyChanged(nameof(CanCancel));
@@ -1104,6 +1170,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     partial void OnWithoutGstChanged(bool value)
     {
         foreach (var l in Lines) l.ZeroGst = value;
+        OnPropertyChanged(nameof(ShowWithoutGstPill));
         OnPropertyChanged(nameof(ShowsTaxes));
         OnPropertyChanged(nameof(PackingLabel));
         RecalculateTotals();
@@ -1276,7 +1343,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public void SelectProduct(ProductSummaryDto p)
     {
         EntryProduct = p;
-        EntryRate = p.Rate > 0 ? p.Rate : null; // no rate in Tally: an empty box to type into, not 0.00
+        EntryRate = p.Rate > 0 ? InQuotationCurrency(p.Rate) : null; // no rate in Tally: an empty box to type into, not 0.00
         if (EditingLine is null || EditingLine.ProductId != p.Id)
         {
             EntryDescription = p.Description;
@@ -1393,6 +1460,131 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         Renumber();
         MarkDirty();
         return true;
+    }
+
+    // ================================================================= copy from a Tally invoice (Round 36)
+
+    /// <summary>"⎘ Copy from Tally invoice" beside Items: the administrator's switch is on, a Tally customer is chosen, and the page can be changed.</summary>
+    public bool ShowCopyInvoice => _settings.Quotation.CopyFromTallyInvoice && CustomerId is not null && CanEditContent;
+
+    partial void OnCustomerIdChanged(int? value) => OnPropertyChanged(nameof(ShowCopyInvoice));
+
+    [ObservableProperty] private bool _isInvoiceOpen;
+    [ObservableProperty] private bool _invoiceLoading;
+    [ObservableProperty] private string? _invoiceMessage;
+    /// <summary>The customer's invoices from Tally, newest first.</summary>
+    public ObservableCollection<TallyInvoiceDto> Invoices { get; } = [];
+    [ObservableProperty] private TallyInvoiceDto? _selectedInvoice;
+    /// <summary>The chosen invoice's items, each with a tick.</summary>
+    public ObservableCollection<InvoiceItemViewModel> InvoiceItems { get; } = [];
+    /// <summary>Today's rate from Tally (true, at first) or the rate on the invoice.</summary>
+    [ObservableProperty] private bool _invoiceUseTodayRate = true;
+    public bool InvoiceUseInvoiceRate { get => !InvoiceUseTodayRate; set => InvoiceUseTodayRate = !value; }
+    public bool HasSelectedInvoice => SelectedInvoice is not null;
+    public string InvoiceItemsTitle => SelectedInvoice is { } i ? $"Items of {i.Number} · {i.Date:dd-MMM-yyyy}" : "";
+    public int InvoiceAddCount => InvoiceItems.Count(i => i.IsTicked && i.Product is not null);
+    public string InvoiceAddText => InvoiceAddCount == 1 ? "Add 1 item" : $"Add {InvoiceAddCount} items";
+
+    partial void OnInvoiceUseTodayRateChanged(bool value) => OnPropertyChanged(nameof(InvoiceUseInvoiceRate));
+
+    partial void OnSelectedInvoiceChanged(TallyInvoiceDto? value)
+    {
+        foreach (var old in InvoiceItems) old.PropertyChanged -= OnInvoiceItemChanged;
+        InvoiceItems.Clear();
+        if (value is not null)
+        {
+            foreach (var line in value.Lines)
+            {
+                var item = new InvoiceItemViewModel(line, InQuotationCurrency(line.Product?.Rate), InQuotationCurrency(line.InvoiceRate)!.Value);
+                item.PropertyChanged += OnInvoiceItemChanged;
+                InvoiceItems.Add(item);
+            }
+        }
+        OnPropertyChanged(nameof(HasSelectedInvoice));
+        OnPropertyChanged(nameof(InvoiceItemsTitle));
+        OnPropertyChanged(nameof(InvoiceAddCount));
+        OnPropertyChanged(nameof(InvoiceAddText));
+    }
+
+    private void OnInvoiceItemChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(InvoiceAddCount));
+        OnPropertyChanged(nameof(InvoiceAddText));
+    }
+
+    /// <summary>Opens the window and reads the customer's sales invoices of the last 12 months from Tally (read only).</summary>
+    [RelayCommand]
+    public async Task OpenInvoicesAsync()
+    {
+        if (!ShowCopyInvoice || CustomerId is not { } customer) return;
+        Invoices.Clear();
+        SelectedInvoice = null;
+        InvoiceUseTodayRate = true;
+        InvoiceMessage = null;
+        IsInvoiceOpen = true;
+        InvoiceLoading = true;
+        try
+        {
+            foreach (var i in await _session.Api.TallyInvoicesAsync(customer)) Invoices.Add(i);
+            if (Invoices.Count == 0) InvoiceMessage = "No sales invoices for this customer in Tally in the last 12 months.";
+        }
+        catch (ApiException ex)
+        {
+            InvoiceMessage = ex.Status == System.Net.HttpStatusCode.NotFound && ex.Code is null && ex.Message.Length == 0
+                ? "This needs the server update." : ex.Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            InvoiceMessage = "The server could not be reached: " + ex.Message;
+        }
+        finally
+        {
+            InvoiceLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    public void CloseInvoices()
+    {
+        IsInvoiceOpen = false;
+        SelectedInvoice = null;
+        Invoices.Clear();
+    }
+
+    /// <summary>Adds the ticked items (those still in Tally) at today's or the invoice's rate; the discount is not copied.</summary>
+    [RelayCommand]
+    public void AddInvoiceItems()
+    {
+        if (SelectedInvoice is not { } invoice || !CanEditContent) return;
+        var add = InvoiceItems.Where(i => i.IsTicked && i.Product is not null).ToList();
+        var skipped = InvoiceItems.Count(i => i.Product is null);
+        foreach (var i in add)
+        {
+            var p = i.Product!;
+            Lines.Add(new QuotationLineViewModel
+            {
+                ProductId = p.Id,
+                ItemName = p.Name,
+                PartNumber = p.PartNumber,
+                Hsn = p.Hsn,
+                GstRate = p.GstRate,
+                Unit = p.Unit,
+                TallyRate = p.Rate,
+                Quantity = i.Quantity,
+                Rate = InvoiceUseTodayRate ? i.TodayRate ?? i.InvoiceRate : i.InvoiceRate,
+                Description = (p.Description ?? "").Trim(),
+                ZeroGst = WithoutGst,
+            });
+        }
+        CloseInvoices();
+        if (add.Count == 0) return;
+        Renumber();
+        MarkDirty();
+        RecalculateTotals();
+        OnPropertyChanged(nameof(CanApprove));
+        OnPropertyChanged(nameof(CanSaveAsPdf));
+        var what = add.Count == 1 ? "1 item" : $"{add.Count} items";
+        _navigator.Toast($"{what} added from Tally invoice {invoice.Number}" + (skipped > 0 ? $" ({skipped} skipped: not in Tally now)." : "."));
     }
 
     // ================================================================= pasted list
@@ -1545,7 +1737,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 Unit = p.Unit,
                 TallyRate = p.Rate,
                 Quantity = row.Quantity!.Value,
-                Rate = row.Rate ?? (p.Rate > 0 ? p.Rate.Value : 0),
+                Rate = row.Rate ?? (p.Rate > 0 ? InQuotationCurrency(p.Rate) ?? 0 : 0),
                 DiscountPercent = row.Discount is > 0 and < 100 ? row.Discount.Value : 0,
                 Description = (p.Description ?? "").Trim(),
                 ZeroGst = WithoutGst,
@@ -1687,6 +1879,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         VerifiedBy = VerifiedBy,
         WithoutGst = WithoutGst,
         GstByBuyer = GstByBuyer,
+        Currency = IsUsd ? Currencies.Usd : null,
+        ExchangeRate = IsUsd ? UsdRate : null,
         FromFormater = Source == QuotationSource.Formater,
         PdfLayout = _pdfLayout,
         Lines = Lines.Select(l => l.ToDto()).ToList(),
@@ -1720,6 +1914,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             MyClashVersion = null;
             // "Without GST" was for this one quotation: the server switched it off; keep the session in step.
             if (created && dto.WithoutGst && _session.Api.CurrentUser is { } me) _session.Api.UpdateCurrentUser(me with { WithoutGstNext = false });
+            // "USD quotation" too was for this one quotation.
+            if (created && dto.IsUsd && _session.Api.CurrentUser is { } usdMe) _session.Api.UpdateCurrentUser(usdMe with { UsdNext = false });
             InfoMessage = created && _provisionalNumber is { } shown && dto.Number is { } got && shown != got
                 ? $"Saved as {got}. {shown} was used by another user."
                 : $"Saved {dto.Number ?? "draft"} at {DateTime.Now:HH:mm}.";
@@ -2069,4 +2265,36 @@ public sealed partial class LineStepOption(string key, string name) : CommunityT
     public string Key { get; } = key;
     public string Name { get; } = name;
     [CommunityToolkit.Mvvm.ComponentModel.ObservableProperty] private bool _isSelected;
+}
+
+/// <summary>Round 36: one item of a Tally invoice in the "Copy from Tally invoice" window.</summary>
+public sealed partial class InvoiceItemViewModel : ObservableObject
+{
+    public InvoiceItemViewModel(TallyInvoiceLineDto line, decimal? todayRate, decimal invoiceRate)
+    {
+        Line = line;
+        TodayRate = todayRate;
+        InvoiceRate = invoiceRate;
+        _isTicked = line.Product is not null;
+    }
+
+    public TallyInvoiceLineDto Line { get; }
+    public ProductSummaryDto? Product => Line.Product;
+    public string ItemName => Line.ItemName;
+    public decimal Quantity => Line.Quantity;
+    public string QuantityText => $"{Line.Quantity:0.###} {Line.Unit}".Trim();
+    public decimal InvoiceRate { get; }
+    public decimal? TodayRate { get; }
+    public bool InTally => Product is not null;
+    public bool NotInTally => Product is null;
+    public double RowOpacity => InTally ? 1 : 0.55;
+    public string InvoiceRateText => IndianFormat.Amount(InvoiceRate);
+    public string TodayRateText => NotInTally ? "skipped" : TodayRate is { } r ? IndianFormat.Amount(r) : "—";
+    /// <summary>"+4%" when today's rate is higher than the invoice's (orange), "−3%" when lower.</summary>
+    public string ChangeText => TodayRate is { } r && InvoiceRate > 0 && r != InvoiceRate
+        ? (r > InvoiceRate ? "+" : "−") + Math.Abs(Math.Round((r - InvoiceRate) * 100 / InvoiceRate, 0)).ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "%"
+        : "";
+    public bool HasChange => ChangeText.Length > 0;
+
+    [ObservableProperty] private bool _isTicked;
 }

@@ -445,6 +445,61 @@ public partial class QuotationApiClient
         return r.Content.Headers.ContentDisposition?.FileNameStar ?? r.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "Quotation-backup.tsq";
     }
 
+    /// <summary>Round 36: an item's datasheet, or null when it has none.</summary>
+    public async Task<DatasheetDto?> DatasheetAsync(int productId, CancellationToken ct = default)
+    {
+        try
+        {
+            return await GetAsync<DatasheetDto>($"api/products/{productId}/datasheet", ct);
+        }
+        catch (ApiException ex) when (ex.Status == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Round 36 (administrators): uploads or replaces an item's PDF datasheet.</summary>
+    public Task<DatasheetDto> UploadDatasheetAsync(int productId, string fileName, byte[] pdf, CancellationToken ct = default) =>
+        SendAsync<DatasheetDto>(HttpMethod.Put, $"api/products/{productId}/datasheet?name={Uri.EscapeDataString(fileName)}", pdf, ct);
+
+    /// <summary>Round 36 (administrators): "Add to the quotation PDF" on or off.</summary>
+    public Task<DatasheetDto> SetDatasheetOnPdfAsync(int productId, bool on, CancellationToken ct = default) =>
+        SendAsync<DatasheetDto>(HttpMethod.Put, $"api/products/{productId}/datasheet/add-to-pdf?on={(on ? "true" : "false")}", null, ct);
+
+    /// <summary>Round 36 (administrators): removes an item's datasheet.</summary>
+    public async Task RemoveDatasheetAsync(int productId, CancellationToken ct = default)
+    {
+        using var _ = await SendRawAsync(HttpMethod.Delete, $"api/products/{productId}/datasheet", null, ct);
+    }
+
+    /// <summary>Round 36: the datasheet PDF itself.</summary>
+    public async Task<byte[]> DatasheetFileAsync(int productId, CancellationToken ct = default)
+    {
+        using var r = await SendRawAsync(HttpMethod.Get, $"api/products/{productId}/datasheet/file", null, ct);
+        return await r.Content.ReadAsByteArrayAsync(ct);
+    }
+
+    /// <summary>Round 36: the customer's sales invoices of the last 12 months, read from Tally now (Copy from Tally invoice).</summary>
+    public Task<List<TallyInvoiceDto>> TallyInvoicesAsync(int customerId, CancellationToken ct = default) =>
+        GetAsync<List<TallyInvoiceDto>>($"api/customers/{customerId}/tally-invoices", ct);
+
+    /// <summary>Administrators (Round 36): the evening summary of a day (text for WhatsApp / e-mail).</summary>
+    public Task<EveningSummaryDto> EveningSummaryAsync(DateOnly day, CancellationToken ct = default) =>
+        GetAsync<EveningSummaryDto>($"api/diagnostics/summary?day={day:yyyy-MM-dd}", ct);
+
+    /// <summary>Administrators (Round 36): "Who did what" on a day, for one user (null = everyone).</summary>
+    public Task<List<ActivityDto>> ActivityAsync(DateOnly day, string? user = null, CancellationToken ct = default) =>
+        GetAsync<List<ActivityDto>>($"api/diagnostics/activity?day={day:yyyy-MM-dd}" + (string.IsNullOrEmpty(user) ? "" : "&user=" + Uri.EscapeDataString(user)), ct);
+
+    /// <summary>Administrators (Round 36): a month's approved PDFs as one ZIP. Returns the ZIP's bytes and file name.</summary>
+    public async Task<(byte[] Zip, string FileName)> MonthPdfsAsync(int year, int month, bool quotations, bool proforma, CancellationToken ct = default)
+    {
+        using var r = await SendRawAsync(HttpMethod.Get,
+            $"api/diagnostics/month-pdfs?month={year:0000}-{month:00}&quotations={(quotations ? "true" : "false")}&proforma={(proforma ? "true" : "false")}", null, ct);
+        var name = r.Content.Headers.ContentDisposition?.FileNameStar ?? r.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? $"Quotations-{year:0000}-{month:00}.zip";
+        return (await r.Content.ReadAsByteArrayAsync(ct), name);
+    }
+
     /// <summary>Administrators: restore from an export (.tsq) or a database backup (.db).</summary>
     public async Task<RestoreSummaryDto> RestoreFromBackupAsync(Stream file, CancellationToken ct = default)
     {

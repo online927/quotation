@@ -26,6 +26,8 @@ public interface IGmailClient
     Task<string> GetAccountEmailAsync(CancellationToken ct);
     Task<IReadOnlyList<string>> ListMessageIdsAsync(string query, int max, CancellationToken ct);
     Task<GmailMessageData> GetMessageAsync(string id, CancellationToken ct);
+    /// <summary>Round 36: sends a plain-text e-mail from the connected account (the evening summary).</summary>
+    Task SendAsync(string to, string subject, string body, CancellationToken ct) => throw new NotSupportedException();
 }
 
 /// <summary>
@@ -36,7 +38,7 @@ public interface IGmailClient
 /// </summary>
 public static class GmailOAuth
 {
-    public static readonly string[] Scopes = [GmailService.Scope.GmailReadonly, Google.Apis.Drive.v3.DriveService.Scope.DriveFile];
+    public static readonly string[] Scopes = [GmailService.Scope.GmailReadonly, GmailService.Scope.GmailSend, Google.Apis.Drive.v3.DriveService.Scope.DriveFile];
 
     public static GoogleAuthorizationCodeFlow CreateFlow(string clientSecretJson)
     {
@@ -105,6 +107,16 @@ public sealed class GoogleGmailClient : IGmailClient, IDisposable
 
     public async Task<string> GetAccountEmailAsync(CancellationToken ct) =>
         (await _service.Users.GetProfile("me").ExecuteAsync(ct)).EmailAddress;
+
+    public async Task SendAsync(string to, string subject, string body, CancellationToken ct)
+    {
+        var mime = "To: " + to + "\r\n" +
+                   "Subject: =?UTF-8?B?" + Convert.ToBase64String(Encoding.UTF8.GetBytes(subject)) + "?=\r\n" +
+                   "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" +
+                   Convert.ToBase64String(Encoding.UTF8.GetBytes(body), Base64FormattingOptions.InsertLineBreaks);
+        var raw = Convert.ToBase64String(Encoding.UTF8.GetBytes(mime)).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        await _service.Users.Messages.Send(new Google.Apis.Gmail.v1.Data.Message { Raw = raw }, "me").ExecuteAsync(ct);
+    }
 
     public async Task<IReadOnlyList<string>> ListMessageIdsAsync(string query, int max, CancellationToken ct)
     {

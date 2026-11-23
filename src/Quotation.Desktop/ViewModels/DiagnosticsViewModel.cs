@@ -25,6 +25,7 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
         _session = session;
         _navigator = navigator;
         _signOut = signOut;
+        _zipMonth = Months[0];
         _ = LoadAsync();
     }
 
@@ -41,7 +42,17 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
         SlowRequests.Clear();
         foreach (var s in await _session.Api.SlowRequestsAsync()) SlowRequests.Add(new SlowRequestRow(s));
         LogText = await _session.Api.ServerLogAsync(300);
+        await LoadActivityUsersAsync();
+        await LoadActivityCoreAsync();
     });
+
+    private async Task LoadActivityCoreAsync()
+    {
+        var rows = await _session.Api.ActivityAsync(DateOnly.FromDateTime(ActivityDay ?? DateTime.Today), ActivityUser == AllUsers ? null : ActivityUser);
+        Activity.Clear();
+        foreach (var a in rows) Activity.Add(new ActivityRow(a));
+        OnPropertyChanged(nameof(NoActivity));
+    }
 
     [RelayCommand]
     private Task BackupAsync() => RunAsync(async () =>
@@ -70,6 +81,74 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
         }
         InfoMessage = $"Everything exported to {path} ({new FileInfo(path).Length / 1024.0 / 1024.0:0.0} MB). Keep it on a USB drive or another PC.";
     });
+
+    /// <summary>Round 36 "Who did what": the chosen day (today at first) and user ("All users" = everyone).</summary>
+    [ObservableProperty] private DateTime? _activityDay = DateTime.Today;
+    [ObservableProperty] private string _activityUser = AllUsers;
+    public const string AllUsers = "All users";
+    public ObservableCollection<string> ActivityUsers { get; } = [AllUsers];
+    public ObservableCollection<ActivityRow> Activity { get; } = [];
+    public bool NoActivity => Activity.Count == 0;
+
+    partial void OnActivityDayChanged(DateTime? value) => _ = LoadActivityAsync();
+    partial void OnActivityUserChanged(string value) => _ = LoadActivityAsync();
+
+    [RelayCommand]
+    public Task LoadActivityAsync() => RunAsync(async () =>
+    {
+        await LoadActivityCoreAsync();
+    });
+
+    private async Task LoadActivityUsersAsync()
+    {
+        foreach (var u in (await _session.Api.UsersAsync()).Select(u => u.Username).Order(StringComparer.OrdinalIgnoreCase))
+            if (!ActivityUsers.Contains(u)) ActivityUsers.Add(u);
+    }
+
+    /// <summary>Round 36: the evening summary of the chosen day (Who did what → Summary).</summary>
+    [ObservableProperty] private string? _summaryText;
+    public bool HasSummary => !string.IsNullOrEmpty(SummaryText);
+    partial void OnSummaryTextChanged(string? value) => OnPropertyChanged(nameof(HasSummary));
+
+    [RelayCommand]
+    private Task ShowSummaryAsync() => RunAsync(async () =>
+        SummaryText = (await _session.Api.EveningSummaryAsync(DateOnly.FromDateTime(ActivityDay ?? DateTime.Today))).Text);
+
+    [RelayCommand]
+    private void SummaryToWhatsApp()
+    {
+        if (SummaryText is { Length: > 0 } text && !_session.Documents.OpenWhatsAppText(text))
+            ErrorMessage = "WhatsApp could not be opened on this PC.";
+    }
+
+    /// <summary>Round 36 "PDFs of a month": this month and the 23 before it, newest first.</summary>
+    public IReadOnlyList<MonthChoice> Months { get; } = Enumerable.Range(0, 24)
+        .Select(i => new MonthChoice(DateOnly.FromDateTime(DateTime.Today).AddDays(1 - DateTime.Today.Day).AddMonths(-i))).ToList();
+
+    [ObservableProperty] private MonthChoice? _zipMonth;
+    [ObservableProperty] private bool _zipQuotations = true;
+    [ObservableProperty] private bool _zipProforma = true;
+
+    /// <summary>Round 36: the month's approved PDFs as one ZIP, saved in Documents (for the accountant or filing).</summary>
+    [RelayCommand]
+    private Task DownloadMonthZipAsync() => RunAsync(async () =>
+    {
+        var month = ZipMonth ?? Months[0];
+        if (!ZipQuotations && !ZipProforma)
+        {
+            ErrorMessage = "Tick Quotations or Proforma invoices.";
+            return;
+        }
+        var (zip, name) = await _session.Api.MonthPdfsAsync(month.First.Year, month.First.Month, ZipQuotations, ZipProforma);
+        Directory.CreateDirectory(ExportFolder);
+        var path = Path.Combine(ExportFolder, name);
+        await File.WriteAllBytesAsync(path, zip);
+        LastZipPath = path;
+        InfoMessage = $"{name} saved in {ExportFolder} ({zip.Length / 1024.0 / 1024.0:0.0} MB).";
+    });
+
+    /// <summary>Where the last ZIP was saved (tests).</summary>
+    public string? LastZipPath { get; private set; }
 
     /// <summary>
     /// Replaces the server's quotations with a backup (.tsq from Export everything, or a .db backup).
@@ -106,6 +185,24 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
             Audit.Add(a);
         }
     }
+}
+
+/// <summary>One row of "Who did what": time, user, chip and what.</summary>
+public sealed class ActivityRow(ActivityDto a)
+{
+    public string Time => a.AtLocal.ToString("HH:mm");
+    public string User => a.User;
+    public string Chip => a.Chip;
+    public bool IsOk => a.Kind == "ok";
+    public bool IsBad => a.Kind == "bad";
+    public bool IsWarn => a.Kind == "warn";
+    public string What => a.What;
+}
+
+/// <summary>A month in the "PDFs of a month" list ("November 2026").</summary>
+public sealed record MonthChoice(DateOnly First)
+{
+    public override string ToString() => First.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
 }
 
 /// <summary>One slow request as listed in Diagnostics, with the likely cause.</summary>

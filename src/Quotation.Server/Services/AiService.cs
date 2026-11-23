@@ -50,8 +50,19 @@ public sealed class AiService(
 
     public const int MaxPhotoBytes = 8 * 1024 * 1024;
 
+    /// <summary>
+    /// The photo instructions for this company (Round 36): its name from Settings → Company and, when typed, what it sells
+    /// (Settings → Claude AI), e.g. "… for ACME TRADERS, a company in India selling tools and instruments: …".
+    /// </summary>
+    public static string PhotoPromptFor(string? companyName, string? whatWeSell)
+    {
+        var sells = string.IsNullOrWhiteSpace(whatWeSell) ? "" : " selling " + whatWeSell.Trim().TrimEnd('.');
+        var who = string.IsNullOrWhiteSpace(companyName) ? $"a trading company in India{sells}" : $"{companyName!.Trim()}, a company in India{sells}";
+        return PhotoPrompt.Replace("{who}", who, StringComparison.Ordinal);
+    }
+
     private const string PhotoPrompt = """
-        You read photos of quotation enquiries for T.SAIFUDDIN & CO., a tools and instruments trading company in India: a
+        You read photos of quotation enquiries for {who}: a
         customer's handwritten or printed list, a WhatsApp screenshot, a letterhead enquiry, a visiting card with items written
         on it. Write out what the photo asks for, in exactly this plain-text form and nothing else:
 
@@ -81,7 +92,7 @@ public sealed class AiService(
         AiRunResult result;
         try
         {
-            result = await provider.RunAsync(new AiRunRequest(PhotoPrompt, "Write out this enquiry.", [], MaxTurns: 1, Image: image,
+            result = await provider.RunAsync(new AiRunRequest(PhotoPromptFor(settings.Company.CompanyName, settings.Ai.WhatWeSell), "Write out this enquiry.", [], MaxTurns: 1, Image: image,
                 ImageMediaType: mediaType), (_, _) => Task.FromResult(new AiToolOutput("No tools here.", IsError: true)), ct);
         }
         catch (AiUnavailableException ex)

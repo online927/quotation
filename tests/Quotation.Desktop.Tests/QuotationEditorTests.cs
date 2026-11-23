@@ -47,6 +47,14 @@ internal sealed class RecordingLauncher(ClientConfig config) : DocumentLauncher(
         return true;
     }
 
+    /// <summary>Round 36: texts sent to WhatsApp (the evening summary).</summary>
+    public List<string> WhatsAppTexts { get; } = [];
+    public override bool OpenWhatsAppText(string message)
+    {
+        WhatsAppTexts.Add(message);
+        return true;
+    }
+
     public List<string> Installers { get; } = [];
     public override bool RunInstaller(string setupPath, string serverUrl)
     {

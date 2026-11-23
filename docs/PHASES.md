@@ -965,3 +965,38 @@ Server update needed (6: stars; 7: Google Drive backup; 8: reading photos; 10: t
 Server update needed (2: the server works out the GST by the chosen state; the database gets the new column by itself;
 6: deleting a user is done by the server; 10, 11, 12, 16: the delivery line, the seal without PIN, the Zoho changes and
 the Minimal layout are made by the server).
+
+### Round 36
+
+1. Google Drive backup: the folder name is typed in Settings → Backup & updates ("Folder name", at first "TS Quotations").
+   A new name: new copies go to the new folder; the old folder stays as it is.
+2. Claude AI photo reader: uses the company name from Settings → Company (not a fixed name), and a new "What we sell" box
+   in Settings → Claude AI (e.g. "tools and instruments").
+3. Gear menu on the quotation page: "Raise all rates by … %" (a minus number lowers them), with Undo in the notice.
+4. Diagnostics (administrator) → "PDFs of a month": pick the month, tick Quotations / Proforma invoices, "Download ZIP"
+   saves one ZIP in Documents (e.g. Quotations-2026-11.zip with "TSQ2627-101 Sonepar India ….pdf" files).
+5. Diagnostics (administrator) → "Who did what": the day's work from the audit log (time, user, chip such as Approved /
+   Cancelled / Saved / Settings, the quotation with its customer and value); pick the day and the user.
+6. USD quotation (My Settings, next quotation only): switch "USD quotation" and "1 USD = ₹ …". The next quotation is in US
+   dollars, without GST: Tally rates are shown in dollars, the screen and the PDF show "$", the words "USD … Cents Only"
+   and the line "Amounts in US dollars (USD), without GST. 1 USD = ₹ …". The switch turns itself off once that
+   quotation is saved; the rate is remembered. A copy (Duplicate) is in rupees again. USD quotations never count as
+   "last rates".
+7. Copy from Tally invoice (Settings → Features switch, Off at first): on the quotation page, after the customer is picked,
+   "Copy from Tally invoice" lists that customer's sales invoices of the last 12 months (read from Tally only on click,
+   one customer, one request; Tally is not changed). Pick one: its items are ticked (untick to leave out), the invoice
+   rate beside today's rate with a +X% chip; items no longer in Tally are greyed and skipped; choose "Today's rate" or
+   "Invoice rate"; "Add N items". Discount is not copied.
+8. Datasheets: Products page → an item → "Add datasheet (PDF)…" (administrator), with Open / Replace / Remove and the tick
+   "Add to the quotation PDF when this item is quoted" (on at first). Quoting the item adds the datasheet pages after the
+   quotation pages (every layout).
+9. Evening summary (Settings → Features switch, Off at first; time, at first 19:00; e-mail address): at that time the
+   administrator's screen shows the day's summary (quotations and value, per user, won / lost, drafts still open,
+   follow-ups tomorrow) with a WhatsApp button, once a day. With an e-mail address it is also e-mailed through the Gmail
+   connection (connect Gmail again once, so Google allows sending). Also in Diagnostics → Who did what → "Summary".
+10. My Settings → WhatsApp (this PC): a third choice "Inside this app": WhatsApp opens in its own window that stays
+    signed in, apart from the browser (scan the QR code once). It uses the Edge or Chrome already on the PC (no bigger
+    download); without either, WhatsApp Web opens in the browser.
+
+Server update needed (1, 2, 4, 5, 6, 7, 8, 9 are done by the server; the database gets the new columns and the
+datasheet table by itself).

@@ -657,7 +657,7 @@ public sealed class QuotationPdfRenderer
             ? $"{IndianFormat.Quantity(doc.TotalQuantity)} {doc.TotalQuantityUnit}"
             : "";
         DrawFitted(g, qty, _bold, ColQty, y);
-        DrawFitted(g, "₹ " + IndianFormat.Amount(doc.GrandTotal), _bold, ColAmount, y);
+        DrawFitted(g, doc.CurrencySymbol + " " + IndianFormat.Amount(doc.GrandTotal), _bold, ColAmount, y);
         g.DrawLine(pen, MarginLeft, top + TotalRowHeight, MarginLeft + ContentWidth, top + TotalRowHeight);
         return top + TotalRowHeight;
     }

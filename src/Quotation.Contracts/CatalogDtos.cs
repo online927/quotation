@@ -117,3 +117,15 @@ public sealed record StarsDto(IReadOnlyList<int> ProductIds, IReadOnlyList<int> 
 
 /// <summary>Star (On) or unstar an item ("product") or a customer ("customer").</summary>
 public sealed record StarRequest(string Kind, int Id, bool On);
+
+/// <summary>Round 36: a customer's sales invoice from Tally (copy items from a Tally invoice).</summary>
+public sealed record TallyInvoiceDto(string Number, DateOnly Date, string VoucherType, decimal Total, IReadOnlyList<TallyInvoiceLineDto> Lines);
+
+/// <summary>
+/// Round 36: one item of a Tally invoice: the quantity and rate on the invoice, and the item as it is in Tally today
+/// (<see cref="Product"/> null = not in Tally now, skipped).
+/// </summary>
+public sealed record TallyInvoiceLineDto(string ItemName, decimal Quantity, string Unit, decimal InvoiceRate, ProductSummaryDto? Product);
+
+/// <summary>Round 36: the PDF datasheet of an item (Products page).</summary>
+public sealed record DatasheetDto(int ProductId, string FileName, int Pages, long Bytes, bool AddToPdf, string UploadedBy, DateTime UploadedUtc);

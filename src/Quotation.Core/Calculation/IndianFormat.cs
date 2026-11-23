@@ -67,6 +67,38 @@ public static class IndianFormat
         return sb.ToString();
     }
 
+    /// <summary>Round 36: "USD Three Hundred Seventy and Fifty Five Cents Only" (international: thousand, million).</summary>
+    public static string DollarsInWords(decimal amount)
+    {
+        var abs = Math.Round(Math.Abs(amount), 2, MidpointRounding.AwayFromZero);
+        var dollars = (long)Math.Floor(abs);
+        var cents = (int)((abs - dollars) * 100);
+        var sb = new StringBuilder();
+        if (amount < 0) sb.Append("Minus ");
+        sb.Append("USD ").Append(dollars == 0 ? "Zero" : InternationalWords(dollars));
+        if (cents > 0) sb.Append(" and ").Append(TwoDigits(cents)).Append(cents == 1 ? " Cent" : " Cents");
+        sb.Append(" Only");
+        return sb.ToString();
+    }
+
+    private static string InternationalWords(long n)
+    {
+        var parts = new List<string>();
+        foreach (var (size, name) in new[] { (1_000_000_000L, "Billion"), (1_000_000L, "Million"), (1000L, "Thousand") })
+        {
+            if (n < size) continue;
+            parts.Add(InternationalWords(n / size) + " " + name);
+            n %= size;
+        }
+        if (n >= 100)
+        {
+            parts.Add(Ones[n / 100] + " Hundred");
+            n %= 100;
+        }
+        if (n > 0) parts.Add(TwoDigits((int)n));
+        return string.Join(" ", parts);
+    }
+
     /// <summary>Indian system: crore (10^7), lakh (10^5), thousand, hundred.</summary>
     public static string NumberToWords(long n)
     {

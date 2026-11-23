@@ -9,7 +9,8 @@ public sealed record LoginResponse(string Token, DateTime ExpiresUtc, UserDto Us
 public sealed record UserDto(int Id, string Username, string DisplayName, UserRole Role, bool IsActive, bool MustChangePassword,
     bool WithoutGstNext = false, string Theme = AppTheme.StartTheme, string? PdfLayout = null,
     string TextSize = AppDisplay.Normal, string Spacing = AppDisplay.Comfortable, bool ReduceMotion = false,
-    string PdfFileOrder = PdfFileOrders.NumberFirst, bool HasSealImage = false, bool HasSealPin = false, bool OpenPdfAfterSave = true)
+    string PdfFileOrder = PdfFileOrders.NumberFirst, bool HasSealImage = false, bool HasSealPin = false, bool OpenPdfAfterSave = true,
+    bool UsdNext = false, decimal UsdRate = 0)
 {
     /// <summary>A user (not an administrator) with both a seal picture and a seal PIN may seal PDFs.</summary>
     public bool CanSeal => Role != UserRole.Admin && HasSealImage && HasSealPin;
@@ -84,7 +85,8 @@ public sealed record UpdateUserRequest(string Username, string DisplayName, User
 
 /// <summary>The current user's own switches ("My settings"); a null value is left unchanged.</summary>
 public sealed record MyPreferencesDto(bool? WithoutGstNext = null, string? Theme = null, string? PdfLayout = null,
-    string? TextSize = null, string? Spacing = null, bool? ReduceMotion = null, string? PdfFileOrder = null, bool? OpenPdfAfterSave = null);
+    string? TextSize = null, string? Spacing = null, bool? ReduceMotion = null, string? PdfFileOrder = null, bool? OpenPdfAfterSave = null,
+    bool? UsdNext = null, decimal? UsdRate = null);
 
 public sealed record CreateUserRequest(string Username, string DisplayName, string Password, UserRole Role);
 
@@ -188,3 +190,12 @@ public static class UserRoles
 {
     public static string Name(UserRole role) => role == UserRole.Admin ? "Administrator" : "Standard";
 }
+
+/// <summary>
+/// Round 36 "Who did what" (administrators): one thing someone did, from the audit log. <see cref="Kind"/> colours the chip:
+/// ok (green), bad (red), warn (orange) or plain (grey).
+/// </summary>
+public sealed record ActivityDto(DateTime AtLocal, string User, string Chip, string Kind, string What);
+
+/// <summary>Round 36: the evening summary of a day (text ready for WhatsApp or e-mail) and when it was last e-mailed.</summary>
+public sealed record EveningSummaryDto(DateOnly Day, string Title, string Text, string? LastSent = null, string? Error = null);

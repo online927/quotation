@@ -50,9 +50,13 @@
             <TextBlock Text="{Binding StatusChipText}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
           </StackPanel>
         </Border>
-        <Border Classes="pill" Background="{DynamicResource WarnSoftBrush}" IsVisible="{Binding WithoutGst}" VerticalAlignment="Center"
+        <Border Classes="pill" Background="{DynamicResource WarnSoftBrush}" IsVisible="{Binding ShowWithoutGstPill}" VerticalAlignment="Center"
                 ToolTip.Tip="0 % GST on all items and on packing &amp; forwarding, no tax lines (My Settings → Without GST)">
           <TextBlock Text="WITHOUT GST" FontWeight="SemiBold" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource WarnBrush}" />
+        </Border>
+        <Border Name="UsdChip" Classes="pill" Background="{DynamicResource WarnSoftBrush}" IsVisible="{Binding IsUsd}" VerticalAlignment="Center"
+                ToolTip.Tip="Rates and amounts in US dollars, without GST (My Settings → USD quotation)">
+          <TextBlock Text="{Binding UsdChipText}" FontWeight="SemiBold" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource WarnBrush}" />
         </Border>
         <TextBlock Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="{DynamicResource FontSmall}" IsVisible="{Binding ShowSource}" />
       </StackPanel>
@@ -426,6 +430,10 @@
                       Background="{DynamicResource AccentSoftBrush}" IsVisible="{Binding HasStepInfo}">
                 <TextBlock Text="{Binding StepInfo}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
               </Border>
+              <!-- Round 36: copy items from one of the customer's Tally sales invoices (administrator switch) -->
+              <Button Name="CopyInvoiceButton" Grid.Column="2" HorizontalAlignment="Right" Margin="0,0,8,0" ctl:ButtonIcon.Kind="copy"
+                      Content="Copy from Tally invoice" Command="{Binding OpenInvoicesCommand}" IsVisible="{Binding ShowCopyInvoice}"
+                      ToolTip.Tip="Pick one of this customer's sales invoices in Tally (last 12 months) and copy its items" />
               <!-- Gear: after a line is changed, Enter goes on to the next line (the whole line, or the chosen columns top to
                    bottom). The menu stays open while switches are turned on and off; a click outside closes it. -->
               <Button Name="StepGearButton" Grid.Column="3" Classes="round" Classes.on="{Binding StepModeOn}" Width="30" Height="30" Padding="0"
@@ -478,6 +486,22 @@
                           <TextBlock Grid.Column="1" Text="%" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0" />
                           <Button Name="ApplyAllDiscountButton" Grid.Column="2" Classes="primary" HorizontalAlignment="Right"
                                   ctl:ButtonIcon.Kind="check" Content="Apply" Command="{Binding ApplyDiscountToAllCommand}"
+                                  IsEnabled="{Binding CanEditContent}" />
+                        </Grid>
+                      </StackPanel>
+                      <Border Classes="menusep" />
+                      <StackPanel Margin="10,6,10,4" Spacing="6">
+                        <TextBlock Text="Raise all rates by" FontWeight="SemiBold" />
+                        <Grid ColumnDefinitions="90,Auto,*">
+                          <TextBox Name="RaiseRatesBox" Text="{Binding RaiseRatesText}" HorizontalContentAlignment="Right" Watermark="5"
+                                   IsEnabled="{Binding CanEditContent}" ToolTip.Tip="A minus number lowers the rates (-5).">
+                            <TextBox.KeyBindings>
+                              <KeyBinding Gesture="Enter" Command="{Binding RaiseAllRatesCommand}" />
+                            </TextBox.KeyBindings>
+                          </TextBox>
+                          <TextBlock Grid.Column="1" Text="%" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0" />
+                          <Button Name="RaiseRatesButton" Grid.Column="2" Classes="primary" HorizontalAlignment="Right"
+                                  ctl:ButtonIcon.Kind="check" Content="Apply" Command="{Binding RaiseAllRatesCommand}"
                                   IsEnabled="{Binding CanEditContent}" />
                         </Grid>
                       </StackPanel>
@@ -768,6 +792,87 @@
       </StackPanel>
     </ScrollViewer>
   </DockPanel>
+
+  <!-- Round 36: copy items from a Tally sales invoice of this customer (Tally is only read) -->
+  <Border Name="InvoiceOverlay" Background="#4D000000" IsVisible="{Binding IsInvoiceOpen}">
+    <Border Classes="card" Name="InvoiceCard" MaxWidth="900" Margin="24" Padding="20,18" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+            Background="{DynamicResource PopupBrush}" BoxShadow="0 18 50 0 #40000000">
+      <DockPanel>
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,10">
+          <TextBlock Text="Copy items from a Tally invoice" FontSize="18" FontWeight="SemiBold" />
+          <TextBlock Grid.Column="1" Classes="muted" VerticalAlignment="Center" Margin="0,0,10,0" Text="{Binding BuyerName, StringFormat='{}{0} · last 12 months'}" />
+          <Button Grid.Column="2" Name="InvoiceCloseButton" Content="✕" Classes="link" Padding="8,2" FontSize="16" Command="{Binding CloseInvoicesCommand}" ToolTip.Tip="Close (Esc)" />
+        </Grid>
+        <TextBlock DockPanel.Dock="Top" Name="InvoiceLoadingText" Classes="muted" Text="Reading this customer's invoices from Tally…" IsVisible="{Binding InvoiceLoading}" Margin="0,4" />
+        <TextBlock DockPanel.Dock="Top" Name="InvoiceMessageText" Text="{Binding InvoiceMessage}" TextWrapping="Wrap" Margin="0,4"
+                   IsVisible="{Binding InvoiceMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <!-- The invoices, newest first -->
+        <Border DockPanel.Dock="Top" Classes="tablehead" IsVisible="{Binding Invoices.Count}">
+          <Grid ColumnDefinitions="*,120,70,120">
+            <TextBlock Text="Invoice" />
+            <TextBlock Grid.Column="1" Text="Date" />
+            <TextBlock Grid.Column="2" Text="Items" HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="3" Text="Value" HorizontalAlignment="Right" />
+          </Grid>
+        </Border>
+        <ListBox DockPanel.Dock="Top" Name="InvoiceList" Classes="table" ItemsSource="{Binding Invoices}" SelectedItem="{Binding SelectedInvoice}" MaxHeight="180"
+                 IsVisible="{Binding Invoices.Count}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="c:TallyInvoiceDto">
+              <Grid ColumnDefinitions="*,120,70,120">
+                <TextBlock Text="{Binding Number}" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="1" Text="{Binding Date, StringFormat='{}{0:dd-MMM-yyyy}'}" />
+                <TextBlock Grid.Column="2" Text="{Binding Lines.Count}" HorizontalAlignment="Right" />
+                <TextBlock Grid.Column="3" Text="{Binding Total, StringFormat='₹ {0:N0}'}" HorizontalAlignment="Right" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <!-- The chosen invoice's items, ticked -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,14,0,0" HorizontalAlignment="Right" IsVisible="{Binding HasSelectedInvoice}">
+          <TextBlock Text="Rates:" VerticalAlignment="Center" />
+          <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,0">
+            <RadioButton Name="InvoiceTodayRateButton" Content="Today's rate" IsChecked="{Binding InvoiceUseTodayRate}" />
+            <RadioButton Name="InvoiceOldRateButton" Content="Invoice rate" IsChecked="{Binding InvoiceUseInvoiceRate}" />
+          </StackPanel>
+          <Button Name="InvoiceCancelButton" ctl:ButtonIcon.Kind="x" Content="Cancel" Command="{Binding CloseInvoicesCommand}" />
+          <Button Name="InvoiceAddButton" Classes="primary" ctl:ButtonIcon.Kind="listplus" Content="{Binding InvoiceAddText}" Command="{Binding AddInvoiceItemsCommand}" />
+        </StackPanel>
+        <StackPanel Spacing="6" Margin="0,12,0,0" IsVisible="{Binding HasSelectedInvoice}">
+          <TextBlock Text="{Binding InvoiceItemsTitle}" FontWeight="SemiBold" />
+          <Border Classes="tablehead">
+            <Grid ColumnDefinitions="36,*,90,120,150">
+              <TextBlock Grid.Column="1" Text="Item" />
+              <TextBlock Grid.Column="2" Text="Qty" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="3" Text="Invoice rate" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="4" Text="Today" HorizontalAlignment="Right" />
+            </Grid>
+          </Border>
+          <ScrollViewer MaxHeight="260" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl Name="InvoiceItemsList" ItemsSource="{Binding InvoiceItems}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:InvoiceItemViewModel">
+                  <Grid ColumnDefinitions="36,*,90,120,150" Margin="10,5" Opacity="{Binding RowOpacity}">
+                    <CheckBox IsChecked="{Binding IsTicked}" IsEnabled="{Binding InTally}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding ItemName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                      <Border Classes="chip bad" IsVisible="{Binding NotInTally}"><TextBlock Text="not in Tally now" /></Border>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding QuantityText}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="{Binding InvoiceRateText}" HorizontalAlignment="Right" VerticalAlignment="Center" Classes="muted" />
+                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+                      <TextBlock Text="{Binding TodayRateText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                      <Border Classes="chip warn" IsVisible="{Binding HasChange}"><TextBlock Text="{Binding ChangeText}" /></Border>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+  </Border>
 
   <!-- A list pasted into the Product box (WhatsApp, e-mail, Excel): check each line, then add them all -->
   <Border Name="PasteOverlay" Background="#4D000000" IsVisible="{Binding IsPasteOpen}">

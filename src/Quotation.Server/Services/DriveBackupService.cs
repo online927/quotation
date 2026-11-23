@@ -32,7 +32,7 @@ public sealed class GoogleDriveClientFactory(SettingsService settings) : IDriveC
 
 /// <summary>
 /// Google Drive backup (Settings → Backup &amp; updates): the newest database backup and the approved PDFs are copied to the
-/// office Google Drive, in "TS Quotations" → "Database backups" and "Approved PDFs" → a folder per month. Uses the Google
+/// office Google Drive, in the folder named in Settings (at first "TS Quotations") → "Database backups" and "Approved PDFs" → a folder per month. Uses the Google
 /// account of the Gmail connection. Runs every 15 minutes (only when there is something new) and on "Back up now".
 /// Never touches Tally. A copy that fails is tried again next time.
 /// </summary>
@@ -46,7 +46,7 @@ public sealed class DriveBackupService(
     ILogger<DriveBackupService> log)
 {
     public const string StateKey = "drive-backup";
-    public const string RootFolder = "TS Quotations";
+    public const string RootFolder = BackupSettings.DefaultDriveFolder;
     public const string BackupsFolder = "Database backups";
     public const string PdfsFolder = "Approved PDFs";
     /// <summary>At most this many PDFs per copy, so a long history goes up a little at a time.</summary>
@@ -99,7 +99,7 @@ public sealed class DriveBackupService(
             long bytes = 0;
             try
             {
-                var root = await FolderAsync(drive, s, RootFolder, null, ct);
+                var root = await FolderAsync(drive, s, BackupSettings.DriveFolderName(options.DriveFolder), null, ct);
                 if (options.DriveBackups)
                 {
                     var newest = makeBackup ? await backups.BackupNowAsync(ct) : NewestBackup();

@@ -29,6 +29,22 @@
         </StackPanel>
       </Border>
 
+      <Border Classes="card" Name="UsdCard">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="USD quotation (next quotation only)" />
+          <ToggleSwitch Name="UsdSwitch" IsChecked="{Binding UsdNext}" OnContent="On — next quotation in USD, no GST" OffContent="Off" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="1 USD = ₹" VerticalAlignment="Center" />
+            <TextBox Name="UsdRateBox" Text="{Binding UsdRateText}" Watermark="84.20" Width="110" HorizontalContentAlignment="Right">
+              <TextBox.KeyBindings>
+                <KeyBinding Gesture="Enter" Command="{Binding SaveUsdCommand}" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Name="SaveUsdRateButton" ctl:ButtonIcon.Kind="check" Content="Save" Command="{Binding SaveUsdCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="PDF layout and file name" />
@@ -95,11 +111,12 @@
       <Border Classes="card" Name="WhatsAppCard">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="WhatsApp (this PC)" />
-          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Where the WhatsApp button opens the customer's chat." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="WhatsApp app: the WhatsApp program installed on this PC. WhatsApp Web: web.whatsapp.com in your browser (log in once with the QR code on your phone). Either way the PDF is copied: in the chat press Ctrl+V, then Enter."><Path Classes="infoicon" /></Border></StackPanel>
+          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Where the WhatsApp button opens the customer's chat." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="WhatsApp app: the WhatsApp program installed on this PC. WhatsApp Web: web.whatsapp.com in your browser (log in once with the QR code on your phone). Inside this app: WhatsApp in its own window that stays signed in, apart from your browser (uses Edge or Chrome). Either way the PDF is copied: in the chat press Ctrl+V, then Enter."><Path Classes="infoicon" /></Border></StackPanel>
           <Border Classes="pillbar" HorizontalAlignment="Left">
             <StackPanel Orientation="Horizontal" Spacing="2">
               <RadioButton Name="WhatsAppAppRadio" Classes="seg" GroupName="WhatsAppOpensIn" Content="WhatsApp app" IsChecked="{Binding WhatsAppOnApp}" />
               <RadioButton Name="WhatsAppWebRadio" Classes="seg" GroupName="WhatsAppOpensIn" Content="WhatsApp Web" IsChecked="{Binding WhatsAppOnWeb}" />
+              <RadioButton Name="WhatsAppInsideRadio" Classes="seg" GroupName="WhatsAppOpensIn" Content="Inside this app" IsChecked="{Binding WhatsAppInsideApp}" />
             </StackPanel>
           </Border>
         </StackPanel>

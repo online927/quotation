@@ -291,7 +291,7 @@ public sealed class LastRateService(TallyGateway gateway, SettingsService settin
     {
         var rows = await (from l in db.QuotationLines
                           join q in db.Quotations on l.QuotationId equals q.Id
-                          where l.ProductId != null && l.Rate > 0 && q.Number != null &&
+                          where l.ProductId != null && l.Rate > 0 && q.Number != null && q.Currency != "USD" &&
                                 (q.Status == QuotationStatus.Approved || q.Status == QuotationStatus.Generated)
                           select new { ProductId = l.ProductId!.Value, l.Rate, q.Date, q.Number, Party = q.Buyer.Name, q.ApprovedUtc })
             .ToListAsync(ct);

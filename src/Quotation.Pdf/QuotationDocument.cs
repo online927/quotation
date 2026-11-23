@@ -88,6 +88,8 @@ public sealed record QuotationDocument
     public decimal TotalQuantity { get; init; }
     public string TotalQuantityUnit { get; init; } = "";
     public required string AmountInWords { get; init; }
+    /// <summary>Round 36: "₹", or "$" on a USD quotation (the grand total).</summary>
+    public string CurrencySymbol { get; init; } = "₹";
 
     public string Remarks { get; init; } = "";
     public IReadOnlyList<string> TermsAndConditions { get; init; } = [];

@@ -41,6 +41,9 @@ public sealed class ClientConfig
     /// <summary>My Settings → Silent (this PC, Round 35): on = no click sounds when saving or approving. On at first.</summary>
     public bool Silent { get; set; } = true;
 
+    /// <summary>Round 36: the day the evening summary was last shown on this PC (yyyy-MM-dd).</summary>
+    public string? EveningSummaryShownDay { get; set; }
+
     /// <summary>My Settings → Delivery time on items (this PC, Round 35): a Delivery box next to Description. Off at first.</summary>
     public bool DeliveryTimeOnItems { get; set; }
 

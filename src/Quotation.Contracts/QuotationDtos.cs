@@ -67,6 +67,10 @@ public sealed class SaveQuotationRequest
     /// <summary>GST by the buyer's state (true) or the ship-to state (false) when the two differ; null keeps the
     /// quotation's own choice (a new one follows the ship-to state, as before this choice existed).</summary>
     public bool? GstByBuyer { get; set; }
+    /// <summary>Round 36: "USD" = rates in US dollars, without GST (set on create; the document keeps it). Null/"" = rupees.</summary>
+    public string? Currency { get; set; }
+    /// <summary>Round 36: 1 USD = this many rupees (USD quotations).</summary>
+    public decimal? ExchangeRate { get; set; }
     /// <summary>The PDF layout chosen for this quotation (Formater page: Tally or Zoho); null = the user's own layout.</summary>
     public string? PdfLayout { get; set; }
     /// <summary>Made on the Formater page (set on create): the customer and items may be typed instead of picked from Tally.</summary>
@@ -109,6 +113,10 @@ public sealed class QuotationDto
     public bool WithoutGst { get; set; }
     /// <summary>GST by the buyer's state (true) or the ship-to state (false) when the two differ.</summary>
     public bool GstByBuyer { get; set; }
+    /// <summary>Round 36: "USD" or "" (rupees).</summary>
+    public string Currency { get; set; } = "";
+    public decimal? ExchangeRate { get; set; }
+    public bool IsUsd => Currency == Currencies.Usd;
     /// <summary>The PDF layout chosen for this quotation (Formater page: Tally or Zoho); null = the user's own layout.</summary>
     public string? PdfLayout { get; set; }
     public List<QuotationLineDto> Lines { get; set; } = [];
@@ -199,3 +207,10 @@ public sealed record ValidationErrorDto(string Field, string Message, int? LineN
 
 /// <summary>Someone else who has the same quotation open: display name and PC.</summary>
 public sealed record PresenceDto(string User, string Machine);
+
+/// <summary>Round 36: currencies of quotations ("" = rupees).</summary>
+public static class Currencies
+{
+    public const string Usd = "USD";
+    public static bool IsUsd(string? currency) => string.Equals(currency?.Trim(), Usd, StringComparison.OrdinalIgnoreCase);
+}

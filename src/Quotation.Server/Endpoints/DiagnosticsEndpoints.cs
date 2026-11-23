@@ -83,6 +83,34 @@ public static class DiagnosticsEndpoints
             return Results.File(stream, "application/octet-stream", Path.GetFileName(file));
         });
 
+        // Round 36: the evening summary of a day (empty = today), and "send now" (e-mail).
+        g.MapGet("/summary", async (string? day, EveningSummaryService summary, CancellationToken ct) =>
+            await summary.BuildAsync(DateOnly.TryParseExact(day ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var d) ? d : summary.Today, ct));
+
+        // Round 36: "Who did what" on a day (yyyy-MM-dd, server's local date; empty = today), for one user or everyone.
+        g.MapGet("/activity", async (string? day, string? user, ActivityService activity, TimeProvider clock, CancellationToken ct) =>
+        {
+            var date = DateOnly.TryParseExact(day ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var d) ? d : DateOnly.FromDateTime(clock.GetLocalNow().DateTime);
+            return await activity.DayAsync(date, user, ct);
+        });
+
+        // Round 36: a month's approved PDFs in one ZIP (month = "2026-11"; quotations and/or proforma invoices).
+        g.MapGet("/month-pdfs", async (string? month, bool? quotations, bool? proforma, MonthPdfZip zips, AuditService audit, HttpContext ctx, CancellationToken ct) =>
+        {
+            if (!DateOnly.TryParseExact((month ?? "") + "-01", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var first))
+                return Results.Json(new ApiError("Pick a month."), statusCode: 400);
+            var q = quotations ?? true;
+            var p = proforma ?? false;
+            if (!q && !p) return Results.Json(new ApiError("Tick Quotations or Proforma invoices."), statusCode: 400);
+            var made = await zips.MakeAsync(first.Year, first.Month, q, p, ct);
+            if (made is not { } zip) return Results.Json(new ApiError($"No approved PDFs in {first:MMMM yyyy}."), statusCode: 404);
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "MonthPdfsDownloaded", "Database", $"{zip.FileName} ({zip.Count} PDFs)", ct: ct);
+            return Results.File(zip.Zip, "application/zip", zip.FileName);
+        });
+
         // Restore from an export (.tsq) or a database backup (.db). The current database is backed up first.
         g.MapPost("/restore", async (HttpContext ctx, BackupService backups, CancellationToken ct) =>
         {

@@ -217,6 +217,12 @@ public static class SystemEndpoints
             if (req.ReduceMotion is { } reduce) user.ReduceMotion = reduce;
             if (req.PdfFileOrder is { } order) user.PdfFileOrder = order;
             if (req.OpenPdfAfterSave is { } open) user.OpenPdfAfterSave = open;
+            if (req.UsdRate is { } usdRate)
+            {
+                if (usdRate is < 0 or > 100000) return Results.BadRequest(new ApiError("Type the rupees for 1 USD (e.g. 84.20)."));
+                user.UsdRate = Math.Round(usdRate, 4);
+            }
+            if (req.UsdNext is { } usdNext) user.UsdNext = usdNext;
             await db.SaveChangesAsync(ct);
             return Results.Ok(svc.Me(user));
         }).RequireAuthorization();

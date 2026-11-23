@@ -156,6 +156,10 @@ public class QuotationHeader
     /// false = the ship-to state, as for every quotation made before this choice existed.
     /// </summary>
     public bool GstByBuyer { get; set; }
+    /// <summary>Round 36: "USD" = the rates and amounts are in US dollars (without GST); "" = rupees.</summary>
+    public string Currency { get; set; } = "";
+    /// <summary>Round 36: 1 USD = this many rupees when the quotation was made in USD.</summary>
+    public decimal? ExchangeRate { get; set; }
     /// <summary>The PDF layout chosen for this quotation (Formater page: Tally or Zoho); null = the user's own layout.</summary>
     public string? PdfLayout { get; set; }
 
@@ -316,6 +320,10 @@ public class AppUser
     public string? SealPinHash { get; set; }
     /// <summary>Save as PDF also opens the PDF (My Settings; on by default).</summary>
     public bool OpenPdfAfterSave { get; set; } = true;
+    /// <summary>Round 36: the next quotation this user saves is in US dollars (switches itself off afterwards).</summary>
+    public bool UsdNext { get; set; }
+    /// <summary>Round 36: 1 USD = this many rupees, for the USD quotation (My Settings).</summary>
+    public decimal UsdRate { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime? LastLoginUtc { get; set; }
 }
@@ -392,4 +400,21 @@ public class FormaterMatch
     public int TallyId { get; set; }
     public string CreatedBy { get; set; } = "";
     public DateTime CreatedUtc { get; set; }
+}
+
+/// <summary>
+/// Round 36: a PDF datasheet uploaded for a Tally item (Products page). With <see cref="AddToPdf"/>, quoting the item adds
+/// the datasheet's pages after the quotation's own pages. The file is kept in the data folder (datasheets\{ProductId}.pdf).
+/// </summary>
+public class ProductDatasheet
+{
+    public int Id { get; set; }
+    public int ProductId { get; set; }
+    /// <summary>The name of the file as uploaded ("Mitutoyo-187-901-datasheet.pdf").</summary>
+    public string FileName { get; set; } = "";
+    public int Pages { get; set; }
+    public long Bytes { get; set; }
+    public bool AddToPdf { get; set; } = true;
+    public string UploadedBy { get; set; } = "";
+    public DateTime UploadedUtc { get; set; }
 }

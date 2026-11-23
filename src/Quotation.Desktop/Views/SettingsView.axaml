@@ -296,6 +296,17 @@
                     <ToggleSwitch Name="XoGameSwitch" IsChecked="{Binding Settings.Quotation.XoGame}" OnContent="On" OffContent="Off" />
                     <TextBlock Classes="h2" Text="Seal PIN" Margin="0,8,0,0" />
                     <ToggleSwitch Name="SealPinSwitch" IsChecked="{Binding Settings.Quotation.SealPin}" OnContent="On" OffContent="Off" />
+                    <TextBlock Classes="h2" Text="Copy from Tally invoice" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="CopyInvoiceSwitch" IsChecked="{Binding Settings.Quotation.CopyFromTallyInvoice}" OnContent="On" OffContent="Off" />
+                    <TextBlock Classes="h2" Text="Evening summary" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="EveningSummarySwitch" IsChecked="{Binding Settings.Quotation.EveningSummary}" OnContent="On" OffContent="Off" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Settings.Quotation.EveningSummary}">
+                      <TextBlock Text="At" VerticalAlignment="Center" />
+                      <TextBox Name="EveningSummaryTimeBox" Text="{Binding Settings.Quotation.EveningSummaryTime}" Watermark="19:00" Width="80" />
+                      <TextBlock Text="E-mail to" VerticalAlignment="Center" Margin="10,0,0,0" />
+                      <TextBox Name="EveningSummaryEmailBox" Text="{Binding Settings.Quotation.EveningSummaryEmail}" Watermark="owner@example.com" Width="260" />
+                      <Border Classes="info" VerticalAlignment="Center" ToolTip.Tip="At this time the administrator's screen shows the day's summary with a WhatsApp button. With an e-mail address it is also e-mailed through the Gmail connection (connect Gmail again once so Google allows sending)."><Path Classes="infoicon" /></Border>
+                    </StackPanel>
                   </StackPanel>
                 </Border>
           </StackPanel>
@@ -321,8 +332,8 @@
             <Border Classes="card" Name="DriveCard" IsVisible="{Binding Drive, Converter={x:Static ObjectConverters.IsNotNull}}">
               <StackPanel Spacing="10">
                 <TextBlock Classes="h2" Text="Google Drive backup" />
-                <StackPanel Classes="help" Orientation="Horizontal" Spacing="6"><TextBlock Text="A copy of every backup and every approved PDF also goes to the office Google Drive." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Uses the Google account of the Gmail connection (connect it again once, so Google asks to allow Google Drive). The copies go to the folder 'TS Quotations' in that Google Drive: 'Database backups', and 'Approved PDFs' with a folder per month. New copies go every 15 minutes."><Path Classes="infoicon" /></Border></StackPanel>
-                <Grid ColumnDefinitions="160,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+                <StackPanel Classes="help" Orientation="Horizontal" Spacing="6"><TextBlock Text="A copy of every backup and every approved PDF also goes to the office Google Drive." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Uses the Google account of the Gmail connection (connect it again once, so Google asks to allow Google Drive). The copies go to the folder named below in that Google Drive: 'Database backups', and 'Approved PDFs' with a folder per month. New copies go every 15 minutes. A new folder name: new copies go to the new folder, the old folder stays."><Path Classes="infoicon" /></Border></StackPanel>
+                <Grid ColumnDefinitions="160,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
                   <TextBlock Text="Google account" VerticalAlignment="Center" />
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Border Classes="chip ok" IsVisible="{Binding DriveConnected}"><TextBlock Text="● Connected" /></Border>
@@ -334,9 +345,11 @@
                     <CheckBox Name="DriveBackupsBox" IsChecked="{Binding Settings.Backup.DriveBackups}" Content="Database backups" />
                     <CheckBox Name="DrivePdfsBox" IsChecked="{Binding Settings.Backup.DrivePdfs}" Content="Approved PDFs (a folder per month)" />
                   </StackPanel>
-                  <TextBlock Grid.Row="2" Text="Last copy" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="2" Grid.Column="1" Name="DriveLastCopy" Text="{Binding DriveLastCopyText}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                  <Button Grid.Row="2" Grid.Column="2" Name="DriveBackupNowButton" Classes="primary" ctl:ButtonIcon.Kind="upload" Content="Back up now"
+                  <TextBlock Grid.Row="2" Text="Folder name" VerticalAlignment="Center" />
+                  <TextBox Grid.Row="2" Grid.Column="1" Name="DriveFolderBox" Text="{Binding Settings.Backup.DriveFolder}" Watermark="TS Quotations" MaxWidth="320" HorizontalAlignment="Left" Width="320" />
+                  <TextBlock Grid.Row="3" Text="Last copy" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="3" Grid.Column="1" Name="DriveLastCopy" Text="{Binding DriveLastCopyText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  <Button Grid.Row="3" Grid.Column="2" Name="DriveBackupNowButton" Classes="primary" ctl:ButtonIcon.Kind="upload" Content="Back up now"
                           Command="{Binding DriveBackupNowCommand}" IsEnabled="{Binding DriveConnected}" />
                 </Grid>
                 <TextBlock Classes="error" Name="DriveErrorText" Text="{Binding DriveError}" IsVisible="{Binding HasDriveError}" TextWrapping="Wrap" />
@@ -455,6 +468,11 @@
           </StackPanel>
           <TextBlock Grid.Row="3" Text="Max product candidates sent to AI" />
           <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.Ai.MaxCandidates}" Minimum="3" Maximum="25" FormatString="0" Width="160" HorizontalAlignment="Left" />
+          <TextBlock Grid.Row="4" Text="What we sell" />
+          <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="6">
+            <TextBox Name="WhatWeSellBox" Text="{Binding Settings.Ai.WhatWeSell}" Watermark="e.g. tools and instruments" Width="360" />
+            <Border Classes="info" VerticalAlignment="Center" ToolTip.Tip="Claude reads enquiry photos for the company named in Settings → Company; these words tell it what you sell."><Path Classes="infoicon" /></Border>
+          </StackPanel>
         </Grid>
         </ScrollViewer>
       </TabItem>

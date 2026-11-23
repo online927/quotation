@@ -270,7 +270,7 @@ public sealed class MinimalPdfRenderer
         }
         g.DrawLine(new XPen(Ink, 0.8), x, y - 2, RightEdge, y - 2);
         Text(g, x, y + 5, "Total", 12, true);
-        var total = "₹ " + IndianFormat.Amount(doc.GrandTotal);
+        var total = doc.CurrencySymbol + " " + IndianFormat.Amount(doc.GrandTotal);
         Text(g, RightEdge, y + 5, total, 12, true, right: true);
         y += 26;
         if (!string.IsNullOrWhiteSpace(doc.AmountInWords))

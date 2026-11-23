@@ -60,10 +60,71 @@ public class DocumentLauncher(ClientConfig config)
         }
     }
 
-    public const string WhatsAppApp = "App", WhatsAppWeb = "Web";
+    public const string WhatsAppApp = "App", WhatsAppWeb = "Web", WhatsAppInApp = "InApp";
 
     /// <summary>My Settings → WhatsApp (this PC): the button opens WhatsApp Web in the browser instead of the WhatsApp program.</summary>
     public bool WhatsAppOnWeb => string.Equals(config.WhatsAppOpensIn, WhatsAppWeb, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Round 36, My Settings → WhatsApp "Inside this app": WhatsApp Web in the app's own WhatsApp window (signed in once with
+    /// the phone's QR code, kept apart from the person's browser). The window is Edge or Chrome in app mode with the app's own
+    /// profile folder; without either, WhatsApp Web opens in the browser.
+    /// </summary>
+    public bool WhatsAppInsideApp => string.Equals(config.WhatsAppOpensIn, WhatsAppInApp, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The hint after the chat opened, for this PC's choice.</summary>
+    public string WhatsAppHintNow(bool hasPhone) => WhatsAppInsideApp
+        ? hasPhone ? "PDF copied. WhatsApp is opening in its own window: press Ctrl+V, then Enter."
+                   : "PDF copied. WhatsApp is opening in its own window: pick the chat, press Ctrl+V, then Enter."
+        : WhatsAppHint(WhatsAppOnWeb, hasPhone);
+
+    /// <summary>The error when the chat could not be opened, for this PC's choice.</summary>
+    public string WhatsAppErrorNow(string path) => WhatsAppError(WhatsAppOnWeb || WhatsAppInsideApp, path);
+
+    /// <summary>The folder that keeps the WhatsApp window's sign-in (this PC, this Windows / Mac user).</summary>
+    public static string WhatsAppWindowProfile => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TSQuotation", "whatsapp-window");
+
+    /// <summary>Edge or Chrome on this PC (for the app's own WhatsApp window), or null.</summary>
+    public static string? AppWindowBrowser()
+    {
+        var candidates = new List<string>();
+        if (OperatingSystem.IsWindows())
+        {
+            foreach (var root in new[] { Environment.GetEnvironmentVariable("ProgramFiles(x86)"), Environment.GetEnvironmentVariable("ProgramFiles"),
+                         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) })
+            {
+                if (string.IsNullOrEmpty(root)) continue;
+                candidates.Add(Path.Combine(root, "Microsoft", "Edge", "Application", "msedge.exe"));
+                candidates.Add(Path.Combine(root, "Google", "Chrome", "Application", "chrome.exe"));
+            }
+        }
+        else if (OperatingSystem.IsMacOS())
+        {
+            candidates.Add("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
+            candidates.Add("/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge");
+        }
+        return candidates.FirstOrDefault(File.Exists);
+    }
+
+    /// <summary>The arguments that open <paramref name="url"/> in the app's own WhatsApp window.</summary>
+    public static string AppWindowArguments(string url, string profile) =>
+        $"--app=\"{url}\" --user-data-dir=\"{profile}\" --no-first-run --no-default-browser-check --window-size=1100,800";
+
+    /// <summary>Opens a WhatsApp Web address in the app's own window (or the browser when there is no Edge / Chrome).</summary>
+    protected virtual void OpenWhatsAppUrl(string webUrl)
+    {
+        if (WhatsAppInsideApp && AppWindowBrowser() is { } browser)
+        {
+            Directory.CreateDirectory(WhatsAppWindowProfile);
+            Process.Start(new ProcessStartInfo(browser, AppWindowArguments(webUrl, WhatsAppWindowProfile)) { UseShellExecute = false });
+            return;
+        }
+        Process.Start(new ProcessStartInfo(webUrl) { UseShellExecute = true });
+    }
+
+    /// <summary>The chat address for this PC's choice.</summary>
+    private string ChatUrl(string? phone, string message) => WhatsAppUrl(WhatsAppOnWeb || WhatsAppInsideApp, phone, message);
 
     /// <summary>The customer's chat with the message typed: the WhatsApp program (whatsapp://) or WhatsApp Web (browser).</summary>
     public static string WhatsAppUrl(bool web, string? phone, string message) =>
@@ -90,6 +151,20 @@ public class DocumentLauncher(ClientConfig config)
     /// Settings). The user pastes (Ctrl+V) and presses Enter. WhatsApp does not let other programs attach or send by
     /// themselves.
     /// </summary>
+    /// <summary>Round 36: WhatsApp opens with a text typed (the evening summary); the person picks the chat and presses Enter.</summary>
+    public virtual bool OpenWhatsAppText(string message)
+    {
+        try
+        {
+            OpenWhatsAppUrl(ChatUrl(null, message));
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     public virtual bool ShareOnWhatsApp(string pdfPath, string? phone, string message)
     {
         try
@@ -102,7 +177,7 @@ public class DocumentLauncher(ClientConfig config)
                 clip?.WaitForExit(5000);
             }
             else if (MacSupport.IsMac) MacSupport.CopyFileToClipboard(pdfPath);
-            Process.Start(new ProcessStartInfo(WhatsAppUrl(WhatsAppOnWeb, phone, message)) { UseShellExecute = true });
+            OpenWhatsAppUrl(ChatUrl(phone, message));
             return true;
         }
         catch (Exception)

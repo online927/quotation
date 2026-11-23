@@ -137,6 +137,23 @@ public sealed class QuotationSettings
     public bool SealPin { get; set; }
 
     /// <summary>
+    /// Round 36 (administrator switch; off by default): "Copy from Tally invoice" on the quotation page reads the chosen
+    /// customer's sales invoices of the last 12 months from Tally (read only, one customer, only when clicked).
+    /// </summary>
+    public bool CopyFromTallyInvoice { get; set; }
+
+    /// <summary>
+    /// Round 36 (administrator switch; off by default): every evening at <see cref="EveningSummaryTime"/> a summary of the
+    /// day (quotations and value, per user, won / lost, drafts, follow-ups tomorrow) goes to the administrator: by e-mail
+    /// (the Gmail connection, to <see cref="EveningSummaryEmail"/>) and on the administrator's screen with a WhatsApp button.
+    /// </summary>
+    public bool EveningSummary { get; set; }
+    /// <summary>"19:00" (the server PC's time).</summary>
+    public string EveningSummaryTime { get; set; } = "19:00";
+    /// <summary>The address the summary is e-mailed to; empty = no e-mail (only on the administrator's screen).</summary>
+    public string EveningSummaryEmail { get; set; } = "";
+
+    /// <summary>
     /// Stars (administrator switch; on by default): each user stars the items and customers they quote often (☆ / ★ in the
     /// search lists, PC and phone); starred ones come first in every search.
     /// </summary>

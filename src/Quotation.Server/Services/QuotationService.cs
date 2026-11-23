@@ -129,6 +129,14 @@ public sealed class QuotationService(
             DocType = request.DocType,
             WithoutGst = request.WithoutGst,
         };
+        if (Currencies.IsUsd(request.Currency) && request.DocType == DocumentType.Quotation)
+        {
+            if (request.ExchangeRate is not > 0)
+                throw new QuotationException(400, ApiErrorCodes.Validation, "Type the rupees for 1 USD in My Settings (e.g. 84.20).");
+            q.Currency = Currencies.Usd;
+            q.ExchangeRate = Math.Round(request.ExchangeRate.Value, 4);
+            q.WithoutGst = true; // a USD quotation is without GST
+        }
         await ApplyAsync(q, request, isNew: true, ct);
         // Only administrators choose the date; for everyone else it is the day the quotation is made.
         if (!user.IsAdmin) q.Date = fy.Today();
@@ -138,6 +146,12 @@ public sealed class QuotationService(
             // "Without GST" applies to one quotation only: the user's switch turns itself off.
             var owner = await db.Users.FirstOrDefaultAsync(u => u.Username == user.UserName, ct);
             if (owner is not null) owner.WithoutGstNext = false;
+        }
+        if (q.Currency == Currencies.Usd)
+        {
+            // "USD quotation" applies to one quotation only: the user's switch turns itself off.
+            var owner = await db.Users.FirstOrDefaultAsync(u => u.Username == user.UserName, ct);
+            if (owner is not null) owner.UsdNext = false;
         }
         audit.Add(user.UserName, user.Machine, "QuotationCreated", "Quotation", q.Id.ToString(),
             $"Source={source}; Customer={q.Buyer.Name}; Lines={q.Lines.Count}");
@@ -450,6 +464,8 @@ public sealed class QuotationService(
         request.BuyersReference = "";
         request.BuyersReferenceDate = null;
         request.WithoutGst = false;
+        request.Currency = null;      // a copy is in rupees again
+        request.ExchangeRate = null;
         var refresh = settings.Quotation.RefreshRatesOnDuplicate;
         foreach (var line in request.Lines)
         {
@@ -478,12 +494,26 @@ public sealed class QuotationService(
         PdfLayouts.IsValid(q.PdfLayout) ? q.PdfLayout : q.Source == QuotationSource.Formater ? PdfLayouts.Zoho : null;
 
     private byte[] RenderAs(string layout, QuotationHeader q, Quotation.Pdf.PrintStamp? stamp, byte[]? seal = null) =>
-        (FixedLayout(q) ?? layout) switch
+        WithDatasheets(q, (FixedLayout(q) ?? layout) switch
         {
             PdfLayouts.Zoho => renderer.RenderModern(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q)),
             PdfLayouts.Minimal => renderer.RenderMinimal(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q)),
             _ => renderer.Render(q, settings.Company, settings.Quotation, stamp, seal, MasterOf(q)),
-        };
+        });
+
+    /// <summary>Round 36: the items' datasheets ("Add to the quotation PDF") after the quotation's own pages.</summary>
+    private byte[] WithDatasheets(QuotationHeader q, byte[] pdf)
+    {
+        try
+        {
+            return new DatasheetService(serverOptions).Append(db, q, pdf);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            log.LogWarning("Datasheets could not be added to {Number}: {Message}", q.Number, ex.Message);
+            return pdf;
+        }
+    }
 
     /// <summary>Renders the current state with a DRAFT watermark (unapproved) without saving anything, in the user's layout.</summary>
     public async Task<byte[]> PreviewPdfAsync(Guid id, PdfQuotationRenderer pdf, CancellationToken ct, UserContext? user = null)
@@ -492,9 +522,9 @@ public sealed class QuotationService(
         var stamp = user is null ? null : Stamp(user);
         var layout = FixedLayout(q) ?? (user is not null ? await LayoutOfAsync(user, ct) : PdfLayouts.Tally);
         if (q.Status is QuotationStatus.Generated or QuotationStatus.Approved)
-            return pdf.RenderIn(layout, q, settings.Company, settings.Quotation, stamp, master: MasterOf(q));
+            return WithDatasheets(q, pdf.RenderIn(layout, q, settings.Company, settings.Quotation, stamp, master: MasterOf(q)));
         var provisional = q.Number ?? (await numbering.PreviewAsync(db, fy.GetActive().Year, ct, q.DocType)).Number + " (provisional)";
-        return pdf.RenderPreviewIn(layout, q, settings.Company, settings.Quotation, provisional, stamp, MasterOf(q));
+        return WithDatasheets(q, pdf.RenderPreviewIn(layout, q, settings.Company, settings.Quotation, provisional, stamp, MasterOf(q)));
     }
 
     /// <summary>
@@ -794,8 +824,12 @@ public sealed class QuotationService(
         q.RoundOff = result.RoundOff;
         q.GrandTotal = result.GrandTotal;
         q.TotalQuantity = result.TotalQuantity;
-        q.AmountInWords = IndianFormat.AmountInWords(result.GrandTotal, qs.CurrencyWordsPrefix);
+        q.AmountInWords = WordsOf(q, result.GrandTotal, qs.CurrencyWordsPrefix);
     }
+
+    /// <summary>"INR … paise Only", or for a USD quotation "USD Three Hundred Seventy and Fifty Five Cents Only".</summary>
+    public static string WordsOf(QuotationHeader q, decimal amount, string rupeePrefix) =>
+        q.Currency == Currencies.Usd ? IndianFormat.DollarsInWords(amount) : IndianFormat.AmountInWords(amount, rupeePrefix);
 
     /// <summary>Re-applies Tally's current HSN/GST/unit and detects Tally rate changes on non-overridden lines.</summary>
     private async Task<List<string>> RefreshFromTallyAsync(QuotationHeader q, CancellationToken ct)
@@ -916,6 +950,8 @@ public sealed class QuotationService(
         VerifiedBy = q.VerifiedBy,
         WithoutGst = q.WithoutGst,
         GstByBuyer = q.GstByBuyer,
+        Currency = q.Currency,
+        ExchangeRate = q.ExchangeRate,
         PdfLayout = q.PdfLayout,
         Lines = q.Lines.OrderBy(l => l.LineNo).Select(ToDto).ToList(),
     };
@@ -964,6 +1000,8 @@ public sealed class QuotationService(
             VerifiedBy = q.VerifiedBy,
             WithoutGst = q.WithoutGst,
             GstByBuyer = q.GstByBuyer,
+            Currency = q.Currency,
+            ExchangeRate = q.ExchangeRate,
             PdfLayout = q.PdfLayout,
             Lines = request.Lines,
             Subtotal = q.Subtotal,

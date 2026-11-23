@@ -994,8 +994,37 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         while (!ct.IsCancellationRequested)
         {
             await LoadStatusAsync();
+            await ShowEveningSummaryIfDueAsync();
             try { await Task.Delay(TimeSpan.FromSeconds(30), ct); }
             catch (OperationCanceledException) { return; }
+        }
+    }
+
+    /// <summary>
+    /// Round 36: at the evening summary time (Settings → Features), an administrator's screen shows the day's summary once a
+    /// day, with a WhatsApp button that opens WhatsApp with the summary typed.
+    /// </summary>
+    public async Task<bool> ShowEveningSummaryIfDueAsync(DateTime? now = null)
+    {
+        try
+        {
+            if (!_session.IsAdmin) return false;
+            var settings = await _session.GetSettingsAsync();
+            if (!settings.Quotation.EveningSummary) return false;
+            var local = now ?? DateTime.Now;
+            var due = TimeOnly.TryParseExact((settings.Quotation.EveningSummaryTime ?? "").Trim(), ["H:mm", "HH:mm"],
+                System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var t) ? t : new TimeOnly(19, 0);
+            var day = local.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            if (TimeOnly.FromDateTime(local) < due || _session.Config.EveningSummaryShownDay == day) return false;
+            var summary = await _session.Api.EveningSummaryAsync(DateOnly.FromDateTime(local));
+            _session.Config.EveningSummaryShownDay = day;
+            try { _session.Config.Save(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            Toast(summary.Text, "WhatsApp", () => _session.Documents.OpenWhatsAppText(summary.Text), 60);
+            return true;
+        }
+        catch (Exception ex) when (ex is ApiClient.ApiException or HttpRequestException or TaskCanceledException)
+        {
+            return false; // an older server, or not reachable just now
         }
     }
 

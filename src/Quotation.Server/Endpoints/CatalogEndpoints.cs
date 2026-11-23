@@ -53,6 +53,44 @@ public static class CatalogEndpoints
             return x is null ? Results.NotFound() : Results.Ok(ToDetail(x, search.IsHidden(x.Description)));
         });
 
+        // Round 36: an item's PDF datasheet (administrators upload, replace or remove it; everyone may see it).
+        p.MapGet("/{id:int}/datasheet", async (int id, QuotationDbContext db, CancellationToken ct) =>
+            await db.Datasheets.AsNoTracking().FirstOrDefaultAsync(d => d.ProductId == id, ct) is { } d
+                ? Results.Ok(DatasheetService.ToDto(d))
+                : Results.NotFound(new ApiError("No datasheet.")));
+        p.MapGet("/{id:int}/datasheet/file", (int id, DatasheetService sheets) =>
+            File.Exists(sheets.PathOf(id)) ? Results.File(File.ReadAllBytes(sheets.PathOf(id)), "application/pdf") : Results.NotFound(new ApiError("No datasheet.")));
+        p.MapPut("/{id:int}/datasheet", async (int id, string? name, HttpContext ctx, QuotationDbContext db, DatasheetService sheets,
+            AuditService audit, TimeProvider clock, CancellationToken ct) =>
+        {
+            using var memory = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(memory, ct);
+            try
+            {
+                var dto = await sheets.SaveAsync(db, id, name ?? "datasheet.pdf", memory.ToArray(), ctx.User.UserName(), clock.GetUtcNow().UtcDateTime, ct);
+                await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "DatasheetAdded", "Product", id.ToString(System.Globalization.CultureInfo.InvariantCulture), dto.FileName, ct);
+                return Results.Ok(dto);
+            }
+            catch (QuotationException ex)
+            {
+                return Results.Json(new ApiError(ex.Message, null, ex.Code), statusCode: ex.Status);
+            }
+        }).RequireAuthorization(SystemEndpoints.AdminPolicy);
+        p.MapPut("/{id:int}/datasheet/add-to-pdf", async (int id, bool on, QuotationDbContext db, CancellationToken ct) =>
+        {
+            var d = await db.Datasheets.FirstOrDefaultAsync(x => x.ProductId == id, ct);
+            if (d is null) return Results.NotFound(new ApiError("No datasheet."));
+            d.AddToPdf = on;
+            await db.SaveChangesAsync(ct);
+            return Results.Ok(DatasheetService.ToDto(d));
+        }).RequireAuthorization(SystemEndpoints.AdminPolicy);
+        p.MapDelete("/{id:int}/datasheet", async (int id, HttpContext ctx, QuotationDbContext db, DatasheetService sheets, AuditService audit, CancellationToken ct) =>
+        {
+            await sheets.RemoveAsync(db, id, ct);
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "DatasheetRemoved", "Product", id.ToString(System.Globalization.CultureInfo.InvariantCulture), ct: ct);
+            return Results.NoContent();
+        }).RequireAuthorization(SystemEndpoints.AdminPolicy);
+
         var c = app.MapGroup("/api/customers").RequireAuthorization();
 
         c.MapGet("/search", async (string? q, int? limit, bool? starredFirst, CatalogSearchService search, QuotationDbContext db, StarsService stars,

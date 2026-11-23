@@ -20,6 +20,7 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
     public DbSet<AuditEntry> AuditLog => Set<AuditEntry>();
     public DbSet<AiRequest> AiRequests => Set<AiRequest>();
     public DbSet<FormaterMatch> FormaterMatches => Set<FormaterMatch>();
+    public DbSet<ProductDatasheet> Datasheets => Set<ProductDatasheet>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -128,5 +129,6 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
         });
 
         b.Entity<FormaterMatch>(e => e.HasIndex(x => new { x.Kind, x.Typed }).IsUnique());
+        b.Entity<ProductDatasheet>(e => e.HasIndex(x => x.ProductId).IsUnique());
     }
 }

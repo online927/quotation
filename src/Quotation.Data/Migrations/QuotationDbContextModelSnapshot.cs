@@ -197,6 +197,12 @@ namespace Quotation.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValue("Light");
 
+                    b.Property<bool>("UsdNext")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("UsdRate")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -596,6 +602,43 @@ namespace Quotation.Data.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("Quotation.Data.Entities.ProductDatasheet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AddToPdf")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("Bytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Pages")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UploadedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId")
+                        .IsUnique();
+
+                    b.ToTable("Datasheets");
+                });
+
             modelBuilder.Entity("Quotation.Data.Entities.QuotationHeader", b =>
                 {
                     b.Property<Guid>("Id")
@@ -633,6 +676,10 @@ namespace Quotation.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("CustomerId")
@@ -683,6 +730,9 @@ namespace Quotation.Data.Migrations
 
                     b.Property<bool>("EverApproved")
                         .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("ExchangeRate")
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("FinancialYearStart")
                         .HasColumnType("INTEGER");

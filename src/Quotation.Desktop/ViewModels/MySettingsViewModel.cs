@@ -15,6 +15,10 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
     private bool _loading;
 
     [ObservableProperty] private bool _withoutGstNext;
+    /// <summary>Round 36: the next quotation in US dollars (turns itself off once it is saved).</summary>
+    [ObservableProperty] private bool _usdNext;
+    /// <summary>Round 36: "1 USD = ₹ …" as typed.</summary>
+    [ObservableProperty] private string _usdRateText = "";
     [ObservableProperty] private string _pdfFolder = "";
     [ObservableProperty] private string _proformaPdfFolder = "";
     /// <summary>Index in <see cref="ThemeChoices"/> (Glass (Blue) first, then the other themes).</summary>
@@ -89,6 +93,8 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         _session.Api.UpdateCurrentUser(me);
         _loading = true;
         WithoutGstNext = me.WithoutGstNext;
+        UsdNext = me.UsdNext;
+        UsdRateText = me.UsdRate > 0 ? me.UsdRate.ToString("0.00##", System.Globalization.CultureInfo.InvariantCulture) : "";
         ThemeIndex = Math.Max(0, Array.IndexOf(Themes, AppTheme.Normalize(me.Theme)));
         TextSizeIndex = me.TextSize == AppDisplay.Large ? 1 : 0;
         SpacingIndex = me.Spacing == AppDisplay.Compact ? 1 : 0;
@@ -185,6 +191,41 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         });
     }
 
+    partial void OnUsdNextChanged(bool value)
+    {
+        if (_loading) return;
+        _ = SaveUsdAsync();
+    }
+
+    /// <summary>Round 36: saves the USD switch and the rupees for 1 USD (the switch needs a rate).</summary>
+    [RelayCommand]
+    public Task SaveUsdAsync() => RunAsync(async () =>
+    {
+        var text = (UsdRateText ?? "").Trim().TrimStart('₹').Trim();
+        decimal? rate = null;
+        if (text.Length > 0)
+        {
+            if (!decimal.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var r) || r <= 0)
+            {
+                ErrorMessage = "Type the rupees for 1 USD, e.g. 84.20.";
+                return;
+            }
+            rate = r;
+        }
+        if (UsdNext && rate is null)
+        {
+            ErrorMessage = "Type the rupees for 1 USD first (e.g. 84.20).";
+            _loading = true;
+            UsdNext = false;
+            _loading = false;
+            return;
+        }
+        _session.Api.UpdateCurrentUser(await _session.Api.SetMyPreferencesAsync(new MyPreferencesDto(UsdNext: UsdNext, UsdRate: rate)));
+        InfoMessage = UsdNext
+            ? $"Your next quotation will be in US dollars (1 USD = ₹ {rate:0.00}), without GST. The switch turns itself off after you save it."
+            : "USD quotation is off.";
+    });
+
     /// <summary>Saves both folders (quotations, proforma invoices) for this PC.</summary>
     [RelayCommand]
     private void SavePdfFolder()
@@ -215,37 +256,51 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         InfoMessage = $"Quotations will be saved in {_session.Documents.Folder}, proforma invoices in {_session.Documents.ProformaFolder}";
     }
 
-    /// <summary>My Settings → WhatsApp (this PC): the button opens WhatsApp Web in the browser (else the WhatsApp program).</summary>
+    /// <summary>My Settings → WhatsApp (this PC): the WhatsApp app, WhatsApp Web (browser) or the app's own WhatsApp window.</summary>
+    private void SetWhatsApp(string mode)
+    {
+        if (string.Equals(_session.Config.WhatsAppOpensIn, mode, StringComparison.OrdinalIgnoreCase)) return;
+        _session.Config.WhatsAppOpensIn = mode;
+        try
+        {
+            _session.Config.Save();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Kept for this session; only this PC's choice.
+        }
+        OnPropertyChanged(nameof(WhatsAppOnWeb));
+        OnPropertyChanged(nameof(WhatsAppOnApp));
+        OnPropertyChanged(nameof(WhatsAppInsideApp));
+        InfoMessage = mode switch
+        {
+            DocumentLauncher.WhatsAppWeb => "WhatsApp opens in WhatsApp Web (your browser) on this PC.",
+            DocumentLauncher.WhatsAppInApp => DocumentLauncher.AppWindowBrowser() is null
+                ? "WhatsApp opens in its own window. Edge or Chrome is needed for that; without it WhatsApp Web opens in your browser."
+                : "WhatsApp opens in its own window on this PC. Scan the QR code with your phone once; it stays signed in.",
+            _ => "WhatsApp opens in the WhatsApp app on this PC.",
+        };
+    }
+
+    private bool Is(string mode) => string.Equals(_session.Config.WhatsAppOpensIn, mode, StringComparison.OrdinalIgnoreCase);
+
     public bool WhatsAppOnWeb
     {
-        get => string.Equals(_session.Config.WhatsAppOpensIn, DocumentLauncher.WhatsAppWeb, StringComparison.OrdinalIgnoreCase);
-        set
-        {
-            if (value == WhatsAppOnWeb) return;
-            _session.Config.WhatsAppOpensIn = value ? DocumentLauncher.WhatsAppWeb : DocumentLauncher.WhatsAppApp;
-            try
-            {
-                _session.Config.Save();
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                // Kept for this session; only this PC's choice.
-            }
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(WhatsAppOnApp));
-            InfoMessage = value
-                ? "WhatsApp opens in WhatsApp Web (your browser) on this PC."
-                : "WhatsApp opens in the WhatsApp app on this PC.";
-        }
+        get => Is(DocumentLauncher.WhatsAppWeb);
+        set { if (value) SetWhatsApp(DocumentLauncher.WhatsAppWeb); }
+    }
+
+    /// <summary>Round 36: "Inside this app".</summary>
+    public bool WhatsAppInsideApp
+    {
+        get => Is(DocumentLauncher.WhatsAppInApp);
+        set { if (value) SetWhatsApp(DocumentLauncher.WhatsAppInApp); }
     }
 
     public bool WhatsAppOnApp
     {
-        get => !WhatsAppOnWeb;
-        set
-        {
-            if (value) WhatsAppOnWeb = false;
-        }
+        get => !WhatsAppOnWeb && !WhatsAppInsideApp;
+        set { if (value) SetWhatsApp(DocumentLauncher.WhatsAppApp); }
     }
 
     /// <summary>Called by the view after the user picked a folder.</summary>

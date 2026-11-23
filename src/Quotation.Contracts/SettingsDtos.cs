@@ -60,6 +60,8 @@ public sealed class AiSettings
     public string? ApiKey { get; set; }
     public bool ApiKeyConfigured { get; set; }
     public int MaxCandidates { get; set; } = 8;
+    /// <summary>Round 36: what the company sells, in a few words ("tools and instruments"), told to Claude with the company name.</summary>
+    public string WhatWeSell { get; set; } = "";
 }
 
 /// <summary>Backups and updates (Settings > Backup &amp; updates, administrators).</summary>
@@ -80,6 +82,21 @@ public sealed class BackupSettings
 
     /// <summary>Google Drive backup: each approved PDF is also copied (a folder per month).</summary>
     public bool DrivePdfs { get; set; } = true;
+
+    /// <summary>
+    /// Round 36: the Google Drive folder the copies go to (typed in Settings → Backup &amp; updates). A new name = new copies
+    /// go to the new folder; the old folder stays as it is.
+    /// </summary>
+    public string DriveFolder { get; set; } = DefaultDriveFolder;
+
+    public const string DefaultDriveFolder = "TS Quotations";
+
+    /// <summary>The folder name to use: the typed name without slashes and extra spaces, or the default when empty.</summary>
+    public static string DriveFolderName(string? typed)
+    {
+        var name = string.Join(' ', (typed ?? "").Replace('/', ' ').Replace('\\', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        return name.Length == 0 ? DefaultDriveFolder : name.Length > 100 ? name[..100].TrimEnd() : name;
+    }
 }
 
 /// <summary>Google Drive backup (Settings → Backup &amp; updates): the Google account, the last copy and what went wrong.</summary>

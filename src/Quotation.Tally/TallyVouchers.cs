@@ -18,6 +18,15 @@ public sealed record TallyRateLine(
     decimal Rate,
     string Unit);
 
+/// <summary>Round 36: one item line of a sales invoice (copy items from a Tally invoice).</summary>
+public sealed record TallyInvoiceLine(string ItemName, decimal Quantity, string Unit, decimal Rate, decimal Amount);
+
+/// <summary>Round 36: a customer's sales invoice as read from Tally (read only).</summary>
+public sealed record TallyInvoice(DateOnly Date, string VoucherType, string Number, string Party, IReadOnlyList<TallyInvoiceLine> Lines)
+{
+    public decimal Total => Lines.Sum(l => l.Amount);
+}
+
 /// <summary>Parses voucher types and the item lines of vouchers.</summary>
 public static class TallyVoucherParser
 {
@@ -70,6 +79,37 @@ public static class TallyVoucherParser
             lines.Add(new TallyRateLine(date.Value, type, number, party, alterId, item, rate, unit));
         }
         return lines;
+    }
+
+    /// <summary>Round 36: a sales invoice with its item lines (quantity, rate, amount); null when cancelled or without items.</summary>
+    public static TallyInvoice? ParseInvoice(XElement v)
+    {
+        if (TallyText.Bool(TallyText.Text(v, "ISCANCELLED")) || TallyText.Bool(TallyText.Text(v, "ISDELETED"))) return null;
+        if (TallyText.Date(TallyText.Text(v, "DATE")) is not { } date) return null;
+        var type = TallyText.Text(v, "VOUCHERTYPENAME");
+        if (type.Length == 0) type = TallyText.Clean(v.Attribute("VCHTYPE")?.Value);
+        var party = TallyText.Text(v, "PARTYLEDGERNAME");
+        if (party.Length == 0) party = TallyText.Text(v, "PARTYNAME");
+        var entries = v.Elements("ALLINVENTORYENTRIES.LIST").ToList();
+        if (entries.Count == 0) entries = v.Elements("INVENTORYENTRIES.LIST").ToList();
+        if (entries.Count == 0)
+            entries = v.Elements("LEDGERENTRIES.LIST").Concat(v.Elements("ALLLEDGERENTRIES.LIST")).SelectMany(l => l.Elements("INVENTORYALLOCATIONS.LIST")).ToList();
+        var lines = new List<TallyInvoiceLine>();
+        foreach (var entry in entries)
+        {
+            var item = TallyText.Text(entry, "STOCKITEMNAME");
+            if (item.Length == 0) continue;
+            var billed = TallyText.Text(entry, "BILLEDQTY");
+            if (billed.Trim().Length == 0) billed = TallyText.Text(entry, "ACTUALQTY");
+            var qty = Quantity(billed) is { } q ? Math.Abs(q) : 1m;
+            var rawRate = TallyText.Text(entry, "RATE");
+            var amount = TallyText.Decimal(TallyText.Text(entry, "AMOUNT")) is { } a ? Math.Abs(a) : 0m;
+            var rate = TallyText.Decimal(rawRate) is { } r ? Math.Abs(r) : qty != 0 ? Math.Round(amount / qty, 2) : 0m;
+            var unit = QuantityUnit(billed);
+            if (unit.Length == 0) unit = TallyText.RateUnit(rawRate);
+            lines.Add(new TallyInvoiceLine(item, qty, unit, rate, amount > 0 ? amount : Math.Round(rate * qty, 2)));
+        }
+        return lines.Count == 0 ? null : new TallyInvoice(date, type, TallyText.Text(v, "VOUCHERNUMBER"), party, lines);
     }
 
     /// <summary>" 2 NOS" → 2.</summary>
@@ -199,5 +239,34 @@ public sealed class TallyVoucherService(TallyXmlClient client)
         var lines = new List<TallyRateLine>();
         await foreach (var v in client.StreamObjectsAsync(request, "VOUCHER", ct)) lines.AddRange(TallyVoucherParser.ParseRateLines(v));
         return lines;
+    }
+
+    /// <summary>
+    /// Round 36: one customer's invoices of <paramref name="voucherType"/> (and its derived types, e.g. Sales → "GST Sales")
+    /// dated <paramref name="from"/>..<paramref name="to"/>, newest first. One request through Tally's voucher-type index,
+    /// filtered to the party, so Tally reads little. Export only: nothing in Tally is changed.
+    /// </summary>
+    public async Task<IReadOnlyList<TallyInvoice>> GetPartyInvoicesAsync(string voucherType, string party, DateOnly from, DateOnly to,
+        CancellationToken ct = default)
+    {
+        var request = TallyRequestBuilder.Collection(new TallyCollectionRequest
+        {
+            Name = "QtPartyInvoices",
+            Type = "Vouchers : VoucherType",
+            ChildOf = voucherType,
+            BelongsTo = true,
+            NativeMethods = VoucherMethods,
+            Filters = new Dictionary<string, string> { ["QtParty"] = "$PartyLedgerName = " + TallyText.TdlString(party) },
+        }, client.Options.CompanyName, new Dictionary<string, string>
+        {
+            ["SVFROMDATE"] = from.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
+            ["SVTODATE"] = to.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
+        });
+        var list = new List<TallyInvoice>();
+        await foreach (var v in client.StreamObjectsAsync(request, "VOUCHER", ct))
+            if (TallyVoucherParser.ParseInvoice(v) is { } invoice && invoice.Party.Equals(party, StringComparison.OrdinalIgnoreCase)
+                && invoice.Date >= from && invoice.Date <= to)
+                list.Add(invoice);
+        return list.OrderByDescending(i => i.Date).ThenByDescending(i => i.Number, StringComparer.Ordinal).ToList();
     }
 }

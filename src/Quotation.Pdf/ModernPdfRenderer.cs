@@ -157,7 +157,7 @@ public sealed class ModernPdfRenderer
         {
             rows.Add(("Round Off", (s.Amount < 0 ? "(-)" : "") + Money(Math.Abs(s.Amount)), false));
         }
-        rows.Add(("Total", "₹" + Money(doc.GrandTotal), true));
+        rows.Add(("Total", doc.CurrencySymbol + Money(doc.GrandTotal), true));
         return rows;
     }
 

@@ -19,6 +19,16 @@ public sealed class FakeGmail : IGmailClient
 
     public Task<string> GetAccountEmailAsync(CancellationToken ct) => Task.FromResult("sales@tsaifuddin.example");
 
+    /// <summary>Round 36: e-mails sent (to, subject, body).</summary>
+    public List<(string To, string Subject, string Body)> Sent { get; } = [];
+
+    public Task SendAsync(string to, string subject, string body, CancellationToken ct)
+    {
+        if (Offline) throw new HttpRequestException("Network unreachable");
+        Sent.Add((to, subject, body));
+        return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyList<string>> ListMessageIdsAsync(string query, int max, CancellationToken ct)
     {
         if (Offline) throw new HttpRequestException("Network unreachable");

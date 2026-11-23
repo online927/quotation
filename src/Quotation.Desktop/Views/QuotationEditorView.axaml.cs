@@ -120,6 +120,12 @@ public partial class QuotationEditorView : UserControl
         }
         var picker = source.FindAncestorOfType<SearchPicker>(includeSelf: true);
 
+        if (e.Key == Key.Escape && Vm is { IsInvoiceOpen: true } invoices)
+        {
+            invoices.CloseInvoicesCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Escape && Vm is { IsPasteOpen: true } pasting)
         {
             if (picker is { IsDropDownOpen: true }) return;

@@ -43,6 +43,9 @@ builder.Services.AddSingleton(sp => new SlowRequestLog(dataDir, sp.GetRequiredSe
 builder.Services.AddSingleton<FinancialYearService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuditService>();
+builder.Services.AddScoped<MonthPdfZip>();
+builder.Services.AddScoped<ActivityService>();
+builder.Services.AddSingleton<DatasheetService>();
 builder.Services.AddScoped<StatusService>();
 builder.Services.AddHttpClient(TallyGateway.HttpClientName);
 builder.Services.AddSingleton<Quotation.Tally.TallyLoadGuard>(_ => new Quotation.Tally.TallyLoadGuard());
@@ -71,6 +74,8 @@ builder.Services.AddHostedService<BackupWorker>();
 builder.Services.AddSingleton<IDriveClientFactory, GoogleDriveClientFactory>();
 builder.Services.AddSingleton<DriveBackupService>();
 builder.Services.AddHostedService<DriveBackupWorker>();
+builder.Services.AddSingleton<EveningSummaryService>();
+builder.Services.AddHostedService<EveningSummaryWorker>();
 builder.Services.AddHostedService<ServerFinderService>();
 
 builder.Services.AddAuthentication(TokenAuthenticationHandler.SchemeName)
@@ -128,6 +133,7 @@ app.MapAiEndpoints();
 app.MapGmailEndpoints();
 app.MapDiagnosticsEndpoints();
 app.MapFormaterEndpoints();
+app.MapTallyInvoiceEndpoints();
 
 app.Logger.LogInformation("Quotations Server starting. Data directory: {DataDir}", dataDir);
 await app.RunAsync();

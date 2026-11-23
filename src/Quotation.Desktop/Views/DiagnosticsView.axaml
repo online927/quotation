@@ -72,6 +72,63 @@
           </Grid>
         </Border>
       </TabItem>
+      <TabItem Header="Who did what">
+        <DockPanel Margin="0,8">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,8">
+            <CalendarDatePicker Name="ActivityDayBox" SelectedDate="{Binding ActivityDay}" CustomDateFormatString="dd-MMM-yyyy" SelectedDateFormat="Custom" Width="150" />
+            <ComboBox Name="ActivityUserBox" ItemsSource="{Binding ActivityUsers}" SelectedItem="{Binding ActivityUser}" MinWidth="160" />
+            <Button Name="SummaryButton" ctl:ButtonIcon.Kind="history" Content="Summary" Command="{Binding ShowSummaryCommand}"
+                    ToolTip.Tip="The day's summary: quotations and value, per user, won / lost, drafts, follow-ups" />
+          </StackPanel>
+          <Border DockPanel.Dock="Top" Classes="card" Name="SummaryCard" Margin="0,0,0,8" IsVisible="{Binding HasSummary}" HorizontalAlignment="Left" MinWidth="420">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+              <TextBlock Name="SummaryTextBlock" Text="{Binding SummaryText}" TextWrapping="Wrap" LineHeight="22" />
+              <Button Grid.Column="1" Name="SummaryWhatsAppButton" Classes="primary" ctl:ButtonIcon.Kind="open" Content="WhatsApp" VerticalAlignment="Top"
+                      Command="{Binding SummaryToWhatsAppCommand}" />
+            </Grid>
+          </Border>
+          <Border DockPanel.Dock="Top" Classes="tablehead">
+            <Grid ColumnDefinitions="80,140,*">
+              <TextBlock Text="Time" />
+              <TextBlock Grid.Column="1" Text="User" />
+              <TextBlock Grid.Column="2" Text="What" />
+            </Grid>
+          </Border>
+          <TextBlock DockPanel.Dock="Top" Classes="muted" Name="NoActivityText" Text="Nothing on this day." IsVisible="{Binding NoActivity}" Margin="12,14" />
+          <ListBox Classes="table" Name="ActivityList" ItemsSource="{Binding Activity}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ActivityRow">
+                <Grid ColumnDefinitions="80,140,*">
+                  <TextBlock Text="{Binding Time}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding User}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <Border Classes="chip" Classes.ok="{Binding IsOk}" Classes.bad="{Binding IsBad}" Classes.warn="{Binding IsWarn}"><TextBlock Text="{Binding Chip}" /></Border>
+                    <TextBlock Text="{Binding What}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="PDFs of a month">
+        <Border Classes="card" Margin="0,8" VerticalAlignment="Top" HorizontalAlignment="Left" MinWidth="560">
+          <StackPanel Spacing="14">
+            <TextBlock Classes="h2" Text="PDFs of a month" />
+            <StackPanel Orientation="Horizontal" Spacing="16">
+              <TextBlock Text="Month" VerticalAlignment="Center" />
+              <ComboBox Name="ZipMonthBox" ItemsSource="{Binding Months}" SelectedItem="{Binding ZipMonth}" MinWidth="190" />
+              <CheckBox Name="ZipQuotationsBox" IsChecked="{Binding ZipQuotations}" Content="Quotations" VerticalAlignment="Center" />
+              <CheckBox Name="ZipProformaBox" IsChecked="{Binding ZipProforma}" Content="Proforma invoices" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Name="DownloadZipButton" Classes="primary" ctl:ButtonIcon.Kind="download" Content="Download ZIP" Command="{Binding DownloadMonthZipCommand}" />
+              <Border Classes="info" VerticalAlignment="Center" ToolTip.Tip="The approved PDFs of that month in one ZIP file, saved in Documents (e.g. Quotations-2026-11.zip with 'TSQ2627-101 Sonepar India.pdf' …)."><Path Classes="infoicon" /></Border>
+            </StackPanel>
+            <TextBlock Name="ZipInfoText" Foreground="{DynamicResource OkBrush}" Text="{Binding InfoMessage}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </TabItem>
       <TabItem Header="Audit log">
         <DockPanel Margin="0,8">
           <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto" Margin="0,0,0,6">

@@ -115,6 +115,8 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
                     var to = IgnorePeriod ? DateOnly.MaxValue : ParseDate(statics?.Element("SVTODATE")?.Value) ?? Data.PeriodTo;
                     var types = formulas.Values.SelectMany(f => VoucherTypeRegex().Matches(f))
                         .Select(m => m.Groups[1].Value.Replace("\"\"", "\"")).ToList();
+                    var parties = formulas.Values.SelectMany(f => PartyRegex().Matches(f))
+                        .Select(m => m.Groups[1].Value.Replace("\"\"", "\"")).ToList();
                     var childOf = Unquote(collection.Element("CHILDOF")?.Value);
                     var belongsTo = (collection.Element("BELONGSTO")?.Value ?? "").Equals("Yes", StringComparison.OrdinalIgnoreCase);
                     if (childOf.Length > 0) VoucherScanCount += Data.Vouchers.Count(v => IsOfType(v.Type, childOf, belongsTo));
@@ -122,6 +124,7 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
                     foreach (var v in Data.Vouchers.Where(v => v.Date >= from && v.Date <= to &&
                                  (types.Count == 0 || types.Contains(v.Type, StringComparer.OrdinalIgnoreCase)) &&
                                  (childOf.Length == 0 || IsOfType(v.Type, childOf, belongsTo)) &&
+                                 (parties.Count == 0 || parties.Contains(v.Party, StringComparer.OrdinalIgnoreCase)) &&
                                  filter(new FilterSubject(v.Number, v.AlterId, ""))))
                         WriteVoucher(sb, v);
                     break;
@@ -190,6 +193,9 @@ public sealed partial class TallySimulatorEngine(SampleDataset data)
 
     [GeneratedRegex(@"\$Name\s*=\s*""((?:[^""]|"""")*)""", RegexOptions.IgnoreCase)]
     private static partial Regex NameRegex();
+
+    [GeneratedRegex(@"\$PartyLedgerName\s*=\s*""((?:[^""]|"""")*)""", RegexOptions.IgnoreCase)]
+    private static partial Regex PartyRegex();
 
     [GeneratedRegex(@"\$VoucherTypeName\s*=\s*""((?:[^""]|"""")*)""", RegexOptions.IgnoreCase)]
     private static partial Regex VoucherTypeRegex();

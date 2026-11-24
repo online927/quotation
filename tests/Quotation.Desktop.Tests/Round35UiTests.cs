@@ -374,8 +374,10 @@ public class Round35UiTests
     public async Task A_delivery_time_is_typed_or_picked_shown_as_a_chip_and_remembered()
     {
         using var ctx = await Round33UiTests.StartAsync();
+        Assert.True(new ClientConfig().DeliveryTimeOnItems);     // on at first (user: "Delivery box, default on")
+        ctx.Session.Config.DeliveryTimeOnItems = false;           // switched off: no box
         var (off, offView) = await Round33UiTests.NewQuotationAsync(ctx);
-        Assert.False(off.ShowDeliveryBox); // off at first
+        Assert.False(off.ShowDeliveryBox);
         Dispatcher.UIThread.RunJobs();
         Assert.False(offView.FindControl<TextBox>("DeliveryBox")!.IsEffectivelyVisible);
         off.IsDirty = false;
@@ -394,7 +396,17 @@ public class Round35UiTests
             // Empty by default; picked from the list …
             editor.SelectProduct((await ctx.Session.Api.SearchProductsAsync("universal bevel")).First().Product);
             Assert.Equal("", editor.EntryDueOn);
-            editor.PickDeliveryCommand.Execute("Ex-stock");
+            // Clicked in the real pop-up list (the list sits outside the page, in its own pop-up)
+            var pick = view.FindControl<Button>("DeliveryPickButton")!;
+            pick.Flyout!.ShowAt(pick);
+            Dispatcher.UIThread.RunJobs();
+            var exStock = ((Flyout)pick.Flyout).Content is ItemsControl list
+                ? list.GetVisualDescendants().OfType<Button>().First(b => (b.Content as string) == "Ex-stock")
+                : throw new InvalidOperationException("no list");
+            exStock.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("Ex-stock", editor.EntryDueOn);
+            Assert.False(pick.Flyout.IsOpen);
             editor.CommitEntryCommand.Execute(null);
             Assert.Equal("Ex-stock", editor.Lines[0].DueOn);
             Assert.True(editor.Lines[0].DueOnInStock);

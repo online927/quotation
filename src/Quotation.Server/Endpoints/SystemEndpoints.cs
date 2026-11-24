@@ -219,7 +219,8 @@ public static class SystemEndpoints
             if (req.OpenPdfAfterSave is { } open) user.OpenPdfAfterSave = open;
             if (req.UsdRate is { } usdRate)
             {
-                if (usdRate is < 0 or > 100000) return Results.BadRequest(new ApiError("Type the rupees for 1 USD (e.g. 84.20)."));
+                if (usdRate != 0 && usdRate is < Currencies.MinUsdRate or > Currencies.MaxUsdRate)
+                    return Results.BadRequest(new ApiError($"1 USD must be between ₹ {Currencies.MinUsdRate} and ₹ {Currencies.MaxUsdRate} (e.g. 84.20)."));
                 user.UsdRate = Math.Round(usdRate, 4);
             }
             if (req.UsdNext is { } usdNext) user.UsdNext = usdNext;

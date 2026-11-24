@@ -189,6 +189,25 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     public IReadOnlyList<string> PdfLayoutChoices { get; } = PdfLayouts.All;
 
+    /// <summary>Round 37: the note on a USD quotation's PDF (Settings → PDF).</summary>
+    public IReadOnlyList<string> UsdPdfNoteChoices { get; } =
+    [
+        "Amounts in US dollars (USD), without GST. 1 USD = ₹ 84.20.",
+        "Amounts in US dollars (USD).",
+        "No note",
+    ];
+
+    public int UsdPdfNoteIndex
+    {
+        get => Math.Max(0, Array.IndexOf(UsdPdfNotes.All, Settings?.Quotation.UsdPdfNote ?? UsdPdfNotes.Full));
+        set
+        {
+            if (Settings is null || value < 0 || value >= UsdPdfNotes.All.Length) return;
+            Settings.Quotation.UsdPdfNote = UsdPdfNotes.All[value];
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>"Show Consignee details", in the order of <see cref="ConsigneePrint"/>.</summary>
     public IReadOnlyList<string> ConsigneeChoices { get; } = ["Yes", "No", "Only when different from Buyer", "Buyer/Consignee when same"];
 
@@ -206,6 +225,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     partial void OnSettingsChanged(AllSettingsDto? value)
     {
+        OnPropertyChanged(nameof(UsdPdfNoteIndex));
         OnPropertyChanged(nameof(PartyDisplayNameIndex));
         OnPropertyChanged(nameof(ConsigneeChoiceIndex));
         OnPropertyChanged(nameof(UpiNoteQuotation));

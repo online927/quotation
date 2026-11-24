@@ -44,8 +44,18 @@ public sealed class ClientConfig
     /// <summary>Round 36: the day the evening summary was last shown on this PC (yyyy-MM-dd).</summary>
     public string? EveningSummaryShownDay { get; set; }
 
-    /// <summary>My Settings → Delivery time on items (this PC, Round 35): a Delivery box next to Description. Off at first.</summary>
-    public bool DeliveryTimeOnItems { get; set; }
+    /// <summary>
+    /// My Settings → Delivery time on items (this PC, Round 35): a Delivery box next to Description. On at first (user:
+    /// "Delivery box, default on"); PCs that had it off get it on once (<see cref="DeliveryOnByDefaultApplied"/>), and can
+    /// switch it off again.
+    /// </summary>
+    public bool DeliveryTimeOnItems { get; set; } = true;
+
+    /// <summary>Round 37, My Settings → "Item rows (this PC)": Bigger (true, the default) or Normal.</summary>
+    public bool BiggerItemRows { get; set; } = true;
+
+    /// <summary>The one-time "Delivery box on" was applied to this PC's saved settings.</summary>
+    public bool DeliveryOnByDefaultApplied { get; set; }
 
     /// <summary>Delivery times typed on this PC, most recent first (they join the Delivery box's list).</summary>
     public List<string> RecentDeliveryTimes { get; set; } = [];
@@ -71,6 +81,13 @@ public sealed class ClientConfig
             {
                 var loaded = JsonSerializer.Deserialize<ClientConfig>(File.ReadAllText(path)) ?? new();
                 loaded.FilePath = path;
+                if (!loaded.DeliveryOnByDefaultApplied)
+                {
+                    // Round 36: the Delivery box is on by default, also on PCs where it was off before; once only.
+                    loaded.DeliveryTimeOnItems = true;
+                    loaded.DeliveryOnByDefaultApplied = true;
+                    try { loaded.Save(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+                }
                 return loaded;
             }
         }
@@ -85,14 +102,14 @@ public sealed class ClientConfig
             if (File.Exists(defaults))
             {
                 var d = JsonSerializer.Deserialize<ClientConfig>(File.ReadAllText(defaults)) ?? new();
-                return new ClientConfig { ServerUrl = d.ServerUrl, FilePath = path };
+                return new ClientConfig { ServerUrl = d.ServerUrl, FilePath = path, DeliveryOnByDefaultApplied = true };
             }
         }
         catch (Exception)
         {
             // Ignore a damaged defaults file.
         }
-        return new ClientConfig { FilePath = path };
+        return new ClientConfig { FilePath = path, DeliveryOnByDefaultApplied = true };
     }
 
     public void Save(string? path = null)

@@ -54,15 +54,32 @@ public static class QuotationEndpoints
                         query = query.Where(x => x.Date == day);
                         continue;
                     }
-                    var like = "%" + term.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+                    // SQLite LIKE: \ escapes % and _ (the [ ] form is SQL Server only, so "_" and "%" never matched before).
+                    var like = "%" + term.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
+                    // Round 36: an item code typed without its dashes, dots or spaces ("18790110" finds "187-901-10").
+                    var compact = new string(term.Where(char.IsLetterOrDigit).ToArray());
+                    var compactLike = compact.Length >= 4 ? "%" + compact + "%" : null;
+                    // Round 36: Tally items whose code, other names (aliases) or HSN match: their quotations are found too.
+                    var itemIds = db.Products.Where(p =>
+                            EF.Functions.Like(p.PartNumber, like, "\\") || EF.Functions.Like(p.Aliases, like, "\\") ||
+                            (compactLike != null && EF.Functions.Like(p.PartNumber.Replace("-", "").Replace(".", "").Replace(" ", "").Replace("/", ""), compactLike)))
+                        .Select(p => (int?)p.Id);
                     query = query.Where(x =>
-                        EF.Functions.Like(x.Number!, like) ||
-                        EF.Functions.Like(x.Buyer.Name, like) ||
-                        EF.Functions.Like(x.Buyer.Gstin, like) ||
-                        EF.Functions.Like(x.Consignee.Name, like) ||
-                        EF.Functions.Like(x.BuyersReference, like) ||
-                        EF.Functions.Like(x.OtherReferences, like) ||
-                        x.Lines.Any(l => EF.Functions.Like(l.ItemName, like) || EF.Functions.Like(l.Description, like)));
+                        EF.Functions.Like(x.Number!, like, "\\") ||
+                        EF.Functions.Like(x.Buyer.Name, like, "\\") ||
+                        EF.Functions.Like(x.Buyer.Gstin, like, "\\") ||
+                        EF.Functions.Like(x.Buyer.ContactPerson, like, "\\") ||
+                        EF.Functions.Like(x.Buyer.Phone, like, "\\") ||
+                        EF.Functions.Like(x.Consignee.Name, like, "\\") ||
+                        EF.Functions.Like(x.BuyersReference, like, "\\") ||
+                        EF.Functions.Like(x.OtherReferences, like, "\\") ||
+                        EF.Functions.Like(x.Remarks, like, "\\") ||
+                        x.Lines.Any(l => EF.Functions.Like(l.ItemName, like, "\\") || EF.Functions.Like(l.Description, like, "\\") ||
+                                         EF.Functions.Like(l.PartNumber, like, "\\") || EF.Functions.Like(l.Hsn, like, "\\") ||
+                                         (compactLike != null && (
+                                             EF.Functions.Like(l.PartNumber.Replace("-", "").Replace(".", "").Replace(" ", "").Replace("/", ""), compactLike) ||
+                                             EF.Functions.Like(l.ItemName.Replace("-", "").Replace(".", "").Replace(" ", "").Replace("/", ""), compactLike))) ||
+                                         itemIds.Contains(l.ProductId)));
                 }
             }
             var rows = await query
@@ -71,7 +88,7 @@ public static class QuotationEndpoints
                 .Select(x => new QuotationSummaryDto(x.Id, x.Number, x.Date, x.Status, x.Source, x.Buyer.Name, x.Buyer.Gstin,
                     x.Lines.OrderBy(l => l.LineNo).Select(l => l.ItemName).FirstOrDefault() ?? "", x.Lines.Count, x.GrandTotal,
                     x.CreatedBy, x.CreatedUtc, x.ApprovedBy, x.PdfPath != null, x.DocType, x.Outcome, x.FollowUpDate,
-                    x.Owner ?? (x.CreatedBy == QuotationService.GmailUserName ? null : x.CreatedBy)))
+                    x.Owner ?? (x.CreatedBy == QuotationService.GmailUserName ? null : x.CreatedBy), x.Currency))
                 .ToListAsync(ct);
             return rows;
         });

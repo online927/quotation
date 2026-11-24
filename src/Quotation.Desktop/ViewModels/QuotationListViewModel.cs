@@ -42,7 +42,8 @@ public sealed class QuotationRow(QuotationSummaryDto s)
     public string Date => Summary.Date.ToString("dd-MMM-yyyy");
     public string Customer => Summary.CustomerName;
     public string Item => Summary.LineCount > 1 ? $"{Summary.FirstItem} (+{Summary.LineCount - 1} more)" : Summary.FirstItem;
-    public string Total => IndianFormat.Amount(Summary.GrandTotal);
+    /// <summary>"31,200.00", or "$ 390.00" for a USD quotation (Round 36).</summary>
+    public string Total => Summary.IsUsd ? Summary.TotalText : IndianFormat.Amount(Summary.GrandTotal);
     public string Status => Summary.Status == QuotationStatus.PendingReview ? "Pending review" : Summary.Status.ToString();
     public bool IsFinal => Summary.Status is QuotationStatus.Approved or QuotationStatus.Generated;
     public bool IsPending => Summary.Status == QuotationStatus.PendingReview;
@@ -208,7 +209,7 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         _loadedOnce = true;
         NotifyEmpty();
         var active = list.Where(s => s.Status != QuotationStatus.Cancelled).ToList();
-        Summary = $"{list.Count} document(s)" + (active.Count > 0 ? $", total ₹ {IndianFormat.Amount(active.Sum(s => s.GrandTotal))}" : "");
+        Summary = $"{list.Count} document(s)" + (active.Count > 0 ? ", total " + Currencies.Total(active.Select(s => (s.GrandTotal, (string?)s.Currency))) : "");
     });
 
     /// <summary>Back from a quotation: reload (it may have been approved or changed) with the same search and filter.</summary>
@@ -218,7 +219,7 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
     private void Open(QuotationRow? row)
     {
         row ??= Selected;
-        if (row is not null) _navigator.OpenQuotation(row.Id);
+        if (row is not null) _navigator.OpenQuotation(row.Id, Rows.Select(r => r.Id).ToList());
     }
 
     [RelayCommand]

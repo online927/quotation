@@ -205,9 +205,13 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         decimal? rate = null;
         if (text.Length > 0)
         {
-            if (!decimal.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var r) || r <= 0)
+            if (!decimal.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var r)
+                || r < Currencies.MinUsdRate || r > Currencies.MaxUsdRate)
             {
-                ErrorMessage = "Type the rupees for 1 USD, e.g. 84.20.";
+                ErrorMessage = $"1 USD must be between ₹ {Currencies.MinUsdRate:0} and ₹ {Currencies.MaxUsdRate:0}, e.g. 84.20.";
+                _loading = true;
+                UsdNext = false;
+                _loading = false;
                 return;
             }
             rate = r;
@@ -380,6 +384,23 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
     }
 
     /// <summary>Sharp text (this PC): ClearType-style letters and slightly bigger small text; off = the old look.</summary>
+    /// <summary>Round 37: "Item rows (this PC)" Bigger (default) or Normal; quotation pages opened after this use it.</summary>
+    public bool BiggerItemRows
+    {
+        get => _session.Config.BiggerItemRows;
+        set
+        {
+            if (value == _session.Config.BiggerItemRows) return;
+            _session.Config.BiggerItemRows = value;
+            try { _session.Config.Save(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            OnPropertyChanged();
+            InfoMessage = value
+                ? "Item rows are bigger on this PC (new quotation pages)."
+                : "Item rows are normal size on this PC (new quotation pages).";
+        }
+    }
+
     public bool SharpText
     {
         get => _session.Config.SharpText;

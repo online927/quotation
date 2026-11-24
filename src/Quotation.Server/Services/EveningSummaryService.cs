@@ -54,7 +54,7 @@ public sealed class EveningSummaryService(IServiceScopeFactory scopes, SettingsS
         var title = "Quotations · " + day.ToString("ddd dd MMM", CultureInfo.InvariantCulture);
         var lines = new List<string> { title };
         lines.Add($"📄 {approved.Count} quotation{(approved.Count == 1 ? "" : "s")} · {Rupees(rupees.Sum(a => a.GrandTotal))}"
-                  + (approved.Count > rupees.Count ? $" (+{approved.Count - rupees.Count} in USD)" : ""));
+                  + (approved.Count > rupees.Count ? " + $ " + IndianFormat.Amount(approved.Where(a => a.Currency == Currencies.Usd).Sum(a => a.GrandTotal)) : ""));
         if (approved.Count > 0)
             lines.Add("👤 " + string.Join(" · ", approved.GroupBy(a => a.User, StringComparer.OrdinalIgnoreCase).OrderByDescending(g => g.Count())
                 .Select(g => $"{(names.TryGetValue(g.Key, out var n) ? n : g.Key)} {g.Count()} ({Rupees(g.Where(a => a.Currency != Currencies.Usd).Sum(a => a.GrandTotal))})")));

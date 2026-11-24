@@ -71,7 +71,7 @@
     </Grid>
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
       <Grid ColumnDefinitions="*,Auto,8,200">
-        <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search quotation number, customer, GSTIN, product, reference…" />
+        <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search number, customer, GSTIN, product, item code, description, reference…" />
         <ComboBox Grid.Column="1" Name="OutcomeFilterBox" Margin="8,0,0,0" Width="150" IsVisible="{Binding ShowOutcomeFilter}"
                   ItemsSource="{x:Static vm:QuotationListViewModel.OutcomeFilters}" SelectedItem="{Binding OutcomeFilter}" />
         <ComboBox Grid.Column="3" Name="TypeFilterBox" IsVisible="{Binding ShowTypeFilter}" ItemsSource="{x:Static vm:QuotationListViewModel.TypeFilters}" SelectedItem="{Binding TypeFilter}" HorizontalAlignment="Stretch" />

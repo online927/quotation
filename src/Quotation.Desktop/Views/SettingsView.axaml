@@ -175,8 +175,6 @@
             <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RoundOffTotal}" />
             <TextBlock Grid.Row="7" Text="Default packing &amp; forwarding (₹)" />
             <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultPackingForwardingAmount}" Minimum="0" FormatString="0.00" Width="160" HorizontalAlignment="Left" />
-            <TextBlock Grid.Row="9" Text="Refresh rates when duplicating" />
-            <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RefreshRatesOnDuplicate}" />
             <TextBlock Grid.Row="10" Text="Allow generation with stale Tally data" />
             <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllowStaleDataOverride}" />
             <TextBlock Grid.Row="11" Text="Tally data stale after (hours)" />
@@ -224,7 +222,7 @@
       <!-- Round 35: the PDF choices have their own tab -->
       <TabItem Header="PDF">
         <ScrollViewer>
-          <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+          <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="PDF layout" VerticalAlignment="Top" Margin="0,8,12,4" />
             <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" Margin="0,3">
               <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Default for users who have not chosen one in My Settings" />
@@ -250,6 +248,9 @@
               <TextBox Text="{Binding Settings.Quotation.ProformaHeading}" Watermark="PROFORMA INVOICE" Width="300" />
               <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="Printed exactly as typed; empty = the standard heading." />
             </StackPanel>
+            <!-- Round 37: the note on a USD quotation's PDF -->
+            <TextBlock Grid.Row="5" Text="USD note on the PDF" />
+            <ComboBox Grid.Row="5" Grid.Column="1" Name="UsdPdfNoteBox" ItemsSource="{Binding UsdPdfNoteChoices}" SelectedIndex="{Binding UsdPdfNoteIndex}" Width="460" Margin="0,3" />
           </Grid>
         </ScrollViewer>
       </TabItem>

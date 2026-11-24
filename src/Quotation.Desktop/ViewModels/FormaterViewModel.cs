@@ -70,6 +70,9 @@ public sealed partial class FormaterViewModel : ViewModelBase, ITitledPage, IDis
     private static string? _keptLayout;
 
     private readonly AppSession _session;
+
+    /// <summary>Round 37: My Settings → Item rows (this PC): Bigger (default) or Normal.</summary>
+    public bool BiggerItemRows => _session.Config.BiggerItemRows;
     private readonly INavigator _navigator;
     private AllSettingsDto _settings = new();
     private readonly Dictionary<string, List<CustomerSearchHitDto>> _customerHits = new(StringComparer.OrdinalIgnoreCase);

@@ -54,6 +54,9 @@ Where things usually are:
   * Simple language, short answers, tables/lists for options. No grey hint/help paragraphs in the app (one short line
     + ⓘ hover is the pattern).
   * Commit, push and build ONLY when the user says "Do". Until then changes stay in the working tree.
+  * NEW RULE (user, after 0.9.87: "Never build till I say do" → "Don't make changes"): a request for a change or a new
+    feature is ONLY ADDED TO THE LIST (section 8), with no code changes. On "Do": make every listed item, test (full
+    suite), then ship (section 4). Questions are still answered, and previews still made when asked ("preview").
   * When a stop hook / system message says "There are uncommitted changes … commit and push", do NOT commit: answer in
     one or two lines that nothing is committed and the changes wait for "Do" (say how many built changes are waiting).
   * Never commit secrets (the repo is public): no keystores, passwords, keys, e-mail addresses.
@@ -67,9 +70,8 @@ Where things usually are:
 
 3. WHAT THE USER'S WORDS MEAN
 -----------------------------
-  * A list of changes / a problem ("X is hiding letters", "remove Y") → do it in the working tree with a test (or, for
-    bigger features, add it to the task list), then report: what changed, test result, server update yes/no,
-    "N built changes waiting for Do".
+  * A list of changes / a problem ("X is hiding letters", "remove Y") → ADD IT TO THE LIST only (new rule above); report
+    what was added, server update yes/no when built, and what is waiting. Build it on "Do".
   * "preview", "don't edit", "just preview", "just add" → NO app code changes. Make pictures (see 5) and send them with
     SendUserFile. For choices, give lettered options (A, B, C …) or numbers; the user answers with a letter, a mix
     ("number from B, date from F") or "Discard".
@@ -195,7 +197,30 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 
 8. ON THE LIST — NOT BUILT YET
 ------------------------------
- NOTHING OPEN. #144–#148, #150–#152, #154, #155 were BUILT IN ROUND 36 on "Do, for mac and Android too" (build all,
+ NOTHING ON THE LIST. ROUND 37 (built on "Do, for mac and Android too") delivered:
+   1-8 made before the list-only rule: Delivery list click (OnDeliveryPicked hands the choice to the page; a pop-up
+     cannot bind to the page with $parent), gear "Same delivery on all lines" (ApplyDeliveryToAll), USD "$" in lists /
+     phone (QuotationSummaryDto.Currency, Currencies.Money/Total), USD rate ₹1–500 (Currencies.Min/MaxUsdRate), Who did
+     what "Approvals and cancels only" (DiagnosticsViewModel.ImportantChips), wider list search (item code compact,
+     aliases, HSN, remarks; SQLite LIKE escape "\"), Delivery box on by default (ClientConfig default + one-time
+     DeliveryOnByDefaultApplied), Page Up/Down (ListIds, ShellViewModel.StepQuotationAsync).
+   D-1 DuplicateAsync copies rates as they are (no -1 marker); the Settings tick box is gone (RefreshRatesOnDuplicate kept
+     only so old settings read). Without GST still becomes a normal quotation on a copy (earlier rule kept; test
+     GstAndEditingRulesTests); a USD copy stays USD (CreateAsync allows USD for any doc type).
+   U-a/b/c USD rate cleared after the first save (AppUser.UsdRate = 0, only when not a duplicate/convert); USD copies and
+     USD proformas stay in dollars.
+   U-d QuotationSettings.UsdPdfNote (UsdPdfNotes Full / DollarsOnly / None), Settings → PDF "USD note on the PDF".
+   DS-1 DatasheetService.Append skips files with the same SHA-256.
+   P-1 QuotationEditorViewModel.PasteColumn(text, PasteColumnKind Rate/Quantity/Discount); QtyBox/DiscountBox paste hooks.
+   IR-1 ClientConfig.BiggerItemRows (default true), Services/ItemRowsLook (LinesList resources FontSmall 13, RowPadding
+     12,11, TextBlock.td 14.5, .th 13), applied on the quotation page and the Formater page when they load; My Settings
+     "Item rows (this PC)".
+   HS-1 ShellViewModel: the "settings" nav item only for administrators.
+   Tests: Round37Tests (server), Round37UiTests; QuotationLifecycleTests duplicate test now expects the same rate.
+   Not on the list (open ideas): B4 evening-summary settings check / error, S1, S3, U1, U2, "no last rate from our own
+   quotations".
+ (Old notes below.)
+ #144–#148, #150–#152, #154, #155 were BUILT IN ROUND 36 on "Do, for mac and Android too" (build all,
  then ship). How each was built:
    #150 BackupSettings.DriveFolder (default still "TS Quotations" so existing Drives keep their folder) + DriveFolderName();
         Settings → Backup "Folder name" box (DriveFolderBox).

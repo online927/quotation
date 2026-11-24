@@ -98,8 +98,13 @@ public sealed class QuotationSettings
     public decimal DefaultPackingForwardingAmount { get; set; }
     public decimal DefaultPackingForwardingPercent { get; set; }
 
-    /// <summary>When duplicating a quotation, refresh rates from the latest synchronized Tally data.</summary>
+    /// <summary>
+    /// No longer used (Round 37: Duplicate copies every rate exactly). Kept so saved settings still read.
+    /// </summary>
     public bool RefreshRatesOnDuplicate { get; set; } = true;
+
+    /// <summary>Round 37 (Settings → PDF): the note printed on a USD quotation's PDF.</summary>
+    public string UsdPdfNote { get; set; } = UsdPdfNotes.Full;
 
     /// <summary>Allow generating a quotation when the last Tally sync is stale (with warning + audit).</summary>
     public bool AllowStaleDataOverride { get; set; } = true;
@@ -199,6 +204,27 @@ public sealed class QuotationSettings
 
     /// <summary>How the buyer and consignee are printed (like Tally's "Party Details" print options).</summary>
     public PartyPrintSettings PartyPrint { get; set; } = new();
+}
+
+/// <summary>Round 37: the note on a USD quotation's PDF (Settings → PDF).</summary>
+public static class UsdPdfNotes
+{
+    /// <summary>"Amounts in US dollars (USD), without GST. 1 USD = ₹ 84.20."</summary>
+    public const string Full = "Full";
+    /// <summary>"Amounts in US dollars (USD)." (no rupee rate)</summary>
+    public const string DollarsOnly = "DollarsOnly";
+    /// <summary>No note.</summary>
+    public const string None = "None";
+
+    public static readonly string[] All = [Full, DollarsOnly, None];
+
+    /// <summary>The note's text ("" for none).</summary>
+    public static string Text(string? choice, decimal exchangeRate) => choice switch
+    {
+        DollarsOnly => "Amounts in US dollars (USD).",
+        None => "",
+        _ => $"Amounts in US dollars (USD), without GST. 1 USD = ₹ {exchangeRate.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}.",
+    };
 }
 
 /// <summary>The PDF layouts each user can choose in My Settings.</summary>

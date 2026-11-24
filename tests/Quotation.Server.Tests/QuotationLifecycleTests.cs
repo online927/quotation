@@ -227,7 +227,7 @@ public class QuotationLifecycleTests : QuotationTestBase
     }
 
     [Fact]
-    public async Task Duplicate_creates_new_number_today_with_current_rates()
+    public async Task Duplicate_creates_new_number_today_with_the_same_rates()
     {
         var request = await BevelRequest();
         request.BuyersReference = "PO-778";
@@ -241,7 +241,7 @@ public class QuotationLifecycleTests : QuotationTestBase
         Assert.Equal(original.CustomerId, copy.CustomerId);
         Assert.Equal(original.Lines[0].ProductId, copy.Lines[0].ProductId);
         Assert.Equal("Brand: Mitutoyo\nMOQ: 1", copy.Lines[0].Description);
-        Assert.Equal(16400m, copy.Lines[0].Rate);
+        Assert.Equal(original.Lines[0].Rate, copy.Lines[0].Rate);   // Round 37: no rate change (Tally is now 16,400)
         Assert.Equal("", copy.BuyersReference);
         Assert.Equal(original.Id, copy.DuplicatedFromId);
     }

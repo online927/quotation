@@ -249,6 +249,17 @@ public partial class ShellView : UserControl
                 e.Handled = true;
                 return;
             }
+            // Page Down / Page Up: the next / previous quotation of the list it was opened from (not inside a
+            // multi-line box or an open list, where the keys scroll)
+            if (e.Key is Key.PageDown or Key.PageUp && quotation.ListIds is { Count: > 1 }
+                && e.Source is not TextBox { AcceptsReturn: true }
+                && !(e.Source is Visual src && (src.FindAncestorOfType<Quotation.Desktop.Controls.SearchPicker>(includeSelf: true) is { IsDropDownOpen: true }
+                                              || src.FindAncestorOfType<ComboBox>(includeSelf: true) is { IsDropDownOpen: true })))
+            {
+                _ = Vm.StepQuotationAsync(e.Key == Key.PageDown ? 1 : -1);
+                e.Handled = true;
+                return;
+            }
             // Delete on an approved quotation, when not typing in a box: Clear, like Ctrl+N (drafts are never touched)
             if (e.Key == Key.Delete && quotation.ShowClear && e.Source is not TextBox { IsReadOnly: false })
             {

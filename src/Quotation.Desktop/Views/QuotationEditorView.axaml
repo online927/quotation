@@ -59,6 +59,8 @@
           <TextBlock Text="{Binding UsdChipText}" FontWeight="SemiBold" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource WarnBrush}" />
         </Border>
         <TextBlock Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="{DynamicResource FontSmall}" IsVisible="{Binding ShowSource}" />
+        <TextBlock Name="ListPositionText" Text="{Binding ListPositionText}" Classes="muted" VerticalAlignment="Center" FontSize="{DynamicResource FontSmall}"
+                   IsVisible="{Binding HasListPosition}" ToolTip.Tip="Page Down: next quotation in the list · Page Up: previous" />
       </StackPanel>
       <!-- The date: a date box only where it can be changed (the administrator, before approval); otherwise plain -->
       <Border Name="DatePill" Grid.Column="1" Classes="datepill" VerticalAlignment="Center">
@@ -490,6 +492,31 @@
                         </Grid>
                       </StackPanel>
                       <Border Classes="menusep" />
+                      <StackPanel Margin="10,6,10,4" Spacing="6" Name="AllDeliveryPanel" IsVisible="{Binding ShowDeliveryBox}">
+                        <TextBlock Text="Same delivery on all lines" FontWeight="SemiBold" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                          <TextBox Name="AllDeliveryBox" Text="{Binding AllLinesDeliveryText}" Watermark="e.g. 2–3 weeks" IsEnabled="{Binding CanEditContent}">
+                            <TextBox.KeyBindings>
+                              <KeyBinding Gesture="Enter" Command="{Binding ApplyDeliveryToAllCommand}" />
+                            </TextBox.KeyBindings>
+                          </TextBox>
+                          <Button Name="ApplyAllDeliveryButton" Grid.Column="1" Classes="primary" ctl:ButtonIcon.Kind="check" Content="Apply"
+                                  Command="{Binding ApplyDeliveryToAllCommand}" IsEnabled="{Binding CanEditContent}" />
+                        </Grid>
+                        <ItemsControl Name="AllDeliveryChoices" ItemsSource="{Binding DeliveryChoices}" IsEnabled="{Binding CanEditContent}">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                              <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                              <Button Classes="link" Content="{Binding}" Padding="6,2" Margin="0,0,4,2" Click="OnAllDeliveryPicked" />
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                      <Border Classes="menusep" IsVisible="{Binding ShowDeliveryBox}" />
                       <StackPanel Margin="10,6,10,4" Spacing="6">
                         <TextBlock Text="Raise all rates by" FontWeight="SemiBold" />
                         <Grid ColumnDefinitions="90,Auto,*">
@@ -661,8 +688,7 @@
                                 <ItemsControl.ItemTemplate>
                                   <DataTemplate x:DataType="x:String">
                                     <Button Classes="link" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Content="{Binding}"
-                                            Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).PickDeliveryCommand}"
-                                            CommandParameter="{Binding}" Click="OnDeliveryPicked" />
+                                            Click="OnDeliveryPicked" />
                                   </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                               </ItemsControl>

@@ -7,6 +7,8 @@ public interface INavigator
 {
     void Navigate(string key);
     void OpenQuotation(Guid id);
+    /// <summary>Opens a quotation from a list (Today's Quotations, History …): Page Up / Page Down then go through that list.</summary>
+    void OpenQuotation(Guid id, IReadOnlyList<Guid> list) => OpenQuotation(id);
     void NewQuotation();
     /// <summary>Returns to the previous page (like a browser's back button).</summary>
     void GoBack();

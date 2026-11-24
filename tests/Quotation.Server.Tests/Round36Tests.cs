@@ -96,7 +96,7 @@ public class Round36Tests : QuotationTestBase
         Assert.Equal(390m, q.GrandTotal);
         Assert.Equal("USD Three Hundred Ninety Only", q.AmountInWords);
         Assert.False((await Api.MeAsync()).UsdNext);     // next quotation only
-        Assert.Equal(80m, (await Api.MeAsync()).UsdRate);  // the rate is remembered
+        Assert.Equal(0m, (await Api.MeAsync()).UsdRate);   // Round 37: the rate is not remembered
 
         await Api.ApproveQuotationAsync(q.Id);
         var words = PdfWords(await Api.QuotationPdfAsync(q.Id));
@@ -105,10 +105,26 @@ public class Round36Tests : QuotationTestBase
         Assert.Contains("80.00.", words);
         Assert.Contains("USD Three Hundred Ninety Only", words);
 
-        // A copy is in rupees again
+        // Lists show it in dollars; totals never add dollars to rupees
+        var row = (await Api.QuotationsAsync()).Single(x => x.Id == q.Id);
+        Assert.True(row.IsUsd);
+        Assert.Equal("$ 390.00", row.TotalText);
+        Assert.Equal("₹ 31,200.00 + $ 390.00", Currencies.Total([(31200m, ""), (390m, "USD")]));
+        Assert.Equal("₹ 31,200.00", Currencies.Total([(31200m, null)]));
+
+        // A sensible rate only (₹ 1 to ₹ 500)
+        await Assert.ThrowsAsync<ApiException>(() => Api.SetMyPreferencesAsync(new MyPreferencesDto(UsdRate: 0.84m)));
+        await Assert.ThrowsAsync<ApiException>(() => Api.SetMyPreferencesAsync(new MyPreferencesDto(UsdRate: 8420m)));
+        var slip = await BevelRequest();
+        slip.Currency = Currencies.Usd;
+        slip.ExchangeRate = 0.0001m;
+        await Assert.ThrowsAsync<ApiException>(() => Api.CreateQuotationAsync(slip));
+
+        // Round 37: a copy stays in dollars, same rates
         var copy = await Api.DuplicateQuotationAsync(q.Id);
-        Assert.False(copy.IsUsd);
-        Assert.Null(copy.ExchangeRate);
+        Assert.True(copy.IsUsd);
+        Assert.Equal(80m, copy.ExchangeRate);
+        Assert.Equal(195m, copy.Lines[0].Rate);
 
         // No rate typed: refused
         request.ExchangeRate = null;
@@ -221,5 +237,35 @@ public class Round36Tests : QuotationTestBase
         Assert.False(await service.SendIfDueAsync(default));               // once a day
         Assert.Single(Server.Gmail.Sent);
         Assert.Equal(new TimeOnly(19, 0), Services.EveningSummaryService.DueTime("7 pm"));
+    }
+
+    [Fact]
+    public async Task Quotation_lists_are_searched_by_item_code_description_alias_and_remarks()
+    {
+        var request = await BevelRequest();
+        request.Lines[0].Description = "With carbide blade 150_mm";
+        request.Remarks = "Urgent for Chakan plant";
+        var q = await Api.CreateQuotationAsync(request);
+        var line = q.Lines[0];
+        Assert.False(string.IsNullOrEmpty(line.PartNumber));                 // e.g. 187-901-10
+        var other = await Api.CreateQuotationAsync(await BevelRequest());    // same customer, no remarks
+        Server.Db(db =>
+        {
+            var p = db.Products.Single(x => x.Id == line.ProductId);
+            p.Aliases = "MITU-BEVEL-PROT";
+            return db.SaveChanges();
+        });
+
+        async Task<List<Guid>> Find(string text) => (await Api.QuotationsAsync(text)).Select(x => x.Id).ToList();
+        Assert.Contains(q.Id, await Find(line.PartNumber));                          // item code as written
+        Assert.Contains(q.Id, await Find(line.PartNumber.Replace("-", "")));          // without its dashes
+        Assert.Contains(q.Id, await Find("carbide"));                                  // description
+        Assert.Contains(q.Id, await Find("150_mm"));                                   // "_" is found (was never before)
+        Assert.DoesNotContain(other.Id, await Find("150_mm"));
+        Assert.Contains(q.Id, await Find("chakan plant"));                             // remarks
+        Assert.DoesNotContain(other.Id, await Find("chakan"));
+        Assert.Contains(q.Id, await Find("mitu-bevel"));                               // the item's other name in Tally
+        Assert.Contains(other.Id, await Find("mitu-bevel"));
+        Assert.Empty(await Find("zzqq_%"));
     }
 }

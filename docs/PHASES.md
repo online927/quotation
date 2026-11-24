@@ -1000,3 +1000,29 @@ the Minimal layout are made by the server).
 
 Server update needed (1, 2, 4, 5, 6, 7, 8, 9 are done by the server; the database gets the new columns and the
 datasheet table by itself).
+
+### Round 37
+
+1. Delivery box: clicking a time in its list (Ex-stock, 1 week …) now fills the box (it only closed the list before).
+2. Gear menu: "Same delivery on all lines": click a time (or type one and Apply) and every line gets it, with Undo;
+   "(none)" clears them all.
+3. USD quotations show "$" in Today's Quotations, History, the number search and the phone app; list totals keep rupees
+   and dollars apart ("₹ … + $ …"); the evening summary adds "+ $ …".
+4. "1 USD = ₹" must be between ₹ 1 and ₹ 500 (a slip like 0.84 or 8420 is refused).
+5. Who did what: "Approvals and cancels only" switch.
+6. Quotation lists are searched also by item code (with or without dashes), the item's other names in Tally, HSN,
+   remarks, contact person and phone; a search with "_" or "%" now finds what it should.
+7. Delivery box is On by default (PCs that had it Off get it On once; it can be switched off in My Settings).
+8. Page Down / Page Up on a quotation opened from a list: the next / previous quotation of that list ("2 of 25").
+9. Duplicate copies the quotation as it is: every rate stays the same (Tally's rate is no longer put on the copy); the
+   "Refresh rates when duplicating" tick box is removed from Settings.
+10. USD: the "1 USD = ₹" rate is not remembered (the box is empty again after the USD quotation is saved); a duplicate of
+    a USD quotation stays in dollars; a USD quotation converted to a proforma invoice stays in dollars.
+11. Settings → PDF: "USD note on the PDF": the full line with the rupee rate (as before), "Amounts in US dollars (USD)."
+    only, or no note.
+12. Datasheets: one catalogue uploaded for several items is added to the quotation PDF only once.
+13. Paste a column from Excel into Qty or Disc % (like prices into Rate): the lines fill from the top, with Undo.
+14. My Settings → "Item rows (this PC)": Bigger (the default: larger item text, taller rows) or Normal.
+15. Settings is shown only to the administrator; users keep My Settings.
+
+Server update needed (3, 4, 6, 9, 10, 11 and 12 are done by the server).

@@ -30,7 +30,7 @@ public sealed partial class QuotationDetailViewModel(MainViewModel main, Guid id
             .Where(s => s.Length > 0))
         : "";
     public string ItemsTitle => $"ITEMS ({Lines.Count})";
-    public string GrandTotal => Quotation is { } q ? "₹ " + IndianFormat.Amount(q.GrandTotal) : "";
+    public string GrandTotal => Quotation is { } q ? Currencies.Money(q.GrandTotal, q.Currency) : "";
     public string AmountInWords => Quotation?.AmountInWords ?? "";
     /// <summary>A draft (or one to review) of a user who makes quotations: Approve gives it the next number.</summary>
     public bool CanApprove => Quotation is { Status: QuotationStatus.Draft or QuotationStatus.PendingReview } && main.Session.User?.MakesDocuments == true;
@@ -42,7 +42,7 @@ public sealed partial class QuotationDetailViewModel(MainViewModel main, Guid id
     {
         Quotation = q;
         Lines.Clear();
-        foreach (var l in q.Lines) Lines.Add(new LineRow(l));
+        foreach (var l in q.Lines) Lines.Add(new LineRow(l, q.IsUsd));
         Totals.Clear();
         if (q.PackingForwarding > 0) Totals.Add(new TotalRow("Packing & Forwarding", IndianFormat.Amount(q.PackingForwarding)));
         foreach (var t in q.Taxes) Totals.Add(new TotalRow($"{t.Name} {t.RatePercent:0.##}%", IndianFormat.Amount(t.Amount)));

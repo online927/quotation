@@ -50,7 +50,7 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
     {
         var rows = await _session.Api.ActivityAsync(DateOnly.FromDateTime(ActivityDay ?? DateTime.Today), ActivityUser == AllUsers ? null : ActivityUser);
         Activity.Clear();
-        foreach (var a in rows) Activity.Add(new ActivityRow(a));
+        foreach (var a in rows.Where(a => !ActivityImportantOnly || ImportantChips.Contains(a.Chip))) Activity.Add(new ActivityRow(a));
         OnPropertyChanged(nameof(NoActivity));
     }
 
@@ -89,6 +89,13 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
     public ObservableCollection<string> ActivityUsers { get; } = [AllUsers];
     public ObservableCollection<ActivityRow> Activity { get; } = [];
     public bool NoActivity => Activity.Count == 0;
+
+    /// <summary>Round 36: "Approvals and cancels only" hides the many Saved / Created / PDF lines.</summary>
+    [ObservableProperty] private bool _activityImportantOnly;
+    partial void OnActivityImportantOnlyChanged(bool value) => _ = LoadActivityAsync();
+
+    /// <summary>The chips kept by "Approvals and cancels only".</summary>
+    public static readonly string[] ImportantChips = ["Approved", "Cancelled", "Deleted", "Restored", "Edited", "Won / Lost"];
 
     partial void OnActivityDayChanged(DateTime? value) => _ = LoadActivityAsync();
     partial void OnActivityUserChanged(string value) => _ = LoadActivityAsync();

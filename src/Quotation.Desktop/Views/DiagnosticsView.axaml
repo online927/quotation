@@ -77,6 +77,8 @@
           <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,8">
             <CalendarDatePicker Name="ActivityDayBox" SelectedDate="{Binding ActivityDay}" CustomDateFormatString="dd-MMM-yyyy" SelectedDateFormat="Custom" Width="150" />
             <ComboBox Name="ActivityUserBox" ItemsSource="{Binding ActivityUsers}" SelectedItem="{Binding ActivityUser}" MinWidth="160" />
+            <ToggleSwitch Name="ActivityImportantSwitch" IsChecked="{Binding ActivityImportantOnly}" OnContent="Approvals and cancels only"
+                          OffContent="Approvals and cancels only" VerticalAlignment="Center" Margin="6,0" />
             <Button Name="SummaryButton" ctl:ButtonIcon.Kind="history" Content="Summary" Command="{Binding ShowSummaryCommand}"
                     ToolTip.Tip="The day's summary: quotations and value, per user, won / lost, drafts, follow-ups" />
           </StackPanel>

@@ -150,6 +150,14 @@
         </StackPanel>
       </Border>
 
+      <Border Classes="card" Name="ItemRowsCard">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Item rows (this PC)" />
+          <ToggleSwitch Name="BiggerItemRowsSwitch" IsChecked="{Binding BiggerItemRows}"
+                        OnContent="Bigger: larger item text and taller rows" OffContent="Normal" />
+        </StackPanel>
+      </Border>
+
       <Border Classes="card" Name="SharpTextCard">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Sharp text (this PC)" />

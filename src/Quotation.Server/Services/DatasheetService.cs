@@ -61,7 +61,10 @@ public sealed class DatasheetService(IOptions<ServerOptions> options)
         if (ids.Count == 0) return pdf;
         var ticked = db.Datasheets.AsNoTracking().Where(d => ids.Contains(d.ProductId) && d.AddToPdf).Select(d => d.ProductId).ToHashSet();
         if (ticked.Count == 0) return pdf;
-        var extras = ids.Where(ticked.Contains).Select(PathOf).Where(File.Exists).Select(File.ReadAllBytes).ToList();
+        // Round 37 ("don't attach same catalogue twice"): one catalogue uploaded for several items is added once.
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var extras = ids.Where(ticked.Contains).Select(PathOf).Where(File.Exists).Select(File.ReadAllBytes)
+            .Where(bytes => seen.Add(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)))).ToList();
         return PdfAppender.Append(pdf, extras);
     }
 }

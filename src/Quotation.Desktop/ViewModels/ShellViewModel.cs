@@ -327,7 +327,8 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         items.Add(new NavItem("tally", "Tally Connection", "", () => new TallyViewModel(_session), "System"));
         items.Add(new NavItem("gmail", "Gmail Connection", "", () => new GmailViewModel(_session, this)));
         items.Add(new NavItem("mysettings", "My Settings", "", () => new MySettingsViewModel(_session)));
-        items.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session, this)));
+        // Round 37: Settings only for the administrator (users could only read it); users keep My Settings.
+        if (_session.IsAdmin) items.Add(new NavItem("settings", "Settings", "", () => new SettingsViewModel(_session, this)));
         if (_session.IsAdmin) items.Add(new NavItem("diagnostics", "Diagnostics", "", () => new DiagnosticsViewModel(_session, this, () => _onLogout())));
 
         NavItem.AssignHotKeys(items);
@@ -489,6 +490,30 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
     }
 
     public void OpenQuotation(Guid id) => _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this, id));
+
+    public void OpenQuotation(Guid id, IReadOnlyList<Guid> list) =>
+        _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this, id) { ListIds = list });
+
+    /// <summary>
+    /// Page Down / Page Up on a quotation opened from a list: the next / previous quotation of that list, in its place (Back
+    /// still returns to the list). Unsaved changes are asked about first, as when leaving the page.
+    /// </summary>
+    public async Task<bool> StepQuotationAsync(int delta)
+    {
+        if (PendingPrompt is not null || _current is not { Page: QuotationEditorViewModel { ListIds: { Count: > 0 } list } editor } entry) return false;
+        var index = editor.Id is { } id ? list.ToList().IndexOf(id) : -1;
+        if (index < 0) return false;
+        var next = index + delta;
+        if (next < 0 || next >= list.Count)
+        {
+            Toast(delta > 0 ? "This is the last quotation in the list." : "This is the first quotation in the list.", 3);
+            return false;
+        }
+        if (await LeaveCurrentAsync() == Leave.Cancel) return false;
+        Release(entry);
+        Show(new PageEntry(entry.NavKey, new QuotationEditorViewModel(_session, this, list[next]) { ListIds = list }), returned: false);
+        return true;
+    }
 
     public void OpenUnsavedQuotation(QuotationDto quotation, bool approve) =>
         _ = OpenAsync(null, () => new QuotationEditorViewModel(_session, this,

@@ -129,10 +129,12 @@ public sealed class QuotationService(
             DocType = request.DocType,
             WithoutGst = request.WithoutGst,
         };
-        if (Currencies.IsUsd(request.Currency) && request.DocType == DocumentType.Quotation)
+        // A USD quotation (made from the switch, duplicated, or converted to a proforma invoice: Round 37 keeps it in dollars).
+        if (Currencies.IsUsd(request.Currency))
         {
-            if (request.ExchangeRate is not > 0)
-                throw new QuotationException(400, ApiErrorCodes.Validation, "Type the rupees for 1 USD in My Settings (e.g. 84.20).");
+            if (request.ExchangeRate is not { } usdRate || usdRate < Currencies.MinUsdRate || usdRate > Currencies.MaxUsdRate)
+                throw new QuotationException(400, ApiErrorCodes.Validation,
+                    $"Type the rupees for 1 USD in My Settings, between ₹ {Currencies.MinUsdRate} and ₹ {Currencies.MaxUsdRate} (e.g. 84.20).");
             q.Currency = Currencies.Usd;
             q.ExchangeRate = Math.Round(request.ExchangeRate.Value, 4);
             q.WithoutGst = true; // a USD quotation is without GST
@@ -147,11 +149,16 @@ public sealed class QuotationService(
             var owner = await db.Users.FirstOrDefaultAsync(u => u.Username == user.UserName, ct);
             if (owner is not null) owner.WithoutGstNext = false;
         }
-        if (q.Currency == Currencies.Usd)
+        if (q.Currency == Currencies.Usd && duplicatedFrom is null)
         {
-            // "USD quotation" applies to one quotation only: the user's switch turns itself off.
+            // "USD quotation" applies to one quotation only: the user's switch turns itself off, and (Round 37: "don't
+            // remember that rate") the "1 USD = ₹" box is emptied. A duplicate or a converted one keeps the switch as it is.
             var owner = await db.Users.FirstOrDefaultAsync(u => u.Username == user.UserName, ct);
-            if (owner is not null) owner.UsdNext = false;
+            if (owner is not null)
+            {
+                owner.UsdNext = false;
+                owner.UsdRate = 0;
+            }
         }
         audit.Add(user.UserName, user.Machine, "QuotationCreated", "Quotation", q.Id.ToString(),
             $"Source={source}; Customer={q.Buyer.Name}; Lines={q.Lines.Count}");
@@ -463,15 +470,11 @@ public sealed class QuotationService(
         request.Date = fy.Today();
         request.BuyersReference = "";
         request.BuyersReferenceDate = null;
+        // "Without GST" was for one quotation: the copy is a normal quotation (a USD copy stays without GST, below).
         request.WithoutGst = false;
-        request.Currency = null;      // a copy is in rupees again
-        request.ExchangeRate = null;
-        var refresh = settings.Quotation.RefreshRatesOnDuplicate;
-        foreach (var line in request.Lines)
-        {
-            if (refresh || line.TallyRate is null || line.Rate == line.TallyRate) line.Rate = -1; // marker: use current Tally rate
-            line.TallyRate = null;
-        }
+        // Round 37 (user: "When duplicate button is clicked just duplicate the quotation, no rate change"): every rate,
+        // and a USD quotation's dollars and "1 USD = ₹", are copied exactly; Tally's rate is never put on it.
+        foreach (var line in request.Lines) line.TallyRate = null;
         var dto = await CreateAsync(request, QuotationSource.Manual, user, ct, duplicatedFrom: source.Id);
         audit.Add(user.UserName, user.Machine, "QuotationDuplicated", "Quotation", dto.Id.ToString(), $"From {source.Number}");
         await SaveAsync(ct);

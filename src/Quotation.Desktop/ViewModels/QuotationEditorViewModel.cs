@@ -528,6 +528,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// <summary>My Settings → Delivery time on items (this PC, Round 35): the Delivery box next to Description.</summary>
     public bool ShowDeliveryBox => _session.Config.DeliveryTimeOnItems;
 
+    /// <summary>Round 37: My Settings → Item rows (this PC): Bigger (default) or Normal.</summary>
+    public bool BiggerItemRows => _session.Config.BiggerItemRows;
+
     /// <summary>The Delivery box's list: "(none)" to clear it, the usual times, then the times typed most on this PC.</summary>
     public IReadOnlyList<string> DeliveryChoices =>
         [NoDelivery, .. StandardDeliveryTimes, .. _session.Config.RecentDeliveryTimes.Where(t => !StandardDeliveryTimes.Contains(t, StringComparer.OrdinalIgnoreCase)).Take(6)];
@@ -651,6 +654,32 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             ? "Discount cleared on all lines."
             : $"{percent:0.##} % discount put on {(Lines.Count == 1 ? "the line" : $"all {Lines.Count} lines")}.");
     }
+    /// <summary>Gear: the delivery time typed for "Same delivery on all lines".</summary>
+    [ObservableProperty] private string _allLinesDeliveryText = "";
+
+    /// <summary>
+    /// Gear: puts the same delivery time on every line at once ("(none)" or an empty box clears them all), with Undo.
+    /// The value is the typed one, or <paramref name="value"/> when a choice (Ex-stock, 1 week …) is clicked.
+    /// </summary>
+    [RelayCommand]
+    public void ApplyDeliveryToAll(string? value = null)
+    {
+        if (!CanEditContent || Lines.Count == 0) return;
+        var delivery = (value ?? AllLinesDeliveryText ?? "").Trim();
+        if (delivery == NoDelivery) delivery = "";
+        AllLinesDeliveryText = delivery;
+        var old = Lines.Select(l => (Line: l, DueOn: l.DueOn)).ToList();
+        foreach (var line in Lines) line.DueOn = delivery;
+        RememberDelivery(delivery);
+        MarkDirty();
+        var lines = Lines.Count == 1 ? "the line" : $"all {Lines.Count} lines";
+        _navigator.Toast(delivery.Length == 0 ? $"Delivery cleared on {lines}." : $"Delivery \"{delivery}\" put on {lines}.", "Undo", () =>
+        {
+            foreach (var (line, was) in old) line.DueOn = was;
+            MarkDirty();
+        }, 12);
+    }
+
     /// <summary>Gear (Round 36): the % typed for "Raise all rates by" (a minus number lowers them).</summary>
     [ObservableProperty] private string _raiseRatesText = "";
 
@@ -1192,6 +1221,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(CanCancel));
         OnPropertyChanged(nameof(CanConvertToProforma));
         OnPropertyChanged(nameof(ChangedByText));
+        OnPropertyChanged(nameof(ListPositionText));
+        OnPropertyChanged(nameof(HasListPosition));
         _ = CheckPresenceAsync();
     }
 
@@ -1461,6 +1492,17 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         MarkDirty();
         return true;
     }
+
+    // ================================================================= Page Up / Page Down through a list
+
+    /// <summary>The list this quotation was opened from (Today's Quotations, History …), for Page Up / Page Down.</summary>
+    public IReadOnlyList<Guid>? ListIds { get; init; }
+
+    /// <summary>"3 of 25 · PgUp / PgDn" when opened from a list.</summary>
+    public string ListPositionText => ListIds is { Count: > 1 } list && Id is { } id && list.ToList().IndexOf(id) is >= 0 and var i
+        ? $"{i + 1} of {list.Count} · PgUp / PgDn"
+        : "";
+    public bool HasListPosition => ListPositionText.Length > 0;
 
     // ================================================================= copy from a Tally invoice (Round 36)
 
@@ -1758,39 +1800,81 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// down; extra prices are left out. A notice says which lines changed, with Undo. Tally is not changed. Returns how
     /// many lines got a price (0: the text is not a column of prices, and is pasted as usual).
     /// </summary>
-    public int PastePriceColumn(string? text)
+    public int PastePriceColumn(string? text) => PasteColumn(text, PasteColumnKind.Rate);
+
+    /// <summary>
+    /// Round 37: a column copied from Excel pasted into Rate, Qty or Disc %: one value per line, from the line being
+    /// changed (or line 1) down; extra values are left out. A notice says which lines changed, with Undo. Returns how many
+    /// lines got a value (0: the text is not such a column, and is pasted as usual).
+    /// </summary>
+    public int PasteColumn(string? text, PasteColumnKind kind)
     {
         if (!CanEditContent || Lines.Count == 0 || string.IsNullOrWhiteSpace(text)) return 0;
         var cells = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
         if (cells.Count < 2) return 0;
-        var prices = new List<decimal>();
+        var values = new List<decimal>();
         foreach (var cell in cells)
         {
-            if (!PastedListParser.TryNumber(cell.Split('\t')[0], out var price, out _, out var percent) || percent || price < 0) return 0;
-            prices.Add(price);
+            if (!PastedListParser.TryNumber(cell.Split('\t')[0], out var value, out _, out var percent)) return 0;
+            var ok = kind switch
+            {
+                PasteColumnKind.Rate => !percent && value >= 0,
+                PasteColumnKind.Quantity => !percent && value > 0,
+                _ => value >= 0 && value < 100,
+            };
+            if (!ok) return 0;
+            values.Add(value);
         }
         var start = EditingLine is { } editing ? Math.Max(0, Lines.IndexOf(editing)) : 0;
         var changed = new List<(QuotationLineViewModel Line, decimal Old)>();
-        for (var i = 0; i < prices.Count && start + i < Lines.Count; i++)
+        for (var i = 0; i < values.Count && start + i < Lines.Count; i++)
         {
             var line = Lines[start + i];
-            changed.Add((line, line.Rate));
-            line.Rate = prices[i];
+            changed.Add((line, Get(line, kind)));
+            Set(line, kind, values[i]);
         }
         if (changed.Count == 0) return 0;
         AfterPricesChanged();
         var lines = changed.Count == 1 ? $"line {start + 1}" : $"lines {start + 1} to {start + changed.Count}";
-        _navigator.Toast($"{changed.Count} price{(changed.Count == 1 ? "" : "s")} pasted into Rate — {lines}", "Undo", () =>
+        var (one, many, box) = kind switch
         {
-            foreach (var (line, old) in changed) line.Rate = old;
+            PasteColumnKind.Rate => ("price", "prices", "Rate"),
+            PasteColumnKind.Quantity => ("quantity", "quantities", "Qty"),
+            _ => ("discount", "discounts", "Disc %"),
+        };
+        _navigator.Toast($"{changed.Count} {(changed.Count == 1 ? one : many)} pasted into {box} — {lines}", "Undo", () =>
+        {
+            foreach (var (line, old) in changed) Set(line, kind, old);
             AfterPricesChanged();
         }, 12);
         return changed.Count;
     }
 
+    private static decimal Get(QuotationLineViewModel line, PasteColumnKind kind) => kind switch
+    {
+        PasteColumnKind.Rate => line.Rate,
+        PasteColumnKind.Quantity => line.Quantity,
+        _ => line.DiscountPercent,
+    };
+
+    private static void Set(QuotationLineViewModel line, PasteColumnKind kind, decimal value)
+    {
+        switch (kind)
+        {
+            case PasteColumnKind.Rate: line.Rate = value; break;
+            case PasteColumnKind.Quantity: line.Quantity = value; break;
+            default: line.DiscountPercent = value; break;
+        }
+    }
+
     private void AfterPricesChanged()
     {
-        if (EditingLine is { } editing) EntryRate = editing.Rate;
+        if (EditingLine is { } editing)
+        {
+            EntryRate = editing.Rate;
+            EntryQuantity = editing.Quantity;
+            EntryDiscount = editing.DiscountPercent;
+        }
         RecalculateTotals();
         MarkDirty();
     }
@@ -1915,7 +1999,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             // "Without GST" was for this one quotation: the server switched it off; keep the session in step.
             if (created && dto.WithoutGst && _session.Api.CurrentUser is { } me) _session.Api.UpdateCurrentUser(me with { WithoutGstNext = false });
             // "USD quotation" too was for this one quotation.
-            if (created && dto.IsUsd && _session.Api.CurrentUser is { } usdMe) _session.Api.UpdateCurrentUser(usdMe with { UsdNext = false });
+            if (created && dto.IsUsd && _session.Api.CurrentUser is { } usdMe) _session.Api.UpdateCurrentUser(usdMe with { UsdNext = false, UsdRate = 0 });
             InfoMessage = created && _provisionalNumber is { } shown && dto.Number is { } got && shown != got
                 ? $"Saved as {got}. {shown} was used by another user."
                 : $"Saved {dto.Number ?? "draft"} at {DateTime.Now:HH:mm}.";
@@ -2298,3 +2382,6 @@ public sealed partial class InvoiceItemViewModel : ObservableObject
 
     [ObservableProperty] private bool _isTicked;
 }
+
+/// <summary>Round 37: the box a column from Excel is pasted into.</summary>
+public enum PasteColumnKind { Rate, Quantity, Discount }

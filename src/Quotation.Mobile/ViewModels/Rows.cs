@@ -11,8 +11,8 @@ public sealed class QuotationRow(QuotationSummaryDto q)
     public Guid Id => Summary.Id;
     public string Number => Summary.Number ?? "Draft";
     public string Customer => Summary.CustomerName.Length > 0 ? Summary.CustomerName : "(no customer yet)";
-    public string Total => "₹ " + IndianFormat.Amount(Summary.GrandTotal);
-    public string ShortTotal => IndianFormat.Amount(Summary.GrandTotal, 0);
+    public string Total => Summary.TotalText;
+    public string ShortTotal => (Summary.IsUsd ? "$ " : "") + IndianFormat.Amount(Summary.GrandTotal, 0);
     public string DateText => Summary.Date.ToString("dd-MMM-yy");
     public string When => $"{Summary.Date:dd-MMM} · by {Summary.CreatedBy}";
     public string StatusText => Status(Summary.Status, Summary.DocType);
@@ -30,11 +30,11 @@ public sealed class QuotationRow(QuotationSummaryDto q)
 }
 
 /// <summary>A line of a quotation on the phone: name, "qty × rate", amount.</summary>
-public sealed class LineRow(QuotationLineDto l)
+public sealed class LineRow(QuotationLineDto l, bool usd = false)
 {
     public string No => l.LineNo.ToString();
     public string Name => l.ItemName;
-    public string Detail => $"{l.Quantity:0.###} {l.Unit} × ₹{IndianFormat.Amount(l.Rate)}".Replace("  ", " ")
+    public string Detail => $"{l.Quantity:0.###} {l.Unit} × {(usd ? "$" : "₹")}{IndianFormat.Amount(l.Rate)}".Replace("  ", " ")
                             + (l.DiscountPercent > 0 ? $" · {l.DiscountPercent:0.##} %" : "");
     public string Amount => IndianFormat.Amount(l.Amount);
 }

@@ -193,7 +193,14 @@ public sealed record QuotationSummaryDto(
     DocumentType DocType = DocumentType.Quotation,
     QuotationOutcome Outcome = QuotationOutcome.Open,
     DateOnly? FollowUpDate = null,
-    string? Owner = null);
+    string? Owner = null,
+    string Currency = "")
+{
+    /// <summary>A USD quotation (its amounts are in US dollars).</summary>
+    public bool IsUsd => Currencies.IsUsd(Currency);
+    /// <summary>"$ 390.00" or "₹ 31,200.00".</summary>
+    public string TotalText => Currencies.Money(GrandTotal, Currency);
+}
 
 public sealed record ApproveRequest(bool OverrideStaleData = false, int? Revision = null);
 
@@ -212,5 +219,23 @@ public sealed record PresenceDto(string User, string Machine);
 public static class Currencies
 {
     public const string Usd = "USD";
+    /// <summary>Round 36: the rupees for 1 USD must be within this range (a typing slip like 0.84 or 8420 is refused).</summary>
+    public const decimal MinUsdRate = 1m, MaxUsdRate = 500m;
     public static bool IsUsd(string? currency) => string.Equals(currency?.Trim(), Usd, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Round 36: an amount with its sign: "$ 390.00" (USD) or "₹ 31,200.00".</summary>
+    public static string Money(decimal amount, string? currency, int decimals = 2) =>
+        (IsUsd(currency) ? "$ " : "₹ ") + Quotation.Core.Calculation.IndianFormat.Amount(amount, decimals);
+
+    /// <summary>
+    /// A total of several documents: rupees and dollars are never added together ("₹ 6,20,400 + $ 390.00").
+    /// </summary>
+    public static string Total(IEnumerable<(decimal Amount, string? Currency)> amounts)
+    {
+        var list = amounts.ToList();
+        var rupees = list.Where(a => !IsUsd(a.Currency)).Sum(a => a.Amount);
+        var dollars = list.Where(a => IsUsd(a.Currency)).ToList();
+        var text = "₹ " + Quotation.Core.Calculation.IndianFormat.Amount(rupees);
+        return dollars.Count == 0 ? text : text + " + $ " + Quotation.Core.Calculation.IndianFormat.Amount(dollars.Sum(a => a.Amount));
+    }
 }

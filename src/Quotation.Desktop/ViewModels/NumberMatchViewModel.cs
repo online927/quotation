@@ -24,5 +24,5 @@ public sealed partial class NumberMatchViewModel(QuotationSummaryDto summary, st
     public bool IsCancelled => Summary.Status == QuotationStatus.Cancelled;
 
     public string Detail =>
-        $"{Summary.CustomerName} · {Summary.Date:dd-MMM-yyyy} · ₹ {Quotation.Core.Calculation.IndianFormat.Amount(Summary.GrandTotal)} · {Summary.Owner ?? Summary.CreatedBy}";
+        $"{Summary.CustomerName} · {Summary.Date:dd-MMM-yyyy} · {Summary.TotalText} · {Summary.Owner ?? Summary.CreatedBy}";
 }

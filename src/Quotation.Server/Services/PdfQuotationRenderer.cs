@@ -142,8 +142,8 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             TotalQuantityUnit = calc.TotalQuantityUnit,
             AmountInWords = QuotationService.WordsOf(q, calc.GrandTotal, settings.CurrencyWordsPrefix),
             CurrencySymbol = q.Currency == Currencies.Usd ? "$" : "₹",
-            Remarks = q.Currency == Currencies.Usd && q.ExchangeRate is { } usd
-                ? ($"Amounts in US dollars (USD), without GST. 1 USD = ₹ {usd.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}." + (q.Remarks.Trim().Length > 0 ? "\n" + q.Remarks : ""))
+            Remarks = q.Currency == Currencies.Usd && q.ExchangeRate is { } usd && UsdPdfNotes.Text(settings.UsdPdfNote, usd) is { Length: > 0 } note
+                ? note + (q.Remarks.Trim().Length > 0 ? "\n" + q.Remarks : "")
                 : q.Remarks,
             TermsAndConditions = SplitLines(q.TermsAndConditions),
             PreparedBy = q.PreparedBy,

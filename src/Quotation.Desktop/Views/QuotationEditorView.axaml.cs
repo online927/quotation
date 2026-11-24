@@ -47,6 +47,8 @@ public partial class QuotationEditorView : UserControl
         // A list pasted into the Product box opens the pasted-list box; a single line is typed in as usual.
         ProductBox.InputBox.AddHandler(TextBox.PastingFromClipboardEvent, OnProductPasting, RoutingStrategies.Bubble);
         RateBox.AddHandler(TextBox.PastingFromClipboardEvent, OnRatePasting, RoutingStrategies.Bubble);
+        QtyBox.AddHandler(TextBox.PastingFromClipboardEvent, OnQtyPasting, RoutingStrategies.Bubble);
+        DiscountBox.AddHandler(TextBox.PastingFromClipboardEvent, OnDiscountPasting, RoutingStrategies.Bubble);
         LinesList.PointerMoved += OnLinesPointerMoved;
         LinesList.PointerReleased += (_, _) => EndDrag();
         LinesList.PointerCaptureLost += (_, _) => EndDrag();
@@ -60,20 +62,38 @@ public partial class QuotationEditorView : UserControl
 
     private QuotationEditorViewModel? Vm => DataContext as QuotationEditorViewModel;
 
+    private bool _rowsLookApplied;
+
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
+        if (!_rowsLookApplied && Vm is { } page)
+        {
+            _rowsLookApplied = true;
+            ItemRowsLook.Apply(this, LinesList, page.BiggerItemRows);
+        }
         if (Vm?.CustomerId is null) CustomerBox.Focus();
         else ProductBox.Focus();
     }
 
     /// <summary>Insert or Alt+C: the cursor in the Customer box (the buyer box opens first when it is folded).</summary>
     /// <summary>A delivery time picked from the list: close it and go back to typing (Round 35).</summary>
+    /// <summary>
+    /// A delivery time picked in the list. The list lives in a pop-up outside this page, so the page's command cannot be
+    /// reached from it by binding: the choice is handed to the page here.
+    /// </summary>
     private void OnDeliveryPicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        if (sender is Button { Content: string choice } && Vm is { } vm) vm.PickDeliveryCommand.Execute(choice);
         DeliveryPickButton.Flyout?.Hide();
         DeliveryBox.Focus();
         DeliveryBox.CaretIndex = DeliveryBox.Text?.Length ?? 0;
+    }
+
+    /// <summary>Gear → "Same delivery on all lines": a clicked choice (Ex-stock, 1 week, (none) …) goes on every line.</summary>
+    private void OnAllDeliveryPicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button { Content: string choice } && Vm is { } vm) vm.ApplyDeliveryToAll(choice);
     }
 
     /// <summary>The ✕ at the top of the gear menu closes it (Round 35).</summary>
@@ -292,6 +312,39 @@ public partial class QuotationEditorView : UserControl
         catch (Exception) { return; }
         if (string.IsNullOrEmpty(text)) return;
         await PasteIntoProductAsync(vm, box, text);
+    }
+
+    private void OnQtyPasting(object? sender, RoutedEventArgs e) => OnColumnPasting(e, PasteColumnKind.Quantity);
+    private void OnDiscountPasting(object? sender, RoutedEventArgs e) => OnColumnPasting(e, PasteColumnKind.Discount);
+
+    /// <summary>Round 37: Ctrl+V in Qty / Disc %: a column from Excel fills the lines down; anything else pastes as usual.</summary>
+    private async void OnColumnPasting(RoutedEventArgs e, PasteColumnKind kind)
+    {
+        if (Vm is not { CanEditContent: true } vm || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard) return;
+        if (e.Source is not TextBox box) return;
+        e.Handled = true;
+        string? text;
+        try { text = await clipboard.GetTextAsync(); }
+        catch (Exception) { return; }
+        if (string.IsNullOrEmpty(text)) return;
+        PasteIntoColumn(vm, box, text, kind);
+    }
+
+    /// <summary>What Ctrl+V in Rate / Qty / Disc % does with <paramref name="text"/> (also used by tests).</summary>
+    public static void PasteIntoColumn(QuotationEditorViewModel vm, TextBox box, string text, PasteColumnKind kind)
+    {
+        if (vm.PasteColumn(text, kind) > 0) return;
+        PasteAsUsual(box, text);
+    }
+
+    private static void PasteAsUsual(TextBox box, string text)
+    {
+        var line = text.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? "";
+        var current = box.Text ?? "";
+        var start = Math.Clamp(Math.Min(box.SelectionStart, box.SelectionEnd), 0, current.Length);
+        var end = Math.Clamp(Math.Max(box.SelectionStart, box.SelectionEnd), 0, current.Length);
+        box.Text = current[..start] + line + current[end..];
+        box.SelectionStart = box.SelectionEnd = box.CaretIndex = start + line.Length;
     }
 
     private async void OnRatePasting(object? sender, RoutedEventArgs e)

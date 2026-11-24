@@ -35,9 +35,16 @@ public partial class FormaterView : UserControl
         AddHandler(KeyDownEvent, OnKeyDownTunnel, RoutingStrategies.Tunnel);
     }
 
+    private bool _rowsLookApplied;
+
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
+        if (!_rowsLookApplied && _vm is { } page)
+        {
+            _rowsLookApplied = true;
+            Quotation.Desktop.Services.ItemRowsLook.Apply(this, LinesList, page.BiggerItemRows);
+        }
         FormaterTextBox.Focus();
         HookTextBox();
     }

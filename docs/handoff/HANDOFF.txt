@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 36 built in full (#144–#148, #150–#152, #154, #155) and shipped on "Do, for mac and Android too" as version 0.9.87 (run 87, commit 0b6a4e8; all 678 tests passed; Windows, Mac and Android built; see section 8 for how each was built). Previous: 0.9.84 (Round 35). Nothing left on the list; ideas M1, M2, M3, M7, M8, N2, N6, N9 not picked.
+Last updated: Round 37 shipped on "Do, for mac and Android too" as version 0.9.89 (run 89, commit f139e34; all 689 tests passed; Windows, Mac and Android built). Nothing on the list. NEW RULE: requests are only ADDED TO THE LIST until "Do" (section 2).
 
 
 1. THE PROJECT

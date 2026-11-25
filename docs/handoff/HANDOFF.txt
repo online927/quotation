@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 37 shipped on "Do, for mac and Android too" as version 0.9.89 (run 89, commit f139e34; all 689 tests passed; Windows, Mac and Android built). Nothing on the list. NEW RULE: requests are only ADDED TO THE LIST until "Do" (section 2).
+Last updated: Round 38 shipped on "Do, for mac and Android too" as version 0.9.93 (run 93, commit 94cd05d; all 716 tests passed; Windows, Mac and Android built). Nothing on the list. NEW RULE: requests are only ADDED TO THE LIST until "Do" (section 2).
 
 
 1. THE PROJECT
@@ -197,7 +197,7 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 
 8. ON THE LIST — NOT BUILT YET
 ------------------------------
- NOTHING ON THE LIST. ROUND 38 (built on "Do, for mac and Android too") delivered:
+ NOTHING ON THE LIST. ROUND 38 (built on "Do, for mac and Android too", version 0.9.93, run 93) delivered:
    EY-1 HideHeaderButton moved into the References headbar (QuotationEditorView.axaml).
    DM-1 Core/Domain/DeliveryText.WithoutDeliveryLines: used by QuotationService.RememberDescriptionsAsync, CatalogEndpoints
      .ToSummary and CatalogSearchService.LoadRememberedAsync (cleans old remembered ones once). DeliveryChoices = (none) +

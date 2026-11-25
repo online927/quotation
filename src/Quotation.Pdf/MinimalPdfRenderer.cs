@@ -132,13 +132,14 @@ public sealed class MinimalPdfRenderer
         const double w = (Width - 40) / 3;
         List<string> Party(PdfParty p)
         {
-            var l = new List<string> { "\u0001" + p.Name.Trim() };
-            foreach (var a in p.AddressLines.Where(a => !string.IsNullOrWhiteSpace(a))) l.AddRange(Wrap(g, a.Trim(), F(8.5), w));
-            if (!string.IsNullOrWhiteSpace(p.Gstin)) l.Add("GSTIN " + p.Gstin.Trim());
+            // Round 38 (MN-1): every line wraps inside its own column with a small gap, so a long name never runs into the next.
+            var l = Wrap(g, p.Name.Trim(), F(8.5, true), w - ColumnGap).Select(n => "\u0001" + n).ToList();
+            foreach (var a in p.AddressLines.Where(a => !string.IsNullOrWhiteSpace(a))) l.AddRange(Wrap(g, a.Trim(), F(8.5), w - ColumnGap));
+            if (!string.IsNullOrWhiteSpace(p.Gstin)) l.AddRange(Wrap(g, "GSTIN " + p.Gstin.Trim(), F(8.5), w - ColumnGap));
             if (!string.IsNullOrWhiteSpace(p.StateName)) l.Add(p.StateName.Trim() + (string.IsNullOrWhiteSpace(p.StateCode) ? "" : " (" + p.StateCode.Trim() + ")"));
             var contact = string.Join(" · ", new[] { p.ContactPerson, p.Phone }.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()));
-            if (contact.Length > 0) l.AddRange(Wrap(g, contact, F(8.5), w));
-            if (!string.IsNullOrWhiteSpace(p.Email)) l.Add(p.Email.Trim());
+            if (contact.Length > 0) l.AddRange(Wrap(g, contact, F(8.5), w - ColumnGap));
+            if (!string.IsNullOrWhiteSpace(p.Email)) l.AddRange(Wrap(g, p.Email.Trim(), F(8.5), w - ColumnGap));
             return l;
         }
         var cols = new List<(string, List<string>)> { (doc.Consignee is null && doc.BuyerCaption.StartsWith("Buyer/", StringComparison.Ordinal) ? "BUYER / SHIP TO" : "BUYER", Party(doc.Buyer)) };
@@ -147,7 +148,7 @@ public sealed class MinimalPdfRenderer
         void Add(string label, string? value)
         {
             if (string.IsNullOrWhiteSpace(value)) return;
-            refs.AddRange(Wrap(g, label + ": " + value.Trim(), F(8.5), w));
+            refs.AddRange(Wrap(g, label + ": " + value.Trim(), F(8.5), w - ColumnGap));
         }
         Add("Order", doc.BuyersReference + (doc.BuyersReferenceDate is { } d && doc.BuyersReference.Trim().Length > 0 ? " · " + d.ToString("dd MMM yyyy", CultureInfo.InvariantCulture) : ""));
         Add("Ref", doc.OtherReferences);
@@ -162,6 +163,9 @@ public sealed class MinimalPdfRenderer
     }
 
     private const double ColumnsTop = 150;
+
+    /// <summary>Round 38 (MN-1): the clear space kept at the right of each top column.</summary>
+    private const double ColumnGap = 6;
 
     private double HeaderBottom(XGraphics g, QuotationDocument doc)
     {
@@ -209,6 +213,7 @@ public sealed class MinimalPdfRenderer
         var details = new List<string>();
         if (doc.ShowPartNumber && l.PartNumber.Length > 0) details.Add("Part No. " + l.PartNumber);
         foreach (var d in l.DescriptionLines) details.AddRange(Wrap(g, d, F(7.5), ItemWidth));
+        if (l.Link.Length > 0) details.Add(PdfLinks.LineFor(l));
         return new Row(l, names, details, 12 + Step * names.Count + 9.5 * details.Count);
     }
 
@@ -234,6 +239,11 @@ public sealed class MinimalPdfRenderer
             for (var i = 0; i < r.Details.Count; i++)
             {
                 var d = r.Details[i];
+                if (PdfLinks.IsLinkLine(d))
+                {
+                    PdfLinks.Draw(g, F(7.5), ItemX, y + Step * r.Names.Count + 9.5 * i - 0.6, l.Link);
+                    continue;
+                }
                 Text(g, ItemX, y + Step * r.Names.Count + 9.5 * i, d, 7.5, color: d.StartsWith("Delivery: ", StringComparison.Ordinal) ? Ink : Grey);
             }
             Text(g, HsnX, y, l.Hsn, 8, color: Grey);
@@ -291,11 +301,11 @@ public sealed class MinimalPdfRenderer
 
     // ------------------------------------------------------------------ bottom: terms, bank, signature
 
-    private sealed record Bottom(List<string> Terms, List<string> Bank, double Height);
+    private sealed record Bottom(List<string> Terms, List<string> Bank, List<string> Ids, double Height);
 
     private Bottom BottomBlock(XGraphics g, QuotationDocument doc)
     {
-        const double w = (Width - 40) / 3 * 1.3;
+        const double w = (Width - 40) / 3;
         var terms = doc.TermsAndConditions.Where(t => !string.IsNullOrWhiteSpace(t)).SelectMany(t => Wrap(g, t.Trim(), F(7.5), w)).ToList();
         if (doc.Kind == DocumentType.Quotation && !string.IsNullOrWhiteSpace(doc.Company.ValidityText) && doc.Company.QuotationValidityDays > 0)
             terms.AddRange(Wrap(g, doc.Company.ValidityText.Replace("{days}", doc.Company.QuotationValidityDays.ToString(CultureInfo.InvariantCulture)), F(7.5), w));
@@ -305,18 +315,26 @@ public sealed class MinimalPdfRenderer
         if (!string.IsNullOrWhiteSpace(c.BankAccountNumber)) bank.Add("A/c " + c.BankAccountNumber.Trim());
         if (!string.IsNullOrWhiteSpace(c.BankIfsc)) bank.Add("IFSC " + c.BankIfsc.Trim());
         if (!string.IsNullOrWhiteSpace(c.BankBranch)) bank.Add(c.BankBranch.Trim());
-        var ids = string.Join(" · ", new[] { (c.Pan, "PAN "), (c.MsmeNumber, "MSME "), (c.Iec, "IEC ") }
-            .Where(p => !string.IsNullOrWhiteSpace(p.Item1)).Select(p => p.Item2 + p.Item1.Trim()));
-        if (ids.Length > 0) bank.AddRange(Wrap(g, ids, F(7.5), (Width - 40) / 3));
-        var lines = Math.Max(Math.Max(terms.Count, bank.Count), 5);
-        return new Bottom(terms, bank, 14 + 10 * lines);
+        bank = bank.SelectMany(x => Wrap(g, x, F(7.5), BankWidth - 8)).ToList();
+        // Round 38 (MN-2): PAN, MSME and IEC in their own COMPANY column, one per line (not under BANK).
+        var ids = new[] { (c.Pan, "PAN "), (c.MsmeNumber, "MSME "), (c.Iec, "IEC ") }
+            .Where(p => !string.IsNullOrWhiteSpace(p.Item1))
+            .SelectMany(p => Wrap(g, p.Item2 + p.Item1.Trim(), F(7.5), IdsWidth)).ToList();
+        var lines = Math.Max(Math.Max(terms.Count, bank.Count), Math.Max(ids.Count, 5));
+        return new Bottom(terms, bank, ids, 14 + 10 * lines);
     }
+
+    /// <summary>Round 38 (MN-2): the BANK column's width and the COMPANY column's width (it ends well before the signatory).</summary>
+    private const double BankWidth = 112, IdsWidth = 118;
 
     private void DrawBottom(XGraphics g, QuotationDocument doc, Bottom b, double top)
     {
         var colW = (Width - 40) / 3;
         var termsX = Left;
-        var bankX = Left + colW * 1.3 + 20;
+        var bankX = Left + colW + 22;
+        var idsX = bankX + BankWidth;
+        if (b.Ids.Count > 0) Text(g, idsX, top, "COMPANY", 6.8, color: Label);
+        for (var i = 0; i < b.Ids.Count; i++) Text(g, idsX, top + 14 + 10 * i, b.Ids[i], 7.5, color: Grey);
         Text(g, termsX, top, doc.TermsAndConditions.Count > 0 ? "TERMS" : "", 6.8, color: Label);
         for (var i = 0; i < b.Terms.Count; i++) Text(g, termsX, top + 14 + 10 * i, b.Terms[i], 7.5, color: Grey);
         if (b.Bank.Count > 0) Text(g, bankX, top, "BANK", 6.8, color: Label);

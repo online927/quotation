@@ -54,6 +54,7 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
 
         b.Entity<QuotationHeader>(e =>
         {
+            e.HasIndex(x => x.ClientKey); // Round 38 (Q10): a create sent again finds the quotation already made
             e.ToTable("Quotations");
             e.HasKey(x => x.Id);
             // Final safety net against duplicate numbers (NULLs are allowed for un-numbered AI drafts).

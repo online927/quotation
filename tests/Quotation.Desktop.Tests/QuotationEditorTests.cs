@@ -55,6 +55,10 @@ internal sealed class RecordingLauncher(ClientConfig config) : DocumentLauncher(
         return true;
     }
 
+    /// <summary>Round 38: product web pages opened from the 🔗.</summary>
+    public List<string> WebPages { get; } = [];
+    public override void OpenWebPage(string url) => WebPages.Add(url);
+
     public List<string> Installers { get; } = [];
     public override bool RunInstaller(string setupPath, string serverUrl)
     {

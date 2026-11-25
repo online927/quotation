@@ -615,6 +615,32 @@ public sealed partial class SettingsViewModel : ViewModelBase
     }
 
     /// <summary>Called by the view with the chosen PNG/JPG file.</summary>
+    /// <summary>Round 38 (PL-1): what loading the product links did ("520 linked · 12 not found: …").</summary>
+    [ObservableProperty] private string _productLinksResult = "";
+
+    /// <summary>Round 38 (PL-1): reads the Excel (column A product code, column B link) and saves the links on the server.</summary>
+    public Task LoadProductLinksAsync(byte[] file, string fileName) => RunAsync(async () =>
+    {
+        List<(string Code, string Url)> rows;
+        try { rows = Core.Import.LinkSheet.Read(file, fileName); }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or System.Xml.XmlException)
+        {
+            ProductLinksResult = "This file could not be read. Save it as an Excel workbook (.xlsx) or CSV: column A product code, column B link.";
+            return;
+        }
+        if (rows.Count == 0)
+        {
+            ProductLinksResult = "No rows found. Column A = product code, column B = link.";
+            return;
+        }
+        var r = await _session.Api.LoadProductLinksAsync(rows.Select(x => new ProductLinkRowDto(x.Code, x.Url)).ToList());
+        var text = $"{r.Linked} of {r.Rows} items linked.";
+        if (r.NotFound.Count > 0) text += $" {r.NotFound.Count} codes not found: " + string.Join(", ", r.NotFound.Take(30)) + (r.NotFound.Count > 30 ? " …" : "");
+        if (r.BadLinks.Count > 0) text += $" {r.BadLinks.Count} without a web link (http/https): " + string.Join(", ", r.BadLinks.Take(10)) + (r.BadLinks.Count > 10 ? " …" : "");
+        ProductLinksResult = text;
+        InfoMessage = $"Product links loaded: {r.Linked} items.";
+    });
+
     public Task UploadUserSealAsync(byte[] image) => RunAsync(async () =>
     {
         if (EditingUser is not { } user) return;

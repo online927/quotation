@@ -46,8 +46,54 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         _presenceTimer = new Avalonia.Threading.DispatcherTimer { Interval = PresenceInterval };
         _presenceTimer.Tick += (_, _) => _ = CheckPresenceAsync();
         _presenceTimer.Start();
+        _sendTimer = new Avalonia.Threading.DispatcherTimer { Interval = SendRetryInterval };
+        _sendTimer.Tick += (_, _) => _ = TrySendNowAsync();
         _ = InitializeAsync(id);
     }
+
+    // ---------------------------------------------------------------- Round 38 (Q10): working while the server is off
+
+    /// <summary>How often a quotation waiting to be sent is tried again (tests make it shorter).</summary>
+    public static TimeSpan SendRetryInterval { get; set; } = TimeSpan.FromSeconds(15);
+    private readonly Avalonia.Threading.DispatcherTimer _sendTimer;
+
+    /// <summary>This new quotation's own key: sent again after a lost answer, the server returns the one already made.</summary>
+    private readonly Guid _clientKey = Guid.NewGuid();
+
+    /// <summary>Saved while the server could not be reached: kept on this PC and sent by itself when the server answers.</summary>
+    [ObservableProperty] private bool _waitingToSend;
+
+    /// <summary>The orange strip on the page while the quotation waits to be sent.</summary>
+    public string WaitingText => Id is null
+        ? "Server not reachable — keep working. This quotation is kept safely on this PC and will be sent when the server is back (it gets its number then)."
+        : "Server not reachable — keep working. Your changes are kept safely on this PC and will be sent when the server is back.";
+
+    partial void OnWaitingToSendChanged(bool value)
+    {
+        OnPropertyChanged(nameof(WaitingText));
+        if (value) _sendTimer.Start();
+        else _sendTimer.Stop();
+    }
+
+    /// <summary>"Try now" on the strip, and every few seconds by itself.</summary>
+    [RelayCommand]
+    private async Task TrySendNowAsync()
+    {
+        if (!WaitingToSend || IsBusy) return;
+        var wasNew = Id is null;
+        _quietSave = true;
+        try
+        {
+            if (!await SaveAsync() || WaitingToSend) return;
+        }
+        finally { _quietSave = false; }
+        _navigator.Toast($"Server is back · {(Number ?? "draft")} saved (sent from this PC).");
+        if (wasNew) ClickSound.Saved();
+    }
+
+    /// <summary>The server did not answer (not a refusal): no connection, or no reply in time.</summary>
+    private static bool IsUnreachable(Exception ex) =>
+        ex is ApiException { Status: 0 } or HttpRequestException || (ex is TaskCanceledException && ex.InnerException is TimeoutException);
 
     /// <summary>Restores unsaved work kept on this PC after a crash or power cut (no number is used until it is saved).</summary>
     public QuotationEditorViewModel(AppSession session, INavigator navigator, RecoverySnapshot restore)
@@ -180,6 +226,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public void Dispose()
     {
         _recoveryTimer.Stop();
+        _sendTimer.Stop();
         _presenceTimer.Stop();
         if (Id is { } id) _ = LeaveQuietlyAsync(id);
     }
@@ -362,6 +409,17 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [ObservableProperty] private string? _lastPdfPath;
     /// <summary>"Without GST": 0 % on all items, P&amp;F without GST, no tax lines (from the user's switch in My Settings).</summary>
     [ObservableProperty] private bool _withoutGst;
+
+    /// <summary>Round 38 (PL-1): print the "View product" links on this quotation's PDF (Settings has them on).</summary>
+    [ObservableProperty] private bool _showProductLinks = true;
+    partial void OnShowProductLinksChanged(bool value) => MarkDirty();
+    public bool ProductLinksOnPdf => _settings.Quotation.ProductLinksOnPdf;
+
+    /// <summary>Round 38 (PL-1): the 🔗 after an item name opens its product web page.</summary>
+    public void OpenProductLink(QuotationLineViewModel line)
+    {
+        if (line.HasLink) _session.Documents.OpenWebPage(line.Link);
+    }
     [ObservableProperty] private DateOnly? _editableUntil;
     /// <summary>Tick next to "Save as PDF": put the company seal on the PDF (asks for the seal PIN).</summary>
     [ObservableProperty] private bool _sealPdf;
@@ -531,9 +589,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// <summary>Round 37: My Settings → Item rows (this PC): Bigger (default) or Normal.</summary>
     public bool BiggerItemRows => _session.Config.BiggerItemRows;
 
-    /// <summary>The Delivery box's list: "(none)" to clear it, the usual times, then the times typed most on this PC.</summary>
-    public IReadOnlyList<string> DeliveryChoices =>
-        [NoDelivery, .. StandardDeliveryTimes, .. _session.Config.RecentDeliveryTimes.Where(t => !StandardDeliveryTimes.Contains(t, StringComparer.OrdinalIgnoreCase)).Take(6)];
+    /// <summary>The Delivery box's list: "(none)" to clear it, then the usual times (Round 38, DM-1: typed times are not remembered).</summary>
+    public IReadOnlyList<string> DeliveryChoices { get; } = [NoDelivery, .. StandardDeliveryTimes];
 
     public const string NoDelivery = "(none)";
     public static readonly string[] StandardDeliveryTimes = ["Ex-stock", "1 week", "2–3 weeks", "4–6 weeks"];
@@ -541,17 +598,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     [RelayCommand]
     private void PickDelivery(string? value) => EntryDueOn = value is null or NoDelivery ? "" : value;
 
-    /// <summary>Typed delivery times join the list (most recent first, at most 10 kept).</summary>
-    private void RememberDelivery(string value)
-    {
-        if (value.Length == 0 || StandardDeliveryTimes.Contains(value, StringComparer.OrdinalIgnoreCase)) return;
-        var list = _session.Config.RecentDeliveryTimes;
-        list.RemoveAll(t => string.Equals(t, value, StringComparison.OrdinalIgnoreCase));
-        list.Insert(0, value);
-        if (list.Count > 10) list.RemoveRange(10, list.Count - 10);
-        try { _session.Config.Save(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-        OnPropertyChanged(nameof(DeliveryChoices));
-    }
 
     // ---------------------------------------------------------------- gear next to Items: line by line / column by column
 
@@ -670,7 +716,6 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         AllLinesDeliveryText = delivery;
         var old = Lines.Select(l => (Line: l, DueOn: l.DueOn)).ToList();
         foreach (var line in Lines) line.DueOn = delivery;
-        RememberDelivery(delivery);
         MarkDirty();
         var lines = Lines.Count == 1 ? "the line" : $"all {Lines.Count} lines";
         _navigator.Toast(delivery.Length == 0 ? $"Delivery cleared on {lines}." : $"Delivery \"{delivery}\" put on {lines}.", "Undo", () =>
@@ -1082,6 +1127,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         Id = q.Id;
         DocType = q.DocType;
         WithoutGst = q.WithoutGst;
+        ShowProductLinks = q.ShowProductLinks;
         GstByBuyer = q.GstByBuyer;
         UsdRate = q.ExchangeRate;
         IsUsd = q.IsUsd;
@@ -1421,13 +1467,13 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             line.GstRate = p.GstRate;
             line.Unit = p.Unit;
             line.TallyRate = p.Rate;
+            line.Link = p.Link;
         }
         line.Quantity = EntryQuantity.Value;
         line.Rate = EntryRate ?? 0;
         line.DiscountPercent = EntryDiscount ?? 0;
         line.Description = EntryDescription.Trim();
         line.DueOn = EntryDueOn.Trim() == NoDelivery ? "" : EntryDueOn.Trim();
-        RememberDelivery(line.DueOn);
         line.ZeroGst = WithoutGst;
         if (EditingLine is null) Lines.Add(line);
         line.IsEditing = false;
@@ -1479,6 +1525,61 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         MarkDirty();
         OnPropertyChanged(nameof(CanApprove));
         OnPropertyChanged(nameof(CanSaveAsPdf));
+    }
+
+    /// <summary>The line the shortcuts work on: the one being changed (clicked), else the one picked in the list.</summary>
+    private QuotationLineViewModel? PickedLine => EditingLine ?? SelectedLine;
+
+    /// <summary>
+    /// Round 38 (Q5): Ctrl+D — a copy of the picked line just below it (item, description, qty, rate, disc, delivery),
+    /// ready to change; Undo in the message.
+    /// </summary>
+    [RelayCommand]
+    private void DuplicateLine()
+    {
+        if (!CanEditContent || PickedLine is not { } line) return;
+        if (EditingLine is not null)
+        {
+            // What is typed in the boxes goes into the line first (nothing is lost).
+            CommitEntry();
+            if (EditingLine is not null) return; // the boxes have a problem (shown); nothing is copied
+        }
+        var index = Lines.IndexOf(line);
+        if (index < 0) return;
+        var copy = new QuotationLineViewModel
+        {
+            ProductId = line.ProductId, ItemName = line.ItemName, PartNumber = line.PartNumber, Description = line.Description,
+            Hsn = line.Hsn, GstRate = line.GstRate, DueOn = line.DueOn, Quantity = line.Quantity, Unit = line.Unit, Rate = line.Rate,
+            TallyRate = line.TallyRate, DiscountPercent = line.DiscountPercent, ZeroGst = line.ZeroGst, Link = line.Link,
+        };
+        Lines.Insert(index + 1, copy);
+        Renumber();
+        MarkDirty();
+        OnPropertyChanged(nameof(CanApprove));
+        OnPropertyChanged(nameof(CanSaveAsPdf));
+        EditLine(copy);
+        _navigator.Toast($"Line {line.LineNo} copied as line {copy.LineNo}.", "Undo", () =>
+        {
+            if (!IsEditable || !Lines.Contains(copy)) return;
+            if (EditingLine == copy) ClearEntry();
+            Lines.Remove(copy);
+            Renumber();
+            MarkDirty();
+            OnPropertyChanged(nameof(CanApprove));
+            OnPropertyChanged(nameof(CanSaveAsPdf));
+        });
+    }
+
+    /// <summary>Round 38 (Q5): Ctrl+↑ / Ctrl+↓ — the picked line one place up / down (not past the ends); Undo in the message.</summary>
+    public void MoveLineStep(int step)
+    {
+        if (!CanEditContent || PickedLine is not { } line) return;
+        var from = Lines.IndexOf(line);
+        if (from < 0 || !MoveLine(line, from + step)) return;
+        _navigator.Toast($"Line moved to {line.LineNo}.", "Undo", () =>
+        {
+            if (IsEditable && Lines.Contains(line)) MoveLine(line, from);
+        });
     }
 
     /// <summary>Moves a line to another place (dragged by its grip); Sl. No. are renumbered.</summary>
@@ -1612,6 +1713,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 GstRate = p.GstRate,
                 Unit = p.Unit,
                 TallyRate = p.Rate,
+                Link = p.Link,
                 Quantity = i.Quantity,
                 Rate = InvoiceUseTodayRate ? i.TodayRate ?? i.InvoiceRate : i.InvoiceRate,
                 Description = (p.Description ?? "").Trim(),
@@ -1778,6 +1880,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 GstRate = p.GstRate,
                 Unit = p.Unit,
                 TallyRate = p.Rate,
+                Link = p.Link,
                 Quantity = row.Quantity!.Value,
                 Rate = row.Rate ?? (p.Rate > 0 ? InQuotationCurrency(p.Rate) ?? 0 : 0),
                 DiscountPercent = row.Discount is > 0 and < 100 ? row.Discount.Value : 0,
@@ -1962,11 +2065,13 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         PreparedBy = PreparedBy,
         VerifiedBy = VerifiedBy,
         WithoutGst = WithoutGst,
+        ShowProductLinks = ShowProductLinks,
         GstByBuyer = GstByBuyer,
         Currency = IsUsd ? Currencies.Usd : null,
         ExchangeRate = IsUsd ? UsdRate : null,
         FromFormater = Source == QuotationSource.Formater,
         PdfLayout = _pdfLayout,
+        ClientKey = Id is null ? _clientKey : null,
         Lines = Lines.Select(l => l.ToDto()).ToList(),
     };
 
@@ -1978,6 +2083,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         InfoMessage = null;
         ValidationMessages.Clear();
         ApiException? clash = null;
+        var offline = false;
         var ok = await RunAsync(async () =>
         {
             var created = Id is null;
@@ -1993,6 +2099,13 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 clash = ex;
                 return;
             }
+            catch (Exception ex) when (IsUnreachable(ex))
+            {
+                // Round 38 (Q10): nothing is lost — kept on this PC and sent by itself when the server answers again.
+                offline = true;
+                return;
+            }
+            WaitingToSend = false;
             Load(dto);
             DropRecoveryCopy();
             MyClashVersion = null;
@@ -2005,6 +2118,14 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 : $"Saved {dto.Number ?? "draft"} at {DateTime.Now:HH:mm}.";
         });
         if (clash is not null) return await ResolveClashAsync(clash);
+        if (offline)
+        {
+            IsDirty = true;
+            KeepRecoveryCopy();
+            if (!WaitingToSend) InfoMessage = "Server not reachable: kept on this PC, it will be sent when the server is back.";
+            WaitingToSend = true;
+            return false;
+        }
         if (ok && !_quietSave) ClickSound.Saved(); // Round 35: a soft click (not when it is part of approving)
         return ok;
     }

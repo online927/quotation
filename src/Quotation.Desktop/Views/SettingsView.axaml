@@ -222,7 +222,7 @@
       <!-- Round 35: the PDF choices have their own tab -->
       <TabItem Header="PDF">
         <ScrollViewer>
-          <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+          <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="PDF layout" VerticalAlignment="Top" Margin="0,8,12,4" />
             <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" Margin="0,3">
               <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Default for users who have not chosen one in My Settings" />
@@ -251,6 +251,17 @@
             <!-- Round 37: the note on a USD quotation's PDF -->
             <TextBlock Grid.Row="5" Text="USD note on the PDF" />
             <ComboBox Grid.Row="5" Grid.Column="1" Name="UsdPdfNoteBox" ItemsSource="{Binding UsdPdfNoteChoices}" SelectedIndex="{Binding UsdPdfNoteIndex}" Width="460" Margin="0,3" />
+            <!-- Round 38 (PL-1): product web links from an Excel; a clickable "View product" line on the PDF -->
+            <TextBlock Grid.Row="6" Text="Product links" VerticalAlignment="Top" Margin="0,8,0,0" />
+            <StackPanel Grid.Row="6" Grid.Column="1" Spacing="6" Margin="0,3">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <CheckBox Name="ProductLinksOnPdfBox" IsChecked="{Binding Settings.Quotation.ProductLinksOnPdf}" Content="&quot;View product&quot; link on the PDF" />
+                <Button Name="LoadProductLinksButton" ctl:ButtonIcon.Kind="upload" Content="Load product links (Excel)…" Click="OnLoadProductLinks" IsEnabled="{Binding IsAdmin}"
+                        ToolTip.Tip="Column A = product code (Part No.), column B = web link. Loading again adds and replaces links. Tally is not changed." />
+              </StackPanel>
+              <TextBlock Name="ProductLinksResultText" Text="{Binding ProductLinksResult}" TextWrapping="Wrap" MaxWidth="620" Classes="muted"
+                         IsVisible="{Binding ProductLinksResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
           </Grid>
         </ScrollViewer>
       </TabItem>
@@ -544,11 +555,11 @@
                 <TextBlock Classes="h2" Text="New user" />
                 <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" MaxWidth="560">
                   <StackPanel VerticalAlignment="Center"><TextBlock Text="Login name" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="printed as 'By:' on PDFs" /></StackPanel>
-                  <TextBox Grid.Column="1" Name="NewUsernameBox" Text="{Binding NewUsername}" Watermark="e.g. ravi" />
+                  <TextBox Grid.Column="1" Name="NewUsernameBox" Text="{Binding NewUsername}" Watermark="e.g. ravi"><TextBox.KeyBindings><KeyBinding Gesture="Enter" Command="{Binding AddUserCommand}" /></TextBox.KeyBindings></TextBox>
                   <StackPanel Grid.Row="1" VerticalAlignment="Center"><TextBlock Text="Display name" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="'Prepared by'" /></StackPanel>
-                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding NewDisplayName}" Watermark="e.g. Ravi Kumar" />
+                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding NewDisplayName}" Watermark="e.g. Ravi Kumar"><TextBox.KeyBindings><KeyBinding Gesture="Enter" Command="{Binding AddUserCommand}" /></TextBox.KeyBindings></TextBox>
                   <StackPanel Grid.Row="2" VerticalAlignment="Center"><TextBlock Text="First password" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="at least 4 characters" /></StackPanel>
-                  <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding NewUserPassword}" PasswordChar="●" />
+                  <TextBox Grid.Row="2" Grid.Column="1" Name="NewUserPasswordBox" Text="{Binding NewUserPassword}" PasswordChar="●"><TextBox.KeyBindings><KeyBinding Gesture="Enter" Command="{Binding AddUserCommand}" /></TextBox.KeyBindings></TextBox>
                 </Grid>
                 <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="New users are Standard users: they make quotations and do not change Settings." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="New users are Standard users: they make quotations and do not change Settings. They choose their own password at their first sign-in."><Path Classes="infoicon" /></Border></StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -579,9 +590,9 @@
                     <StackPanel Spacing="10" Margin="0,12,0,0">
                       <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" MaxWidth="560">
                         <StackPanel VerticalAlignment="Center"><TextBlock Text="Login name" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="printed as 'By:' on PDFs" /></StackPanel>
-                        <TextBox Grid.Column="1" Name="EditUsernameBox" Text="{Binding EditUsername}" />
+                        <TextBox Grid.Column="1" Name="EditUsernameBox" Text="{Binding EditUsername}"><TextBox.KeyBindings><KeyBinding Gesture="Enter" Command="{Binding SaveUserCommand}" /></TextBox.KeyBindings></TextBox>
                         <StackPanel Grid.Row="1" VerticalAlignment="Center"><TextBlock Text="Display name" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="'Prepared by'" /></StackPanel>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditDisplayName}" />
+                        <TextBox Grid.Row="1" Grid.Column="1" Name="EditDisplayNameBox" Text="{Binding EditDisplayName}"><TextBox.KeyBindings><KeyBinding Gesture="Enter" Command="{Binding SaveUserCommand}" /></TextBox.KeyBindings></TextBox>
                         <TextBlock Grid.Row="2" Text="Can sign in" VerticalAlignment="Center" />
                         <ToggleSwitch Grid.Row="2" Grid.Column="1" Name="EditActiveSwitch" IsChecked="{Binding EditIsActive}" OnContent="Active" OffContent="Inactive" />
                       </Grid>
@@ -607,7 +618,7 @@
                             <Button ctl:ButtonIcon.Kind="eye" Content="Preview on a page" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}" />
                           </WrapPanel>
                           <TextBlock Text="New seal PIN (4 digits, saved with Save user)" FontSize="12" />
-                          <TextBox Name="UserSealPinBox" Text="{Binding NewUserSealPin}" PasswordChar="●" MaxLength="4" Width="110" HorizontalAlignment="Left" Watermark="••••" />
+                          <TextBox Name="UserSealPinBox" Text="{Binding NewUserSealPin}" PasswordChar="●" MaxLength="4" Width="110" HorizontalAlignment="Left" Watermark="••••"><TextBox.KeyBindings><KeyBinding Gesture="Enter" Command="{Binding SaveUserCommand}" /></TextBox.KeyBindings></TextBox>
                         </StackPanel>
                       </Grid>
                       <TextBlock Name="UserSealStateLine" FontWeight="SemiBold" FontSize="12" Text="{Binding UserSealState}" TextWrapping="Wrap"

@@ -138,6 +138,15 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
             return;
         }
+        // Round 38 (Q5): Ctrl+D copies the picked line just below; Ctrl+↑ / Ctrl+↓ move it (⌘ on a Mac).
+        if (e.KeyModifiers == MacSupport.Command && e.Key is Key.D or Key.Up or Key.Down && Vm is { } lines
+            && source.FindAncestorOfType<SearchPicker>(includeSelf: true) is not { IsDropDownOpen: true })
+        {
+            if (e.Key == Key.D) lines.DuplicateLineCommand.Execute(null);
+            else lines.MoveLineStep(e.Key == Key.Up ? -1 : 1);
+            e.Handled = true;
+            return;
+        }
         var picker = source.FindAncestorOfType<SearchPicker>(includeSelf: true);
 
         if (e.Key == Key.Escape && Vm is { IsInvoiceOpen: true } invoices)
@@ -312,6 +321,13 @@ public partial class QuotationEditorView : UserControl
         catch (Exception) { return; }
         if (string.IsNullOrEmpty(text)) return;
         await PasteIntoProductAsync(vm, box, text);
+    }
+
+    /// <summary>Round 38 (PL-1): the small 🔗 after an item name.</summary>
+    private void OnOpenProductLink(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control { DataContext: QuotationLineViewModel line } && Vm is { } vm) vm.OpenProductLink(line);
+        e.Handled = true;
     }
 
     private void OnQtyPasting(object? sender, RoutedEventArgs e) => OnColumnPasting(e, PasteColumnKind.Quantity);

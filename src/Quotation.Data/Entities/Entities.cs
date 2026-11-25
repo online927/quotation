@@ -37,6 +37,8 @@ public class Product
     /// Offered instead of the Tally description the next time the item is picked.
     /// </summary>
     public string LastDescription { get; set; } = "";
+    /// <summary>Round 38 (PL-1): the product's web page, loaded from the administrator's Excel (never written to Tally).</summary>
+    public string Link { get; set; } = "";
     public string Moq { get; set; } = "";
     /// <summary>True when HSN/GST come from the stock group ("As per Company/Stock Group").</summary>
     public bool GstInherited { get; set; }
@@ -151,6 +153,10 @@ public class QuotationHeader
     public bool RoundOffTotal { get; set; }
     /// <summary>"Without GST" quotation: 0 % on all lines and P&amp;F, no tax lines.</summary>
     public bool WithoutGst { get; set; }
+    /// <summary>Round 38 (PL-1): print the "View product" links on this quotation's PDF.</summary>
+    public bool ShowProductLinks { get; set; } = true;
+    /// <summary>Round 38 (Q10): the PC's key for this new quotation (a create sent again never makes a second copy).</summary>
+    public Guid? ClientKey { get; set; }
     /// <summary>
     /// GST follows the buyer's state when the consignee is in another state (the usual "bill to – ship to" rule);
     /// false = the ship-to state, as for every quotation made before this choice existed.

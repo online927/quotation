@@ -259,7 +259,7 @@ public class Round36UiTests
             editor.AllLinesDeliveryText = "10 days";
             editor.ApplyDeliveryToAllCommand.Execute(null);
             Assert.All(editor.Lines, l => Assert.Equal("10 days", l.DueOn));
-            Assert.Contains("10 days", editor.DeliveryChoices);      // remembered for next time
+            Assert.DoesNotContain("10 days", editor.DeliveryChoices); // Round 38 (DM-1): typed times are not remembered
 
             // (none) clears all
             Dispatcher.UIThread.RunJobs();

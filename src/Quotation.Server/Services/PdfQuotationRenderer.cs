@@ -18,7 +18,7 @@ public sealed record PartyMaster(string Name, string Alias, IReadOnlyList<string
 }
 
 /// <summary>Maps a saved quotation to the print model and renders the Tally-style PDF.</summary>
-public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQuotationDocumentRenderer
+public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log, ProductLinkService? links = null) : IQuotationDocumentRenderer
 {
     private readonly QuotationPdfRenderer _renderer = new();
 
@@ -82,7 +82,11 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log) : IQ
             l.Rate,
             l.DiscountPercent,
             l.Amount,
-            l.PartNumber)).ToList();
+            l.PartNumber)
+        {
+            // Round 38 (PL-1): a clickable "View product" line when Settings and the quotation both have the links on.
+            Link = settings.ProductLinksOnPdf && q.ShowProductLinks && links is not null ? links.For(l.ProductId) : "",
+        }).ToList();
 
         var ordered = q.Lines.OrderBy(l => l.LineNo).ToList();
         // The quotation's own GST presentation and round off (fixed when it was saved), so reprints match its totals.

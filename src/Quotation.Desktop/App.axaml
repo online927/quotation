@@ -486,6 +486,23 @@
       <Setter Property="Margin" Value="0,0,3,0" />
       <Setter Property="Cursor" Value="Hand" />
     </Style>
+    <!-- Round 38 (PL-1): the small 🔗 after an item name -->
+    <Style Selector="Button.linkicon">
+      <Setter Property="Width" Value="20" />
+      <Setter Property="Height" Value="18" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
+    <Style Selector="Button.linkicon /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.linkicon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    </Style>
     <Style Selector="Button.calday">
       <Setter Property="Width" Value="30" />
       <Setter Property="Height" Value="28" />

@@ -240,6 +240,7 @@ public sealed class QuotationPdfRenderer
         var descWidth = _colW[ColDesc] - 2 * Pad;
         var nameLines = Wrap(g, line.ItemName, _bold, descWidth);
         var descLines = line.DescriptionLines.SelectMany(d => Wrap(g, d, _italic, descWidth - 8)).ToList();
+        if (line.Link.Length > 0) descLines.Add(PdfLinks.LineFor(line)); // Round 38 (PL-1)
         var height = RowHeight(nameLines.Count, descLines.Count);
         if (height <= capacity)
         {
@@ -601,6 +602,12 @@ public sealed class QuotationPdfRenderer
         }
         foreach (var d in row.DescriptionLines)
         {
+            if (PdfLinks.IsLinkLine(d))
+            {
+                PdfLinks.Draw(g, _italic, _colX[ColDesc] + Pad + 8, y, row.Line.Link);
+                y += LineHeight(_italic);
+                continue;
+            }
             DrawText(g, d, _italic, _colX[ColDesc] + Pad + 8, y);
             y += LineHeight(_italic);
         }

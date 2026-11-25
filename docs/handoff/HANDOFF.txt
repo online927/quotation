@@ -197,7 +197,35 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 
 8. ON THE LIST — NOT BUILT YET
 ------------------------------
- NOTHING ON THE LIST. ROUND 37 (built on "Do, for mac and Android too") delivered:
+ NOTHING ON THE LIST. ROUND 38 (built on "Do, for mac and Android too") delivered:
+   EY-1 HideHeaderButton moved into the References headbar (QuotationEditorView.axaml).
+   DM-1 Core/Domain/DeliveryText.WithoutDeliveryLines: used by QuotationService.RememberDescriptionsAsync, CatalogEndpoints
+     .ToSummary and CatalogSearchService.LoadRememberedAsync (cleans old remembered ones once). DeliveryChoices = (none) +
+     the 4 usual times; ClientConfig.RecentDeliveryTimes cleared on load (kept only so old files read).
+   ZP-1 ModernPdfRenderer: Date row bold; DetailStep 9.2 / TotalsStep 16; empty bank rows removed.
+   F9-1 ShellView OnPreviewKeyDown F9 (not on the Tally page, whose own F9 button does it) → ShellViewModel
+     .SyncTallyChangesAsync (incremental, wait=true; toasts; "already running"); KeyBar + F1 card.
+   MN-1/MN-2 MinimalPdfRenderer: ColumnGap 6 (names, addresses, GSTIN, contact, e-mail, refs wrap); BottomBlock Ids →
+     own COMPANY column (BankWidth 112, IdsWidth 118, terms one third wide).
+   EN-1 ShellView.CycleFocus (Tab/Shift+Tab/←/→ inside DialogPanel and PromptPanel), BringToFront (Activate + focus the
+     main button when the window becomes active); SettingsView user boxes KeyBinding Enter → AddUser / SaveUser.
+   Q5 QuotationEditorView Ctrl/⌘+D / +↑ / +↓ → DuplicateLineCommand / MoveLineStep (PickedLine = EditingLine ?? SelectedLine;
+     Undo toasts).
+   Q7 SearchIndex.Search: when nothing is found, a long word is tried split in two ("borgauge" = "bor gauge");
+     "close match" chip (Match.UsedFuzzy) in the Product box and Products page. Typos were already tolerated.
+   Q10 QuotationEditorViewModel: unreachable save (ApiException Status 0 / HttpRequestException) → WaitingToSend, recovery
+     copy, orange WaitingToSendStrip with Try now; _sendTimer (SendRetryInterval 15 s) resends; SaveQuotationRequest
+     .ClientKey (new quotations) + QuotationHeader.ClientKey (indexed): CreateAsync returns the one already made.
+   PL-1 Product.Link + QuotationHeader.ShowProductLinks (migration Round38ProductLinks, old quotations true);
+     Core/Import/LinkSheet (xlsx first sheet incl. hyperlinks, or CSV); POST /api/products/links (admin) →
+     ProductLinkService (singleton, memory cache; matches Part No., alias / leading code, name); ProductSummaryDto.Link,
+     QuotationLineDto.Link (filled by the server); PdfLine.Link → PdfLinks.Draw ("View product", blue, underlined,
+     web-link annotation) in all three layouts when QuotationSettings.ProductLinksOnPdf && ShowProductLinks;
+     Settings → PDF row "Product links"; 🔗 Button.linkicon after the item name (no tooltip) → DocumentLauncher.OpenWebPage;
+     tick "Show product links on the PDF" in the remarks section. Phone app: not done (ask).
+   Tests: Round38Tests (Core, Server), Round38PdfTests, Round38UiTests; Round35UiTests delivery-list check updated.
+
+ ROUND 37 (built on "Do, for mac and Android too") delivered:
    1-8 made before the list-only rule: Delivery list click (OnDeliveryPicked hands the choice to the page; a pop-up
      cannot bind to the page with $parent), gear "Same delivery on all lines" (ApplyDeliveryToAll), USD "$" in lists /
      phone (QuotationSummaryDto.Currency, Currencies.Money/Total), USD rate ₹1–500 (Currencies.Min/MaxUsdRate), Who did

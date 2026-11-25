@@ -94,7 +94,7 @@ public sealed class ModernPdfRenderer
         var headTop = Math.Max(FirstHeadTop, HeaderBottom(g, doc) + 22);
         var rows = doc.Lines.Select(l => MakeRow(g, doc, l)).ToList();
         var totals = Totals(doc);
-        var totalsHeight = 9.2 + 25.4 * (totals.Count - 1) + 14 + 10; // and "E. & O.E" under the total
+        var totalsHeight = 9.2 + TotalsStep * (totals.Count - 1) + 14 + 10; // and "E. & O.E" under the total
         var (bottom, bottomTop) = BottomBlock(g, doc);
         var lastLimit = bottomTop - 12 - totalsHeight;
 
@@ -137,7 +137,8 @@ public sealed class ModernPdfRenderer
         var details = new List<string>();
         if (doc.ShowPartNumber && line.PartNumber.Length > 0) details.Add("Part No. " + line.PartNumber);
         foreach (var d in line.DescriptionLines) details.AddRange(Wrap(g, d, F(7), ItemWidth));
-        var last = 18.9 + 10.8 * (names.Count - 1) + 12.3 * (Math.Max(details.Count, 1) - 1);
+        if (line.Link.Length > 0) details.Add(PdfLinks.LineFor(line));
+        var last = 18.9 + 10.8 * (names.Count - 1) + DetailStep * (Math.Max(details.Count, 1) - 1);
         return new Row(line, names, details, last + 14.9 + 0.8);
     }
 
@@ -181,6 +182,7 @@ public sealed class ModernPdfRenderer
             bank.Add(("Bank Name", (c.BankName ?? "").Trim()));
             bank.Add(("A/c No.", (c.BankAccountNumber ?? "").Trim()));
             bank.Add(("Branch & IFS Code", string.Join(" & ", new[] { c.BankBranch, c.BankIfsc }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!.Trim()))));
+            bank.RemoveAll(b => b.Value.Length == 0); // Round 38 (ZP-1): an empty row is left out, as in the Tally layout
         }
 
         var bottom = FootBottom;
@@ -395,14 +397,19 @@ public sealed class ModernPdfRenderer
         var y = top + 52.4;
         foreach (var (label, value) in RightRows(doc))
         {
-            Text(g, RightLabelX, y, label + " :", 9, align: Right);
-            var valueLines = Wrap(g, value, F(8), RightValueWidth);
-            for (var i = 0; i < valueLines.Count; i++) Text(g, RightLabelX + 4, y + 0.8 + i * LineStep, valueLines[i], 8);
+            // Round 38 (ZP-1): the date stands out in bold.
+            var bold = label == "Date";
+            Text(g, RightLabelX, y, label + " :", 9, bold, align: Right);
+            var valueLines = Wrap(g, value, F(8, bold), RightValueWidth);
+            for (var i = 0; i < valueLines.Count; i++) Text(g, RightLabelX + 4, y + 0.8 + i * LineStep, valueLines[i], 8, bold);
             y += RightRowStep + LineStep * (valueLines.Count - 1);
         }
     }
 
     private const double RightLabelX = 452, RightValueWidth = 104, RightRowStep = 17;
+
+    /// <summary>Round 38 (ZP-1): tighter steps between the small lines under an item and between the totals rows.</summary>
+    internal const double DetailStep = 9.2, TotalsStep = 16;
 
     /// <summary>Date (always), then payment terms, dispatched through, destination and terms of delivery when filled.</summary>
     internal static List<(string Label, string Value)> RightRows(QuotationDocument doc)
@@ -518,7 +525,11 @@ public sealed class ModernPdfRenderer
             Text(g, DiscRight, y, l.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture) + "%", 9, color: Black, align: Right);
         TextFit(g, AmountRight, y, Money(l.Amount), 9, AmountRight - DiscRight - 6);
         var detailTop = rowTop + 18.9 + 10.8 * (row.NameLines.Count - 1);
-        for (var i = 0; i < row.Details.Count; i++) Text(g, ItemX, detailTop + 12.3 * i, row.Details[i], 7);
+        for (var i = 0; i < row.Details.Count; i++)
+        {
+            if (PdfLinks.IsLinkLine(row.Details[i])) PdfLinks.Draw(g, F(7), ItemX, detailTop + DetailStep * i - 0.6, l.Link);
+            else Text(g, ItemX, detailTop + DetailStep * i, row.Details[i], 7);
+        }
         var ruleY = rowTop + row.Height - 0.8;
         Fill(g, Rule, TableX, ruleY, TableW, 0.8);
         return rowTop + row.Height;
@@ -532,9 +543,9 @@ public sealed class ModernPdfRenderer
             var (label, value, bold) = totals[i];
             Text(g, TotalsLabelRight, y, label, 9, bold, Black, Right);
             TextFit(g, AmountRight, y, value, 9, AmountRight - TotalsLabelRight - 8, bold);
-            y += 25.4;
+            y += TotalsStep;
         }
-        Text(g, AmountRight, y - 25.4 + 14, "E. & O.E", 7, color: PageNo, align: Right);
+        Text(g, AmountRight, y - TotalsStep + 14, "E. & O.E", 7, color: PageNo, align: Right);
     }
 
     private void DrawSeal(XGraphics g, QuotationDocument doc)

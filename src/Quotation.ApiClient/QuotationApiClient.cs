@@ -81,6 +81,10 @@ public partial class QuotationApiClient
     public Task<UserDto> MeAsync(CancellationToken ct = default) => GetAsync<UserDto>("api/auth/me", ct);
     public Task<List<UserDto>> UsersAsync(CancellationToken ct = default) => GetAsync<List<UserDto>>("api/users", ct);
     public Task<UserDto> CreateUserAsync(CreateUserRequest req, CancellationToken ct = default) => PostAsync<UserDto>("api/users", req, ct);
+
+    /// <summary>Round 38 (PL-1): saves product web links (administrator); returns what matched.</summary>
+    public Task<ProductLinksResultDto> LoadProductLinksAsync(IReadOnlyList<ProductLinkRowDto> rows, CancellationToken ct = default) =>
+        PostAsync<ProductLinksResultDto>("api/products/links", rows, ct);
     public Task<UserDto> SetUserActiveAsync(int id, bool active, CancellationToken ct = default) =>
         PostAsync<UserDto>($"api/users/{id}/active/{active.ToString().ToLowerInvariant()}", null, ct);
     public Task ResetPasswordAsync(int id, string password, CancellationToken ct = default) =>

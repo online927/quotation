@@ -1,3 +1,4 @@
+using Quotation.Core.Domain;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Quotation.Contracts;
@@ -169,8 +170,15 @@ public sealed class CatalogSearchService
         if (_rememberedLoaded) return;
         using var scope = _scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<QuotationDbContext>();
-        foreach (var x in await db.Products.AsNoTracking().Where(p => p.LastDescription != "").Select(p => new { p.Id, p.LastDescription }).ToListAsync(ct))
-            _remembered.TryAdd(x.Id, x.LastDescription);
+        var changed = false;
+        foreach (var p in await db.Products.Where(p => p.LastDescription != "").ToListAsync(ct))
+        {
+            // Round 38 (DM-1): descriptions remembered before carry no delivery line any more (cleaned once, here).
+            var clean = DeliveryText.WithoutDeliveryLines(p.LastDescription);
+            if (clean != p.LastDescription) { p.LastDescription = clean; changed = true; }
+            if (clean.Length > 0) _remembered.TryAdd(p.Id, clean);
+        }
+        if (changed) await db.SaveChangesAsync(ct);
         _rememberedLoaded = true;
     }
 

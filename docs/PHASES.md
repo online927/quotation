@@ -1026,3 +1026,26 @@ datasheet table by itself).
 15. Settings is shown only to the administrator; users keep My Settings.
 
 Server update needed (3, 4, 6, 9, 10, 11 and 12 are done by the server).
+
+### Round 38
+
+1. Quotation page: the eye that hides the opened customer section sits at the top right of the References box.
+2. Delivery is never remembered: a delivery line typed inside a description ("Delivery: 2-3 weeks", "Ex-stock") is left
+   out of the remembered description (old ones are cleaned once), and the Delivery box list shows only (none), Ex-stock,
+   1 week, 2–3 weeks and 4–6 weeks (typed times are no longer added).
+3. Zoho PDF: "Date :" and the date in bold; the small lines under an item and the Sub Total / P&F / GST / Total rows sit
+   closer together; an empty bank row (e.g. A/c Holder's Name) is left out.
+4. F9 anywhere in the PC/Mac app: "Sync changes" with Tally (messages when it starts and ends; on the F1 card).
+5. Minimal PDF: long buyer / ship-to names, addresses and e-mails wrap inside their own column; PAN, MSME and IEC have their
+   own COMPANY column next to BANK.
+6. Question boxes: Tab / Shift+Tab (and ← / →) go round inside the box and never to the page behind; a box brings the
+   window to the front and puts the keyboard on its main button; Settings → Users: Enter adds / saves the user.
+7. Ctrl+D copies the picked line just below; Ctrl+↑ / Ctrl+↓ move it (with Undo; on the F1 card).
+8. Item search finds words typed together with a mistake ("borgauge" → BORE GAUGE); typo results show "close match".
+9. Server off: saving keeps the quotation on this PC ("Waiting to send", orange strip with "Try now") and sends it by
+   itself when the server answers (a resend never makes a second copy).
+10. Product links: Settings → PDF → "Load product links (Excel)" (column A product code, column B link); a small 🔗 after
+    the item name opens its web page; the PDF prints a clickable "View product" line (switch in Settings, tick on each
+    quotation).
+
+Server update needed (2, 3, 5, 8, 9 and 10 are done by the server).

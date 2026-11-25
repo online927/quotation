@@ -80,6 +80,7 @@ public partial class ShellView : UserControl
                     if (Vm?.PendingDialog is { HasInput: true }) DialogInput.Focus();
                     else DialogPrimary.Focus();
                 }, DispatcherPriority.Input);
+                BringToFront(DialogPanel, () => Vm?.PendingDialog is { HasInput: true } ? DialogInput : DialogPrimary);
             }
             else if (_focusBeforeDialog is { } previous)
             {
@@ -95,6 +96,7 @@ public partial class ShellView : UserControl
             {
                 _focusBeforePrompt = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() as Control;
                 Dispatcher.UIThread.Post(() => PromptSave.Focus(), DispatcherPriority.Input);
+                BringToFront(PromptPanel, () => PromptSave);
             }
             else if (_focusBeforePrompt is { } previous)
             {
@@ -186,6 +188,39 @@ public partial class ShellView : UserControl
 
     private ShellViewModel? Vm => DataContext as ShellViewModel;
 
+    /// <summary>
+    /// Round 38 (EN-1): moves the keyboard to the next (Tab, →) or previous (Shift+Tab, ←) control of a question box; from
+    /// anywhere outside the box it goes to <paramref name="main"/>.
+    /// </summary>
+    private static void CycleFocus(KeyEventArgs e, Control[] order, Control main)
+    {
+        var list = order.Where(c => c.IsEffectivelyVisible && c.IsEffectivelyEnabled).ToList();
+        if (list.Count == 0) return;
+        var current = list.FindIndex(c => e.Source is Visual v && (ReferenceEquals(c, v) || c.IsVisualAncestorOf(v)));
+        var back = e.Key == Key.Left || (e.Key == Key.Tab && e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+        var next = current < 0 ? Math.Max(0, list.IndexOf(main)) : (current + (back ? -1 : 1) + list.Count) % list.Count;
+        list[next].Focus(NavigationMethod.Tab);
+    }
+
+    /// <summary>
+    /// Round 38 (EN-1): a question box brings the window to the front, and once the window has the keyboard again the
+    /// main button gets it, so Enter answers even when the app was not the active window (e.g. opened by itself).
+    /// </summary>
+    private void BringToFront(Control panel, Func<Control> main)
+    {
+        if (TopLevel.GetTopLevel(this) is not Window window || window.IsActive) return;
+        void OnActivated(object? sender, EventArgs args)
+        {
+            window.Activated -= OnActivated;
+            if (!panel.IsVisible) return;
+            var focused = window.FocusManager?.GetFocusedElement() as Visual;
+            if (focused is null || !panel.IsVisualAncestorOf(focused)) main().Focus();
+        }
+        window.Activated += OnActivated;
+        if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal;
+        window.Activate();
+    }
+
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key == Key.X && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift) && Vm is { } game)
@@ -220,7 +255,17 @@ public partial class ShellView : UserControl
             // A Yes / No question (Tally theme: "Approve? Yes or No"): Y and N answer it.
             else if (!dialog.HasInput && e.KeyModifiers == KeyModifiers.None && e.Key == Key.Y && dialog.PrimaryText == "Yes") dialog.Choose(true);
             else if (!dialog.HasInput && e.KeyModifiers == KeyModifiers.None && e.Key == Key.N && dialog.SecondaryText == "No") dialog.Choose(false);
-            else if (e.Source is Visual inDialog && DialogPanel.IsVisualAncestorOf(inDialog)) return; // typing in the box, Tab, Space on a button
+            // Round 38 (EN-1): Tab / Shift+Tab (and ← / → on the buttons) go round inside the box only, never to the page behind.
+            else if (e.Key == Key.Tab || (e.Key is Key.Left or Key.Right && e.Source is not TextBox))
+                CycleFocus(e, dialog.HasInput ? [DialogInput, DialogSecondary, DialogPrimary] : [DialogSecondary, DialogPrimary], DialogPrimary);
+            else if (e.Source is Visual inDialog && DialogPanel.IsVisualAncestorOf(inDialog)) return; // typing in the box, Space on a button
+            e.Handled = true;
+            return;
+        }
+        // Round 38 (F9-1): F9 anywhere = "Sync changes" with Tally (the Tally page's own F9 button does it there).
+        if (Vm is { PendingPrompt: null } syncing && e.Key == Key.F9 && e.KeyModifiers == KeyModifiers.None && syncing.CurrentPage is not TallyViewModel)
+        {
+            _ = syncing.SyncTallyChangesAsync();
             e.Handled = true;
             return;
         }
@@ -278,7 +323,10 @@ public partial class ShellView : UserControl
             case Key.Y or Key.S: prompt.Choose(LeaveChoice.Save); break;
             case Key.Enter or Key.Space when onPromptButton: return; // the focused button answers
             case Key.Enter: prompt.Choose(LeaveChoice.Save); break;
-            case Key.Tab or Key.Left or Key.Right when onPromptButton: return;
+            case Key.Tab or Key.Left or Key.Right:
+                // Round 38 (EN-1): round the three buttons only, never to the page behind.
+                CycleFocus(e, [PromptDontSave, PromptCancel, PromptSave], PromptSave);
+                break;
         }
         e.Handled = true;
     }

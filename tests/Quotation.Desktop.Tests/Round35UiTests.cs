@@ -413,14 +413,14 @@ public class Round35UiTests
             Dispatcher.UIThread.RunJobs();
             Assert.Contains(view.GetVisualDescendants().OfType<Border>(), b => b.Name == "DueOnChip" && b.IsEffectivelyVisible);
 
-            // … or typed (and then offered in the list); "(none)" clears it
+            // … or typed (Round 38, DM-1: not remembered in the list); "(none)" clears it
             editor.SelectProduct((await ctx.Session.Api.SearchProductsAsync("digital caliper")).First().Product);
             editor.EntryDueOn = "10 days";
             editor.CommitEntryCommand.Execute(null);
             Assert.Equal("10 days", editor.Lines[1].DueOn);
             Assert.False(editor.Lines[1].DueOnInStock);
-            Assert.Contains("10 days", editor.DeliveryChoices);
-            Assert.Equal("10 days", ctx.Session.Config.RecentDeliveryTimes[0]);
+            Assert.DoesNotContain("10 days", editor.DeliveryChoices);
+            Assert.Empty(ctx.Session.Config.RecentDeliveryTimes);
             editor.EntryDueOn = "x";
             editor.PickDeliveryCommand.Execute(QuotationEditorViewModel.NoDelivery);
             Assert.Equal("", editor.EntryDueOn);

@@ -14,7 +14,17 @@ public sealed record ProductSummaryDto(
     /// <summary>Empty when <see cref="Rate"/> is the Tally selling price; otherwise where the last rate came from.</summary>
     string RateNote = "",
     /// <summary>Marked "Do Not Use" in its Tally description (e.g. DNU): not offered when making quotations.</summary>
-    bool Hidden = false);
+    bool Hidden = false)
+{
+    /// <summary>Round 38 (PL-1): the product's web page from the loaded links ("" = none).</summary>
+    public string Link { get; init; } = "";
+}
+
+/// <summary>Round 38 (PL-1): one row of the product links Excel (product code, web link).</summary>
+public sealed record ProductLinkRowDto(string Code, string Url);
+
+/// <summary>Round 38 (PL-1): what loading the product links did.</summary>
+public sealed record ProductLinksResultDto(int Rows, int Linked, IReadOnlyList<string> NotFound, IReadOnlyList<string> BadLinks);
 
 public sealed record SearchMatchDto(bool AllTermsMatched, bool ExactName, bool ExactIdentifier, bool UsedFuzzy, IReadOnlyList<string> MatchedFields);
 

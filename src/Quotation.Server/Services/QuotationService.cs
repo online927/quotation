@@ -53,6 +53,7 @@ public sealed class QuotationService(
     TallySyncService sync,
     LastRateService lastRates,
     CatalogSearchService catalog,
+    ProductLinkService links,
     IQuotationDocumentRenderer renderer,
     PdfStorage pdfStorage,
     TimeProvider clock,
@@ -113,6 +114,10 @@ public sealed class QuotationService(
         CancellationToken ct, bool assignNumber = true, int? sourceEmailId = null, Guid? duplicatedFrom = null)
     {
         EnsureMaker(user);
+        // Round 38 (Q10): the same new quotation sent again (its answer was lost while the server could not be reached).
+        if (request.ClientKey is { } key
+            && await db.Quotations.AsNoTracking().Where(x => x.ClientKey == key && x.CreatedBy == user.UserName).Select(x => (Guid?)x.Id).FirstOrDefaultAsync(ct) is { } sent)
+            return await GetAsync(sent, ct);
         if (request.DocType == DocumentType.ProformaInvoice && !settings.Quotation.ProformaEnabled)
             throw new QuotationException(409, ApiErrorCodes.InvalidState,
                 "Proforma invoices are switched off. An administrator can switch them on in Settings → Quotation.");
@@ -128,6 +133,8 @@ public sealed class QuotationService(
             DuplicatedFromId = duplicatedFrom,
             DocType = request.DocType,
             WithoutGst = request.WithoutGst,
+            ShowProductLinks = request.ShowProductLinks,
+            ClientKey = request.ClientKey,
         };
         // A USD quotation (made from the switch, duplicated, or converted to a proforma invoice: Round 37 keeps it in dollars).
         if (Currencies.IsUsd(request.Currency))
@@ -658,6 +665,7 @@ public sealed class QuotationService(
     {
         q.Date = r.Date == default ? fy.Today() : r.Date;
         q.PdfLayout = PdfLayouts.IsValid(r.PdfLayout) ? r.PdfLayout : null;
+        q.ShowProductLinks = r.ShowProductLinks;
         q.BuyersReference = Trim(r.BuyersReference, 200);
         q.BuyersReferenceDate = r.BuyersReferenceDate;
         q.DispatchedThrough = Trim(r.DispatchedThrough, 200);
@@ -768,8 +776,9 @@ public sealed class QuotationService(
     /// </summary>
     private async Task RememberDescriptionsAsync(List<QuotationLine> lines, CancellationToken ct)
     {
-        var latest = lines.Where(l => l.ProductId is not null && l.Description.Trim().Length > 0)
-            .GroupBy(l => l.ProductId!.Value).ToDictionary(g => g.Key, g => g.OrderBy(l => l.LineNo).Last().Description.Trim());
+        // Round 38 (DM-1): delivery lines typed inside a description are never remembered.
+        var latest = lines.Where(l => l.ProductId is not null && DeliveryText.WithoutDeliveryLines(l.Description).Length > 0)
+            .GroupBy(l => l.ProductId!.Value).ToDictionary(g => g.Key, g => DeliveryText.WithoutDeliveryLines(g.OrderBy(l => l.LineNo).Last().Description));
         if (latest.Count == 0) return;
         var ids = latest.Keys.ToList();
         var remembered = new Dictionary<int, string>();
@@ -956,6 +965,7 @@ public sealed class QuotationService(
         Currency = q.Currency,
         ExchangeRate = q.ExchangeRate,
         PdfLayout = q.PdfLayout,
+        ShowProductLinks = q.ShowProductLinks,
         Lines = q.Lines.OrderBy(l => l.LineNo).Select(ToDto).ToList(),
     };
 
@@ -965,6 +975,13 @@ public sealed class QuotationService(
         GstRate = l.GstRate, DueOn = l.DueOn, Quantity = l.Quantity, Unit = l.Unit, Rate = l.Rate, TallyRate = l.TallyRate,
         DiscountPercent = l.DiscountPercent, Amount = l.Amount,
     };
+
+    /// <summary>Round 38 (PL-1): each line carries its item's product web page (for the 🔗 on the quotation page).</summary>
+    private List<QuotationLineDto> WithLinks(List<QuotationLineDto> lines)
+    {
+        foreach (var l in lines) l.Link = links.For(l.ProductId);
+        return lines;
+    }
 
     public QuotationDto ToDto(QuotationHeader q)
     {
@@ -1006,7 +1023,8 @@ public sealed class QuotationService(
             Currency = q.Currency,
             ExchangeRate = q.ExchangeRate,
             PdfLayout = q.PdfLayout,
-            Lines = request.Lines,
+            ShowProductLinks = q.ShowProductLinks,
+            Lines = WithLinks(request.Lines),
             Subtotal = q.Subtotal,
             Taxes = calc.Taxes.Select(t => new TaxLineDto(t.Name, t.RatePercent, t.TaxableValue, t.Amount)).ToList(),
             TaxTotal = q.TaxTotal,

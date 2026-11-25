@@ -27,7 +27,11 @@ public sealed record PdfLine(
     decimal Rate,
     decimal DiscountPercent,
     decimal Amount,
-    string PartNumber = "");
+    string PartNumber = "")
+{
+    /// <summary>Round 38 (PL-1): the product web page; a clickable "View product" line is printed under the item.</summary>
+    public string Link { get; init; } = "";
+}
 
 /// <summary>
 /// Additional ledger-style rows printed after the items (P&amp;F, taxes, round off). <paramref name="Less"/> prints

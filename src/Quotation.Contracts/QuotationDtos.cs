@@ -32,6 +32,8 @@ public sealed class QuotationLineDto
     public decimal? TallyRate { get; set; }
     public decimal DiscountPercent { get; set; }
     public decimal Amount { get; set; }
+    /// <summary>Round 38 (PL-1): the item's product web page (from the loaded links; read-only, filled by the server).</summary>
+    public string Link { get; set; } = "";
 }
 
 /// <summary>Editable content of a quotation, sent by the client when creating/updating.</summary>
@@ -75,6 +77,13 @@ public sealed class SaveQuotationRequest
     public string? PdfLayout { get; set; }
     /// <summary>Made on the Formater page (set on create): the customer and items may be typed instead of picked from Tally.</summary>
     public bool FromFormater { get; set; }
+    /// <summary>Round 38 (PL-1): print the "View product" links on this quotation's PDF (when Settings has them on).</summary>
+    public bool ShowProductLinks { get; set; } = true;
+    /// <summary>
+    /// Round 38 (Q10): the PC's own key for a new quotation, so a create sent again (the answer was lost while the server was
+    /// unreachable) returns the quotation already made instead of a second copy.
+    /// </summary>
+    public Guid? ClientKey { get; set; }
     public List<QuotationLineDto> Lines { get; set; } = [];
 }
 
@@ -119,6 +128,8 @@ public sealed class QuotationDto
     public bool IsUsd => Currency == Currencies.Usd;
     /// <summary>The PDF layout chosen for this quotation (Formater page: Tally or Zoho); null = the user's own layout.</summary>
     public string? PdfLayout { get; set; }
+    /// <summary>Round 38 (PL-1): print the "View product" links on this quotation's PDF.</summary>
+    public bool ShowProductLinks { get; set; } = true;
     public List<QuotationLineDto> Lines { get; set; } = [];
 
     public decimal Subtotal { get; set; }

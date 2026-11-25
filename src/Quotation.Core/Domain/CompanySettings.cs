@@ -106,6 +106,9 @@ public sealed class QuotationSettings
     /// <summary>Round 37 (Settings → PDF): the note printed on a USD quotation's PDF.</summary>
     public string UsdPdfNote { get; set; } = UsdPdfNotes.Full;
 
+    /// <summary>Round 38 (PL-1, Settings → PDF): a clickable "View product" line under items that have a product link.</summary>
+    public bool ProductLinksOnPdf { get; set; } = true;
+
     /// <summary>Allow generating a quotation when the last Tally sync is stale (with warning + audit).</summary>
     public bool AllowStaleDataOverride { get; set; } = true;
 

@@ -20,7 +20,7 @@ public static class CatalogEndpoints
         // starredFirst: the user's starred items come first (only the lists people pick from by hand ask for it; the
         // automatic matching — paste a list, Formater, the phone's message — keeps the best match on top).
         p.MapGet("/search", async (string? q, int? limit, bool? includeHidden, bool? starredFirst, CatalogSearchService search, QuotationDbContext db,
-            StarsService stars, HttpContext ctx, CancellationToken ct) =>
+            StarsService stars, ProductLinkService links, HttpContext ctx, CancellationToken ct) =>
         {
             var take = Math.Clamp(limit ?? 20, 1, 100);
             var withHidden = includeHidden == true;
@@ -42,7 +42,7 @@ public static class CatalogEndpoints
             if (withHidden) hits = hits.Concat((await search.HiddenProductsAsync(ct)).Search(q, wide)).OrderByDescending(h => h.Score).Take(wide).ToList();
             var result = new List<ProductSearchHitDto>();
             foreach (var h in hits)
-                result.Add(new ProductSearchHitDto(await search.WithRememberedAsync(CatalogSearchService.ToSummary(h.Item), ct), Math.Round(h.Score, 2),
+                result.Add(new ProductSearchHitDto(await search.WithRememberedAsync(CatalogSearchService.ToSummary(h.Item), ct) with { Link = links.For(h.Item.Id) }, Math.Round(h.Score, 2),
                     CatalogSearchService.ToMatch(h.Evidence)) { IsStarred = starred.Contains(h.Item.Id) });
             return (first ? StarsService.StarredFirst(result, r => r.Product.Id, starred) : result).Take(take).ToList();
         });
@@ -52,6 +52,15 @@ public static class CatalogEndpoints
             var x = await db.Products.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct);
             return x is null ? Results.NotFound() : Results.Ok(ToDetail(x, search.IsHidden(x.Description)));
         });
+
+        // Round 38 (PL-1): the administrator loads product web links (rows of an Excel: product code, link).
+        p.MapPost("/links", async (List<ProductLinkRowDto> rows, ProductLinkService links, AuditService audit, HttpContext ctx, CancellationToken ct) =>
+        {
+            var result = await links.ImportAsync(rows, ct);
+            await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "ProductLinksLoaded", "Product", "",
+                $"{result.Linked} linked, {result.NotFound.Count} not found", ct);
+            return Results.Ok(result);
+        }).RequireAuthorization(SystemEndpoints.AdminPolicy);
 
         // Round 36: an item's PDF datasheet (administrators upload, replace or remove it; everyone may see it).
         p.MapGet("/{id:int}/datasheet", async (int id, QuotationDbContext db, CancellationToken ct) =>
@@ -125,8 +134,8 @@ public static class CatalogEndpoints
 
     public static ProductSummaryDto ToSummary(Product x, bool hidden = false) =>
         new(x.Id, x.Name, x.PartNumber, x.Brand, x.StockGroup, x.Unit, x.Hsn, x.GstRate, x.Rate ?? x.LastRate,
-            x.LastDescription.Length > 0 ? x.LastDescription : x.Description,
-            x.Rate is null && x.LastRate is not null ? x.LastRateNote : "", hidden);
+            x.LastDescription.Length > 0 ? Quotation.Core.Domain.DeliveryText.WithoutDeliveryLines(x.LastDescription) : x.Description,
+            x.Rate is null && x.LastRate is not null ? x.LastRateNote : "", hidden) { Link = x.Link };
 
     public static ProductDetailDto ToDetail(Product x, bool hidden = false)
     {

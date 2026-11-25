@@ -29,6 +29,10 @@
                   <TextBlock Text="DNU" FontSize="{DynamicResource FontTiny}" FontWeight="SemiBold" Foreground="{DynamicResource WarnBrush}" />
                 </Border>
                 <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                <Border Classes="pill" Background="{DynamicResource AccentSoftBrush}" Padding="6,0" VerticalAlignment="Center" IsVisible="{Binding Match.UsedFuzzy}"
+                                        ToolTip.Tip="A close match for a spelling mistake">
+                                  <TextBlock Text="close match" FontSize="{DynamicResource FontTiny}" Foreground="{DynamicResource AccentBrush}" />
+                                </Border>
               </StackPanel>
               <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis">
                 <Run Text="{Binding Product.Brand, Mode=OneWay}" />

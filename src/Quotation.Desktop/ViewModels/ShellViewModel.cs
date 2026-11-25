@@ -769,6 +769,44 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         UpdateKeyBar(newValue);
     }
 
+    private bool _syncingTally;
+
+    /// <summary>
+    /// Round 38 (F9-1): F9 anywhere starts "Sync changes" (the light sync, only what changed in Tally; Tally is only read).
+    /// The page being typed is not touched; messages tell when it starts and ends.
+    /// </summary>
+    public async Task SyncTallyChangesAsync()
+    {
+        if (_syncingTally)
+        {
+            Toast("A sync is already running.");
+            return;
+        }
+        _syncingTally = true;
+        Toast("Syncing with Tally…");
+        try
+        {
+            var run = await _session.Api.StartSyncAsync(Core.Domain.SyncKind.Incremental, wait: true, _cts.Token);
+            Toast(run is { Status: Core.Domain.SyncStatus.Failed } ? "Tally sync failed: " + run.Message
+                : run is null ? "Tally sync done."
+                : $"Tally sync done: {run.ProductsChanged} items, {run.CustomersChanged} customers changed.");
+        }
+        catch (Quotation.ApiClient.ApiException ex) when (ex.Status == System.Net.HttpStatusCode.Conflict)
+        {
+            Toast("A sync is already running.");
+        }
+        catch (OperationCanceledException) when (!_cts.IsCancellationRequested)
+        {
+            Toast("The Tally sync is still running on the server; it finishes by itself.");
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Toast("Tally sync failed: " + ex.Message, 10);
+        }
+        finally { _syncingTally = false; }
+    }
+
     /// <summary>The key bar on the right (Tally theme): the app's shortcuts, the ones this page uses in black, the others grey.</summary>
     public ObservableCollection<KeyBarItem> KeyBar { get; } = [];
 
@@ -788,6 +826,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         [
             new("F1", "Help / keys", Avalonia.Input.Key.F1, N, true),
             new("F5", "Refresh", Avalonia.Input.Key.F5, N, refresh),
+            new("F9", "Sync Tally", Avalonia.Input.Key.F9, N, true),
             new(ctrl + "+F", "Search", Avalonia.Input.Key.F, C, true),
             new(alt + "+←", "Back", Avalonia.Input.Key.Left, A, CanGoBack),
             new(alt + "+→", "Forward", Avalonia.Input.Key.Right, A, CanGoForward),

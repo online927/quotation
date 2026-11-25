@@ -113,6 +113,23 @@ public sealed class SearchIndex<T>
 
     public IReadOnlyList<SearchHit<T>> Search(string? query, int limit = 20, Func<T, bool>? filter = null)
     {
+        var hits = SearchCore(query, limit, filter);
+        if (hits.Count > 0 || string.IsNullOrWhiteSpace(query)) return hits;
+        // Round 38 (Q7): one word that is two words typed together, with a typo ("borgauge" = "bore gauge"): try each split.
+        // Only for a single typed word, and only results where both parts matched (never a guess for a longer text).
+        var word = query.Trim();
+        if (word.Length < 7 || !word.All(char.IsLetter)) return hits;
+        IReadOnlyList<SearchHit<T>> best = [];
+        for (var cut = 3; cut <= word.Length - 3; cut++)
+        {
+            var tried = SearchCore(word[..cut] + " " + word[cut..], limit, filter).Where(h => h.Evidence.AllTokensMatched).ToList();
+            if (tried.Count > 0 && (best.Count == 0 || tried[0].Score > best[0].Score)) best = tried;
+        }
+        return best.Count > 0 ? best : hits;
+    }
+
+    private IReadOnlyList<SearchHit<T>> SearchCore(string? query, int limit, Func<T, bool>? filter)
+    {
         var queryTokens = TextNormalizer.QueryTokens(query);
         if (queryTokens.Count == 0 || _items.Length == 0) return [];
         var queryCompact = TextNormalizer.Compact(query);

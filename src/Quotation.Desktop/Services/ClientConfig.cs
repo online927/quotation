@@ -57,7 +57,7 @@ public sealed class ClientConfig
     /// <summary>The one-time "Delivery box on" was applied to this PC's saved settings.</summary>
     public bool DeliveryOnByDefaultApplied { get; set; }
 
-    /// <summary>Delivery times typed on this PC, most recent first (they join the Delivery box's list).</summary>
+    /// <summary>Kept only so old settings files read; Round 38 (DM-1) no longer remembers typed delivery times (cleared on load).</summary>
     public List<string> RecentDeliveryTimes { get; set; } = [];
     /// <summary>A picture behind the pages on this PC (a copy kept next to this file); empty = none.</summary>
     public string BackgroundPicture { get; set; } = "";
@@ -86,6 +86,12 @@ public sealed class ClientConfig
                     // Round 36: the Delivery box is on by default, also on PCs where it was off before; once only.
                     loaded.DeliveryTimeOnItems = true;
                     loaded.DeliveryOnByDefaultApplied = true;
+                    try { loaded.Save(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+                }
+                if (loaded.RecentDeliveryTimes.Count > 0)
+                {
+                    // Round 38 (DM-1): typed delivery times are no longer remembered; the old ones are cleared once.
+                    loaded.RecentDeliveryTimes = [];
                     try { loaded.Save(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
                 }
                 return loaded;

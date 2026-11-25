@@ -64,7 +64,7 @@ public class ModernLayoutTests
         Assert.Equal(246.8, Baseline("BuyersHub"), 0);
         Assert.Equal(369.2, Baseline("Vernier"), 0);
         Assert.Equal(86.3, Left("Vernier"), 0);
-        Assert.Equal(467.3, Baseline("₹70,864.90"), 0);
+        Assert.Equal(445.4, Baseline("₹70,864.90"), 0); // Round 38 (ZP-1): tighter rows (spec 467.3 − 2 × 9.4 − 3.1)
         Assert.Equal(553.1, page.GetWords().First(w => w.Text == "₹70,864.90").BoundingBox.Right, 0);
         Assert.DoesNotContain("Regards", text);
     }

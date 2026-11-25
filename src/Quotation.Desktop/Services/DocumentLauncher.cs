@@ -198,6 +198,13 @@ public class DocumentLauncher(ClientConfig config)
     }
 
     /// <summary>Runs a downloaded client installer quietly (the app restarts itself when it is done).</summary>
+    /// <summary>Round 38 (PL-1): opens a product's web page in the browser.</summary>
+    public virtual void OpenWebPage(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)) return;
+        Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+    }
+
     public virtual bool RunInstaller(string setupPath, string serverUrl)
     {
         try

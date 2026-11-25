@@ -29,6 +29,10 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     [ObservableProperty] private bool _isEditing;
     /// <summary>The quotation is "Without GST": every line shows 0 %.</summary>
     [ObservableProperty] private bool _zeroGst;
+    /// <summary>Round 38 (PL-1): the item's product web page ("" = none); a small 🔗 opens it.</summary>
+    [ObservableProperty] private string _link = "";
+    public bool HasLink => Link.Length > 0;
+    partial void OnLinkChanged(string value) => OnPropertyChanged(nameof(HasLink));
 
     public decimal Amount => QuotationCalculator.LineAmount(Quantity, Rate, DiscountPercent);
     public bool RateOverridden => TallyRate is not null && Rate != TallyRate;
@@ -77,7 +81,7 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     {
         LineNo = d.LineNo, ProductId = d.ProductId, ItemName = d.ItemName, PartNumber = d.PartNumber, Description = d.Description, Hsn = d.Hsn,
         GstRate = d.GstRate, DueOn = d.DueOn, Quantity = d.Quantity, Unit = d.Unit, Rate = d.Rate, TallyRate = d.TallyRate,
-        DiscountPercent = d.DiscountPercent,
+        DiscountPercent = d.DiscountPercent, Link = d.Link,
     };
 
     public QuotationLineDto ToDto() => new()

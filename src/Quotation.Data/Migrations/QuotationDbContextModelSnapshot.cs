@@ -545,6 +545,10 @@ namespace Quotation.Data.Migrations
                     b.Property<DateTime>("LastSyncedUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Link")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Manufacturer")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -666,6 +670,9 @@ namespace Quotation.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("CancelledUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ClientKey")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("ConsigneeSameAsBuyer")
@@ -809,6 +816,9 @@ namespace Quotation.Data.Migrations
                     b.Property<int?>("Sequence")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("ShowProductLinks")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Source")
                         .HasColumnType("INTEGER");
 
@@ -852,6 +862,8 @@ namespace Quotation.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClientKey");
 
                     b.HasIndex("CustomerId");
 

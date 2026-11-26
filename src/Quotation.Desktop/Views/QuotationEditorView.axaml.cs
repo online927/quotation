@@ -222,6 +222,14 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
             return;
         }
+        // Round 40 (ED-1): Home (outside a typing box) goes to the Product box to add an item.
+        if (e.Key == Key.Home && e.KeyModifiers == KeyModifiers.None && source is not TextBox && source.FindAncestorOfType<TextBox>() is null
+            && source.FindAncestorOfType<SearchPicker>(includeSelf: true) is null && Vm is { IsPasteOpen: false, IsInvoiceOpen: false, EditingLine: null })
+        {
+            FocusPicker(ProductBox);
+            e.Handled = true;
+            return;
+        }
         // Round 38 (Q5): Ctrl+D copies the picked line just below; Ctrl+↑ / Ctrl+↓ move it (⌘ on a Mac).
         if (e.KeyModifiers == MacSupport.Command && e.Key is Key.D or Key.Up or Key.Down && Vm is { } lines
             && source.FindAncestorOfType<SearchPicker>(includeSelf: true) is not { IsDropDownOpen: true })
@@ -441,6 +449,16 @@ public partial class QuotationEditorView : UserControl
 
     private void OnFocusEntry(string box)
     {
+        if (box == "Line")
+        {
+            // Round 40 (ED-1): back on the line that was changed; the page does not move to the Product box.
+            Dispatcher.UIThread.Post(() =>
+            {
+                Focus();
+                ScrollToHighlight();
+            }, DispatcherPriority.Background);
+            return;
+        }
         if (Vm is { InListEditing: true } listed && box != "Product")
         {
             if (box == "Name" && listed.EditingLine is { } changing) changing.IsChangingItem = true;

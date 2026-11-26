@@ -125,7 +125,7 @@ public class ZohoRound35Tests
         Assert.Contains("By Road Dispatch :", text); // value, then its label (drawn right-aligned)
         Assert.Contains("Pune Destination :", text);
         Assert.Contains("Ex-godown Bangalore. Delivery :", text);
-        Assert.Contains("30 Sep 2026 Date :", text);
+        Assert.Contains("Date: 30 Sep 2026", text); // Round 40 (QR-3): under the Ref No.
         Assert.Contains("Prepared by Imran", text);
         Assert.DoesNotContain("Printed on", text);
 

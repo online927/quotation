@@ -255,24 +255,45 @@ public static class SystemEndpoints
             if (req.Width is < 30 or > 280) return Results.BadRequest(new ApiError("The seal width must be between 30 and 280 points."));
             if (Math.Abs(req.OffsetX) > 300 || Math.Abs(req.OffsetY) > 400) return Results.BadRequest(new ApiError("The seal is moved too far."));
             var company = s.Company;
-            if (company.SealWidth == req.Width && company.SealOffsetX == req.OffsetX && company.SealOffsetY == req.OffsetY) return Results.NoContent();
-            company.SealWidth = req.Width;
-            company.SealOffsetX = req.OffsetX;
-            company.SealOffsetY = req.OffsetY;
+            var zoho = string.Equals(req.Layout, PdfLayouts.Zoho, StringComparison.OrdinalIgnoreCase);
+            var now = zoho ? company.ZohoSeal() : (company.SealWidth, company.SealOffsetX, company.SealOffsetY);
+            if (now == (req.Width, req.OffsetX, req.OffsetY) && (!zoho || company.ZohoSealWidth is not null)) return Results.NoContent();
+            if (zoho)
+            {
+                (company.ZohoSealWidth, company.ZohoSealOffsetX, company.ZohoSealOffsetY) = (req.Width, req.OffsetX, req.OffsetY);
+            }
+            else
+            {
+                // The Zoho seal keeps its place when the Tally one moves (it gets its own numbers the first time).
+                if (company.ZohoSealWidth is null) (company.ZohoSealWidth, company.ZohoSealOffsetX, company.ZohoSealOffsetY) = company.ZohoSeal();
+                (company.SealWidth, company.SealOffsetX, company.SealOffsetY) = (req.Width, req.OffsetX, req.OffsetY);
+            }
             await s.SaveAsync(SettingsService.CompanyKey, company, ctx.User.UserName(), ct);
             await audit.WriteAsync(ctx.User.UserName(), ctx.Machine(), "SealPositionChanged", "Settings", "seal",
-                $"width {req.Width}, right {req.OffsetX}, down {req.OffsetY}", ct);
+                $"{(zoho ? "Zoho" : "Tally")}: width {req.Width}, right {req.OffsetX}, down {req.OffsetY}", ct);
             return Results.NoContent();
         }).RequireAuthorization(AdminPolicy);
         // A sample page with a seal (the given user's, or any user's). Size and position can be given (the values on the Settings screen, not saved yet),
         // otherwise the saved ones are used.
-        app.MapGet("/api/settings/seal/preview", (double? width, double? offsetX, double? offsetY, int? userId, SealService seal, SettingsService s,
-            PdfQuotationRenderer pdf, HttpContext ctx, TimeProvider clock) =>
+        app.MapGet("/api/settings/seal/preview", (double? width, double? offsetX, double? offsetY, int? userId, string? layout, SealService seal,
+            SettingsService s, PdfQuotationRenderer pdf, HttpContext ctx, TimeProvider clock) =>
         {
             var company = s.Company;
-            if (width is { } w) company.SealWidth = w;
-            if (offsetX is { } x) company.SealOffsetX = x;
-            if (offsetY is { } y) company.SealOffsetY = y;
+            // Round 40 (SL-1): "Zoho" shows the seal on a Zoho page with the Zoho numbers.
+            var zoho = string.Equals(layout, PdfLayouts.Zoho, StringComparison.OrdinalIgnoreCase);
+            if (zoho)
+            {
+                (company.ZohoSealWidth, company.ZohoSealOffsetX, company.ZohoSealOffsetY) = company.ZohoSeal();
+                if (width is { } zw) company.ZohoSealWidth = zw;
+                if (offsetX is { } zx) company.ZohoSealOffsetX = zx;
+                if (offsetY is { } zy) company.ZohoSealOffsetY = zy;
+            }
+            else
+            {
+                if (width is { } w) company.SealWidth = w;
+                if (offsetX is { } x) company.SealOffsetX = x;
+                if (offsetY is { } y) company.SealOffsetY = y;
+            }
             if ((userId is { } uid ? seal.ReadImage(uid) : seal.AnyImage()) is not { } image)
                 return Results.NotFound(new ApiError("No seal picture yet: add one to a user in Settings → Users."));
             var sample = new QuotationHeader
@@ -286,8 +307,8 @@ public static class SystemEndpoints
                 Status = QuotationStatus.Draft,
                 Lines = [new QuotationLine { LineNo = 1, ItemName = "Sample Item", Hsn = "82051000", GstRate = 18, Quantity = 1, Unit = "NOS", Rate = 1000, Amount = 1000 }],
             };
-            var bytes = pdf.Render(sample, company, s.Quotation,
-                new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName()), image);
+            var stamp = new Quotation.Pdf.PrintStamp(clock.GetLocalNow().DateTime, ctx.User.UserName());
+            var bytes = zoho ? pdf.RenderModern(sample, company, s.Quotation, stamp, image) : pdf.Render(sample, company, s.Quotation, stamp, image);
             return Results.File(bytes, "application/pdf");
         }).RequireAuthorization(AdminPolicy);
         // The latest quotation (not proforma) with a Tally customer (or a sample) printed with the quotation settings on the Settings screen

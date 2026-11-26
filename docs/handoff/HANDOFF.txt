@@ -199,6 +199,74 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 ------------------------------
  STILL TO BUILD: Z8 phone part (read / add notes in the Android app, 🎤 in the note box) — the server and PC/Mac parts
    are built; do it with the next Android build.
+ (QR-1 … FT-1 and PD-1 below were BUILT in Round 40 on "Build only for windows" (= Do, Windows only) — kept as the record
+ of what was asked; see docs/PHASES.md "Round 40" and the ROUND 40 block after the Round 39 one.)
+ QR-1 (user, after the "Zoho format with all details filled" preview, previews/zoho-all-filled-page1/2.png): "Qr code
+   should be above heading Quotation/performa heading". Zoho PDF (ModernPdfRenderer): move the UPI QR ("Pay by UPI" +
+   UPI ID) from the bottom right of the last page to page 1, top right, just above the "Quotation/Proforma" title
+   (title stays right-aligned under it). The bottom block (remarks / terms / bank) then uses the full width. Tally
+   layout unchanged. Server update needed when built (the server makes the PDFs).
+ QR-2 (user: "Also move that date and that under section below refno section"): Zoho PDF page 1 — the Date / Terms /
+   Dispatch / Destination / Delivery rows move up from beside the buyer to right under the Ref No / Order No / Other Ref
+   lines (same right-aligned "label : value" look, date bold). The item table then starts just under the buyer and
+   consignee blocks (a little higher than now). Server update needed when built.
+   QR-1 + QR-2 previewed together (made with a copy of the real Zoho renderer): previews/idea-QR1-QR2-page1.png and
+   idea-QR1-QR2-page2.png. QR block: "Pay by UPI" at T=50, code, UPI ID; title stays at 139.9; date rows start at
+   (last ref line + 25); with no QR at the bottom the remarks / terms / bank use the full width.
+ QR-3 (user, after the QR-1 + QR-2 preview: "Add date under ref no"): the date moves out of the Date / Terms / … rows
+   and becomes its own line right under "Ref No. TSQ…", in the same bold right-aligned style ("Date: 26 Nov 2026"),
+   before "Order No" and "Other Ref". Terms / Dispatch / Destination / Delivery stay as rows under the ref lines (QR-2).
+   Previewed: previews/idea-QR3-date-under-ref.png. Server update needed when built.
+ SL-1 (user: "Seal for zoho should have separate settings like moving it"): today ONE set of seal settings (Settings →
+   seal: Width, Move right, Move up = CompanySettings.SealWidth / SealOffsetX / SealOffsetY) is used by the Tally,
+   Zoho (ModernPdfRenderer.DrawSeal) and Minimal layouts. Give the Zoho layout its own Width / Move right / Move up
+   (new CompanySettings ZohoSealWidth / ZohoSealOffsetX / ZohoSealOffsetY, first copied from the current values), shown
+   in Settings next to the seal as "Tally" / "Zoho" choice with its own Preview (SealPreviewAsync gets a layout
+   argument; the preview PDF is drawn in that layout). The seal picture itself stays the same. Tally unchanged.
+   Server update needed when built (new settings + PDF); PC/Mac app update for the Settings page.
+   Previewed: previews/idea-SL1-settings.png (Tally | Zoho pill above Width / Move right / Move up, "Preview on a Zoho
+   page") and idea-SL1-zoho-seal-moved.png (Zoho seal at width 100, right 280, up 20: bottom right, where the QR was).
+ PG-1 (user: "Remove grey text page up down in quotation history"): on a quotation opened from a list (History,
+   Today's, Drafts) remove the grey "3 of 25 · PgUp / PgDn" line next to the heading (QuotationEditorView.axaml ~l.63,
+   ListPosition / HasListPosition). Page Up / Page Down keep working; F1 card keeps its PgUp / PgDn row. PC/Mac app
+   update only, no server update.
+ PD-1 (user: "Part details, remove grey text, contact 98, contact mr, email, gst, pan, preview"): Settings → Party
+   Details: the text after five switches goes and they show On / Off like the State switch: "Contact : 98…",
+   "Contact : Mr. Name, 98…", "E-Mail : name@company.com", "GSTIN/UIN", "PAN/IT No, from the Tally ledger"
+   (SettingsView.axaml Party Details OnContent/OffContent). The other rows (Party master, continuous line, PIN code,
+   address width) keep their text. Previewed: previews/idea-PD1-now.png → idea-PD1-after.png (status: previewed, waits
+   for "Add"). PC/Mac app update only.
+ ST-1 (user: "gst presentation is always compute tax so remove, default pnf remove"): Settings → Quotation tab:
+   remove the "GST presentation" row (TaxPresentation ComboBox, SettingsView.axaml ~l.184) — always Compute tax
+   (server keeps/forces TaxPresentation.ComputeTax on save; SettingsService already does it in one place). Remove the
+   "Default packing & forwarding (₹)" row (~l.188): new quotations, Formater and the AI reader start with an empty P&F
+   (DefaultPackingForwardingAmount treated as 0 / set to 0; QuotationEditorViewModel l.1335, AiService l.201).
+   Server update needed when built (server stops using the default P&F and forces Compute tax); PC/Mac app update.
+ ED-1 (user: "Pressing edit button after finishing edit comes to last of the list, don't want that, stay where ever it
+   is, also press home button to come to product box"): (a) after changing a line (✎ Edit, then Save line / Enter,
+   or Cancel) the page must stay where that line is — no jump down to the product box / end of the list (today the
+   focus goes back to the Product box at the bottom, which scrolls the page there). The changed line stays in view and
+   picked; the cursor goes to the product box only without scrolling, or the next key (↓/↑/Enter) works from that line.
+   Both ways of editing (boxes below and IE-1 in the list). (b) Home key on the quotation screen (not while typing in a
+   text box, where Home moves to the start of the text) = jump to the Product box (like Alt+I), scrolling it into view.
+   Add Home to the F1 card. PC/Mac app update only.
+ UB-1 (user: "In the box edit, change button to update and cancel and make sure it doesn't hit each other and the
+   amount"): the line being changed in the list (IE-1 inline row, QuotationEditorView.axaml "inlineedit" grid):
+   buttons "Enter · Update line" / "Esc · Cancel" → "Update" / "Cancel" (Enter / Esc as hover hints), stacked with 6
+   gap, both the same width; Amount column 100 → 130 with 14 right margin and the button column Auto, so a big amount
+   (15,43,20,875.00) never runs under the buttons. Previewed: previews/idea-UB1-now.png → idea-UB1-after.png (made
+   with a temporary change, put back). The "Update line" button under the list (boxes below) becomes "Update" too.
+   PC/Mac app update only.
+ TC-1 (user: "Title case always on, so remove"): Settings → Quotation: remove the "Title Case while typing" row
+   (TitleCaseSwitch, SettingsView.axaml ~l.201). Title Case is always on (TitleCase.IsOn = true always; the
+   Settings.Quotation.TitleCase value is no longer read, an old "off" is ignored). PC/Mac app update only (server
+   keeps the stored value, nothing to change there).
+ FT-1 (user: "Remove grey text for Proforma, in feature, whatsapp button"): Settings → Features: the "Proforma
+   invoices" switch (ProformaSwitch: "On: New Proforma Invoice, the Proforma Invoices list and 'Make proforma'" /
+   "Off: nobody makes proforma invoices …") and the "WhatsApp button" switch (WhatsAppSwitch: "On: approved
+   quotations and proforma invoices get a WhatsApp button") show just On / Off, like Greet / Fest / XO. The WhatsApp
+   message boxes under it stay. Other Features rows (Users and others' quotations, Won / Lost, Stars) keep their text
+   unless asked. PC/Mac app update only.
  (Everything else that was listed below was BUILT in Round 39 on "Do for windows only" — kept below as the record of
  what was asked; see docs/PHASES.md "Round 39" and the ROUND 39 block after this list.)
 
@@ -368,6 +436,24 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
      b) Settings form rows too tight (Grid.form children Margin 0,3 / 0,4 → boxes touch the row below): every row gets
         8 px above and below (TextBlock / TextBox / NumericUpDown / ComboBox / switch / StackPanel rows) and a faint
         line between rows (RowLineBrush), on all Settings tabs. PC/Mac only.
+
+ ROUND 40 (built on "Build only for windows" = Do, Windows only) delivered (code pointers):
+   QR-1/2/3 ModernPdfRenderer: DrawUpiQr on page 1 (QrTop 50, right 559.8), BottomBlock full width (no hasQr), the date
+     "Date: dd MMM yyyy" bold under Ref No (178.5), RightRows without Date, RightRowsTop(doc) under the ref lines.
+   SL-1 CompanySettings.ZohoSealWidth/OffsetX/OffsetY (null = Tally numbers) + ZohoSeal(); ModernPdfRenderer.DrawSeal uses
+     it; SealPositionDto(..., Layout); PUT /api/settings/seal/position (Zoho → own numbers; a Tally move first gives Zoho
+     its own); GET /api/settings/seal/preview?layout=Zoho (RenderModern); SettingsService.SaveAllFromClientAsync keeps
+     stored Zoho numbers when a PC sends none. Desktop: SettingsViewModel SealForZoho/SealForTally, _tallySeal/_zohoSeal,
+     BothSeals(), SealPreviewText; SettingsView pill SealTallyRadio/SealZohoRadio + preview button beside the numbers.
+   ST-1 SettingsService: SaveAllFromClientAsync forces ComputeTax + default P&F 0; upgrade key state:upgrade.r40.gst.pf;
+     AiService no default P&F; editor PackingForwarding = null on a new quotation; rows removed from SettingsView.
+   TC-1 TitleCase.IsOn = true always (QuotationEditorViewModel); row removed. FT-1/PD-1 SettingsView OnContent/OffContent.
+   PG-1 ListPositionText TextBlock removed (VM property kept). UB-1 inlineedit grid 130 amount + Auto buttons
+     "Update"/"Cancel"; EntryButtonText "Update". ED-1 SaveLine/CancelEntry of an existing line → SelectedLine +
+     FocusEntry("Line") (view: Focus + ScrollToHighlight); Home key in OnPreviewKeyDown → FocusPicker(ProductBox); F1 row.
+   Tests: tests/Quotation.Pdf.Tests/Round40PdfTests.cs, tests/Quotation.Server.Tests/Round40Tests.cs,
+     tests/Quotation.Desktop.Tests/Round40UiTests.cs; updated UpiQrTests, ZohoFooterTests, ModernLayoutTests,
+     QuotationEditorTests ("Update").
 
  ROUND 39 (built on "Do for windows only") delivered (code pointers):
    GR-1/GR-2 QuotationEditorView ViewGearButton (HideGstSwitch, HideHsnSwitch, HidePerSwitch, ProductLinksSwitch,

@@ -59,8 +59,6 @@
           <TextBlock Text="{Binding UsdChipText}" FontWeight="SemiBold" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource WarnBrush}" />
         </Border>
         <TextBlock Text="{Binding Source, StringFormat='Source: {0}'}" Classes="muted" VerticalAlignment="Center" FontSize="{DynamicResource FontSmall}" IsVisible="{Binding ShowSource}" />
-        <TextBlock Name="ListPositionText" Text="{Binding ListPositionText}" Classes="muted" VerticalAlignment="Center" FontSize="{DynamicResource FontSmall}"
-                   IsVisible="{Binding HasListPosition}" ToolTip.Tip="Page Down: next quotation in the list · Page Up: previous" />
       </StackPanel>
       <!-- Round 39 (GR-1 / GR-2): a gear just before the date: what this PC's screen hides, and this user's PDF choices -->
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -642,7 +640,7 @@
                       </StackPanel>
                     </Grid>
                     <!-- Round 39 (IE-1): the line changed in the list itself (My Settings → Editing a line → In the list) -->
-                    <Grid Classes="inlineedit" ColumnDefinitions="50,*,Auto,Auto,0,70,90,Auto,54,100,110" IsVisible="{Binding IsInline}"
+                    <Grid Classes="inlineedit" ColumnDefinitions="50,*,Auto,Auto,0,70,90,Auto,54,130,Auto" IsVisible="{Binding IsInline}"
                           KeyboardNavigation.TabNavigation="Local">
                       <TextBlock Classes="td" Text="{Binding LineNo}" Margin="20,0,0,0" VerticalAlignment="Top" />
                       <StackPanel Grid.Column="1" Spacing="6" Margin="0,0,10,0">
@@ -679,10 +677,11 @@
                                  IsVisible="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).ShowPer}" />
                       <NumericUpDown Grid.Column="8" Name="InlineDiscountBox" Value="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EntryDiscount}" Minimum="0" Maximum="99.99" FormatString="0.##" TabIndex="3"
                                      VerticalAlignment="Top" Margin="4,0,0,0" ShowButtonSpinner="False" HorizontalContentAlignment="Right" />
-                      <TextBlock Classes="td" Grid.Column="9" Text="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EntryAmountText}" HorizontalAlignment="Right" FontWeight="SemiBold" VerticalAlignment="Top" />
-                      <StackPanel Grid.Column="10" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Top">
-                        <Button Name="InlineUpdateButton" Classes="primary small" Content="Enter · Update line" Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).SaveLineCommand}" Focusable="False" />
-                        <Button Name="InlineCancelButton" Classes="small" Content="Esc · Cancel" Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).CancelEntryCommand}" Focusable="False" />
+                      <TextBlock Classes="td" Grid.Column="9" Text="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EntryAmountText}" HorizontalAlignment="Right" FontWeight="SemiBold" VerticalAlignment="Top" Margin="0,0,14,0" />
+                      <!-- Round 40 (UB-1): short names, the same width, clear of the amount -->
+                      <StackPanel Grid.Column="10" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <Button Name="InlineUpdateButton" Classes="primary small" Content="Update" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTip.Tip="Enter" Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).SaveLineCommand}" Focusable="False" />
+                        <Button Name="InlineCancelButton" Classes="small" Content="Cancel" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTip.Tip="Esc" Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).CancelEntryCommand}" Focusable="False" />
                       </StackPanel>
                     </Grid>
                     </Panel>

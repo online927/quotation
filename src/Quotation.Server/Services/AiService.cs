@@ -198,8 +198,7 @@ public sealed class AiService(
             TermsAndConditions = string.Join("\n", company.TermsAndConditions),
             PreparedBy = company.DefaultPreparedBy,
             VerifiedBy = company.DefaultVerifiedBy,
-            PackingForwarding = settings.Quotation.DefaultPackingForwardingAmount,
-            PackingForwardingPercent = settings.Quotation.DefaultPackingForwardingPercent > 0 ? settings.Quotation.DefaultPackingForwardingPercent : null,
+            // Round 40 (ST-1): no default packing & forwarding; it is typed when needed.
             Lines = decisions.Lines.Select(l => new QuotationLineDto
             {
                 ProductId = l.ProductId,

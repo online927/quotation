@@ -181,12 +181,8 @@
             <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultStartSequence}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
             <TextBlock Grid.Row="4" Text="Financial year start month" />
             <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding Settings.Quotation.FinancialYearStartMonth}" Minimum="1" Maximum="12" FormatString="0" Width="160" HorizontalAlignment="Left" />
-            <TextBlock Grid.Row="5" Text="GST presentation" />
-            <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding TaxPresentations}" SelectedItem="{Binding Settings.Quotation.TaxPresentation}" Width="200" />
             <TextBlock Grid.Row="6" Text="Round off total to rupee" />
             <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RoundOffTotal}" OnContent="On" OffContent="Off" />
-            <TextBlock Grid.Row="7" Text="Default packing &amp; forwarding (₹)" />
-            <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultPackingForwardingAmount}" Minimum="0" FormatString="0.00" Width="160" HorizontalAlignment="Left" />
             <TextBlock Grid.Row="10" Text="Allow generation with stale Tally data" />
             <ToggleSwitch Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllowStaleDataOverride}" OnContent="On" OffContent="Off" />
             <TextBlock Grid.Row="11" Text="Tally data stale after (hours)" />
@@ -198,8 +194,6 @@
               <NumericUpDown Value="{Binding Settings.Quotation.UserEditDays}" Minimum="0" Maximum="365" FormatString="0" Width="120" />
               <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="after a quotation is first saved; administrators can always edit." />
             </StackPanel>
-            <TextBlock Grid.Row="17" Text="Title Case while typing" />
-            <ToggleSwitch Grid.Row="17" Grid.Column="1" Name="TitleCaseSwitch" IsChecked="{Binding Settings.Quotation.TitleCase}" OnContent="" OffContent="" />
             <TextBlock Grid.Row="13" Text="Proforma invoice number pattern" />
             <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding Settings.Quotation.ProformaNumberPattern}" Watermark="TSPI{FY}-{SEQ}" />
             <TextBlock Grid.Row="14" Text="First proforma number of a new year" />
@@ -289,8 +283,7 @@
                   <StackPanel Spacing="10">
                     <TextBlock Classes="h2" Text="Proforma invoices" />
                     <ToggleSwitch Name="ProformaSwitch" IsChecked="{Binding Settings.Quotation.ProformaEnabled}"
-                                  OnContent="On: New Proforma Invoice, the Proforma Invoices list and 'Make proforma'"
-                                  OffContent="Off: nobody makes proforma invoices (those already made stay in Quotation History)" />
+                                  OnContent="On" OffContent="Off" />
                     <TextBlock Classes="h2" Text="Users and others' quotations" Margin="0,8,0,0" />
                     <ToggleSwitch Name="OwnOnlySwitch" IsChecked="{Binding Settings.Quotation.UsersChangeOnlyTheirOwn}"
                                   OnContent="On: users see everyone's quotations but change, approve, cancel, duplicate and print only their own"
@@ -304,7 +297,7 @@
                     </StackPanel>
                     <TextBlock Classes="h2" Text="WhatsApp button" Margin="0,8,0,0" />
                     <ToggleSwitch Name="WhatsAppSwitch" IsChecked="{Binding Settings.Quotation.WhatsAppButton}"
-                                  OnContent="On: approved quotations and proforma invoices get a WhatsApp button" OffContent="Off" />
+                                  OnContent="On" OffContent="Off" />
                     <StackPanel Spacing="4" IsVisible="{Binding Settings.Quotation.WhatsAppButton}">
                       <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Message typed into WhatsApp ({number} = the number, {customer} = the customer)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Message typed into WhatsApp ({number} = the number, {customer} = the customer). WhatsApp Desktop must be installed on the PC."><Path Classes="infoicon" /></Border></StackPanel>
                       <TextBox Text="{Binding Settings.Quotation.WhatsAppMessage}" />
@@ -403,12 +396,12 @@
             <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="How Buyer (Bill to) and Consignee (Ship to) are printed on every PDF, like Tally&#x27;s print …" TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="How Buyer (Bill to) and Consignee (Ship to) are printed on every PDF, like Tally's print configuration &#x2018;Party Details&#x2019;. PDFs already made change only when they are regenerated."><Path Classes="infoicon" /></Border></StackPanel>
             <Grid Classes="form" ColumnDefinitions="320,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Text="Show Contact (phone)" />
-              <ToggleSwitch Grid.Row="0" Grid.Column="1" Name="ShowContactBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" OnContent="Contact : 98…" OffContent="Contact : 98…" />
+              <ToggleSwitch Grid.Row="0" Grid.Column="1" Name="ShowContactBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" OnContent="On" OffContent="Off" />
               <TextBlock Grid.Row="1" Text="     Show contact person's name" />
               <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactPerson}"
-                        IsEnabled="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" OnContent="Contact : Mr. Name, 98…" OffContent="Contact : Mr. Name, 98…" />
+                        IsEnabled="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" OnContent="On" OffContent="Off" />
               <TextBlock Grid.Row="2" Text="Show E-mail" />
-              <ToggleSwitch Grid.Row="2" Grid.Column="1" Name="ShowEmailBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowEmail}" OnContent="E-Mail : name@company.com" OffContent="E-Mail : name@company.com" />
+              <ToggleSwitch Grid.Row="2" Grid.Column="1" Name="ShowEmailBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowEmail}" OnContent="On" OffContent="Off" />
               <TextBlock Grid.Row="3" Text="Show Name and Address from Party master" />
               <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.NameAndAddressFromMaster}"
                         OnContent="Tally ledger's name and address, not what was typed on the quotation" OffContent="Tally ledger's name and address, not what was typed on the quotation" />
@@ -417,9 +410,9 @@
               <TextBlock Grid.Row="5" Text="Display name for Parties" />
               <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding PartyDisplayNames}" SelectedIndex="{Binding PartyDisplayNameIndex}" Width="200" />
               <TextBlock Grid.Row="6" Text="Show Buyer's Tax Registration No. / GSTIN" />
-              <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowGstin}" OnContent="GSTIN/UIN" OffContent="GSTIN/UIN" />
+              <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowGstin}" OnContent="On" OffContent="Off" />
               <TextBlock Grid.Row="7" Text="Show PAN / Income Tax No." />
-              <ToggleSwitch Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPan}" OnContent="PAN/IT No, from the Tally ledger" OffContent="PAN/IT No, from the Tally ledger" />
+              <ToggleSwitch Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPan}" OnContent="On" OffContent="Off" />
               <TextBlock Grid.Row="8" Text="Show State Name &amp; State Code" />
               <ToggleSwitch Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowStateNameAndCode}" OnContent="On" OffContent="Off" />
               <TextBlock Grid.Row="9" Text="Show Consignee details" />
@@ -632,7 +625,6 @@
                         <StackPanel Grid.Column="2" Spacing="8">
                           <WrapPanel ItemSpacing="8" LineSpacing="8">
                             <Button ctl:ButtonIcon.Kind="image" Name="UploadUserSealButton" Content="Choose picture…" Click="OnChooseUserSeal" />
-                            <Button ctl:ButtonIcon.Kind="eye" Content="Preview on a page" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}" />
                           </WrapPanel>
                           <TextBlock Text="New seal PIN (4 digits, saved with Save user)" FontSize="12" />
                           <TextBox Name="UserSealPinBox" Text="{Binding NewUserSealPin}" PasswordChar="●" MaxLength="4" Width="110" HorizontalAlignment="Left" Watermark="••••"><TextBox.KeyBindings><KeyBinding Gesture="Enter" Command="{Binding SaveUserCommand}" /></TextBox.KeyBindings></TextBox>
@@ -641,6 +633,13 @@
                       <TextBlock Name="UserSealStateLine" FontWeight="SemiBold" FontSize="12" Text="{Binding UserSealState}" TextWrapping="Wrap"
                                  Classes="sealstate" Classes.notready="{Binding !UserSealReady}" />
                       <TextBlock Classes="h2" FontSize="13" Text="Size and place on the PDF (the same for every user's seal)" Margin="0,6,0,0" TextWrapping="Wrap" />
+                      <!-- Round 40 (SL-1): the Tally and Zoho layouts each keep their own size and place -->
+                      <Border Classes="pillbar" HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                          <RadioButton Name="SealTallyRadio" Classes="seg" GroupName="SealLayout" Content="Tally" IsChecked="{Binding SealForTally}" />
+                          <RadioButton Name="SealZohoRadio" Classes="seg" GroupName="SealLayout" Content="Zoho" IsChecked="{Binding SealForZoho}" />
+                        </StackPanel>
+                      </Border>
                       <WrapPanel ItemSpacing="14" LineSpacing="8">
                         <StackPanel Spacing="3"><TextBlock FontSize="12" Text="Width (pt)" />
                           <NumericUpDown Name="SealWidthBox" Value="{Binding SealWidth}" Minimum="30" Maximum="280" Increment="10" FormatString="0" Width="120" /></StackPanel>
@@ -648,8 +647,10 @@
                           <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="120" /></StackPanel>
                         <StackPanel Spacing="3"><TextBlock FontSize="12" Text="Move up" />
                           <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-200" Maximum="300" Increment="5" FormatString="0" Width="120" /></StackPanel>
+                        <Button ctl:ButtonIcon.Kind="eye" Content="{Binding SealPreviewText}" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}"
+                                VerticalAlignment="Bottom" />
                       </WrapPanel>
-                      <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Points (72 = 1 inch); a minus number moves it left / down." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Points (72 = 1 inch); a minus number moves it left / down. 'Preview on a page' shows these numbers straight away; Save user keeps them."><Path Classes="infoicon" /></Border></StackPanel>
+                      <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Points (72 = 1 inch); a minus number moves it left / down." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Points (72 = 1 inch); a minus number moves it left / down. 'Preview on a … page' shows these numbers straight away; Save user keeps them."><Path Classes="infoicon" /></Border></StackPanel>
                       <Button ctl:ButtonIcon.Kind="trash" Content="Remove seal" Classes="danger" Command="{Binding RemoveUserSealCommand}" IsVisible="{Binding UserHasAnySeal}" HorizontalAlignment="Left" />
                     </StackPanel>
                   </TabItem>

@@ -1072,6 +1072,14 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             FocusEntry?.Invoke(FirstStepBox ?? "Quantity");
             return;
         }
+        if (editing is not null && index >= 0 && index < Lines.Count)
+        {
+            // Round 40 (ED-1): a changed line keeps the page where it is: the line stays highlighted (↓ / ↑ go on from it),
+            // no jump down to the Product box.
+            SelectedLine = Lines[index];
+            FocusEntry?.Invoke("Line");
+            return;
+        }
         FocusEntry?.Invoke("Product");
     }
 
@@ -1267,7 +1275,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         if (Id is { } id && !HasUnsavedChanges && !IsBusy) _ = RunAsync(async () => Load(await _session.Api.QuotationAsync(id)));
     }
 
-    public string EntryButtonText => EditingLine is null ? "Add line" : "Update line";
+    public string EntryButtonText => EditingLine is null ? "Add line" : "Update";
 
     // ================================================================= loading
 
@@ -1283,7 +1291,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 _session.Api.UpdateCurrentUser(await _session.Api.MeAsync());
             }
             catch (ApiException) { }
-            Controls.TitleCase.IsOn = _settings.Quotation.TitleCase;
+            Controls.TitleCase.IsOn = true; // Round 40 (TC-1): always on (the Settings row was removed)
             OnPropertyChanged(nameof(NotesOn));
             OnPropertyChanged(nameof(TrackOutcomes));
             OnPropertyChanged(nameof(ShowOutcome));
@@ -1332,7 +1340,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                     ? _session.Api.CurrentUser?.DisplayName ?? ""
                     : _settings.Company.DefaultPreparedBy;
                 VerifiedBy = _settings.Company.DefaultVerifiedBy;
-                PackingForwarding = _settings.Quotation.DefaultPackingForwardingAmount is > 0 and var pf ? pf : null;
+                PackingForwarding = null; // Round 40 (ST-1): no default P&F; typed when needed
                 PackingForwardingPercent = null; // P&F is an amount (the % box was removed)
                 _loading = false;
                 await RefreshNumberPreviewAsync();
@@ -2274,7 +2282,15 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     }
 
     [RelayCommand]
-    private void CancelEntry() => ClearEntry();
+    private void CancelEntry()
+    {
+        var editing = EditingLine;
+        ClearEntry();
+        if (editing is null || !Lines.Contains(editing)) return;
+        // Round 40 (ED-1): Cancel on a line being changed stays on that line.
+        SelectedLine = editing;
+        FocusEntry?.Invoke("Line");
+    }
 
     private void ClearEntry()
     {

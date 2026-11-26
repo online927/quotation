@@ -156,6 +156,30 @@ public sealed partial class SettingsViewModel : ViewModelBase
     });
 
     // Seal size and position on PDFs (administrator)
+    // Round 40 (SL-1): the boxes show the Tally or the Zoho seal numbers; the other layout's are kept here meanwhile.
+    private (decimal? Width, decimal? OffsetX, decimal? MoveUp) _tallySeal, _zohoSeal;
+    [ObservableProperty] private bool _sealForZoho;
+    public bool SealForTally { get => !SealForZoho; set { if (value) SealForZoho = false; } }
+    public string SealPreviewText => SealForZoho ? "Preview on a Zoho page" : "Preview on a Tally page";
+    private string SealLayout => SealForZoho ? PdfLayouts.Zoho : PdfLayouts.Tally;
+
+    partial void OnSealForZohoChanging(bool value)
+    {
+        if (value == SealForZoho) return;
+        if (SealForZoho) _zohoSeal = (SealWidth, SealOffsetX, SealMoveUp); else _tallySeal = (SealWidth, SealOffsetX, SealMoveUp);
+    }
+
+    partial void OnSealForZohoChanged(bool value)
+    {
+        (SealWidth, SealOffsetX, SealMoveUp) = value ? _zohoSeal : _tallySeal;
+        OnPropertyChanged(nameof(SealForTally));
+        OnPropertyChanged(nameof(SealPreviewText));
+    }
+
+    /// <summary>Both layouts' numbers, with the boxes' values for the one shown.</summary>
+    private ((decimal? Width, decimal? OffsetX, decimal? MoveUp) Tally, (decimal? Width, decimal? OffsetX, decimal? MoveUp) Zoho) BothSeals() =>
+        SealForZoho ? (_tallySeal, (SealWidth, SealOffsetX, SealMoveUp)) : ((SealWidth, SealOffsetX, SealMoveUp), _zohoSeal);
+
     [ObservableProperty] private decimal? _sealWidth;
     [ObservableProperty] private decimal? _sealOffsetX;
     /// <summary>Points the seal is moved up (negative = down); stored as the downward offset.</summary>
@@ -318,9 +342,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
         CustomerGroups = string.Join(Environment.NewLine, s.Tally.CustomerGroups);
         LastRateVoucherTypes = string.Join(Environment.NewLine, s.Tally.LastRateVoucherTypes);
         HiddenMarkers = string.Join(Environment.NewLine, s.Tally.HiddenProductMarkers);
-        SealWidth = (decimal)s.Company.SealWidth;
-        SealOffsetX = (decimal)s.Company.SealOffsetX;
-        SealMoveUp = -(decimal)s.Company.SealOffsetY;
+        var zoho = s.Company.ZohoSeal();
+        _tallySeal = ((decimal)s.Company.SealWidth, (decimal)s.Company.SealOffsetX, -(decimal)s.Company.SealOffsetY);
+        _zohoSeal = ((decimal)zoho.Width, (decimal)zoho.OffsetX, -(decimal)zoho.OffsetY);
+        (SealWidth, SealOffsetX, SealMoveUp) = SealForZoho ? _zohoSeal : _tallySeal;
         FyOverride = s.Tally.ActiveFinancialYearOverride?.ToString() ?? "";
         Settings = s;
         OnPropertyChanged(nameof(ExampleNumber));
@@ -424,9 +449,13 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Settings.Tally.CustomerGroups = SplitLines(CustomerGroups);
         Settings.Tally.LastRateVoucherTypes = SplitLines(LastRateVoucherTypes);
         Settings.Tally.HiddenProductMarkers = SplitLines(HiddenMarkers);
-        Settings.Company.SealWidth = (double)(SealWidth ?? 150);
-        Settings.Company.SealOffsetX = (double)(SealOffsetX ?? 0);
-        Settings.Company.SealOffsetY = -(double)(SealMoveUp ?? 0);
+        var (tally, zohoSeal) = BothSeals();
+        Settings.Company.SealWidth = (double)(tally.Width ?? 150);
+        Settings.Company.SealOffsetX = (double)(tally.OffsetX ?? 0);
+        Settings.Company.SealOffsetY = -(double)(tally.MoveUp ?? 0);
+        Settings.Company.ZohoSealWidth = (double)(zohoSeal.Width ?? 150);
+        Settings.Company.ZohoSealOffsetX = (double)(zohoSeal.OffsetX ?? 0);
+        Settings.Company.ZohoSealOffsetY = -(double)(zohoSeal.MoveUp ?? 0);
         if (string.IsNullOrWhiteSpace(FyOverride))
         {
             Settings.Tally.ActiveFinancialYearOverride = null;
@@ -557,15 +586,26 @@ public sealed partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Saves the seal size and place when they were changed on screen (the same for every seal).</summary>
+    /// <summary>Saves the seal size and place (Tally and Zoho each) when they were changed on screen (the same for every seal).</summary>
     private async Task SaveSealPositionAsync()
     {
         if (Settings is null) return;
-        var position = new SealPositionDto((double)(SealWidth ?? 150), (double)(SealOffsetX ?? 0), -(double)(SealMoveUp ?? 0));
+        var (tally, zoho) = BothSeals();
         var c = Settings.Company;
-        if (c.SealWidth == position.Width && c.SealOffsetX == position.OffsetX && c.SealOffsetY == position.OffsetY) return;
-        await _session.Api.SaveSealPositionAsync(position);
-        (c.SealWidth, c.SealOffsetX, c.SealOffsetY) = (position.Width, position.OffsetX, position.OffsetY);
+        var t = new SealPositionDto((double)(tally.Width ?? 150), (double)(tally.OffsetX ?? 0), -(double)(tally.MoveUp ?? 0), PdfLayouts.Tally);
+        if ((c.SealWidth, c.SealOffsetX, c.SealOffsetY) != (t.Width, t.OffsetX, t.OffsetY))
+        {
+            // The server gives the Zoho seal its own numbers before the Tally ones move.
+            if (c.ZohoSealWidth is null) (c.ZohoSealWidth, c.ZohoSealOffsetX, c.ZohoSealOffsetY) = c.ZohoSeal();
+            await _session.Api.SaveSealPositionAsync(t);
+            (c.SealWidth, c.SealOffsetX, c.SealOffsetY) = (t.Width, t.OffsetX, t.OffsetY);
+        }
+        var z = new SealPositionDto((double)(zoho.Width ?? 150), (double)(zoho.OffsetX ?? 0), -(double)(zoho.MoveUp ?? 0), PdfLayouts.Zoho);
+        if (c.ZohoSeal() != (z.Width, z.OffsetX, z.OffsetY) || c.ZohoSealWidth is null)
+        {
+            await _session.Api.SaveSealPositionAsync(z);
+            (c.ZohoSealWidth, c.ZohoSealOffsetX, c.ZohoSealOffsetY) = (z.Width, z.OffsetX, z.OffsetY);
+        }
     }
 
     /// <summary>Temporary password: the user must choose a new one at the next login; logged out on every PC now.</summary>
@@ -662,8 +702,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private Task PreviewUserSealAsync() => RunAsync(async () =>
     {
         if (EditingUser is not { } user) return;
-        var bytes = await _session.Api.SealPreviewAsync((double)(SealWidth ?? 150), (double)(SealOffsetX ?? 0), -(double)(SealMoveUp ?? 0), userId: user.Id);
-        _session.Documents.SaveAndOpen(bytes, $"Seal-preview-{user.Username}.pdf");
+        var bytes = await _session.Api.SealPreviewAsync((double)(SealWidth ?? 150), (double)(SealOffsetX ?? 0), -(double)(SealMoveUp ?? 0), userId: user.Id,
+            layout: SealLayout);
+        _session.Documents.SaveAndOpen(bytes, $"Seal-preview-{SealLayout}-{user.Username}.pdf");
     });
 
     /// <summary>Opens a sample page with the seal at the size and position shown on screen (also before saving).</summary>
@@ -671,8 +712,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private Task PreviewSealAsync() => RunAsync(async () =>
     {
         // The values on screen, so each change can be checked before pressing Save.
-        var bytes = await _session.Api.SealPreviewAsync((double)(SealWidth ?? 150), (double)(SealOffsetX ?? 0), -(double)(SealMoveUp ?? 0));
-        _session.Documents.SaveAndOpen(bytes, "Seal-preview.pdf");
+        var bytes = await _session.Api.SealPreviewAsync((double)(SealWidth ?? 150), (double)(SealOffsetX ?? 0), -(double)(SealMoveUp ?? 0), layout: SealLayout);
+        _session.Documents.SaveAndOpen(bytes, $"Seal-preview-{SealLayout}.pdf");
     });
 
     /// <summary>Opens the latest quotation printed with the heading and Party Details on screen (also before saving).</summary>

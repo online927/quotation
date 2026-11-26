@@ -52,6 +52,18 @@ public sealed class CompanySettings
     public double SealOffsetX { get; set; }
     public double SealOffsetY { get; set; }
 
+    /// <summary>
+    /// Round 40 (SL-1): the seal's own size and place on the Zoho layout. Empty (null) = the same as above (the Tally numbers),
+    /// so the Zoho seal starts where it was before.
+    /// </summary>
+    public double? ZohoSealWidth { get; set; }
+    public double? ZohoSealOffsetX { get; set; }
+    public double? ZohoSealOffsetY { get; set; }
+
+    /// <summary>The Zoho seal's width and offsets (its own, or the Tally ones while it has none).</summary>
+    public (double Width, double OffsetX, double OffsetY) ZohoSeal() =>
+        (ZohoSealWidth ?? SealWidth, ZohoSealOffsetX ?? SealOffsetX, ZohoSealOffsetY ?? SealOffsetY);
+
     /// <summary>The company's UPI ID (e.g. tsaifuddin@okhdfcbank) for the "Pay by UPI" QR code.</summary>
     public string UpiId { get; set; } = "";
     /// <summary>Print a "Pay by UPI" QR code on quotations (not proforma invoices). Off at first.</summary>

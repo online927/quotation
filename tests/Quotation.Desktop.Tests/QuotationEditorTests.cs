@@ -425,7 +425,7 @@ public class QuotationEditorTests
         Assert.Contains("15,600.00", editor.Lines[0].TallyRateHint);
 
         editor.EditLineCommand.Execute(editor.Lines[0]);
-        Assert.Equal("Update line", editor.EntryButtonText);
+        Assert.Equal("Update", editor.EntryButtonText);
         editor.EntryQuantity = 4;
         editor.CommitEntryCommand.Execute(null);
         Assert.Single(editor.Lines);

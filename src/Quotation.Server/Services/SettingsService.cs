@@ -109,6 +109,15 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
 
     public async Task SaveAllFromClientAsync(AllSettingsDto dto, string user, CancellationToken ct)
     {
+        // Round 40 (ST-1): GST is always computed and there is no default P&F any more (the rows left Settings).
+        dto.Quotation.TaxPresentation = TaxPresentation.ComputeTax;
+        dto.Quotation.DefaultPackingForwardingAmount = 0;
+        dto.Quotation.DefaultPackingForwardingPercent = 0;
+        // Round 40 (SL-1): a PC that does not know the Zoho seal numbers yet does not wipe them.
+        var stored = Company;
+        if (dto.Company.ZohoSealWidth is null && stored.ZohoSealWidth is not null)
+            (dto.Company.ZohoSealWidth, dto.Company.ZohoSealOffsetX, dto.Company.ZohoSealOffsetY) =
+                (stored.ZohoSealWidth, stored.ZohoSealOffsetX, stored.ZohoSealOffsetY);
         await SaveAsync(CompanyKey, dto.Company, user, ct);
         await SaveAsync(QuotationKey, dto.Quotation, user, ct);
         await SaveAsync(TallyKey, dto.Tally, user, ct);
@@ -127,6 +136,7 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
 
     public const string UpgradeGstDefaultKey = "state:upgrade.gstdefault";
     public const string UpgradeSyncLastRateKey = "state:upgrade.sync3h.lastrate";
+    public const string UpgradeRound40Key = "state:upgrade.r40.gst.pf";
 
     internal sealed class UpgradeDone
     {
@@ -167,6 +177,17 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
                 await db.SaveChangesAsync(ct);
             }
             await SaveAsync(UpgradeSyncLastRateKey, new UpgradeDone { Done = true }, "system", ct);
+        }
+
+        // Round 40 (ST-1): GST always computed; no default packing & forwarding.
+        if (!Get<UpgradeDone>(UpgradeRound40Key).Done)
+        {
+            var quotation = Quotation;
+            quotation.TaxPresentation = TaxPresentation.ComputeTax;
+            quotation.DefaultPackingForwardingAmount = 0;
+            quotation.DefaultPackingForwardingPercent = 0;
+            await SaveAsync(QuotationKey, quotation, "system", ct);
+            await SaveAsync(UpgradeRound40Key, new UpgradeDone { Done = true }, "system", ct);
         }
     }
 

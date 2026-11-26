@@ -1075,3 +1075,21 @@ Server update needed (2, 3, 5, 8, 9 and 10 are done by the server).
    Settings rows; "Fit on one page" removed (always shrinks up to 10 %).
 
 Server update needed (1, 7 and the always-on shrink are done by the server; new database table for notes).
+
+### Round 40 (Windows only)
+
+1. Zoho PDF page 1: the "Pay by UPI" QR (with the UPI ID) is at the top right, above "Quotation/Proforma" (QR-1); the
+   date is its own bold line under the Ref No (QR-3); Terms / Dispatch / Destination / Delivery sit right under the ref
+   lines beside the buyer, so the item table starts higher (QR-2). The foot of the last page (remarks, terms, bank) uses
+   the full width.
+2. Seal: Settings → Users → Seal has a Tally | Zoho choice; the Zoho layout keeps its own Width / Move right / Move up
+   (first the Tally numbers) and "Preview on a Zoho page" (SL-1).
+3. Settings: "GST presentation" (always Compute tax), "Default packing & forwarding" (P&F starts empty) and "Title Case
+   while typing" (always on) removed (ST-1, TC-1); Features → Proforma and WhatsApp button and Party Details → Contact,
+   contact person, E-mail, GSTIN, PAN switches show just On / Off (FT-1, PD-1).
+4. Quotation page: no grey "3 of 25 · PgUp / PgDn" (keys still work) (PG-1); after Update / Cancel of a line the page
+   stays on that line (highlighted, ↓ / ↑ go on from it) instead of jumping to the Product box; Home = Product box (on
+   F1) (ED-1); a line changed in the list shows "Update" / "Cancel", clear of the amount ("Update line" → "Update") (UB-1).
+
+Server update needed (1, 2 and the GST / P&F part of 3 are done by the server). Phone part of Z8 still waits for the next
+Android build.

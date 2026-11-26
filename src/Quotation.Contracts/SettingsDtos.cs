@@ -133,7 +133,8 @@ public sealed class AllSettingsDto
 }
 
 /// <summary>Size (points) and place of the seal on PDFs; a minus number moves it left / up.</summary>
-public sealed record SealPositionDto(double Width, double OffsetX, double OffsetY);
+/// <summary>The seal's size and place on PDFs; <paramref name="Layout"/> "Zoho" sets the Zoho layout's own (Round 40, SL-1).</summary>
+public sealed record SealPositionDto(double Width, double OffsetX, double OffsetY, string Layout = "Tally");
 
 /// <summary>Request for a PDF with the user's own seal.</summary>
 public sealed record SealedPdfRequest(string Pin);

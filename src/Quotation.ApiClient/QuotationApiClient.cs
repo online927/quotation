@@ -128,8 +128,8 @@ public partial class QuotationApiClient
         SendAsync<UserDto>(HttpMethod.Delete, $"api/users/{userId}/seal", null, ct);
     /// <summary>A sample page with a seal (the user's, or any user's); size/position as given (unsaved values) or else as saved.</summary>
     public Task<byte[]> SealPreviewAsync(double? width = null, double? offsetX = null, double? offsetY = null, CancellationToken ct = default,
-        int? userId = null) =>
-        GetBytesAsync("api/settings/seal/preview?x=1" + Q("userId", userId?.ToString()) +
+        int? userId = null, string? layout = null) =>
+        GetBytesAsync("api/settings/seal/preview?x=1" + Q("userId", userId?.ToString()) + Q("layout", layout) +
                       Q("width", width?.ToString(System.Globalization.CultureInfo.InvariantCulture)) +
                       Q("offsetX", offsetX?.ToString(System.Globalization.CultureInfo.InvariantCulture)) +
                       Q("offsetY", offsetY?.ToString(System.Globalization.CultureInfo.InvariantCulture)), ct);

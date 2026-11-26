@@ -3,7 +3,7 @@ using UglyToad.PdfPig;
 
 namespace Quotation.Pdf.Tests;
 
-/// <summary>"Pay by UPI" QR code: quotations only, Tally layout in the right half of Terms of Delivery, Zoho at the bottom right.</summary>
+/// <summary>"Pay by UPI" QR code: quotations only, Tally layout in the right half of Terms of Delivery, Zoho at the top right of page 1.</summary>
 public class UpiQrTests
 {
     private static CompanySettings WithUpi(CompanySettings c, bool on = true)
@@ -62,20 +62,24 @@ public class UpiQrTests
     }
 
     [Fact]
-    public void Zoho_layout_prints_the_qr_at_the_bottom_right()
+    public void Zoho_layout_prints_the_qr_at_the_top_right_above_the_title()
     {
-        var doc = ModernLayoutTests.Sample() with { Kind = DocumentType.Quotation };
+        var doc = ModernLayoutTests.Sample() with { Kind = DocumentType.Quotation, Lines = SampleDocuments.ManyLines(24) };
         WithUpi(doc.Company);
         var bytes = new ModernPdfRenderer().Render(doc);
         PdfRenderTests.Save("upi-qr-zoho.pdf", bytes);
         using var pdf = PdfDocument.Open(bytes);
-        var page = pdf.GetPage(pdf.NumberOfPages);
+        Assert.True(pdf.NumberOfPages > 1);
+        var page = pdf.GetPage(1);
         var words = page.GetWords().ToList();
         var pay = words.First(w => w.Text == "Pay");
-        Assert.True(pay.BoundingBox.Left > page.Width * 0.7);  // right side
-        Assert.True(pay.BoundingBox.Bottom < page.Height * 0.25); // near the bottom
-        var conditions = words.First(w => w.Text == "Conditions");
-        Assert.True(conditions.BoundingBox.Right < pay.BoundingBox.Left); // terms keep clear of it
-        Assert.Contains(words, w => w.Text.Contains("tsaifuddin@okhdfcbank"));
+        var title = words.First(w => w.Text.StartsWith("Quotation", StringComparison.Ordinal) && w.Letters[0].PointSize > 20);
+        Assert.True(pay.BoundingBox.Left > page.Width * 0.7);              // right side
+        Assert.True(pay.BoundingBox.Bottom > title.BoundingBox.Top);        // above the title
+        var upiId = words.First(w => w.Text.Contains("tsaifuddin@okhdfcbank"));
+        Assert.True(upiId.BoundingBox.Bottom > title.BoundingBox.Top);      // the UPI ID line too
+        var last = pdf.GetPage(pdf.NumberOfPages).GetWords().ToList();
+        Assert.DoesNotContain(last, w => w.Text == "Pay");                  // not at the foot of the last page any more
+        new PdfRenderTests().No_overlapping_words(doc);
     }
 }

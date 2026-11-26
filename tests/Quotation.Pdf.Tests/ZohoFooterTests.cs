@@ -25,7 +25,7 @@ public class ZohoFooterTests
         QuotationPdfRenderer.A4Height - page.GetWords().First(w => w.Text == word).Letters[0].StartBaseLine.Y;
 
     [Fact]
-    public void Company_numbers_left_bank_details_middle_qr_bottom_right_on_one_bottom_line()
+    public void Company_numbers_left_bank_details_right_on_one_bottom_line_and_the_qr_at_the_top()
     {
         var bytes = new ModernPdfRenderer().Render(Doc());
         PdfRenderTests.Save("zoho-footer.pdf", bytes);
@@ -41,10 +41,9 @@ public class ZohoFooterTests
         var ifsc = words.First(w => w.Text == "HDFC0000123");
         var upi = words.First(w => w.Text == "tsaifuddin@okhdfcbank");
         Assert.True(iec.BoundingBox.Right < words.First(w => w.Text == "A/c").BoundingBox.Left); // company numbers left of the bank details
-        Assert.True(ifsc.BoundingBox.Right < upi.BoundingBox.Left);                             // bank details clear of the UPI ID
         Assert.True(upi.BoundingBox.Right > 540);                                               // UPI ID at the right
+        Assert.True(upi.BoundingBox.Bottom > page.Height * 0.75);                               // Round 40 (QR-1): at the top
         Assert.Equal(Baseline(page, "0000000000"), Baseline(page, "HDFC0000123"), 0);            // last lines level
-        Assert.Equal(Baseline(page, "HDFC0000123"), Baseline(page, "tsaifuddin@okhdfcbank"), 0);
         Assert.Contains("GST", words.Select(w => w.Text));
         Assert.Contains("18%", words.Select(w => w.Text));
         Assert.Contains("O.E", text);

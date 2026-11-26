@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 39 shipped on "Do for windows only" as version 0.9.96 (run 96, commit 6ac2ef7; all 733 tests passed; Windows built, Mac and Android not built this time). On the list: Z8 phone part only (notes in the Android app). NEW RULE: requests are only ADDED TO THE LIST until "Do" (section 2).
+Last updated: Round 40 shipped on "Build only for windows" (= Do, Windows only) as version 0.9.99 (run 99, commit f11d1cc; all 741 tests passed; Windows built, Mac and Android not built). Built: QR-1/2/3, SL-1, ST-1, TC-1, FT-1, PD-1, PG-1, ED-1, UB-1. On the list: Z8 phone part only (notes in the Android app). Requests are only ADDED TO THE LIST until "Do" (section 2).
 
 
 1. THE PROJECT

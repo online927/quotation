@@ -253,7 +253,8 @@ public static class SystemEndpoints
             CancellationToken ct) =>
         {
             if (req.Width is < 30 or > 280) return Results.BadRequest(new ApiError("The seal width must be between 30 and 280 points."));
-            if (Math.Abs(req.OffsetX) > 300 || Math.Abs(req.OffsetY) > 400) return Results.BadRequest(new ApiError("The seal is moved too far."));
+            if (Math.Abs(req.OffsetX) > CompanySettings.SealMoveLimit || Math.Abs(req.OffsetY) > CompanySettings.SealMoveLimit)
+                return Results.BadRequest(new ApiError("The seal is moved too far."));
             var company = s.Company;
             var zoho = string.Equals(req.Layout, PdfLayouts.Zoho, StringComparison.OrdinalIgnoreCase);
             var now = zoho ? company.ZohoSeal() : (company.SealWidth, company.SealOffsetX, company.SealOffsetY);

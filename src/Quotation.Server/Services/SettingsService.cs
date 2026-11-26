@@ -137,6 +137,7 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
     public const string UpgradeGstDefaultKey = "state:upgrade.gstdefault";
     public const string UpgradeSyncLastRateKey = "state:upgrade.sync3h.lastrate";
     public const string UpgradeRound40Key = "state:upgrade.r40.gst.pf";
+    public const string UpgradeRound41Key = "state:upgrade.r41.zohoseal";
 
     internal sealed class UpgradeDone
     {
@@ -188,6 +189,19 @@ public sealed class SettingsService(IServiceScopeFactory scopes, ISecretProtecto
             quotation.DefaultPackingForwardingPercent = 0;
             await SaveAsync(QuotationKey, quotation, "system", ct);
             await SaveAsync(UpgradeRound40Key, new UpgradeDone { Done = true }, "system", ct);
+        }
+
+        // Round 41 (SL-2): the Zoho seal's standard place moved to the bottom right; a Zoho seal moved before starts there.
+        if (!Get<UpgradeDone>(UpgradeRound41Key).Done)
+        {
+            var company = Company;
+            if (company.ZohoSealOffsetX is not null || company.ZohoSealOffsetY is not null)
+            {
+                company.ZohoSealOffsetX = 0;
+                company.ZohoSealOffsetY = 0;
+                await SaveAsync(CompanyKey, company, "system", ct);
+            }
+            await SaveAsync(UpgradeRound41Key, new UpgradeDone { Done = true }, "system", ct);
         }
     }
 

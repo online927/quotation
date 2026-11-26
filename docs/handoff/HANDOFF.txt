@@ -197,8 +197,31 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 
 8. ON THE LIST — NOT BUILT YET
 ------------------------------
- STILL TO BUILD: Z8 phone part (read / add notes in the Android app, 🎤 in the note box) — the server and PC/Mac parts
-   are built; do it with the next Android build.
+ NOTHING LEFT TO BUILD after Round 41 (Z8 phone part, RD-5b, SL-2, PD-2 built on "Do, for Android and mac too").
+ RD-5b (user after Round 40: "Rd 5, no change"): the Round 39 RD-5 build only added line icons; the words stayed the
+   old faded grey and the chosen one a pale blue pill, so it looked unchanged. Fix (SettingsView.axaml sidetabs styles):
+   section names in the normal text colour (TextBrush) via a class on the header TextBlock (NOT "TabItem TextBlock" —
+   that also colours the page content), icons MutedBrush, the chosen one the main menu's white pill
+   (SidebarSelectedBrush + SidebarSelectedTextBrush, SidebarSelectedShadow). Previewed: previews/idea-RD5b-settings-menu.png.
+   + user: "Colored icon": each section's icon in its own colour (like the RD-5 picture's emoji), e.g. Company blue,
+   Quotation teal, PDF red, Features amber, Backup & updates green, Party Details purple, Tally orange, Claude AI violet,
+   Gmail red, Users indigo — set per section (SettingsTabIcon gives a colour too); same colours in every theme, a little
+   lighter in dark themes.
+ SL-2 (user after Round 40: "zoho pdf sign position starts with a value, so trying to move to right didn't work as 200 is
+   max"): the Zoho seal's standard place is x centre 230 (left-middle of the foot), and "Move right" stops at 200
+   (SettingsView NumericUpDown Maximum 200; server also refuses |OffsetX| > 300), so it cannot reach the right side.
+   Fix: (a) the Zoho seal's standard place becomes the bottom right, where the QR used to be (ModernPdfRenderer.DrawSeal:
+   centre x ≈ 510, above the footer rule), and a Zoho seal that still has the old numbers (ZohoSealOffsetX null or the
+   copied Tally ones) is moved there once, i.e. offsets 0 = bottom right; (b) Move right / Move up allow −450…+450 on
+   the screen and the server (whole page width), Width up to 280 as before. Tally seal unchanged.
+   Server update needed (PDF + limits); PC/Mac app update (box limits).
+ PD-2 (user: "Add delivery columns too", after the paste overview): paste an Excel column into the Delivery box like
+   Qty / Rate / Disc % (fills down the lines from that line, one cell per line, toast with Undo; PasteColumnKind
+   Delivery, DeliveryBox PastingFromClipboardEvent in QuotationEditorView; also the inline InlineDeliveryBox); and the
+   pasted-list window reads a "Delivery" / "Del" / "Lead time" / "Delivery period" heading column into each line's
+   delivery (PastedColumnRole.Delivery, PastedLine.Delivery). Only when the Delivery box is shown (My Settings
+   delivery switch); otherwise the column is skipped. PC/Mac app update only.
+   PC/Mac app update only.
  (QR-1 … FT-1 and PD-1 below were BUILT in Round 40 on "Build only for windows" (= Do, Windows only) — kept as the record
  of what was asked; see docs/PHASES.md "Round 40" and the ROUND 40 block after the Round 39 one.)
  QR-1 (user, after the "Zoho format with all details filled" preview, previews/zoho-all-filled-page1/2.png): "Qr code
@@ -436,6 +459,22 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
      b) Settings form rows too tight (Grid.form children Margin 0,3 / 0,4 → boxes touch the row below): every row gets
         8 px above and below (TextBlock / TextBox / NumericUpDown / ComboBox / switch / StackPanel rows) and a faint
         line between rows (RowLineBrush), on all Settings tabs. PC/Mac only.
+
+ ROUND 41 (built on "Do, for Android and mac too") delivered (code pointers):
+   RD-5b SettingsView sidetabs: TextBlock.tabname (TextBrush; chosen = AccentBrush), chosen TabItem CardBrush + shadow on
+     PART_LayoutRoot; Controls/SettingsTabIcon.cs SettingsTabColor (fixed colour per section).
+   SL-2 ModernPdfRenderer.ZohoSealCentreX = 500 (was 230); CompanySettings.ZohoSeal() null offsets → 0;
+     CompanySettings.SealMoveLimit 450 (server check + SettingsView boxes −450…450); SettingsService upgrade key
+     state:upgrade.r41.zohoseal resets an earlier Zoho offset to 0 once.
+   PD-2 QuotationEditorViewModel.PasteDeliveryColumn (toast "N deliveries pasted into Delivery — lines a to b", Undo);
+     QuotationEditorView OnDeliveryPasting / PasteDelivery / WireDelivery (DeliveryBox + InlineDeliveryBox);
+     PastedListParser PastedColumnRole.Delivery + HeaderRole (deliv*, del, lead time) + PastedLine.Delivery;
+     PasteRowViewModel.RoleNames + Delivery; AddPastedLines sets DueOn when ShowDeliveryBox.
+   Z8 phone QuotationDetailViewModel NotesOn (Session.Company.Quotation.InternalNotes), Notes (Rows.cs NoteRow),
+     NewNoteText, AddNoteCommand, SpeakNoteCommand (Phone.ListenAsync); QuotationDetailView NotesCard (NoteBox,
+     NoteMicButton, AddNoteButton). Read + add only (edit / delete stay on the PC).
+   Tests: tests/Quotation.Desktop.Tests/Round41UiTests.cs, tests/Quotation.Server.Tests/Round41Tests.cs,
+     tests/Quotation.Core.Tests/Round41Tests.cs, tests/Quotation.Mobile.Tests/Round41PhoneTests.cs; Round40 seal tests updated.
 
  ROUND 40 (built on "Build only for windows" = Do, Windows only) delivered (code pointers):
    QR-1/2/3 ModernPdfRenderer: DrawUpiQr on page 1 (QrTop 50, right 559.8), BottomBlock full width (no hasQr), the date

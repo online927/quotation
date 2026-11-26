@@ -1093,3 +1093,18 @@ Server update needed (1, 7 and the always-on shrink are done by the server; new 
 
 Server update needed (1, 2 and the GST / P&F part of 3 are done by the server). Phone part of Z8 still waits for the next
 Android build.
+
+### Round 41 (Windows, Mac and Android)
+
+1. Settings left menu: section names in the normal text colour, each with its own coloured icon (Company blue, Quotation
+   teal, PDF red, Features amber, Backup green, Party Details purple, Tally orange, Claude AI violet, Gmail red, Users
+   indigo); the chosen section is a white card (RD-5b).
+2. Zoho seal: its standard place is the bottom right (where the QR used to be); a Zoho seal moved in Round 40 starts
+   there again once; Move right / Move up allow −450…+450 (server and screen) (SL-2).
+3. Paste a Delivery column from Excel into the Delivery box (fills the lines down, with Undo; also in a line changed in
+   the list); the pasted-list window reads a "Delivery" / "Del" / "Lead time" column (PD-2).
+4. Phone app: internal notes on a quotation (when Settings → Features "Notes" is On): read them, write one or 🎤 speak it,
+   Add. "🔒 Only inside the app"; never printed or shared (Z8 phone part).
+5. Mac and phone apps also get everything of Rounds 39–40.
+
+Server update needed (2 is done by the server). PC, Mac and phone apps updated (phone: uninstall the old app first).

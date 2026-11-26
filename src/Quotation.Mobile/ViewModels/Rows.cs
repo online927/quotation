@@ -48,3 +48,13 @@ public sealed record InfoRow(string Label, string Value, string? Link = null)
 
 /// <summary>A tax or total line under the items.</summary>
 public sealed record TotalRow(string Label, string Value);
+
+/// <summary>Round 41 (Z8 phone): one internal note: its text and "Ravi · 26-Nov 11:42 (edited)".</summary>
+public sealed class NoteRow(QuotationNoteDto n)
+{
+    public int Id => n.Id;
+    public string Text => n.Text;
+    public string Who => $"{(n.DisplayName.Length > 0 ? n.DisplayName : n.UserName)} · {n.CreatedUtc.ToLocalTime():dd-MMM HH:mm}"
+                         + (n.IsEdited ? " (edited)" : "");
+    public bool Mine => n.Mine;
+}

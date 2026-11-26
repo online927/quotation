@@ -53,16 +53,19 @@ public sealed class CompanySettings
     public double SealOffsetY { get; set; }
 
     /// <summary>
-    /// Round 40 (SL-1): the seal's own size and place on the Zoho layout. Empty (null) = the same as above (the Tally numbers),
-    /// so the Zoho seal starts where it was before.
+    /// Round 40 (SL-1): the seal's own size and place on the Zoho layout. Empty (null) = the Tally width at the Zoho
+    /// standard place (Round 41, SL-2: offsets 0 = bottom right, where the QR used to be).
     /// </summary>
     public double? ZohoSealWidth { get; set; }
     public double? ZohoSealOffsetX { get; set; }
     public double? ZohoSealOffsetY { get; set; }
 
-    /// <summary>The Zoho seal's width and offsets (its own, or the Tally ones while it has none).</summary>
+    /// <summary>The Zoho seal's width and offsets (its own; while it has none, the Tally width at the standard place).</summary>
     public (double Width, double OffsetX, double OffsetY) ZohoSeal() =>
-        (ZohoSealWidth ?? SealWidth, ZohoSealOffsetX ?? SealOffsetX, ZohoSealOffsetY ?? SealOffsetY);
+        (ZohoSealWidth ?? SealWidth, ZohoSealOffsetX ?? 0, ZohoSealOffsetY ?? 0);
+
+    /// <summary>Round 41 (SL-2): how far the seal can be moved from its standard place (points, either way).</summary>
+    public const double SealMoveLimit = 450;
 
     /// <summary>The company's UPI ID (e.g. tsaifuddin@okhdfcbank) for the "Pay by UPI" QR code.</summary>
     public string UpiId { get; set; } = "";

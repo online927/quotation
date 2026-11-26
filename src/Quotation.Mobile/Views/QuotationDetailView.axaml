@@ -76,6 +76,37 @@
           </StackPanel>
         </Border>
 
+        <!-- Round 41 (Z8 phone): internal notes (only inside the app; never printed or shared) -->
+        <Border Name="NotesCard" Classes="card" IsVisible="{Binding NotesOn}">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="eyebrow" Text="{Binding NotesTitle}" />
+              <TextBlock Grid.Column="1" Classes="muted" FontSize="11" Text="🔒 Only inside the app" />
+            </Grid>
+            <TextBlock Classes="muted" FontSize="13" Text="No notes yet." IsVisible="{Binding HasNoNotes}" />
+            <ItemsControl Name="NoteList" ItemsSource="{Binding Notes}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:NoteRow">
+                  <StackPanel Margin="0,4">
+                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                    <TextBlock Classes="muted" FontSize="11" Text="{Binding Who}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Grid ColumnDefinitions="*,8,Auto,8,Auto">
+              <TextBox Name="NoteBox" Text="{Binding NewNoteText}" Watermark="Write a note…" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="40" />
+              <Button Grid.Column="2" Name="NoteMicButton" Classes="round" Command="{Binding SpeakNoteCommand}" VerticalAlignment="Bottom"
+                      Classes.on="{Binding IsListeningNote}">
+                <Path Classes="icon" Data="{x:Static m:PhoneIcons.Mic}" Stroke="{DynamicResource AccentBrush}" />
+              </Button>
+              <Button Grid.Column="4" Name="AddNoteButton" Classes="primary" Content="Add" Command="{Binding AddNoteCommand}" VerticalAlignment="Bottom"
+                      IsEnabled="{Binding !IsBusy}" />
+            </Grid>
+            <TextBlock Classes="muted" FontSize="12" Text="Listening…" IsVisible="{Binding IsListeningNote}" />
+          </StackPanel>
+        </Border>
+
         <Grid ColumnDefinitions="*,10,*">
           <Button Name="PreviewButton" HorizontalAlignment="Stretch" Command="{Binding PreviewCommand}">
             <StackPanel Orientation="Horizontal" Spacing="8">

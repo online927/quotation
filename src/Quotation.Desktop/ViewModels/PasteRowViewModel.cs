@@ -19,6 +19,8 @@ public sealed partial class PasteRowViewModel : ObservableObject
     public string? NameQuery { get; init; }
     /// <summary>Round 39 (DX-1): the description from the pasted rows' description column (null: the item's own).</summary>
     public string? Description { get; init; }
+    /// <summary>Round 41 (PD-2): the delivery from the pasted row's delivery column.</summary>
+    public string? Delivery { get; init; }
 
     [ObservableProperty] private decimal? _quantity;
     /// <summary>The rate from Excel (or typed); empty: the item's Tally rate.</summary>
@@ -157,7 +159,7 @@ public sealed partial class PasteRowViewModel : ObservableObject
 /// <summary>One column of rows pasted from Excel (A, B, C …) and what it holds; changing it reads the rows again.</summary>
 public sealed partial class PasteColumnViewModel : ObservableObject
 {
-    public static readonly string[] RoleNames = ["Left out", "Name", "Part No", "Qty", "Rate", "Disc %", "Description"];
+    public static readonly string[] RoleNames = ["Left out", "Name", "Part No", "Qty", "Rate", "Disc %", "Description", "Delivery"];
 
     public required string Letter { get; init; }
     public string[] Roles => RoleNames;

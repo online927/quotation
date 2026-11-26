@@ -36,7 +36,68 @@ public sealed partial class QuotationDetailViewModel(MainViewModel main, Guid id
     public bool CanApprove => Quotation is { Status: QuotationStatus.Draft or QuotationStatus.PendingReview } && main.Session.User?.MakesDocuments == true;
     public bool HasCustomerPhone => (Quotation?.Buyer.Phone ?? "").Any(char.IsDigit);
 
-    public override Task LoadAsync() => RunAsync(async () => Show(await main.Session.Api.QuotationAsync(Id)));
+    public override Task LoadAsync() => RunAsync(async () =>
+    {
+        Show(await main.Session.Api.QuotationAsync(Id));
+        await LoadNotesAsync();
+    });
+
+    // ================================================================= Round 41 (Z8 phone): internal notes
+
+    /// <summary>Notes are on (Settings → Features "Notes"): the card shows; they are never printed or shared.</summary>
+    public bool NotesOn => main.Session.Company?.Quotation.InternalNotes == true;
+    public ObservableCollection<NoteRow> Notes { get; } = [];
+    public string NotesTitle => Notes.Count == 0 ? "NOTES" : $"NOTES ({Notes.Count})";
+    public bool HasNoNotes => Notes.Count == 0;
+    [ObservableProperty] private string _newNoteText = "";
+    [ObservableProperty] private bool _isListeningNote;
+
+    private async Task LoadNotesAsync()
+    {
+        Notes.Clear();
+        if (NotesOn)
+            foreach (var n in await main.Session.Api.NotesAsync(Id)) Notes.Add(new NoteRow(n));
+        NotesChanged();
+    }
+
+    private void NotesChanged()
+    {
+        OnPropertyChanged(nameof(NotesOn));
+        OnPropertyChanged(nameof(NotesTitle));
+        OnPropertyChanged(nameof(HasNoNotes));
+    }
+
+    /// <summary>Adds the note typed (or spoken); the quotation itself does not change.</summary>
+    [RelayCommand]
+    private Task AddNoteAsync() => !NotesOn || NewNoteText.Trim().Length == 0 ? Task.CompletedTask : RunAsync(async () =>
+    {
+        var added = await main.Session.Api.AddNoteAsync(Id, NewNoteText.Trim());
+        Notes.Add(new NoteRow(added));
+        NewNoteText = "";
+        NotesChanged();
+    });
+
+    /// <summary>🎤: what is said is written into the note box (add it with Add note).</summary>
+    [RelayCommand]
+    private async Task SpeakNoteAsync()
+    {
+        if (IsListeningNote) return;
+        IsListeningNote = true;
+        try
+        {
+            var said = await main.Session.Phone.ListenAsync();
+            if (!string.IsNullOrWhiteSpace(said))
+            {
+                var text = said.Trim();
+                text = char.ToUpperInvariant(text[0]) + text[1..];
+                NewNoteText = NewNoteText.Trim().Length == 0 ? text : NewNoteText.TrimEnd() + " " + text;
+            }
+        }
+        finally
+        {
+            IsListeningNote = false;
+        }
+    }
 
     private void Show(QuotationDto q)
     {

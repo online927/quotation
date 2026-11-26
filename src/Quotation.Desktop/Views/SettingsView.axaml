@@ -17,22 +17,32 @@
       <Setter Property="FontSize" Value="14" />
       <Setter Property="CornerRadius" Value="10" />
     </Style>
-    <!-- Round 39 (RD-5): a symbol beside each section name -->
+    <!-- Round 39 (RD-5) / Round 40 (RD-5b): a coloured symbol beside each section name; names in the normal text colour -->
     <Style Selector="TabControl.sidetabs > TabItem">
       <Setter Property="HeaderTemplate">
         <DataTemplate x:DataType="x:String">
           <StackPanel Orientation="Horizontal" Spacing="10">
-            <ctl:StrokeIcon Kind="{Binding Converter={x:Static ctl:SettingsTabIcon.Instance}}" Width="16" Height="16" />
-            <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+            <ctl:StrokeIcon Kind="{Binding Converter={x:Static ctl:SettingsTabIcon.Instance}}" Width="16" Height="16"
+                            Foreground="{Binding Converter={x:Static ctl:SettingsTabColor.Instance}}" />
+            <TextBlock Classes="tabname" Text="{Binding}" VerticalAlignment="Center" />
           </StackPanel>
         </DataTemplate>
       </Setter>
+    </Style>
+    <Style Selector="TabControl.sidetabs > TabItem TextBlock.tabname">
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    </Style>
+    <Style Selector="TabControl.sidetabs > TabItem:selected TextBlock.tabname">
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="TabControl.sidetabs > TabItem:selected /template/ Border#PART_LayoutRoot">
+      <Setter Property="BoxShadow" Value="0 1 6 0 #22000000" />
     </Style>
     <Style Selector="TabControl.sidetabs > TabItem /template/ Border#PART_SelectedPipe">
       <Setter Property="IsVisible" Value="False" />
     </Style>
     <Style Selector="TabControl.sidetabs > TabItem:selected">
-      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
@@ -40,7 +50,7 @@
       <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" />
     </Style>
     <Style Selector="TabControl.sidetabs > TabItem:selected:pointerover">
-      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
     </Style>
     <!-- Users page: small coloured tags (Administrator / Standard, Active / Inactive, seal state) -->
     <Style Selector="Border.tag">
@@ -644,9 +654,9 @@
                         <StackPanel Spacing="3"><TextBlock FontSize="12" Text="Width (pt)" />
                           <NumericUpDown Name="SealWidthBox" Value="{Binding SealWidth}" Minimum="30" Maximum="280" Increment="10" FormatString="0" Width="120" /></StackPanel>
                         <StackPanel Spacing="3"><TextBlock FontSize="12" Text="Move right" />
-                          <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-200" Maximum="200" Increment="5" FormatString="0" Width="120" /></StackPanel>
+                          <NumericUpDown Value="{Binding SealOffsetX}" Minimum="-450" Maximum="450" Increment="5" FormatString="0" Width="120" /></StackPanel>
                         <StackPanel Spacing="3"><TextBlock FontSize="12" Text="Move up" />
-                          <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-200" Maximum="300" Increment="5" FormatString="0" Width="120" /></StackPanel>
+                          <NumericUpDown Value="{Binding SealMoveUp}" Minimum="-450" Maximum="450" Increment="5" FormatString="0" Width="120" /></StackPanel>
                         <Button ctl:ButtonIcon.Kind="eye" Content="{Binding SealPreviewText}" Command="{Binding PreviewUserSealCommand}" IsVisible="{Binding HasUserSealImage}"
                                 VerticalAlignment="Bottom" />
                       </WrapPanel>

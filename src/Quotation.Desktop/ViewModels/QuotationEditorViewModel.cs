@@ -2054,7 +2054,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             var row = new PasteRowViewModel
             {
                 No = i + 1, Raw = line.Raw, Query = line.Query, NameQuery = line.NameQuery, Quantity = line.Quantity, SearchText = line.Query,
-                Rate = line.Rate, RateFromPaste = line.Rate is not null, Discount = line.Discount, Description = line.Description,
+                Rate = line.Rate, RateFromPaste = line.Rate is not null, Discount = line.Discount, Description = line.Description, Delivery = line.Delivery,
             };
             row.Changed = OnPasteRowsChanged;
             PasteRows.Add(row);
@@ -2137,6 +2137,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 Rate = row.Rate ?? (p.Rate > 0 ? InQuotationCurrency(p.Rate) ?? 0 : 0),
                 DiscountPercent = row.Discount is > 0 and < 100 ? row.Discount.Value : 0,
                 Description = (row.Description ?? p.Description ?? "").Trim(),
+                DueOn = ShowDeliveryBox ? (row.Delivery ?? "").Trim() : "", // Round 41 (PD-2)
                 ZeroGst = WithoutGst,
             });
         }
@@ -2211,6 +2212,40 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// notice offers Undo, and "Put all in this box" (undo, then the whole text goes in the one box). Returns how many
     /// lines changed (0: not done).
     /// </summary>
+    /// <summary>
+    /// Round 41 (PD-2): cells of a delivery column copied from Excel ("Ex-stock", "2-3 weeks" …), pasted into the Delivery
+    /// box, go one per line from the line being changed (or line 1) down; an empty cell leaves its line as it is. Undo in
+    /// the message. Returns how many lines changed (0: not a column, paste as usual).
+    /// </summary>
+    public int PasteDeliveryColumn(string? text)
+    {
+        if (!CanEditContent || Lines.Count == 0 || string.IsNullOrWhiteSpace(text)) return 0;
+        var cells = text.Replace("\r\n", "\n").Replace('\r', '\n').TrimEnd('\n').Split('\n').Select(c => c.Split('\t')[0].Trim()).ToList();
+        if (cells.Count(c => c.Length > 0) < 2) return 0;
+        var start = EditingLine is { } editing ? Math.Max(0, Lines.IndexOf(editing)) : 0;
+        var changed = new List<(QuotationLineViewModel Line, string Old)>();
+        for (var i = 0; i < cells.Count && start + i < Lines.Count; i++)
+        {
+            if (cells[i].Length == 0) continue;
+            var line = Lines[start + i];
+            changed.Add((line, line.DueOn));
+            line.DueOn = cells[i];
+        }
+        if (changed.Count == 0) return 0;
+        if (EditingLine is { } open && changed.Any(c => c.Line == open)) EntryDueOn = open.DueOn;
+        MarkDirty();
+        var first = Lines.IndexOf(changed[0].Line) + 1;
+        var last = Lines.IndexOf(changed[^1].Line) + 1;
+        var lines = first == last ? $"line {first}" : $"lines {first} to {last}";
+        _navigator.Toast($"{changed.Count} deliver{(changed.Count == 1 ? "y" : "ies")} pasted into Delivery — {lines}", "Undo", () =>
+        {
+            foreach (var (line, old) in changed) line.DueOn = old;
+            if (EditingLine is { } back && changed.Any(c => c.Line == back)) EntryDueOn = back.DueOn;
+            MarkDirty();
+        }, 12);
+        return changed.Count;
+    }
+
     public int PasteDescriptionColumn(IReadOnlyList<string> cells, string wholeText)
     {
         if (!CanEditContent || Lines.Count == 0 || cells.Count < 2) return 0;

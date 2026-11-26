@@ -28,7 +28,7 @@ public class Round40Tests : QuotationTestBase
         // At first the Zoho seal is where the Tally one is
         var company = (await Api.SettingsAsync()).Company;
         Assert.Null(company.ZohoSealWidth);
-        Assert.Equal((company.SealWidth, company.SealOffsetX, company.SealOffsetY), company.ZohoSeal());
+        Assert.Equal((company.SealWidth, 0d, 0d), company.ZohoSeal()); // the Tally width at the Zoho place (Round 41)
 
         // Moving the Tally seal keeps the Zoho seal where it was
         var before = company.SealWidth;

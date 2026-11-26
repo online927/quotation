@@ -546,6 +546,9 @@ public sealed class ModernPdfRenderer
         Text(g, AmountRight, y - TotalsStep + 14, "E. & O.E", 7, color: PageNo, align: Right);
     }
 
+    /// <summary>The Zoho seal's standard centre: right of the bank details, above the footer rule.</summary>
+    internal const double ZohoSealCentreX = 500;
+
     private void DrawSeal(XGraphics g, QuotationDocument doc)
     {
         try
@@ -556,8 +559,8 @@ public sealed class ModernPdfRenderer
             var (sealWidth, offsetX, offsetY) = doc.Company.ZohoSeal();
             var width = Math.Clamp(sealWidth, 40, 260);
             var height = width * img.PointHeight / Math.Max(1, img.PointWidth);
-            // At the foot of the page, between the company's numbers and the bank details, like a stamp.
-            var x = Math.Clamp(230 - width / 2 + offsetX, 0, PageW - width);
+            // Round 41 (SL-2): at the foot of the page on the right, where the QR used to be, like a stamp.
+            var x = Math.Clamp(ZohoSealCentreX - width / 2 + offsetX, 0, PageW - width);
             var y = Math.Clamp(756 - height / 2 + offsetY, 0, PageH - height);
             g.DrawImage(img, x, y, width, height);
         }

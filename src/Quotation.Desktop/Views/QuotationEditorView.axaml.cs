@@ -56,15 +56,20 @@ public partial class QuotationEditorView : UserControl
         QtyBox.AddHandler(TextBox.PastingFromClipboardEvent, OnQtyPasting, RoutingStrategies.Bubble);
         DiscountBox.AddHandler(TextBox.PastingFromClipboardEvent, OnDiscountPasting, RoutingStrategies.Bubble);
         DescriptionBox.AddHandler(TextBox.PastingFromClipboardEvent, OnDescriptionPasting, RoutingStrategies.Bubble);
+        DeliveryBox.AddHandler(TextBox.PastingFromClipboardEvent, OnDeliveryPasting, RoutingStrategies.Bubble);
         LinesList.PointerMoved += OnLinesPointerMoved;
         // Round 39 (IE-1): the item search inside a row (changing a line in the list) picks another Tally item.
         LinesList.ContainerPrepared += (_, e) =>
         {
             if (e.Container.GetVisualDescendants().OfType<SearchPicker>().FirstOrDefault(p => p.Name == "InlineProductBox") is { } inline)
+            {
                 Wire(inline);
+                WireDelivery(e.Container);
+            }
             else e.Container.Loaded += (_, _) =>
             {
                 if (e.Container.GetVisualDescendants().OfType<SearchPicker>().FirstOrDefault(p => p.Name == "InlineProductBox") is { } later) Wire(later);
+                WireDelivery(e.Container);
             };
         };
         LinesList.PointerReleased += (_, _) => EndDrag();
@@ -611,6 +616,34 @@ public partial class QuotationEditorView : UserControl
         catch (Exception) { return; }
         if (string.IsNullOrEmpty(text)) return;
         PasteIntoColumn(vm, box, text, kind);
+    }
+
+    /// <summary>Round 41 (PD-2): the Delivery box inside a row being changed in the list pastes a column too.</summary>
+    private void WireDelivery(Control row)
+    {
+        if (row.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(b => b.Name == "InlineDeliveryBox") is not { } box || box.Tag is "pd2") return;
+        box.Tag = "pd2";
+        box.AddHandler(TextBox.PastingFromClipboardEvent, OnDeliveryPasting, RoutingStrategies.Bubble);
+    }
+
+    /// <summary>Round 41 (PD-2): Ctrl+V in Delivery: a column from Excel fills the lines down; anything else pastes as usual.</summary>
+    private async void OnDeliveryPasting(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { CanEditContent: true } vm || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard) return;
+        if (e.Source is not TextBox box) return;
+        e.Handled = true;
+        string? text;
+        try { text = await clipboard.GetTextAsync(); }
+        catch (Exception) { return; }
+        if (string.IsNullOrEmpty(text)) return;
+        PasteDelivery(vm, box, text);
+    }
+
+    /// <summary>What Ctrl+V in Delivery does with <paramref name="text"/> (also used by tests).</summary>
+    public static void PasteDelivery(QuotationEditorViewModel vm, TextBox box, string text)
+    {
+        if (vm.PasteDeliveryColumn(text) > 0) return;
+        PasteAsUsual(box, text);
     }
 
     /// <summary>What Ctrl+V in Rate / Qty / Disc % does with <paramref name="text"/> (also used by tests).</summary>

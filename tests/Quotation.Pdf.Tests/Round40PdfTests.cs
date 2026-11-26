@@ -34,16 +34,17 @@ public class Round40PdfTests
         var doc = SampleDocuments.Build([SampleDocuments.Bevel()]) with { Seal = png };
         doc.Company.SealWidth = 120;
         doc.Company.SealOffsetX = 10;
-        Assert.Equal((120d, 10d, 0d), doc.Company.ZohoSeal()); // nothing of its own yet: the Tally numbers
+        Assert.Equal((120d, 0d, 0d), doc.Company.ZohoSeal()); // nothing of its own yet: the Tally width at the Zoho place
         var before = SealBox(new ModernPdfRenderer().Render(doc));
         Assert.Equal(120, before.Width, 0);
+        Assert.True(before.Left > 595 / 2.0); // Round 41 (SL-2): at the bottom right, where the QR used to be
 
         doc.Company.ZohoSealWidth = 80;
-        doc.Company.ZohoSealOffsetX = 200;
+        doc.Company.ZohoSealOffsetX = -300;
         doc.Company.ZohoSealOffsetY = -20;
         var after = SealBox(new ModernPdfRenderer().Render(doc));
         Assert.Equal(80, after.Width, 0);
-        Assert.True(after.Left > before.Left + 150);    // moved right
+        Assert.True(after.Left < before.Left - 250);    // moved far left
         Assert.True(after.Bottom > before.Bottom + 10); // and up
         // The Tally layout keeps the Tally numbers
         using var tally = PdfDocument.Open(new QuotationPdfRenderer().Render(doc));

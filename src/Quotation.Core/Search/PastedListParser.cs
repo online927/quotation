@@ -14,10 +14,12 @@ public sealed record PastedLine(string Raw, string Query, decimal Quantity, bool
     public string? NameQuery { get; init; }
     /// <summary>Round 39 (DX-1): the description from an Excel row's description column (null: the item's own).</summary>
     public string? Description { get; init; }
+    /// <summary>Round 41 (PD-2): the delivery from an Excel row's delivery column ("Ex-stock", "2-3 weeks").</summary>
+    public string? Delivery { get; init; }
 }
 
 /// <summary>What a column of rows copied from Excel holds.</summary>
-public enum PastedColumnRole { Skip, Item, PartNo, Quantity, Rate, Discount, Description }
+public enum PastedColumnRole { Skip, Item, PartNo, Quantity, Rate, Discount, Description, Delivery }
 
 /// <summary>
 /// Reads a list copied from WhatsApp, e-mail or Excel ("187-901 x 2", "530-312 - 5 nos", "qty 3 dial gauge")
@@ -303,6 +305,8 @@ public static partial class PastedListParser
         h = Regex.Replace(h, @"\s+", " ");
         if (h.Length == 0) return null;
         if (h.Contains("disc") || h == "%" || h == "dis") return PastedColumnRole.Discount;
+        // Round 41 (PD-2): "Delivery", "Del", "Lead time", "Delivery period"
+        if (h.StartsWith("deliv") || h is "del" or "del period" || h.Contains("lead time") || h.Contains("leadtime")) return PastedColumnRole.Delivery;
         if (h.Contains("amount") || h.Contains("total") || h.Contains("value") || h is "amt" or "net") return PastedColumnRole.Skip;
         if (h is "qty" or "qnty" or "quantity" or "nos" or "pcs" || h.StartsWith("qty") || h.StartsWith("quantity")) return PastedColumnRole.Quantity;
         if (h.Contains("rate") || h.Contains("price") || h.Contains("mrp") || h == "basic") return PastedColumnRole.Rate;
@@ -347,6 +351,7 @@ public static partial class PastedListParser
                 Discount = disc is >= 0 and < 100 ? disc : null,
                 NameQuery = part.Length > 0 && name.Length > 0 ? name : null,
                 Description = Join(PastedColumnRole.Description) is { Length: > 0 } d ? d : null,
+                Delivery = Join(PastedColumnRole.Delivery) is { Length: > 0 } dl ? dl : null,
             });
         }
         return result;

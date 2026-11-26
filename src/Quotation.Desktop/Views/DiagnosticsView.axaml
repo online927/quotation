@@ -5,6 +5,19 @@
              xmlns:c="using:Quotation.Contracts"
              x:Class="Quotation.Desktop.Views.DiagnosticsView"
              x:DataType="vm:DiagnosticsViewModel">
+  <UserControl.Styles>
+    <Style Selector="ToggleButton.pilltoggle">
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="Padding" Value="14,6" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="ToggleButton.pilltoggle TextBlock.tick"><Setter Property="IsVisible" Value="False" /></Style>
+    <Style Selector="ToggleButton.pilltoggle:checked TextBlock.tick"><Setter Property="IsVisible" Value="True" /></Style>
+    <Style Selector="ToggleButton.pilltoggle:checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+  </UserControl.Styles>
   <DockPanel Margin="24,12,24,20">
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
       <ctl:PageTitle Text="Diagnostics" Icon="diagnostics" />
@@ -26,49 +39,39 @@
     <TabControl Classes="pills">
       <TabItem Header="System">
         <Border Classes="card" Margin="0,8" VerticalAlignment="Top">
-          <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-            <TextBlock Classes="label" Text="Server version" />
-            <TextBlock Grid.Column="1" Text="{Binding Info.ServerVersion, FallbackValue=''}" />
-            <TextBlock Grid.Row="1" Classes="label" Text="Server runtime / OS" />
-            <TextBlock Grid.Row="1" Grid.Column="1" TextWrapping="Wrap">
-              <Run Text="{Binding Info.Runtime, FallbackValue='', Mode=OneWay}" />
-              <Run Text=" · " />
-              <Run Text="{Binding Info.OperatingSystem, FallbackValue='', Mode=OneWay}" />
-              <Run Text=" · " />
-              <Run Text="{Binding Info.MachineName, FallbackValue='', Mode=OneWay}" />
-            </TextBlock>
-            <TextBlock Grid.Row="2" Classes="label" Text="This PC" />
-            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ClientInfo}" TextWrapping="Wrap" />
-            <TextBlock Grid.Row="3" Classes="label" Text="Data directory" />
-            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Info.DataDirectory, FallbackValue=''}" />
-            <TextBlock Grid.Row="4" Classes="label" Text="Database size" />
-            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DatabaseSize}" />
-            <TextBlock Grid.Row="5" Classes="label" Text="Products / customers" />
-            <TextBlock Grid.Row="5" Grid.Column="1">
-              <Run Text="{Binding Info.Products, FallbackValue='', Mode=OneWay}" />
-              <Run Text=" / " />
-              <Run Text="{Binding Info.Customers, FallbackValue='', Mode=OneWay}" />
-            </TextBlock>
+          <!-- Round 39 (RD-2): plain words and coloured chips -->
+          <Grid Name="SystemGrid" ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="9">
+            <TextBlock Classes="label" Text="Server" />
+            <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding ServerText}" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="1" Classes="label" Text="This PC" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ClientInfo}" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="2" Classes="label" Text="Tally" />
+            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Border Name="TallyStateChip" Classes="chip" Classes.ok="{Binding TallyOk}" Classes.bad="{Binding !TallyOk}"><StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding TallyText}" /></StackPanel></Border>
+              <TextBlock Text="{Binding Info.Status.TallyError, FallbackValue=''}" Foreground="{DynamicResource BadBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Grid.Row="3" Classes="label" Text="Gmail" />
+            <Border Grid.Row="3" Grid.Column="1" Name="GmailStateChip" Classes="chip" Classes.ok="{Binding GmailOk}" Classes.bad="{Binding !GmailOk}" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding GmailText}" /></StackPanel></Border>
+            <TextBlock Grid.Row="4" Classes="label" Text="Claude AI" />
+            <Border Grid.Row="4" Grid.Column="1" Name="AiStateChip" Classes="chip" Classes.ok="{Binding AiOk}" Classes.warn="{Binding !AiOk}" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding AiText}" /></StackPanel></Border>
+            <TextBlock Grid.Row="5" Classes="label" Text="Database" />
+            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding DatabaseText}" />
             <TextBlock Grid.Row="6" Classes="label" Text="Quotations / PDFs" />
             <TextBlock Grid.Row="6" Grid.Column="1">
               <Run Text="{Binding Info.Quotations, FallbackValue='', Mode=OneWay}" />
               <Run Text=" / " />
               <Run Text="{Binding Info.PdfFiles, FallbackValue='', Mode=OneWay}" />
             </TextBlock>
-            <TextBlock Grid.Row="7" Classes="label" Text="Tally" />
-            <TextBlock Grid.Row="7" Grid.Column="1" TextWrapping="Wrap">
-              <Run Text="{Binding Info.Status.TallyConnected, StringFormat='Connected: {0}', FallbackValue='', Mode=OneWay}" />
-              <Run Text="  " />
-              <Run Text="{Binding Info.Status.TallyError, FallbackValue='', Mode=OneWay}" Foreground="{DynamicResource BadBrush}" />
-            </TextBlock>
-            <TextBlock Grid.Row="8" Classes="label" Text="Gmail / Claude AI" />
-            <TextBlock Grid.Row="8" Grid.Column="1">
-              <Run Text="{Binding Info.Status.GmailConnected, StringFormat='Gmail connected: {0}', FallbackValue='', Mode=OneWay}" />
-              <Run Text="   " />
-              <Run Text="{Binding Info.Status.AiConfigured, StringFormat='AI configured: {0}', FallbackValue='', Mode=OneWay}" />
-            </TextBlock>
-            <TextBlock Grid.Row="9" Classes="label" Text="Log files" VerticalAlignment="Top" />
-            <ItemsControl Grid.Row="9" Grid.Column="1" ItemsSource="{Binding Info.LogFiles, FallbackValue={x:Null}}" />
+            <TextBlock Grid.Row="7" Classes="label" Text="Data folder" />
+            <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="{Binding Info.DataDirectory, FallbackValue=''}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="480" />
+              <Button Name="OpenDataFolderButton" Classes="small" ctl:ButtonIcon.Kind="folderopen" Content="Open" Command="{Binding OpenDataFolderCommand}" IsVisible="{Binding OnServerPc}" />
+            </StackPanel>
+            <TextBlock Grid.Row="8" Classes="label" Text="Today's log" />
+            <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="{Binding TodaysLog}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
+              <Button Name="OpenLogButton" Classes="small" ctl:ButtonIcon.Kind="open" Content="Open" Command="{Binding OpenTodaysLogCommand}" IsVisible="{Binding OnServerPc}" />
+            </StackPanel>
           </Grid>
         </Border>
       </TabItem>
@@ -120,8 +123,13 @@
             <StackPanel Orientation="Horizontal" Spacing="16">
               <TextBlock Text="Month" VerticalAlignment="Center" />
               <ComboBox Name="ZipMonthBox" ItemsSource="{Binding Months}" SelectedItem="{Binding ZipMonth}" MinWidth="190" />
-              <CheckBox Name="ZipQuotationsBox" IsChecked="{Binding ZipQuotations}" Content="Quotations" VerticalAlignment="Center" />
-              <CheckBox Name="ZipProformaBox" IsChecked="{Binding ZipProforma}" Content="Proforma invoices" VerticalAlignment="Center" />
+              <!-- Round 39 (TB-1): two pill buttons — blue with ✓ goes in the ZIP -->
+              <ToggleButton Name="ZipQuotationsBox" Classes="pilltoggle" IsChecked="{Binding ZipQuotations}" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="5"><TextBlock Classes="tick" Text="✓" /><TextBlock Text="Quotations" /></StackPanel>
+              </ToggleButton>
+              <ToggleButton Name="ZipProformaBox" Classes="pilltoggle" IsChecked="{Binding ZipProforma}" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="5"><TextBlock Classes="tick" Text="✓" /><TextBlock Text="Proforma invoices" /></StackPanel>
+              </ToggleButton>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Button Name="DownloadZipButton" Classes="primary" ctl:ButtonIcon.Kind="download" Content="Download ZIP" Command="{Binding DownloadMonthZipCommand}" />

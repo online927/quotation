@@ -5,6 +5,12 @@
              xmlns:c="using:Quotation.Contracts"
              x:Class="Quotation.Desktop.Views.ProductsView"
              x:DataType="vm:ProductsViewModel">
+  <UserControl.Styles>
+    <!-- Round 39 (RD-6): space round each shown row (hidden rows take no room) -->
+    <Style Selector="Grid.details > TextBlock, Grid.details > Panel, Grid.details > ItemsControl">
+      <Setter Property="Margin" Value="0,4.5" />
+    </Style>
+  </UserControl.Styles>
   <UserControl.KeyBindings>
     <KeyBinding Gesture="F5" Command="{Binding RefreshCommand}" />
   </UserControl.KeyBindings>
@@ -13,7 +19,7 @@
     <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,0,8">
       <Grid ColumnDefinitions="*,12,Auto">
         <TextBox Name="SearchBox" Text="{Binding Query}" Watermark="Search name, part no., alias, brand, HSN… (e.g. 'universal bevel', '10mm', '187-901')" />
-        <CheckBox Grid.Column="2" Content="Show DNU items" IsChecked="{Binding ShowHidden}"
+        <ToggleSwitch Grid.Column="2" Name="ShowDnuSwitch" OnContent="Show DNU items" OffContent="Show DNU items" IsChecked="{Binding ShowHidden}"
                   ToolTip.Tip="Items whose Tally description is DNU (do not use) are never offered in quotations" />
       </Grid>
       <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="{Binding ResultInfo}" />
@@ -51,35 +57,35 @@
 
     <Border Grid.Row="1" Grid.RowSpan="2" Grid.Column="2" Classes="card" IsVisible="{Binding Detail, Converter={x:Static ObjectConverters.IsNotNull}}">
       <ScrollViewer>
-        <Grid Classes="details" ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="9" ColumnSpacing="12">
+        <Grid Classes="details" ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="0" ColumnSpacing="12">
           <TextBlock Grid.ColumnSpan="2" Classes="h2" Text="{Binding Detail.Name, FallbackValue=''}" TextWrapping="Wrap" Margin="0,0,0,8" />
-          <TextBlock Grid.Row="1" Classes="label" Text="Part number" />
-          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Detail.PartNumber, FallbackValue=''}" />
-          <TextBlock Grid.Row="2" Classes="label" Text="Brand" />
-          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Detail.Brand, FallbackValue=''}" />
+          <TextBlock Grid.Row="1" Classes="label" Text="Part number" IsVisible="{Binding HasPartNumber}" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Detail.PartNumber, FallbackValue=''}" IsVisible="{Binding HasPartNumber}" />
+          <TextBlock Grid.Row="2" Classes="label" Text="Brand" IsVisible="{Binding HasBrand}" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Detail.Brand, FallbackValue=''}" IsVisible="{Binding HasBrand}" />
           <TextBlock Grid.Row="3" Classes="label" Text="Stock group" />
-          <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Detail.StockGroup, FallbackValue=''}" />
+          <TextBlock Grid.Row="3" Grid.Column="1" FontWeight="SemiBold" Text="{Binding Detail.StockGroup, FallbackValue=''}" />
           <TextBlock Grid.Row="4" Classes="label" Text="Unit" />
-          <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Detail.Unit, FallbackValue=''}" />
+          <TextBlock Grid.Row="4" Grid.Column="1" FontWeight="SemiBold" Text="{Binding Detail.Unit, FallbackValue=''}" />
           <TextBlock Grid.Row="5" Classes="label" Text="HSN/SAC" />
-          <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Detail.Hsn, FallbackValue=''}" />
+          <TextBlock Grid.Row="5" Grid.Column="1" FontWeight="SemiBold" Text="{Binding Detail.Hsn, FallbackValue=''}" />
           <TextBlock Grid.Row="6" Classes="label" Text="GST" />
-          <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Detail.GstRate, StringFormat='{}{0:0.##}%', FallbackValue='', TargetNullValue='not set in Tally'}" />
-          <TextBlock Grid.Row="7" Classes="label" Text="GST source" />
-          <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Detail.GstSource, FallbackValue=''}" />
+          <TextBlock Grid.Row="6" Grid.Column="1" FontWeight="SemiBold" Text="{Binding GstText}" />
           <TextBlock Grid.Row="8" Classes="label" Text="Rate" />
-          <TextBlock Grid.Row="8" Grid.Column="1" FontWeight="Bold" Text="{Binding Detail.Rate, StringFormat='₹ {0:N2}', FallbackValue='', TargetNullValue='No selling price in Tally'}" />
-          <TextBlock Grid.Row="9" Classes="label" Text="Rate source" />
-          <TextBlock Grid.Row="9" Grid.Column="1" TextWrapping="Wrap">
-            <Run Text="{Binding Detail.RateSource, FallbackValue='', Mode=OneWay}" />
-            <Run Text="{Binding Detail.RateDate, StringFormat=' (from {0:dd-MMM-yyyy})', FallbackValue='', Mode=OneWay}" />
-          </TextBlock>
-          <TextBlock Grid.Row="10" Classes="label" Text="Aliases" VerticalAlignment="Top" />
-          <ItemsControl Grid.Row="10" Grid.Column="1" ItemsSource="{Binding Detail.Aliases, FallbackValue={x:Null}}" />
-          <TextBlock Grid.Row="11" Classes="label" Text="Description" VerticalAlignment="Top" />
-          <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding Detail.Description, FallbackValue=''}" TextWrapping="Wrap" />
+          <Panel Grid.Row="8" Grid.Column="1">
+            <TextBlock FontWeight="Bold" Text="{Binding RateText}" IsVisible="{Binding HasRate}" />
+            <Border Name="NoRateChip" Classes="chip warn" HorizontalAlignment="Left" IsVisible="{Binding NoRate}">
+              <TextBlock Text="No selling price in Tally" FontSize="{DynamicResource FontSmall}" />
+            </Border>
+          </Panel>
+          <TextBlock Grid.Row="9" Classes="label" Text="Rate source" IsVisible="{Binding HasRateSource}" />
+          <TextBlock Grid.Row="9" Grid.Column="1" TextWrapping="Wrap" Text="{Binding RateSourceText}" IsVisible="{Binding HasRateSource}" />
+          <TextBlock Grid.Row="10" Classes="label" Text="Aliases" VerticalAlignment="Top" IsVisible="{Binding HasAliases}" />
+          <ItemsControl Grid.Row="10" Grid.Column="1" ItemsSource="{Binding Detail.Aliases, FallbackValue={x:Null}}" IsVisible="{Binding HasAliases}" />
+          <TextBlock Grid.Row="11" Classes="label" Text="Description" VerticalAlignment="Top" IsVisible="{Binding HasDescription}" />
+          <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding Detail.Description, FallbackValue=''}" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
           <TextBlock Grid.Row="12" Classes="label" Text="Synced" />
-          <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding Detail.LastSyncedUtc, StringFormat='{}{0:dd-MMM-yyyy HH:mm} UTC', FallbackValue=''}" />
+          <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding SyncedText}" />
           <!-- Round 36: the item's PDF datasheet -->
           <TextBlock Grid.Row="13" Classes="label" Text="Datasheet" VerticalAlignment="Top" Margin="0,10,0,0" />
           <StackPanel Grid.Row="13" Grid.Column="1" Spacing="8" Margin="0,10,0,0" Name="DatasheetPanel">
@@ -96,7 +102,7 @@
                 </StackPanel>
               </Grid>
             </Border>
-            <CheckBox Name="DatasheetOnPdfBox" Content="Add to the quotation PDF when this item is quoted" IsChecked="{Binding DatasheetOnPdf}"
+            <ToggleSwitch Name="DatasheetOnPdfBox" OnContent="Add to the quotation PDF when this item is quoted" OffContent="Add to the quotation PDF when this item is quoted" IsChecked="{Binding DatasheetOnPdf}"
                       IsVisible="{Binding HasDatasheet}" IsEnabled="{Binding IsAdmin}" />
             <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding NoDatasheet}">
               <TextBlock Classes="muted" Text="None" VerticalAlignment="Center" />

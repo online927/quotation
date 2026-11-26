@@ -259,8 +259,8 @@ public class Round33UiTests
         Assert.True(view.FindControl<Border>("DriveCard")!.IsVisible);
         Assert.True(settings.DriveConnected);
         Assert.Equal("Not yet (1 PDFs to copy)", settings.DriveLastCopyText);
-        Assert.True(view.FindControl<CheckBox>("DriveBackupsBox")!.IsChecked);
-        Assert.True(view.FindControl<CheckBox>("DrivePdfsBox")!.IsChecked);
+        Assert.True(view.FindControl<ToggleSwitch>("DriveBackupsBox")!.IsChecked);
+        Assert.True(view.FindControl<ToggleSwitch>("DrivePdfsBox")!.IsChecked);
 
         await settings.DriveBackupNowCommand.ExecuteAsync(null);
         Assert.StartsWith("Today ", settings.DriveLastCopyText);
@@ -438,43 +438,17 @@ public class Round33UiTests
     }
 
     [AvaloniaFact]
-    public async Task Sharp_text_is_a_switch_in_my_settings_and_off_is_the_old_look()
+    public async Task Sharp_text_is_always_on_and_my_settings_has_no_switch_for_it()
     {
         using var ctx = await StartAsync();
-        var clearTypeHere = SharpTextLook.ClearTypeHere;
-        SharpTextLook.ClearTypeHere = true; // the Windows look, on any computer
-        try
-        {
-            ctx.Shell.Navigate("mysettings");
-            var mine = Assert.IsType<MySettingsViewModel>(ctx.Shell.CurrentPage);
-            Dispatcher.UIThread.RunJobs();
-            var view = ctx.Window.FindDescendantOfType<MySettingsView>()!;
-            Assert.NotNull(view.FindControl<ToggleSwitch>("SharpTextSwitch"));
-            Assert.True(ctx.Session.Config.SharpText); // on at first
-            double Small() => (double)Application.Current!.Resources["FontSmall"]!;
-
-            mine.SharpText = false; // the old look
-            Assert.False(ctx.Session.Config.SharpText);
-            Assert.Equal(SharpTextLook.SmallOff, Small());
-            Assert.Equal(TextRenderingMode.Unspecified, RenderOptions.GetTextRenderingMode(ctx.Window));
-            Assert.False(ClientConfig.Load(ctx.Session.Config.FilePath).SharpText); // kept on this PC
-
-            mine.SharpText = true;
-            Assert.Equal(SharpTextLook.SmallOn, Small());
-            Assert.Equal(TextRenderingMode.SubpixelAntialias, RenderOptions.GetTextRenderingMode(ctx.Window));
-            Assert.Equal("Sharp text on for this PC.", mine.InfoMessage);
-
-            // A window opened later draws its letters the same way
-            var later = new Window();
-            later.Show();
-            Assert.Equal(TextRenderingMode.SubpixelAntialias, RenderOptions.GetTextRenderingMode(later));
-            later.Close();
-        }
-        finally
-        {
-            SharpTextLook.ClearTypeHere = clearTypeHere;
-            SharpTextLook.Apply(true);
-        }
+        ctx.Shell.Navigate("mysettings");
+        Dispatcher.UIThread.RunJobs();
+        var view = ctx.Window.FindDescendantOfType<MySettingsView>()!;
+        Assert.Null(view.FindControl<ToggleSwitch>("SharpTextSwitch")); // Round 39 (SX-1)
+        Assert.Null(view.FindControl<ToggleSwitch>("SilentSwitch"));
+        Assert.Null(view.FindControl<ToggleSwitch>("ReduceMotionSwitch"));
+        SharpTextLook.Apply(true);
+        Assert.Equal(SharpTextLook.SmallOn, (double)Application.Current!.Resources["FontSmall"]!);
     }
 
     /// <summary>A quotation made and approved on the New quotation page (where Clear shows).</summary>

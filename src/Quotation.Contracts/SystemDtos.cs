@@ -10,7 +10,7 @@ public sealed record UserDto(int Id, string Username, string DisplayName, UserRo
     bool WithoutGstNext = false, string Theme = AppTheme.StartTheme, string? PdfLayout = null,
     string TextSize = AppDisplay.Normal, string Spacing = AppDisplay.Comfortable, bool ReduceMotion = false,
     string PdfFileOrder = PdfFileOrders.NumberFirst, bool HasSealImage = false, bool HasSealPin = false, bool OpenPdfAfterSave = true,
-    bool UsdNext = false, decimal UsdRate = 0)
+    bool UsdNext = false, decimal UsdRate = 0, bool ProductLinksOnPdf = true, bool AttachCatalogues = true)
 {
     /// <summary>A user (not an administrator) with both a seal picture and a seal PIN may seal PDFs.</summary>
     public bool CanSeal => Role != UserRole.Admin && HasSealImage && HasSealPin;
@@ -86,7 +86,7 @@ public sealed record UpdateUserRequest(string Username, string DisplayName, User
 /// <summary>The current user's own switches ("My settings"); a null value is left unchanged.</summary>
 public sealed record MyPreferencesDto(bool? WithoutGstNext = null, string? Theme = null, string? PdfLayout = null,
     string? TextSize = null, string? Spacing = null, bool? ReduceMotion = null, string? PdfFileOrder = null, bool? OpenPdfAfterSave = null,
-    bool? UsdNext = null, decimal? UsdRate = null);
+    bool? UsdNext = null, decimal? UsdRate = null, bool? ProductLinksOnPdf = null, bool? AttachCatalogues = null);
 
 public sealed record CreateUserRequest(string Username, string DisplayName, string Password, UserRole Role);
 

@@ -60,6 +60,20 @@ public sealed class QuotationRow(QuotationSummaryDto s)
         };
     public bool IsWon => Summary.Outcome == QuotationOutcome.Won;
     public bool IsLost => Summary.Outcome == QuotationOutcome.Lost;
+
+    // Round 39 (Z8): internal notes (only while Settings → Features "Notes" is on; never printed)
+    public bool HasNotes => Summary.NoteCount > 0;
+    public string NoteCountText => Summary.NoteCount > 0 ? "📝 " + Summary.NoteCount : "";
+    public string? LatestNote => Summary.LatestNote.Length > 0 ? Summary.LatestNote : null;
+    /// <summary>The newest note under the customer (To Follow Up list).</summary>
+    public string NoteLine => Summary.LatestNote.Length > 0 ? "📝 " + OneLine(Summary.LatestNote) : "";
+    public bool ShowNoteLine { get; init; }
+
+    private static string OneLine(string text)
+    {
+        var line = text.Replace('\r', ' ').Replace('\n', ' ').Trim();
+        return line.Length <= 90 ? line : line[..90] + "…";
+    }
 }
 
 /// <summary>Drafts, today's quotations, proforma invoices and full history with search (number, customer, GSTIN, item, reference).</summary>
@@ -74,6 +88,11 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
     [ObservableProperty] private string _summary = "";
     [ObservableProperty] private DocTypeFilter _typeFilter;
     [ObservableProperty] private OutcomeFilter _outcomeFilter = OutcomeFilters[0];
+    /// <summary>Round 39 (K4): Quotation History shows only this day's documents (F2 opens its calendar); null = all.</summary>
+    [ObservableProperty] private DateTime? _dateFilter;
+    public bool ShowDateFilter => Preset == QuotationListPreset.History;
+    /// <summary>Round 39 (Z8): the 📝 column shows (internal notes switched on).</summary>
+    [ObservableProperty] private bool _notesOn;
     /// <summary>Won / Lost tracking switched on by an administrator (Settings > Quotation).</summary>
     [ObservableProperty] private bool _trackOutcomes;
 
@@ -177,12 +196,15 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
     partial void OnQueryChanged(string value) => _debounce.Run(_ => LoadAsync());
     partial void OnTypeFilterChanged(DocTypeFilter value) => _ = LoadAsync();
     partial void OnOutcomeFilterChanged(OutcomeFilter value) => _ = LoadAsync();
+    partial void OnDateFilterChanged(DateTime? value) => _ = LoadAsync();
 
     [RelayCommand]
     public Task LoadAsync() => RunAsync(async () =>
     {
         var settings = await _session.GetSettingsAsync();
         TrackOutcomes = settings.Quotation.TrackOutcomes;
+        NotesOn = settings.Quotation.InternalNotes;
+        var day = ShowDateFilter && DateFilter is { } picked ? DateOnly.FromDateTime(picked) : (DateOnly?)null;
         ShowFollowUpWhatsApp = Preset == QuotationListPreset.FollowUp && settings.Quotation.TrackOutcomes && settings.Quotation.WhatsAppButton;
         var today = DateOnly.FromDateTime(DateTime.Today);
         var type = TypeFilter.Type;
@@ -193,7 +215,7 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
                 .. await _session.Api.QuotationsAsync(Query, QuotationStatus.Draft, take: 500, type: type)],
             QuotationListPreset.Today => await _session.Api.QuotationsAsync(Query, from: today, to: today, take: 500, type: type),
             QuotationListPreset.FollowUp => await _session.Api.QuotationsAsync(Query, take: 500, followUpDue: true),
-            _ => await _session.Api.QuotationsAsync(Query, take: 300, type: type,
+            _ => await _session.Api.QuotationsAsync(Query, take: 300, type: type, from: day, to: day,
                 outcome: ShowOutcomeFilter ? OutcomeFilter.Outcome : null),
         };
         var selectedId = Selected?.Id;
@@ -203,7 +225,12 @@ public sealed partial class QuotationListViewModel : ViewModelBase, ITitledPage,
         foreach (var s in list)
         {
             var mine = !ownOnly || s.Owner is null || string.Equals(s.Owner, me, StringComparison.OrdinalIgnoreCase);
-            Rows.Add(new QuotationRow(s) { Mine = mine, CanDuplicate = mine && _session.MakesDocuments });
+            Rows.Add(new QuotationRow(s)
+            {
+                Mine = mine, CanDuplicate = mine && _session.MakesDocuments,
+                // The newest note under the customer: in the To Follow Up list, and in a search that matched a note.
+                ShowNoteLine = NotesOn && s.LatestNote.Length > 0 && (Preset == QuotationListPreset.FollowUp || Query.Trim().Length > 0),
+            });
         }
         Selected = Rows.FirstOrDefault(r => r.Id == selectedId);
         _loadedOnce = true;

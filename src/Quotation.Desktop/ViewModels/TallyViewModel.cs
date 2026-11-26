@@ -54,8 +54,20 @@ public sealed partial class TallyViewModel : ViewModelBase
 
     partial void OnSyncStateChanged(SyncStateDto? value) => OnPropertyChanged(nameof(SyncRunning));
 
+    // Round 39 (RD-1): "If Tally is disconnected" as a checklist that is checked with every refresh.
+    public bool TallyOpenOk => IsConnected && !string.IsNullOrWhiteSpace(Status?.TallyCompany);
+    public bool PortOk => IsConnected;
+    public bool FirewallOk => IsConnected;
+    public string TallyOpenMark => TallyOpenOk ? "✓" : "✗";
+    public string PortMark => PortOk ? "✓" : "✗";
+    public string FirewallMark => FirewallOk ? "✓" : "?";
+    /// <summary>The raw Tally data tool is folded until opened (Round 39, RD-1).</summary>
+    [ObservableProperty] private bool _rawDataOpen;
+
     partial void OnStatusChanged(SystemStatusDto? value)
     {
+        foreach (var n in new[] { nameof(TallyOpenOk), nameof(PortOk), nameof(FirewallOk), nameof(TallyOpenMark), nameof(PortMark), nameof(FirewallMark) })
+            OnPropertyChanged(n);
         OnPropertyChanged(nameof(LastSyncText));
         OnPropertyChanged(nameof(ConnectionText));
         OnPropertyChanged(nameof(IsConnected));
@@ -136,7 +148,15 @@ public sealed class SyncRunRow(SyncRunDto r)
 {
     public string Started { get; } = Formatting.LocalDateTime(r.StartedUtc) ?? "";
     public string Kind { get; } = r.Kind.ToString();
-    public string Status { get; } = r.Status.ToString();
+    public string Status { get; } = r.Status switch
+    {
+        Core.Domain.SyncStatus.Succeeded => "Done",
+        Core.Domain.SyncStatus.Failed => "Failed",
+        _ => r.Status.ToString(),
+    };
+    /// <summary>Round 39 (RD-1): the result as a green / red chip.</summary>
+    public bool IsOk { get; } = r.Status == Core.Domain.SyncStatus.Succeeded;
+    public bool IsFailed { get; } = r.Status == Core.Domain.SyncStatus.Failed;
     public string Changes { get; } = $"{r.ProductsChanged} products, {r.CustomersChanged} customers; deleted {r.ProductsDeleted}/{r.CustomersDeleted}";
     public string By { get; } = r.TriggeredBy;
     public string Message { get; } = r.Message ?? "";

@@ -84,8 +84,8 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log, Prod
             l.Amount,
             l.PartNumber)
         {
-            // Round 38 (PL-1): a clickable "View product" line when Settings and the quotation both have the links on.
-            Link = settings.ProductLinksOnPdf && q.ShowProductLinks && links is not null ? links.For(l.ProductId) : "",
+            // Round 38 (PL-1) / Round 39 (GR-2): a clickable "View product" line when the maker of the PDF has the links on.
+            Link = q.PrintLinks && links is not null ? links.For(l.ProductId) : "",
         }).ToList();
 
         var ordered = q.Lines.OrderBy(l => l.LineNo).ToList();
@@ -134,7 +134,7 @@ public sealed class PdfQuotationRenderer(ILogger<PdfQuotationRenderer> log, Prod
                 ? q.ConsigneeSameAsBuyer ? ToParty(q.Buyer, settings.PartyPrint, master) : ToParty(q.Consignee, settings.PartyPrint, null)
                 : null,
             BuyerCaption = settings.PartyPrint.EffectiveConsignee == ConsigneePrint.CombinedWhenSame && SameParty(q) ? "Buyer/Consignee" : "Buyer (Bill to)",
-            ShrinkToFitOnePage = settings.ShrinkToFitOnePage,
+            ShrinkToFitOnePage = true, // Round 39: always (the Settings switch is gone)
             ShowPartNumber = q.DocType == DocumentType.ProformaInvoice ? settings.PartNumberOnProforma : settings.PartNumberOnQuotations,
             TaxLines = calc.Taxes.Select(t => new PdfTaxLine(t.Name, t.RatePercent, t.Amount)).ToList(),
             ModernTitle = string.IsNullOrWhiteSpace(settings.ModernHeading) ? "Quotation/Proforma" : settings.ModernHeading.Trim(),

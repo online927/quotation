@@ -127,7 +127,7 @@ public class Round28UiTests
         editor.SaveLineCommand.Execute(null);
         Assert.Equal(14900m, editor.Lines[0].Rate);
         Assert.Same(editor.Lines[1], editor.EditingLine);
-        Assert.Equal("Going down: Rate · line 2 of 3", editor.StepInfo);
+        Assert.Equal("Rate · line 2 of 3", editor.StepInfo);
         await UiHelpers.WaitUntil(() =>
         {
             Dispatcher.UIThread.RunJobs();
@@ -187,7 +187,7 @@ public class Round28UiTests
         editor.EditLineCommand.Execute(editor.Lines[1]);
         editor.SaveLineCommand.Execute(null);
         Assert.Same(editor.Lines[2], editor.EditingLine);
-        Assert.Equal("Going down: Rate, Discount · line 3 of 3", editor.StepInfo);
+        Assert.Equal("Rate, Discount · line 3 of 3", editor.StepInfo);
         editor.SaveLineCommand.Execute(null);
         Assert.Null(editor.EditingLine);
         // The choice made on this PC comes back on the next quotation; an older single choice still reads.
@@ -303,7 +303,7 @@ public class Round28UiTests
         editor.EditLineCommand.Execute(editor.Lines[0]);
         TextBox Input(string box) => view.FindControl<NumericUpDown>(box)!.GetVisualDescendants().OfType<TextBox>().First();
         await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return Input("RateBox").IsFocused; });
-        Assert.Equal("Going down: Rate, Discount · line 1 of 3", editor.StepInfo);
+        Assert.Equal("Rate, Discount · line 1 of 3", editor.StepInfo);
         ctx.Window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
         await UiHelpers.WaitUntil(() => { Dispatcher.UIThread.RunJobs(); return editor.EditingLine == editor.Lines[0] && Input("DiscountBox").IsFocused; });
         ctx.Window.KeyTextInput("5");

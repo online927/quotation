@@ -1049,3 +1049,29 @@ Server update needed (3, 4, 6, 9, 10, 11 and 12 are done by the server).
     quotation).
 
 Server update needed (2, 3, 5, 8, 9 and 10 are done by the server).
+
+### Round 39 (Windows only)
+
+1. Quotation page: a gear just before the date: Hide GST, Hide HSN, Hide per (screen only, this PC; all three on at first),
+   "Product links on PDF" and "Attach catalogues" (each user's own choice, saved with the login). The tick on each
+   quotation and the administrator's "View product link" switch are gone.
+2. Keyboard: ↓ / ↑ pick a line (outside the typing boxes; Esc from an empty entry box first), Enter edits it, Esc lets go
+   (only then goes Back); Alt+D removes the picked line with Undo; Enter on an empty Product box goes on to P&F → Remarks
+   → Approve; F2 in Quotation History opens the new date filter (one day). All on the F1 card.
+3. The Product / Customer search box scrolls into view with room below it; its list never flips up over the box.
+4. Gear next to Items: no suggestion buttons under "Same delivery on all lines"; "Go up instead of down" removed.
+5. My Settings: "Editing a line (this PC)": In the list (the line opens in its row: Qty, Rate, Disc. %, Description,
+   Delivery; click the name or Shift+Tab from Qty to pick another item, its list floating over the rows) or In the boxes
+   below (the old way). Sharp text, sounds and animations are always on (their switches removed); grey help lines removed.
+6. Description column from Excel: pasted into Description it goes one cell per line (Undo / "Put all in this box"); the
+   pasted-list window reads a Description column.
+7. Internal notes (Settings → Features "Notes", off at first): 📝 card under the items (Alt+N), own notes can be edited /
+   deleted, admins delete any; never printed; count and newest note in History, search finds note words; a proforma shows
+   its quotation's notes.
+8. Part No. line under item names removed from the quotation page; drag dots show only on the line under the mouse.
+9. Redesigns: Tally page (sync table, self-checking checklist, raw Tally data folded at the bottom), Diagnostics chips and
+   Open buttons, Deleted empty message, Settings menu icons, Products details card, AI Inbox "not set up" card, top search
+   hidden on pages with their own search; every tick box is a switch (ZIP choices are pill buttons); more space between
+   Settings rows; "Fit on one page" removed (always shrinks up to 10 %).
+
+Server update needed (1, 7 and the always-on shrink are done by the server; new database table for notes).

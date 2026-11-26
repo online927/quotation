@@ -17,6 +17,10 @@ public sealed partial class AiInboxViewModel : ViewModelBase
     [ObservableProperty] private string _requestText = "";
     [ObservableProperty] private bool _showAll;
     [ObservableProperty] private string _aiState = "";
+    /// <summary>Round 39 (RD-8): Claude AI is not set up: an info card instead of an orange line; Analyse waits.</summary>
+    [ObservableProperty] private bool _aiNotSetUp;
+    public bool IsAdmin => _session.IsAdmin;
+    public string NotSetUpText => IsAdmin ? "Once set up, type a request and it prepares the quotation." : "Ask your administrator to set it up.";
 
     public ObservableCollection<AiRequestItemViewModel> Items { get; } = [];
 
@@ -33,7 +37,8 @@ public sealed partial class AiInboxViewModel : ViewModelBase
     public Task LoadAsync() => RunAsync(async () =>
     {
         var status = await _session.Api.StatusAsync();
-        AiState = status.AiConfigured ? "" : "The AI assistant is not configured. An administrator can enable it in Settings → Claude AI.";
+        AiState = "";
+        AiNotSetUp = !status.AiConfigured;
         var list = await _session.Api.AiRequestsAsync(take: 200);
         Items.Clear();
         foreach (var r in list.Where(r => ShowAll || r.Status is AiRequestStatus.NeedsClarification or AiRequestStatus.ReadyForReview
@@ -42,6 +47,10 @@ public sealed partial class AiInboxViewModel : ViewModelBase
             Items.Add(new AiRequestItemViewModel(r, _session, _navigator, () => LoadAsync()));
         }
     });
+
+    /// <summary>Round 39 (RD-8): "Set up" opens Settings (administrators), where the Claude AI section is.</summary>
+    [RelayCommand]
+    private void SetUpAi() => _navigator.Navigate("settings");
 
     [RelayCommand]
     private async Task AnalyzeAsync()

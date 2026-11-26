@@ -46,19 +46,14 @@ public class Round38Tests : QuotationTestBase
             Assert.True(HasWebLink(pdf, url), layout);
         }
 
-        // Off for this quotation: no link line.
-        var request = await BevelRequest();
-        request.ShowProductLinks = false;
-        var off = await Api.CreateQuotationAsync(request);
-        await Api.ApproveQuotationAsync(off.Id);
-        Assert.False(off.ShowProductLinks);
-        Assert.DoesNotContain("View product", PdfWords(await Api.QuotationPdfAsync(off.Id, layout: PdfLayouts.Zoho)));
-
-        // Off in Settings: none at all.
+        // Round 39 (GR-2): the maker's own switch decides (the quotation's tick and the Settings switch are gone).
+        Api.UpdateCurrentUser(await Api.SetMyPreferencesAsync(new MyPreferencesDto(ProductLinksOnPdf: false)));
+        Assert.DoesNotContain("View product", PdfWords(await Api.QuotationPdfAsync(q.Id, layout: PdfLayouts.Zoho)));
+        Api.UpdateCurrentUser(await Api.SetMyPreferencesAsync(new MyPreferencesDto(ProductLinksOnPdf: true)));
         var all = await Api.SettingsAsync();
-        all.Quotation.ProductLinksOnPdf = false;
+        all.Quotation.ProductLinksOnPdf = false; // ignored now
         await Api.SaveSettingsAsync(all);
-        Assert.DoesNotContain("View product", PdfWords(await Api.QuotationPdfAsync(q.Id, layout: PdfLayouts.Tally)));
+        Assert.Contains("View product", PdfWords(await Api.QuotationPdfAsync(q.Id, layout: PdfLayouts.Tally)));
     }
 
     [Fact]

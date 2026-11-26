@@ -17,6 +17,17 @@
       <Setter Property="FontSize" Value="14" />
       <Setter Property="CornerRadius" Value="10" />
     </Style>
+    <!-- Round 39 (RD-5): a symbol beside each section name -->
+    <Style Selector="TabControl.sidetabs > TabItem">
+      <Setter Property="HeaderTemplate">
+        <DataTemplate x:DataType="x:String">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <ctl:StrokeIcon Kind="{Binding Converter={x:Static ctl:SettingsTabIcon.Instance}}" Width="16" Height="16" />
+            <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+          </StackPanel>
+        </DataTemplate>
+      </Setter>
+    </Style>
     <Style Selector="TabControl.sidetabs > TabItem /template/ Border#PART_SelectedPipe">
       <Setter Property="IsVisible" Value="False" />
     </Style>
@@ -53,13 +64,14 @@
     <Style Selector="TextBlock.notready">
       <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
     </Style>
+    <!-- Round 39: more room between Settings rows (boxes no longer touch the row below) -->
     <Style Selector="Grid.form > TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
       <Setter Property="VerticalAlignment" Value="Center" />
-      <Setter Property="Margin" Value="0,4,12,4" />
+      <Setter Property="Margin" Value="0,8,12,8" />
     </Style>
-    <Style Selector="Grid.form > TextBox, Grid.form > NumericUpDown, Grid.form > ComboBox, Grid.form > CheckBox">
-      <Setter Property="Margin" Value="0,3" />
+    <Style Selector="Grid.form > TextBox, Grid.form > NumericUpDown, Grid.form > ComboBox, Grid.form > ToggleSwitch, Grid.form > StackPanel, Grid.form > Grid">
+      <Setter Property="Margin" Value="0,8" />
     </Style>
   </UserControl.Styles>
   <Panel>
@@ -172,23 +184,22 @@
             <TextBlock Grid.Row="5" Text="GST presentation" />
             <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding TaxPresentations}" SelectedItem="{Binding Settings.Quotation.TaxPresentation}" Width="200" />
             <TextBlock Grid.Row="6" Text="Round off total to rupee" />
-            <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RoundOffTotal}" />
+            <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RoundOffTotal}" OnContent="On" OffContent="Off" />
             <TextBlock Grid.Row="7" Text="Default packing &amp; forwarding (₹)" />
             <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Settings.Quotation.DefaultPackingForwardingAmount}" Minimum="0" FormatString="0.00" Width="160" HorizontalAlignment="Left" />
             <TextBlock Grid.Row="10" Text="Allow generation with stale Tally data" />
-            <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllowStaleDataOverride}" />
+            <ToggleSwitch Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.AllowStaleDataOverride}" OnContent="On" OffContent="Off" />
             <TextBlock Grid.Row="11" Text="Tally data stale after (hours)" />
             <NumericUpDown Grid.Row="11" Grid.Column="1" Value="{Binding Settings.Quotation.StaleDataHours}" Minimum="1" FormatString="0" Width="160" HorizontalAlignment="Left" />
             <TextBlock Grid.Row="12" Text="Require HSN/SAC on every line" />
-            <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RequireHsn}" />
+            <ToggleSwitch Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.Quotation.RequireHsn}" OnContent="On" OffContent="Off" />
             <TextBlock Grid.Row="16" Text="Users can edit for (days)" />
             <StackPanel Grid.Row="16" Grid.Column="1" Orientation="Horizontal" Spacing="8">
               <NumericUpDown Value="{Binding Settings.Quotation.UserEditDays}" Minimum="0" Maximum="365" FormatString="0" Width="120" />
               <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="after a quotation is first saved; administrators can always edit." />
             </StackPanel>
             <TextBlock Grid.Row="17" Text="Title Case while typing" />
-            <CheckBox Grid.Row="17" Grid.Column="1" IsChecked="{Binding Settings.Quotation.TitleCase}"
-                      Content="Capital first letter of each word in the quotation's text boxes (like Tally)" />
+            <ToggleSwitch Grid.Row="17" Grid.Column="1" Name="TitleCaseSwitch" IsChecked="{Binding Settings.Quotation.TitleCase}" OnContent="" OffContent="" />
             <TextBlock Grid.Row="13" Text="Proforma invoice number pattern" />
             <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding Settings.Quotation.ProformaNumberPattern}" Watermark="TSPI{FY}-{SEQ}" />
             <TextBlock Grid.Row="14" Text="First proforma number of a new year" />
@@ -224,38 +235,41 @@
         <ScrollViewer>
           <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Text="PDF layout" VerticalAlignment="Top" Margin="0,8,12,4" />
-            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" Margin="0,3">
+            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" Margin="0,8">
               <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Default for users who have not chosen one in My Settings" />
               <ComboBox ItemsSource="{Binding PdfLayoutChoices}" SelectedItem="{Binding Settings.Quotation.DefaultPdfLayout}" Width="200" />
               <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="Zoho layout: heading" Margin="0,6,0,0" />
               <TextBox Text="{Binding Settings.Quotation.ModernHeading}" Watermark="Quotation/Proforma" Width="300" HorizontalAlignment="Left" />
             </StackPanel>
             <TextBlock Grid.Row="1" Text="Part No. column" />
-            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,3">
-              <CheckBox IsChecked="{Binding Settings.Quotation.PartNumberOnQuotations}" Content="On quotations" />
-              <CheckBox IsChecked="{Binding Settings.Quotation.PartNumberOnProforma}" Content="On proforma invoices" />
+            <!-- Round 39: the words first, then each switch -->
+            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="28" Margin="0,8">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Classes="muted" Text="On quotations" VerticalAlignment="Center" />
+                <ToggleSwitch Name="PartNoQuotationsSwitch" IsChecked="{Binding Settings.Quotation.PartNumberOnQuotations}" OnContent="" OffContent="" MinWidth="0" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Classes="muted" Text="On proforma invoices" VerticalAlignment="Center" />
+                <ToggleSwitch Name="PartNoProformaSwitch" IsChecked="{Binding Settings.Quotation.PartNumberOnProforma}" OnContent="" OffContent="" MinWidth="0" />
+              </StackPanel>
             </StackPanel>
-            <TextBlock Grid.Row="2" Text="Fit on one page" />
-            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.Quotation.ShrinkToFitOnePage}"
-                      Content="Shrink slightly (up to 10 %) when a document is just over one page" />
             <TextBlock Grid.Row="3" Text="Heading on quotation PDF" />
-            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
+            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,8">
               <TextBox Text="{Binding Settings.Quotation.QuotationHeading}" Watermark="QUOTATION" Width="300" />
               <Button ctl:ButtonIcon.Kind="eye" Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
             </StackPanel>
             <TextBlock Grid.Row="4" Text="Heading on proforma invoice PDF" />
-            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,3">
+            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,8">
               <TextBox Text="{Binding Settings.Quotation.ProformaHeading}" Watermark="PROFORMA INVOICE" Width="300" />
               <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" VerticalAlignment="Center" Text="Printed exactly as typed; empty = the standard heading." />
             </StackPanel>
             <!-- Round 37: the note on a USD quotation's PDF -->
             <TextBlock Grid.Row="5" Text="USD note on the PDF" />
-            <ComboBox Grid.Row="5" Grid.Column="1" Name="UsdPdfNoteBox" ItemsSource="{Binding UsdPdfNoteChoices}" SelectedIndex="{Binding UsdPdfNoteIndex}" Width="460" Margin="0,3" />
+            <ComboBox Grid.Row="5" Grid.Column="1" Name="UsdPdfNoteBox" ItemsSource="{Binding UsdPdfNoteChoices}" SelectedIndex="{Binding UsdPdfNoteIndex}" Width="460" Margin="0,8" />
             <!-- Round 38 (PL-1): product web links from an Excel; a clickable "View product" line on the PDF -->
             <TextBlock Grid.Row="6" Text="Product links" VerticalAlignment="Top" Margin="0,8,0,0" />
-            <StackPanel Grid.Row="6" Grid.Column="1" Spacing="6" Margin="0,3">
+            <StackPanel Grid.Row="6" Grid.Column="1" Spacing="6" Margin="0,8">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <CheckBox Name="ProductLinksOnPdfBox" IsChecked="{Binding Settings.Quotation.ProductLinksOnPdf}" Content="&quot;View product&quot; link on the PDF" />
                 <Button Name="LoadProductLinksButton" ctl:ButtonIcon.Kind="upload" Content="Load product links (Excel)…" Click="OnLoadProductLinks" IsEnabled="{Binding IsAdmin}"
                         ToolTip.Tip="Column A = product code (Part No.), column B = web link. Loading again adds and replaces links. Tally is not changed." />
               </StackPanel>
@@ -306,6 +320,9 @@
                     <ToggleSwitch Name="FestivalLooksSwitch" IsChecked="{Binding Settings.Quotation.FestivalLooks}" OnContent="On" OffContent="Off" />
                     <TextBlock Classes="h2" Text="XO" Margin="0,8,0,0" />
                     <ToggleSwitch Name="XoGameSwitch" IsChecked="{Binding Settings.Quotation.XoGame}" OnContent="On" OffContent="Off" />
+                    <!-- Round 39 (Z8): internal notes on quotations (off at first) -->
+                    <TextBlock Classes="h2" Text="Notes" Margin="0,8,0,0" />
+                    <ToggleSwitch Name="InternalNotesSwitch" IsChecked="{Binding Settings.Quotation.InternalNotes}" OnContent="On" OffContent="Off" />
                     <TextBlock Classes="h2" Text="Seal PIN" Margin="0,8,0,0" />
                     <ToggleSwitch Name="SealPinSwitch" IsChecked="{Binding Settings.Quotation.SealPin}" OnContent="On" OffContent="Off" />
                     <TextBlock Classes="h2" Text="Copy from Tally invoice" Margin="0,8,0,0" />
@@ -354,8 +371,8 @@
                   </StackPanel>
                   <TextBlock Grid.Row="1" Text="Copy" VerticalAlignment="Center" />
                   <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="18">
-                    <CheckBox Name="DriveBackupsBox" IsChecked="{Binding Settings.Backup.DriveBackups}" Content="Database backups" />
-                    <CheckBox Name="DrivePdfsBox" IsChecked="{Binding Settings.Backup.DrivePdfs}" Content="Approved PDFs (a folder per month)" />
+                    <ToggleSwitch Name="DriveBackupsBox" IsChecked="{Binding Settings.Backup.DriveBackups}" OnContent="Database backups" OffContent="Database backups" />
+                    <ToggleSwitch Name="DrivePdfsBox" IsChecked="{Binding Settings.Backup.DrivePdfs}" OnContent="Approved PDFs (a folder per month)" OffContent="Approved PDFs (a folder per month)" />
                   </StackPanel>
                   <TextBlock Grid.Row="2" Text="Folder name" VerticalAlignment="Center" />
                   <TextBox Grid.Row="2" Grid.Column="1" Name="DriveFolderBox" Text="{Binding Settings.Backup.DriveFolder}" Watermark="TS Quotations" MaxWidth="320" HorizontalAlignment="Left" Width="320" />
@@ -386,32 +403,32 @@
             <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="How Buyer (Bill to) and Consignee (Ship to) are printed on every PDF, like Tally&#x27;s print …" TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="How Buyer (Bill to) and Consignee (Ship to) are printed on every PDF, like Tally's print configuration &#x2018;Party Details&#x2019;. PDFs already made change only when they are regenerated."><Path Classes="infoicon" /></Border></StackPanel>
             <Grid Classes="form" ColumnDefinitions="320,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Text="Show Contact (phone)" />
-              <CheckBox Grid.Row="0" Grid.Column="1" Name="ShowContactBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" Content="Contact : 98…" />
+              <ToggleSwitch Grid.Row="0" Grid.Column="1" Name="ShowContactBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" OnContent="Contact : 98…" OffContent="Contact : 98…" />
               <TextBlock Grid.Row="1" Text="     Show contact person's name" />
-              <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactPerson}"
-                        IsEnabled="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" Content="Contact : Mr. Name, 98…" />
+              <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowContactPerson}"
+                        IsEnabled="{Binding Settings.Quotation.PartyPrint.ShowContactDetails}" OnContent="Contact : Mr. Name, 98…" OffContent="Contact : Mr. Name, 98…" />
               <TextBlock Grid.Row="2" Text="Show E-mail" />
-              <CheckBox Grid.Row="2" Grid.Column="1" Name="ShowEmailBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowEmail}" Content="E-Mail : name@company.com" />
+              <ToggleSwitch Grid.Row="2" Grid.Column="1" Name="ShowEmailBox" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowEmail}" OnContent="E-Mail : name@company.com" OffContent="E-Mail : name@company.com" />
               <TextBlock Grid.Row="3" Text="Show Name and Address from Party master" />
-              <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.NameAndAddressFromMaster}"
-                        Content="Tally ledger's name and address, not what was typed on the quotation" />
+              <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.NameAndAddressFromMaster}"
+                        OnContent="Tally ledger's name and address, not what was typed on the quotation" OffContent="Tally ledger's name and address, not what was typed on the quotation" />
               <TextBlock Grid.Row="4" Text="Show Address in a continuous line" />
-              <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.AddressInContinuousLine}" Content="One line, separated by commas" />
+              <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.AddressInContinuousLine}" OnContent="One line, separated by commas" OffContent="One line, separated by commas" />
               <TextBlock Grid.Row="5" Text="Display name for Parties" />
               <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding PartyDisplayNames}" SelectedIndex="{Binding PartyDisplayNameIndex}" Width="200" />
               <TextBlock Grid.Row="6" Text="Show Buyer's Tax Registration No. / GSTIN" />
-              <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowGstin}" Content="GSTIN/UIN" />
+              <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowGstin}" OnContent="GSTIN/UIN" OffContent="GSTIN/UIN" />
               <TextBlock Grid.Row="7" Text="Show PAN / Income Tax No." />
-              <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPan}" Content="PAN/IT No, from the Tally ledger" />
+              <ToggleSwitch Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPan}" OnContent="PAN/IT No, from the Tally ledger" OffContent="PAN/IT No, from the Tally ledger" />
               <TextBlock Grid.Row="8" Text="Show State Name &amp; State Code" />
-              <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowStateNameAndCode}" />
+              <ToggleSwitch Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowStateNameAndCode}" OnContent="On" OffContent="Off" />
               <TextBlock Grid.Row="9" Text="Show Consignee details" />
               <ComboBox Grid.Row="9" Grid.Column="1" ItemsSource="{Binding ConsigneeChoices}" SelectedIndex="{Binding ConsigneeChoiceIndex}" Width="260" />
               <TextBlock Grid.Row="10" Text="Show PIN code" />
-              <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPinCode}" Content="At the end of the address: Bangalore - 562111" />
+              <ToggleSwitch Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.ShowPinCode}" OnContent="At the end of the address: Bangalore - 562111" OffContent="At the end of the address: Bangalore - 562111" />
               <TextBlock Grid.Row="11" Text="Address width" />
-              <CheckBox Grid.Row="11" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.AddressHalfWidth}"
-                        Content="Half the width of the box (the address wraps; name, GSTIN, state and contact use the full width)" />
+              <ToggleSwitch Grid.Row="11" Grid.Column="1" IsChecked="{Binding Settings.Quotation.PartyPrint.AddressHalfWidth}"
+                        OnContent="Half the width of the box (the address wraps; name, GSTIN, state and contact use the full width)" OffContent="Half the width of the box (the address wraps; name, GSTIN, state and contact use the full width)" />
             </Grid>
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Button ctl:ButtonIcon.Kind="eye" Content="Preview PDF" Command="{Binding PreviewPrintCommand}" IsEnabled="{Binding IsAdmin}" />
@@ -447,9 +464,9 @@
             <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding FyOverride}" Width="160" HorizontalAlignment="Left" Watermark="e.g. 2025" />
             <TextBlock Grid.Row="10" Text="No selling price in Tally: use last rate" VerticalAlignment="Top" />
             <StackPanel Grid.Row="10" Grid.Column="1">
-              <CheckBox IsChecked="{Binding Settings.Tally.UseLastRate}" Content="Fill the rate the item was last quoted at in this app (any customer)" />
-              <CheckBox IsChecked="{Binding Settings.Tally.ReadLastRatesFromTally}" IsEnabled="{Binding Settings.Tally.UseLastRate}"
-                        Content="Also read last rates from Tally's Sales and Quotation vouchers (heavier syncs)" />
+              <ToggleSwitch IsChecked="{Binding Settings.Tally.UseLastRate}" OnContent="Fill the rate the item was last quoted at in this app (any customer)" OffContent="Fill the rate the item was last quoted at in this app (any customer)" />
+              <ToggleSwitch IsChecked="{Binding Settings.Tally.ReadLastRatesFromTally}" IsEnabled="{Binding Settings.Tally.UseLastRate}"
+                        OnContent="Also read last rates from Tally's Sales and Quotation vouchers (heavier syncs)" OffContent="Also read last rates from Tally's Sales and Quotation vouchers (heavier syncs)" />
               <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Off (recommended): only quotations approved in this app are remembered and Tally is not asked for vouchers." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Off (recommended): only quotations approved in this app are remembered and Tally is not asked for vouchers. Takes effect at the next sync."><Path Classes="infoicon" /></Border></StackPanel>
             </StackPanel>
             <TextBlock Grid.Row="11" Text="Voucher types for last rate (one per line)" VerticalAlignment="Top" />
@@ -470,7 +487,7 @@
         <ScrollViewer>
         <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
           <TextBlock Grid.Row="0" Text="Enable AI assistant" />
-          <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Ai.Enabled}" />
+          <ToggleSwitch Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Ai.Enabled}" OnContent="On" OffContent="Off" />
           <TextBlock Grid.Row="1" Text="Model" />
           <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Ai.Model}" />
           <TextBlock Grid.Row="2" Text="API key" />
@@ -493,7 +510,7 @@
         <ScrollViewer>
         <Grid Classes="form" ColumnDefinitions="260,*" Margin="4,8" MaxWidth="900" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
           <TextBlock Grid.Row="0" Text="Enable Gmail ingestion" />
-          <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Gmail.Enabled}" />
+          <ToggleSwitch Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.Gmail.Enabled}" OnContent="On" OffContent="Off" />
           <TextBlock Grid.Row="1" Text="Gmail search query" />
           <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Gmail.Query}" />
           <TextBlock Grid.Row="2" Text="Poll every (minutes)" />

@@ -137,6 +137,9 @@ namespace Quotation.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("AttachCatalogues")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
@@ -171,6 +174,9 @@ namespace Quotation.Data.Migrations
                     b.Property<string>("PdfLayout")
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("ProductLinksOnPdf")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("ReduceMotion")
                         .HasColumnType("INTEGER");
@@ -946,6 +952,40 @@ namespace Quotation.Data.Migrations
                     b.HasIndex("QuotationId", "LineNo");
 
                     b.ToTable("QuotationLines");
+                });
+
+            modelBuilder.Entity("Quotation.Data.Entities.QuotationNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EditedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("QuotationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuotationId");
+
+                    b.ToTable("QuotationNotes");
                 });
 
             modelBuilder.Entity("Quotation.Data.Entities.SettingEntry", b =>

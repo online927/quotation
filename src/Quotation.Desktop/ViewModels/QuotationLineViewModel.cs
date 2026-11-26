@@ -27,6 +27,12 @@ public sealed partial class QuotationLineViewModel : ObservableObject
     [ObservableProperty] private decimal? _tallyRate;
     [ObservableProperty] private decimal _discountPercent;
     [ObservableProperty] private bool _isEditing;
+    /// <summary>Round 39 (KL-1): the line picked with ↓ / ↑ (Enter edits it, Alt+D removes it).</summary>
+    [ObservableProperty] private bool _isHighlighted;
+    /// <summary>Round 39 (IE-1): this line is being changed in the list itself (My Settings → Editing a line → In the list).</summary>
+    [ObservableProperty] private bool _isInline;
+    /// <summary>Round 39 (IE-1): the item name is a search box to pick another Tally item.</summary>
+    [ObservableProperty] private bool _isChangingItem;
     /// <summary>The quotation is "Without GST": every line shows 0 %.</summary>
     [ObservableProperty] private bool _zeroGst;
     /// <summary>Round 38 (PL-1): the item's product web page ("" = none); a small 🔗 opens it.</summary>

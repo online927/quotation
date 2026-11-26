@@ -105,7 +105,7 @@ public class Round31UiTests
             server.Tally.ChangeRate(item, 17250);
             await vm.IncrementalSyncCommand.ExecuteAsync(null);
             Assert.Null(vm.ErrorMessage);
-            Assert.Equal("Succeeded", vm.Runs[0].Status);
+            Assert.Equal("Done", vm.Runs[0].Status);
             Assert.Equal("Incremental", vm.Runs[0].Kind); // only what changed
             var product = (await session.Api.SearchProductsAsync("universal bevel")).First().Product;
             Assert.Equal(17250m, product.Rate);

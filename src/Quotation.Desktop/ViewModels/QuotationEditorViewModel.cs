@@ -33,8 +33,9 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         _startedNew = id is null;
         _stepMode = CleanStepMode(session.Config.LineStepMode);
         foreach (var o in StepModes) o.IsSelected = StepKeys(_stepMode).Contains(o.Key);
-        _stepUp = session.Config.LineStepUp;
-        _hideHsnGst = session.Config.HideHsnGst;
+        _hideGst = session.Config.HideGst;
+        _hideHsn = session.Config.HideHsn;
+        _hidePer = session.Config.HidePer;
         _navigator = navigator;
         _docType = docType;
         Lines.CollectionChanged += (_, _) => RecalculateTotals();
@@ -410,10 +411,55 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     /// <summary>"Without GST": 0 % on all items, P&amp;F without GST, no tax lines (from the user's switch in My Settings).</summary>
     [ObservableProperty] private bool _withoutGst;
 
-    /// <summary>Round 38 (PL-1): print the "View product" links on this quotation's PDF (Settings has them on).</summary>
+    /// <summary>Round 38 (PL-1): kept on the saved quotation for old rows; Round 39 (GR-2) the maker's own choice decides.</summary>
     [ObservableProperty] private bool _showProductLinks = true;
-    partial void OnShowProductLinksChanged(bool value) => MarkDirty();
-    public bool ProductLinksOnPdf => _settings.Quotation.ProductLinksOnPdf;
+
+    /// <summary>Round 39 (GR-2), gear before the date: "Product links on PDF" — this user's standing choice (saved with the login).</summary>
+    public bool ProductLinksMine
+    {
+        get => _session.Api.CurrentUser?.ProductLinksOnPdf ?? true;
+        set
+        {
+            if (value == ProductLinksMine) return;
+            _ = SaveMyPrintChoiceAsync(new MyPreferencesDto(ProductLinksOnPdf: value));
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Round 39 (GR-2): "Attach catalogues" — the items' catalogues are added to this user's PDFs (saved with the login).</summary>
+    public bool AttachCataloguesMine
+    {
+        get => _session.Api.CurrentUser?.AttachCatalogues ?? true;
+        set
+        {
+            if (value == AttachCataloguesMine) return;
+            _ = SaveMyPrintChoiceAsync(new MyPreferencesDto(AttachCatalogues: value));
+            OnPropertyChanged();
+        }
+    }
+
+    private async Task SaveMyPrintChoiceAsync(MyPreferencesDto prefs)
+    {
+        if (_session.Api.CurrentUser is { } me)
+            _session.Api.UpdateCurrentUser(me with
+            {
+                ProductLinksOnPdf = prefs.ProductLinksOnPdf ?? me.ProductLinksOnPdf,
+                AttachCatalogues = prefs.AttachCatalogues ?? me.AttachCatalogues,
+            });
+        try
+        {
+            var saved = await _session.Api.SetMyPreferencesAsync(prefs);
+            // Two quick switches: an earlier answer must not undo the later choice on this PC.
+            var now = _session.Api.CurrentUser ?? saved;
+            _session.Api.UpdateCurrentUser(saved with { ProductLinksOnPdf = now.ProductLinksOnPdf, AttachCatalogues = now.AttachCatalogues });
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Could not save the choice: " + ex.Message;
+        }
+        OnPropertyChanged(nameof(ProductLinksMine));
+        OnPropertyChanged(nameof(AttachCataloguesMine));
+    }
 
     /// <summary>Round 38 (PL-1): the 🔗 after an item name opens its product web page.</summary>
     public void OpenProductLink(QuotationLineViewModel line)
@@ -573,6 +619,31 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
     public ObservableCollection<QuotationLineViewModel> Lines { get; } = [];
     [ObservableProperty] private QuotationLineViewModel? _selectedLine;
 
+    partial void OnSelectedLineChanged(QuotationLineViewModel? value)
+    {
+        foreach (var l in Lines) l.IsHighlighted = l == value;
+    }
+
+    /// <summary>Round 39 (KL-1): ↓ / ↑ highlight the next / previous line (the first ↓ picks line 1).</summary>
+    public QuotationLineViewModel? MoveHighlight(int delta)
+    {
+        if (Lines.Count == 0) return null;
+        var at = SelectedLine is { } current ? Lines.IndexOf(current) : -1;
+        var next = at < 0 ? (delta > 0 ? 0 : Lines.Count - 1) : Math.Clamp(at + delta, 0, Lines.Count - 1);
+        SelectedLine = Lines[next];
+        return SelectedLine;
+    }
+
+    /// <summary>Round 39 (K5): Alt+D removes the highlighted (or edited) line, with Undo; not on an approved quotation.</summary>
+    public bool RemovePickedLine()
+    {
+        if (!CanEditContent || PickedLine is not { } line) return false;
+        var at = Lines.IndexOf(line);
+        RemoveLine(line);
+        SelectedLine = Lines.Count == 0 ? null : Lines[Math.Clamp(at, 0, Lines.Count - 1)];
+        return true;
+    }
+
     // Line entry panel
     [ObservableProperty] private string _productSearchText = "";
     [ObservableProperty] private ProductSummaryDto? _entryProduct;
@@ -588,6 +659,46 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     /// <summary>Round 37: My Settings → Item rows (this PC): Bigger (default) or Normal.</summary>
     public bool BiggerItemRows => _session.Config.BiggerItemRows;
+
+    // ------------------------------------------------------------------ Round 39 (IE-1): editing a line in the list
+
+    /// <summary>My Settings → "Editing a line": in the list itself (true) or in the boxes below (false, the old way).</summary>
+    public bool EditInList => _session.Config.EditLineInList;
+    /// <summary>A line is open in the list: the boxes below are only for new lines, so they hide meanwhile.</summary>
+    public bool InListEditing => EditInList && EditingLine is not null;
+    public bool ShowLineEntry => CanEditContent && !InListEditing;
+    /// <summary>The amount of the line being changed, as typed (live).</summary>
+    public string EntryAmountText
+    {
+        get
+        {
+            var qty = EntryQuantity ?? 0;
+            var rate = EntryRate ?? 0;
+            var disc = EntryDiscount ?? 0;
+            return Core.Calculation.IndianFormat.Amount(Math.Round(qty * rate * (1 - disc / 100m), 2));
+        }
+    }
+    partial void OnEntryQuantityChanged(decimal? value) => OnPropertyChanged(nameof(EntryAmountText));
+    partial void OnEntryRateChanged(decimal? value) => OnPropertyChanged(nameof(EntryAmountText));
+    partial void OnEntryDiscountChanged(decimal? value) => OnPropertyChanged(nameof(EntryAmountText));
+
+    /// <summary>Click on the name (or Shift+Tab from Qty) while changing a line in the list: pick another item.</summary>
+    [RelayCommand]
+    private void StartChangeItem()
+    {
+        if (EditingLine is { IsInline: true } line && CanEditContent) line.IsChangingItem = true;
+    }
+
+    /// <summary>
+    /// Another Tally item for the line being changed: name, part no., HSN, GST and unit follow it; the typed Qty, Rate,
+    /// Disc. %, Description and Delivery stay.
+    /// </summary>
+    public void ChangeEditingItem(ProductSummaryDto p)
+    {
+        EntryProduct = p;
+        SetProductTextSilently(p.Name);
+        if (EditingLine is { } line) line.IsChangingItem = false;
+    }
 
     /// <summary>The Delivery box's list: "(none)" to clear it, then the usual times (Round 38, DM-1: typed times are not remembered).</summary>
     public IReadOnlyList<string> DeliveryChoices { get; } = [NoDelivery, .. StandardDeliveryTimes];
@@ -634,7 +745,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     /// <summary>"Going down: Rate, Discount · line 2 of 3" while a line is open in a step mode.</summary>
     public string StepInfo => StepModeOn && EditingLine is { } l
-        ? $"Going {(StepUp ? "up" : "down")}: {(StepMode == "Line" ? "line by line" : string.Join(", ", StepColumns.Select(k => StepModes.First(m => m.Key == k).Name)))} · line {l.LineNo} of {Lines.Count}"
+        ? $"{(StepMode == "Line" ? "line by line" : string.Join(", ", StepColumns.Select(k => StepModes.First(m => m.Key == k).Name)))} · line {l.LineNo} of {Lines.Count}"
         : "";
 
     private static IReadOnlyCollection<string> StepKeys(string? mode) =>
@@ -649,26 +760,147 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         return chosen.Count == 0 ? "Off" : string.Join(",", chosen);
     }
 
-    /// <summary>Gear: go to the line above instead of below (remembered on this PC).</summary>
-    [ObservableProperty] private bool _stepUp;
+    // ------------------------------------------------------------------ Round 39 (Z8): internal notes
 
-    partial void OnStepUpChanged(bool value)
+    /// <summary>The 📝 Notes card shows (Settings → Features "Notes" on).</summary>
+    public bool NotesOn => _settings.Quotation.InternalNotes;
+    public ObservableCollection<NoteItemViewModel> Notes { get; } = [];
+    [ObservableProperty] private string _newNoteText = "";
+    /// <summary>The card is open (it is folded while there are no notes, until clicked or Alt+N).</summary>
+    [ObservableProperty] private bool _notesOpen;
+    public bool HasNotes => Notes.Count > 0;
+    public string NotesCountText => Notes.Count.ToString(CultureInfo.InvariantCulture);
+    /// <summary>Notes can be written once the quotation is saved (it needs its place on the server first).</summary>
+    public bool CanWriteNotes => Id is not null;
+    /// <summary>Asks the view to put the cursor in "Write a note…" (Alt+N).</summary>
+    public Action? FocusNoteBox { get; set; }
+
+    private void NotesChanged()
     {
-        OnPropertyChanged(nameof(StepInfo));
-        if (_session.Config.LineStepUp == value) return;
-        _session.Config.LineStepUp = value;
+        OnPropertyChanged(nameof(HasNotes));
+        OnPropertyChanged(nameof(NotesCountText));
+    }
+
+    public async Task LoadNotesAsync()
+    {
+        if (!NotesOn || Id is not { } id) return;
+        try
+        {
+            var notes = await _session.Api.NotesAsync(id);
+            Notes.Clear();
+            foreach (var n in notes) Notes.Add(new NoteItemViewModel(n));
+            if (Notes.Count > 0) NotesOpen = true;
+            NotesChanged();
+        }
+        catch (Exception)
+        {
+            // Notes are only a help; the quotation works without them.
+        }
+    }
+
+    /// <summary>Alt+N: opens the card and puts the cursor in "Write a note…".</summary>
+    [RelayCommand]
+    private void OpenNotes()
+    {
+        if (!NotesOn) return;
+        NotesOpen = true;
+        FocusNoteBox?.Invoke();
+    }
+
+    [RelayCommand]
+    private async Task AddNoteAsync()
+    {
+        var text = NewNoteText.Trim();
+        if (text.Length == 0 || Id is not { } id) return;
+        try
+        {
+            var note = await _session.Api.AddNoteAsync(id, text);
+            Notes.Add(new NoteItemViewModel(note));
+            NewNoteText = "";
+            NotesOpen = true;
+            NotesChanged();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "The note was not added: " + ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private void StartEditNote(NoteItemViewModel note)
+    {
+        if (!note.Mine) return;
+        note.EditText = note.Text;
+        note.IsEditing = true;
+    }
+
+    [RelayCommand]
+    private void CancelEditNote(NoteItemViewModel note) => note.IsEditing = false;
+
+    [RelayCommand]
+    private async Task SaveNoteAsync(NoteItemViewModel note)
+    {
+        var text = note.EditText.Trim();
+        if (text.Length == 0) return;
+        try
+        {
+            note.Replace(await _session.Api.EditNoteAsync(note.Id, text));
+            note.IsEditing = false;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "The note was not changed: " + ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteNoteAsync(NoteItemViewModel note)
+    {
+        if (!note.CanDelete) return;
+        if (!await _navigator.ConfirmAsync("Delete this note?", note.Text, "Yes", "No")) return;
+        try
+        {
+            await _session.Api.DeleteNoteAsync(note.Id);
+            Notes.Remove(note);
+            NotesChanged();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "The note was not deleted: " + ex.Message;
+        }
+    }
+
+    /// <summary>Round 39 (GR-1), gear before the date: the GST column is hidden on this PC's screen (the PDF keeps it).</summary>
+    [ObservableProperty] private bool _hideGst;
+    /// <summary>Round 39 (GR-1): the HSN/SAC column is hidden on this PC's screen.</summary>
+    [ObservableProperty] private bool _hideHsn;
+    /// <summary>Round 39 (GR-1): the "per" (unit) column is hidden on this PC's screen.</summary>
+    [ObservableProperty] private bool _hidePer;
+    public bool ShowGst => !HideGst;
+    public bool ShowHsn => !HideHsn;
+    public bool ShowPer => !HidePer;
+
+    partial void OnHideGstChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowGst));
+        if (_session.Config.HideGst == value) return;
+        _session.Config.HideGst = value;
         SaveConfig();
     }
 
-    /// <summary>Gear: the HSN/SAC and GST columns are hidden on this PC's screen (the PDF keeps them).</summary>
-    [ObservableProperty] private bool _hideHsnGst;
-    public bool ShowHsnGst => !HideHsnGst;
-
-    partial void OnHideHsnGstChanged(bool value)
+    partial void OnHideHsnChanged(bool value)
     {
-        OnPropertyChanged(nameof(ShowHsnGst));
-        if (_session.Config.HideHsnGst == value) return;
-        _session.Config.HideHsnGst = value;
+        OnPropertyChanged(nameof(ShowHsn));
+        if (_session.Config.HideHsn == value) return;
+        _session.Config.HideHsn = value;
+        SaveConfig();
+    }
+
+    partial void OnHidePerChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowPer));
+        if (_session.Config.HidePer == value) return;
+        _session.Config.HidePer = value;
         SaveConfig();
     }
 
@@ -809,6 +1041,14 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     partial void OnEditingLineChanged(QuotationLineViewModel? value)
     {
+        foreach (var l in Lines)
+        {
+            l.IsInline = EditInList && l == value;
+            if (!l.IsInline) l.IsChangingItem = false;
+        }
+        OnPropertyChanged(nameof(InListEditing));
+        OnPropertyChanged(nameof(ShowLineEntry));
+        OnPropertyChanged(nameof(EntryAmountText));
         OnPropertyChanged(nameof(EntryButtonText));
         OnPropertyChanged(nameof(StepInfo));
         OnPropertyChanged(nameof(HasStepInfo));
@@ -825,7 +1065,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         var index = editing is null ? -1 : Lines.IndexOf(editing);
         CommitEntry();
         if (ErrorMessage is not null) return; // not saved: stays as it is
-        var next = StepUp ? index - 1 : index + 1;
+        var next = index + 1; // Round 39 (GU-1): always down
         if (editing is not null && StepModeOn && index >= 0 && next >= 0 && next < Lines.Count)
         {
             EditLine(Lines[next]);
@@ -1044,6 +1284,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             }
             catch (ApiException) { }
             Controls.TitleCase.IsOn = _settings.Quotation.TitleCase;
+            OnPropertyChanged(nameof(NotesOn));
             OnPropertyChanged(nameof(TrackOutcomes));
             OnPropertyChanged(nameof(ShowOutcome));
             OnPropertyChanged(nameof(ShowWhatsApp));
@@ -1212,6 +1453,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         OnPropertyChanged(nameof(ShowCopyInvoice));
         OnPropertyChanged(nameof(IsEditable));
         OnPropertyChanged(nameof(CanEditContent));
+        OnPropertyChanged(nameof(ShowLineEntry));
         OnPropertyChanged(nameof(CanCancel));
         OnPropertyChanged(nameof(ShowCancel));
         OnPropertyChanged(nameof(ShowClear));
@@ -1264,6 +1506,8 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
 
     partial void OnIdChanged(Guid? value)
     {
+        OnPropertyChanged(nameof(CanWriteNotes));
+        if (value is not null && Notes.Count == 0) _ = LoadNotesAsync();
         OnPropertyChanged(nameof(CanCancel));
         OnPropertyChanged(nameof(CanConvertToProforma));
         OnPropertyChanged(nameof(ChangedByText));
@@ -1802,7 +2046,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
             var row = new PasteRowViewModel
             {
                 No = i + 1, Raw = line.Raw, Query = line.Query, NameQuery = line.NameQuery, Quantity = line.Quantity, SearchText = line.Query,
-                Rate = line.Rate, RateFromPaste = line.Rate is not null, Discount = line.Discount,
+                Rate = line.Rate, RateFromPaste = line.Rate is not null, Discount = line.Discount, Description = line.Description,
             };
             row.Changed = OnPasteRowsChanged;
             PasteRows.Add(row);
@@ -1884,7 +2128,7 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
                 Quantity = row.Quantity!.Value,
                 Rate = row.Rate ?? (p.Rate > 0 ? InQuotationCurrency(p.Rate) ?? 0 : 0),
                 DiscountPercent = row.Discount is > 0 and < 100 ? row.Discount.Value : 0,
-                Description = (p.Description ?? "").Trim(),
+                Description = (row.Description ?? p.Description ?? "").Trim(),
                 ZeroGst = WithoutGst,
             });
         }
@@ -1949,6 +2193,53 @@ public sealed partial class QuotationEditorViewModel : ViewModelBase, ITitledPag
         {
             foreach (var (line, old) in changed) Set(line, kind, old);
             AfterPricesChanged();
+        }, 12);
+        return changed.Count;
+    }
+
+    /// <summary>
+    /// Round 39 (DX-1): cells of a description column copied from Excel, pasted into the Description box, go one per line
+    /// from the line being changed (or line 1) down; an empty cell leaves its line as it is; extra cells are left out. A
+    /// notice offers Undo, and "Put all in this box" (undo, then the whole text goes in the one box). Returns how many
+    /// lines changed (0: not done).
+    /// </summary>
+    public int PasteDescriptionColumn(IReadOnlyList<string> cells, string wholeText)
+    {
+        if (!CanEditContent || Lines.Count == 0 || cells.Count < 2) return 0;
+        var start = EditingLine is { } editing ? Math.Max(0, Lines.IndexOf(editing)) : 0;
+        var changed = new List<(QuotationLineViewModel Line, string Old)>();
+        var ignored = 0;
+        for (var i = 0; i < cells.Count; i++)
+        {
+            if (start + i >= Lines.Count)
+            {
+                ignored += cells.Skip(i).Count(c => c.Trim().Length > 0);
+                break;
+            }
+            var cell = cells[i].Trim();
+            if (cell.Length == 0) continue;
+            var line = Lines[start + i];
+            changed.Add((line, line.Description));
+            line.Description = cell;
+        }
+        if (changed.Count == 0) return 0;
+        // The line being changed shows its new description in the box too.
+        if (EditingLine is { } open && changed.Any(c => c.Line == open)) EntryDescription = open.Description;
+        MarkDirty();
+        var first = Lines.IndexOf(changed[0].Line) + 1;
+        var last = Lines.IndexOf(changed[^1].Line) + 1;
+        void Undo()
+        {
+            foreach (var (line, old) in changed) line.Description = old;
+            if (EditingLine is { } back && changed.Any(c => c.Line == back)) EntryDescription = back.Description;
+            MarkDirty();
+        }
+        _navigator.Toast(first == last ? $"Description pasted into line {first}." : $"Descriptions pasted into lines {first}–{last}."
+            + (ignored > 0 ? $" {ignored} more left out (no line for them)." : ""), "Undo", Undo, 12);
+        _navigator.Toast("Wanted it all in this one box?", "Put all in this box", () =>
+        {
+            Undo();
+            EntryDescription = string.IsNullOrEmpty(EntryDescription) ? wholeText : EntryDescription + "\n" + wholeText;
         }, 12);
         return changed.Count;
     }

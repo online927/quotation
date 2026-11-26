@@ -71,7 +71,28 @@ public sealed partial class ProductsViewModel : ViewModelBase
         OnPropertyChanged(nameof(DatasheetOnPdf));
     }
 
-    partial void OnDetailChanged(ProductDetailDto? value) => OnPropertyChanged(nameof(CanUploadDatasheet));
+    partial void OnDetailChanged(ProductDetailDto? value)
+    {
+        OnPropertyChanged(nameof(CanUploadDatasheet));
+        foreach (var name in new[] { nameof(HasPartNumber), nameof(HasBrand), nameof(HasAliases), nameof(HasDescription), nameof(HasRateSource),
+                     nameof(GstText), nameof(HasRate), nameof(NoRate), nameof(RateText), nameof(RateSourceText), nameof(SyncedText) })
+            OnPropertyChanged(name);
+    }
+
+    // Round 39 (RD-6): the details card shows only the rows that have something, in plain words and local time.
+    public bool HasPartNumber => !string.IsNullOrWhiteSpace(Detail?.PartNumber);
+    public bool HasBrand => !string.IsNullOrWhiteSpace(Detail?.Brand);
+    public bool HasAliases => Detail?.Aliases.Count > 0;
+    public bool HasDescription => !string.IsNullOrWhiteSpace(Detail?.Description);
+    public bool HasRateSource => !string.IsNullOrWhiteSpace(Detail?.RateSource);
+    public string GstText => Detail?.GstRate is { } g
+        ? $"{g:0.##}%" + (string.IsNullOrWhiteSpace(Detail.GstSource) ? "" : $" (from {Detail.GstSource.ToLowerInvariant()})")
+        : "not set in Tally";
+    public bool HasRate => Detail?.Rate is not null;
+    public bool NoRate => Detail is not null && Detail.Rate is null;
+    public string RateText => Detail?.Rate is { } r ? $"₹ {r:N2}" : "";
+    public string RateSourceText => Detail is null ? "" : Detail.RateSource + (Detail.RateDate is { } d ? $" (from {d:dd-MMM-yyyy})" : "");
+    public string SyncedText => Detail is null ? "" : DateTime.SpecifyKind(Detail.LastSyncedUtc, DateTimeKind.Utc).ToLocalTime().ToString("dd-MMM-yyyy HH:mm");
 
     /// <summary>Uploads (or replaces) the datasheet of the selected item from a PDF on this PC (administrators).</summary>
     public Task UploadDatasheetAsync(string path) => RunAsync(async () =>

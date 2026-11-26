@@ -97,7 +97,7 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
     public void ApplyAppearance(Contracts.UserDto user)
     {
         ApplyTheme(Contracts.AppTheme.Normalize(user.Theme));
-        ThemeService.ApplyDisplay(user.TextSize, user.Spacing, user.ReduceMotion);
+        ThemeService.ApplyDisplay(user.TextSize, user.Spacing, false); // Round 39 (SX-1): animations always on
     }
 
     /// <summary>Saves text size, spacing or animations on the server (they follow the user to every PC) and shows them.</summary>
@@ -105,7 +105,7 @@ public sealed class AppSession(ClientConfig config, Func<string, QuotationApiCli
     {
         var me = await Api.SetMyPreferencesAsync(new Contracts.MyPreferencesDto(TextSize: textSize, Spacing: spacing, ReduceMotion: reduceMotion));
         Api.UpdateCurrentUser(me);
-        ThemeService.ApplyDisplay(me.TextSize, me.Spacing, me.ReduceMotion);
+        ThemeService.ApplyDisplay(me.TextSize, me.Spacing, false);
     }
 
     /// <summary>Saves the signed-in user's light/dark choice on the server (it follows them to every PC).</summary>

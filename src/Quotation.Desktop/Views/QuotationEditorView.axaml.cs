@@ -36,6 +36,12 @@ public partial class QuotationEditorView : UserControl
             if (Vm is not { } vm) return;
             vm.PropertyChanged += (_, e) =>
             {
+                if (e.PropertyName == nameof(QuotationEditorViewModel.EditingLine) && vm.InListEditing)
+                {
+                    // Round 39 (IE-1): in the list itself: the cursor in the line's Qty (or the gear's first column).
+                    FocusInline(InlineName(vm.StepColumns.FirstOrDefault()) ?? "InlineQtyBox");
+                    return;
+                }
                 if (e.PropertyName != nameof(QuotationEditorViewModel.EditingLine) || vm.EditingLine is null) return;
                 // With the gear on columns, the cursor goes straight to the first chosen column's box.
                 if (vm.StepColumns.FirstOrDefault() is { } column) OnFocusEntry(column);
@@ -49,7 +55,18 @@ public partial class QuotationEditorView : UserControl
         RateBox.AddHandler(TextBox.PastingFromClipboardEvent, OnRatePasting, RoutingStrategies.Bubble);
         QtyBox.AddHandler(TextBox.PastingFromClipboardEvent, OnQtyPasting, RoutingStrategies.Bubble);
         DiscountBox.AddHandler(TextBox.PastingFromClipboardEvent, OnDiscountPasting, RoutingStrategies.Bubble);
+        DescriptionBox.AddHandler(TextBox.PastingFromClipboardEvent, OnDescriptionPasting, RoutingStrategies.Bubble);
         LinesList.PointerMoved += OnLinesPointerMoved;
+        // Round 39 (IE-1): the item search inside a row (changing a line in the list) picks another Tally item.
+        LinesList.ContainerPrepared += (_, e) =>
+        {
+            if (e.Container.GetVisualDescendants().OfType<SearchPicker>().FirstOrDefault(p => p.Name == "InlineProductBox") is { } inline)
+                Wire(inline);
+            else e.Container.Loaded += (_, _) =>
+            {
+                if (e.Container.GetVisualDescendants().OfType<SearchPicker>().FirstOrDefault(p => p.Name == "InlineProductBox") is { } later) Wire(later);
+            };
+        };
         LinesList.PointerReleased += (_, _) => EndDrag();
         LinesList.PointerCaptureLost += (_, _) => EndDrag();
         CustomerBox.ItemPicked += async (_, e) =>
@@ -61,6 +78,40 @@ public partial class QuotationEditorView : UserControl
     }
 
     private QuotationEditorViewModel? Vm => DataContext as QuotationEditorViewModel;
+
+    private readonly HashSet<SearchPicker> _wired = [];
+
+    /// <summary>Round 39 (IE-1): a picked item replaces the line's item; the typed values stay.</summary>
+    private void Wire(SearchPicker picker)
+    {
+        if (!_wired.Add(picker)) return;
+        picker.ItemPicked += (_, e) =>
+        {
+            if (e.Item is not ProductSearchHitDto hit || Vm is not { } vm) return;
+            vm.ChangeEditingItem(hit.Product);
+            FocusInline("InlineQtyBox");
+        };
+    }
+
+    /// <summary>Round 39 (IE-1): a box of the line being changed in the list ("InlineQtyBox" …), focused with its text selected.</summary>
+    private bool FocusInline(string name)
+    {
+        if (Vm is not { InListEditing: true, EditingLine: { } line } vm) return false;
+        var at = vm.Lines.IndexOf(line);
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (LinesList.ContainerFromIndex(at) is not { } row) return;
+            var target = row.GetVisualDescendants().OfType<Control>().FirstOrDefault(c => c.Name == name);
+            if (target is null) return;
+            target.BringIntoView();
+            if (target is SearchPicker picker) { picker.InputBox.Focus(NavigationMethod.Tab); picker.InputBox.SelectAll(); return; }
+            var input = target as TextBox ?? target.GetVisualDescendants().OfType<TextBox>().FirstOrDefault();
+            if (input is null) { target.Focus(); return; }
+            input.Focus(NavigationMethod.Tab);
+            input.SelectAll();
+        }, DispatcherPriority.Background);
+        return true;
+    }
 
     private bool _rowsLookApplied;
 
@@ -90,10 +141,27 @@ public partial class QuotationEditorView : UserControl
         DeliveryBox.CaretIndex = DeliveryBox.Text?.Length ?? 0;
     }
 
-    /// <summary>Gear → "Same delivery on all lines": a clicked choice (Ex-stock, 1 week, (none) …) goes on every line.</summary>
-    private void OnAllDeliveryPicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    /// <summary>Round 39 (Z8): Enter adds the note, Shift+Enter starts a new line in it, Esc leaves the box.</summary>
+    private void OnNewNoteKeyDown(object? sender, KeyEventArgs e)
     {
-        if (sender is Button { Content: string choice } && Vm is { } vm) vm.ApplyDeliveryToAll(choice);
+        if (sender is not TextBox box || Vm is not { } vm) return;
+        if (e.Key == Key.Enter && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        {
+            var at = box.CaretIndex;
+            box.Text = (box.Text ?? "").Insert(at, "\n");
+            box.CaretIndex = at + 1;
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter)
+        {
+            vm.AddNoteCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            Focus();
+            e.Handled = true;
+        }
     }
 
     /// <summary>The ✕ at the top of the gear menu closes it (Round 35).</summary>
@@ -129,6 +197,22 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
             return;
         }
+        // Round 39 (Z8): Alt+N opens the notes and puts the cursor in "Write a note…".
+        if (e.Key == Key.N && AltKey.IsAlt(e.KeyModifiers) && Vm is { NotesOn: true } noting)
+        {
+            AltKey.SwallowTypedLetter(this, e.KeyModifiers);
+            noting.OpenNotesCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+        // Round 39 (K5): Alt+D removes the highlighted line (with Undo).
+        if (e.Key == Key.D && AltKey.IsAlt(e.KeyModifiers) && Vm is { } deleting)
+        {
+            AltKey.SwallowTypedLetter(this, e.KeyModifiers);
+            if (deleting.RemovePickedLine()) ScrollToHighlight();
+            e.Handled = true;
+            return;
+        }
         // Alt+C: the Customer box (also Insert, anywhere in the window); Alt+I: the Product box to add an item (either Alt key).
         if (AltKey.IsAlt(e.KeyModifiers) && e.Key is Key.C or Key.I)
         {
@@ -148,6 +232,62 @@ public partial class QuotationEditorView : UserControl
             return;
         }
         var picker = source.FindAncestorOfType<SearchPicker>(includeSelf: true);
+
+        // Round 39 (IE-1): inside a line changed in the list: Enter updates it (Shift+Enter is a new line in its description),
+        // Shift+Tab from Qty opens the item search.
+        if (source.FindAncestorOfType<Grid>(includeSelf: true) is { } host && host.FindAncestorOfType<Grid>(includeSelf: true) is not null
+            && source.GetSelfAndVisualAncestors().OfType<Grid>().Any(g => g.Classes.Contains("inlineedit")) && Vm is { InListEditing: true } inlineVm)
+        {
+            var inPicker = source.FindAncestorOfType<SearchPicker>(includeSelf: true);
+            if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && inPicker is null)
+            {
+                inlineVm.SaveLineCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.Tab && e.KeyModifiers == KeyModifiers.Shift
+                && source.FindAncestorOfType<NumericUpDown>(includeSelf: true) is { Name: "InlineQtyBox" } && inlineVm.EditingLine is { } swap)
+            {
+                swap.IsChangingItem = true;
+                FocusInline("InlineProductBox");
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.Escape && inPicker is { IsDropDownOpen: false } && inlineVm.EditingLine is { IsChangingItem: true } keep)
+            {
+                keep.IsChangingItem = false; // the old item stays
+                FocusInline("InlineQtyBox");
+                e.Handled = true;
+                return;
+            }
+        }
+
+        // Round 39 (KL-1): outside the typing boxes ↓ / ↑ walk the item lines, Enter edits the highlighted one and Esc
+        // first removes the highlight (only then does Esc go Back).
+        var typing = source is TextBox || source.FindAncestorOfType<TextBox>() is not null || picker is not null;
+        if (Vm is { IsPasteOpen: false, IsInvoiceOpen: false } walker && !typing && e.KeyModifiers == KeyModifiers.None
+            && source.FindAncestorOfType<Button>(includeSelf: true) is null)
+        {
+            if (e.Key is Key.Down or Key.Up && walker.Lines.Count > 0)
+            {
+                walker.MoveHighlight(e.Key == Key.Down ? 1 : -1);
+                ScrollToHighlight();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.Enter && walker.SelectedLine is { } chosen && walker.EditingLine is null && walker.CanEditContent)
+            {
+                walker.EditLineCommand.Execute(chosen);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.Escape && walker.EditingLine is null && walker.SelectedLine is not null)
+            {
+                walker.SelectedLine = null;
+                e.Handled = true;
+                return;
+            }
+        }
 
         if (e.Key == Key.Escape && Vm is { IsInvoiceOpen: true } invoices)
         {
@@ -171,10 +311,22 @@ public partial class QuotationEditorView : UserControl
         if (e.Key == Key.Escape)
         {
             // An open list closes first; the next Esc cancels editing of a line.
-            if (picker is { IsDropDownOpen: true } || Vm?.EditingLine is null) return;
-            Vm.CancelEntryCommand.Execute(null);
-            ProductBox.Focus();
-            e.Handled = true;
+            if (picker is { IsDropDownOpen: true }) return;
+            if (Vm?.EditingLine is { } edited)
+            {
+                Vm.CancelEntryCommand.Execute(null);
+                Vm.SelectedLine = edited; // Round 39 (KL-1): the line stays highlighted; ↓ / ↑ go on from it
+                Focus();
+                e.Handled = true;
+                return;
+            }
+            // Round 39 (KL-1): Esc in an empty entry box leaves it, so ↓ / ↑ can walk the lines; the next Esc goes Back.
+            if (Vm is { Lines.Count: > 0, EntryProduct: null } && typing && string.IsNullOrEmpty(Vm.ProductSearchText)
+                && (picker == ProductBox || EntryBoxes().Contains(source.FindAncestorOfType<TextBox>(includeSelf: true))))
+            {
+                Focus();
+                e.Handled = true;
+            }
             return;
         }
         if (e.Key != Key.Enter || e.KeyModifiers != KeyModifiers.None) return;
@@ -184,6 +336,14 @@ public partial class QuotationEditorView : UserControl
         {
             // The box accepts the highlighted match itself.
             if (picker.HandlesEnter) return;
+            if (picker == ProductBox && Vm is { EntryProduct: null, EditingLine: null } done && string.IsNullOrWhiteSpace(done.ProductSearchText)
+                && done.Lines.Count > 0 && !picker.IsDropDownOpen)
+            {
+                // Round 39 (K2): Enter on an empty Product box = done with the items: P&F → Remarks → Approve.
+                if (!FocusPackingStep()) FocusApprove();
+                e.Handled = true;
+                return;
+            }
             if (picker == ProductBox && Vm is { EntryProduct: null } vm && !string.IsNullOrWhiteSpace(vm.ProductSearchText))
             {
                 // Text typed but no product chosen: show the matches again instead of moving on.
@@ -200,6 +360,12 @@ public partial class QuotationEditorView : UserControl
                 // Last field of the line: Enter adds the line (Shift+Enter is a new line in the description); with the gear
                 // on, a changed line opens the next one.
                 Vm?.SaveLineCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+            // Round 39 (K2): Enter in Remarks goes on to Approve (Shift+Enter is a new line in it).
+            if (source == RemarksBox && FocusApprove())
+            {
                 e.Handled = true;
                 return;
             }
@@ -237,7 +403,7 @@ public partial class QuotationEditorView : UserControl
             e.Handled = true;
             return;
         }
-        if (owner == PackingBox && FocusApprove())
+        if (owner == PackingBox && (FocusRemarks() || FocusApprove()))
         {
             e.Handled = true;
             return;
@@ -263,8 +429,24 @@ public partial class QuotationEditorView : UserControl
     };
 
     /// <summary>After a line is saved: the cursor in the box the gear asks for (the whole line: Quantity), or a new line.</summary>
+    private static string? InlineName(string? column) => column switch
+    {
+        "Name" => "InlineProductBox",
+        "Description" => "InlineDescriptionBox",
+        "Quantity" => "InlineQtyBox",
+        "Rate" => "InlineRateBox",
+        "Discount" => "InlineDiscountBox",
+        _ => null,
+    };
+
     private void OnFocusEntry(string box)
     {
+        if (Vm is { InListEditing: true } listed && box != "Product")
+        {
+            if (box == "Name" && listed.EditingLine is { } changing) changing.IsChangingItem = true;
+            FocusInline(InlineName(box) ?? "InlineQtyBox");
+            return;
+        }
         Control target = box == "Product" ? ProductBox : StepBox(box) ?? QtyBox;
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
@@ -283,6 +465,36 @@ public partial class QuotationEditorView : UserControl
             input.Focus(NavigationMethod.Tab);
             input.SelectAll();
         }, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    /// <summary>The line entry boxes (Quantity, Rate, Disc. %, Description), for Esc (Round 39).</summary>
+    private IEnumerable<TextBox?> EntryBoxes() =>
+        new Control[] { QtyBox, RateBox, DiscountBox, DescriptionBox }.Select(c => c as TextBox ?? c.GetVisualDescendants().OfType<TextBox>().FirstOrDefault());
+
+    /// <summary>The highlighted line is scrolled into view (Round 39, KL-1).</summary>
+    private void ScrollToHighlight()
+    {
+        if (Vm?.SelectedLine is not { } line) return;
+        var at = Vm.Lines.IndexOf(line);
+        Dispatcher.UIThread.Post(() => LinesList.ContainerFromIndex(at)?.BringIntoView(), DispatcherPriority.Loaded);
+    }
+
+    /// <summary>Round 39 (K2): P&amp;F when it can be typed in; false otherwise.</summary>
+    private bool FocusPackingStep()
+    {
+        if (!PackingBox.IsEffectivelyEnabled || !PackingBox.IsEffectivelyVisible) return false;
+        FocusPacking();
+        return true;
+    }
+
+    /// <summary>Round 39 (K2): after P&amp;F the cursor goes to Remarks (when the remarks are shown and can be changed).</summary>
+    private bool FocusRemarks()
+    {
+        if (!RemarksBox.IsEffectivelyEnabled || !RemarksBox.IsEffectivelyVisible || RemarksBox.IsReadOnly) return false;
+        RemarksBox.BringIntoView();
+        RemarksBox.Focus(NavigationMethod.Tab);
+        RemarksBox.CaretIndex = RemarksBox.Text?.Length ?? 0;
+        return true;
     }
 
     /// <summary>Alt+P: the cursor in the Packing &amp; Forwarding box with its amount selected (when it can be changed).</summary>
@@ -332,6 +544,43 @@ public partial class QuotationEditorView : UserControl
 
     private void OnQtyPasting(object? sender, RoutedEventArgs e) => OnColumnPasting(e, PasteColumnKind.Quantity);
     private void OnDiscountPasting(object? sender, RoutedEventArgs e) => OnColumnPasting(e, PasteColumnKind.Discount);
+
+    /// <summary>
+    /// Round 39 (DX-1): Ctrl+V in Description: a description column copied from Excel (the clipboard carries a spreadsheet
+    /// format besides the text, and 2+ cells) goes one cell per line; text from WhatsApp, Word or e-mail pastes as usual.
+    /// </summary>
+    private async void OnDescriptionPasting(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { CanEditContent: true, Lines.Count: > 0 } vm || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard) return;
+        string[] formats;
+        try { formats = await clipboard.GetFormatsAsync(); }
+        catch (Exception) { return; }
+        if (!IsSpreadsheet(formats)) return; // a normal paste goes ahead
+        e.Handled = true;
+        string? text;
+        try { text = await clipboard.GetTextAsync(); }
+        catch (Exception) { return; }
+        if (string.IsNullOrEmpty(text)) return;
+        if (!PasteDescriptions(vm, text) && e.Source is TextBox box)
+        {
+            var at = box.CaretIndex;
+            box.Text = (box.Text ?? "").Insert(at, text);
+            box.CaretIndex = at + text.Length;
+        }
+    }
+
+    /// <summary>The clipboard came from a spreadsheet (Excel, LibreOffice): it has a sheet or HTML-table format besides text.</summary>
+    public static bool IsSpreadsheet(IEnumerable<string> formats) => formats.Any(f =>
+        f.Contains("XML Spreadsheet", StringComparison.OrdinalIgnoreCase) || f.StartsWith("Biff", StringComparison.OrdinalIgnoreCase)
+        || f.Contains("HTML", StringComparison.OrdinalIgnoreCase) || f.Contains("spreadsheet", StringComparison.OrdinalIgnoreCase)
+        || f.Equals("text/html", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Spreads the cells of <paramref name="text"/> over the lines (also used by tests); false when it is not a column.</summary>
+    public static bool PasteDescriptions(QuotationEditorViewModel vm, string text)
+    {
+        var cells = Quotation.Core.Import.ExcelColumnText.Cells(text);
+        return cells.Count(c => c.Length > 0) >= 2 && vm.PasteDescriptionColumn(cells, text.Trim()) > 0;
+    }
 
     /// <summary>Round 37: Ctrl+V in Qty / Disc %: a column from Excel fills the lines down; anything else pastes as usual.</summary>
     private async void OnColumnPasting(RoutedEventArgs e, PasteColumnKind kind)

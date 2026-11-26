@@ -22,11 +22,26 @@ public sealed class ClientConfig
     /// </summary>
     public string LineStepMode { get; set; } = "Off";
 
-    /// <summary>Gear: after changing a line, go to the line above instead of below.</summary>
+    /// <summary>Kept only so old settings files read; Round 39 (GU-1) always goes down to the next line.</summary>
     public bool LineStepUp { get; set; }
 
-    /// <summary>Gear: hide the HSN/SAC and GST columns of the item list on this PC's screen (the PDF keeps them).</summary>
+    /// <summary>Kept only so old settings files read; Round 39 (GR-1) has three separate switches below.</summary>
     public bool HideHsnGst { get; set; }
+
+    /// <summary>Round 39 (GR-1), gear before the date: hide the GST column on this PC's screen (the PDF keeps it). On at first.</summary>
+    public bool HideGst { get; set; } = true;
+
+    /// <summary>Round 39 (GR-1): hide the HSN/SAC column on this PC's screen. On at first.</summary>
+    public bool HideHsn { get; set; } = true;
+
+    /// <summary>Round 39 (GR-1): hide the "per" (unit) column on this PC's screen. On at first.</summary>
+    public bool HidePer { get; set; } = true;
+
+    /// <summary>The one-time "hide GST, HSN and per" was applied to this PC's saved settings.</summary>
+    public bool HideColumnsByDefaultApplied { get; set; }
+
+    /// <summary>Round 39 (IE-1), My Settings → "Editing a line": true = in the list itself; false = in the boxes below (old way).</summary>
+    public bool EditLineInList { get; set; }
     /// <summary>
     /// Where the WhatsApp button opens the customer's chat on this PC: "App" (the WhatsApp program) or "Web" (WhatsApp Web in
     /// the browser).
@@ -35,10 +50,10 @@ public sealed class ClientConfig
     /// <summary>How selected text looks in typing boxes (My Settings > Selected text): see <see cref="TextSelectionLook"/>.</summary>
     public string TextSelection { get; set; } = TextSelectionLook.SoftBlue;
 
-    /// <summary>Sharp text (My Settings, this PC): ClearType-style letters and slightly bigger small text; off = the old look.</summary>
+    /// <summary>Kept only so old settings files read; Round 39 (SX-1): sharp text is always on.</summary>
     public bool SharpText { get; set; } = true;
 
-    /// <summary>My Settings → Silent (this PC, Round 35): on = no click sounds when saving or approving. On at first.</summary>
+    /// <summary>Kept only so old settings files read; Round 39 (SX-1): the click sounds are always on.</summary>
     public bool Silent { get; set; } = true;
 
     /// <summary>Round 36: the day the evening summary was last shown on this PC (yyyy-MM-dd).</summary>
@@ -88,6 +103,13 @@ public sealed class ClientConfig
                     loaded.DeliveryOnByDefaultApplied = true;
                     try { loaded.Save(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
                 }
+                if (!loaded.HideColumnsByDefaultApplied)
+                {
+                    // Round 39 (GR-1): GST, HSN and per are hidden on the screen by default, also on PCs set up before; once only.
+                    loaded.HideGst = loaded.HideHsn = loaded.HidePer = true;
+                    loaded.HideColumnsByDefaultApplied = true;
+                    try { loaded.Save(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+                }
                 if (loaded.RecentDeliveryTimes.Count > 0)
                 {
                     // Round 38 (DM-1): typed delivery times are no longer remembered; the old ones are cleared once.
@@ -108,14 +130,14 @@ public sealed class ClientConfig
             if (File.Exists(defaults))
             {
                 var d = JsonSerializer.Deserialize<ClientConfig>(File.ReadAllText(defaults)) ?? new();
-                return new ClientConfig { ServerUrl = d.ServerUrl, FilePath = path, DeliveryOnByDefaultApplied = true };
+                return new ClientConfig { ServerUrl = d.ServerUrl, FilePath = path, DeliveryOnByDefaultApplied = true, HideColumnsByDefaultApplied = true };
             }
         }
         catch (Exception)
         {
             // Ignore a damaged defaults file.
         }
-        return new ClientConfig { FilePath = path, DeliveryOnByDefaultApplied = true };
+        return new ClientConfig { FilePath = path, DeliveryOnByDefaultApplied = true, HideColumnsByDefaultApplied = true };
     }
 
     public void Save(string? path = null)

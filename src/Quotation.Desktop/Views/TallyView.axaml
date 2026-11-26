@@ -80,45 +80,82 @@
           <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Name="AutoSyncLine" Text="{Binding AutoSyncText}" TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Use 'Sync changes' (F9) right after editing items, prices or customers in Tally: it reads only what changed (Tally is only read, never changed). Anyone can use it."><Path Classes="infoicon" /></Border></StackPanel>
           <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Read last rates: only when &#x27;Also read last rates from Tally&#x27; is switched on in Settings → …" TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Read last rates: only when 'Also read last rates from Tally' is switched on in Settings → Tally (off by default; the app then remembers the rates of its own approved quotations). It reads the rate each item was last quoted or sold at from Tally's Sales and Quotation vouchers (read-only). Started here it takes a few minutes and TallyPrime may respond a little slower meanwhile; Stop ends it at once."><Path Classes="infoicon" /></Border></StackPanel>
           <TextBlock Text="{Binding InfoMessage}" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap" />
-          <ItemsControl ItemsSource="{Binding Runs}">
+          <!-- Round 39 (RD-1): the last syncs as a small table with a result chip -->
+          <Border Classes="tablehead" Margin="0,4,0,0">
+            <Grid ColumnDefinitions="150,90,90,*">
+              <TextBlock Text="When" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="1" Text="Kind" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="2" Text="Result" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="3" Text="Read" FontWeight="SemiBold" />
+            </Grid>
+          </Border>
+          <ItemsControl Name="SyncRunsTable" ItemsSource="{Binding Runs}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:SyncRunRow">
-                <Grid ColumnDefinitions="140,90,80,*" Margin="0,2">
-                  <TextBlock Text="{Binding Started}" FontSize="12" />
-                  <TextBlock Grid.Column="1" Text="{Binding Kind}" FontSize="12" />
-                  <TextBlock Grid.Column="2" Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" />
-                  <StackPanel Grid.Column="3">
-                    <TextBlock Text="{Binding Changes}" FontSize="12" />
-                    <TextBlock Text="{Binding Message}" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
-                  </StackPanel>
-                </Grid>
+                <Border BorderBrush="{DynamicResource RowLineBrush}" BorderThickness="0,0,0,1" Padding="12,7">
+                  <Grid ColumnDefinitions="150,90,90,*">
+                    <TextBlock Text="{Binding Started}" FontSize="12.5" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding Kind}" FontSize="12.5" VerticalAlignment="Center" />
+                    <Border Grid.Column="2" Classes="chip" Classes.ok="{Binding IsOk}" Classes.bad="{Binding IsFailed}" HorizontalAlignment="Left" VerticalAlignment="Center">
+                      <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding Status}" /></StackPanel>
+                    </Border>
+                    <StackPanel Grid.Column="3">
+                      <TextBlock Text="{Binding Changes}" FontSize="12.5" />
+                      <TextBlock Text="{Binding Message}" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+                                 IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </StackPanel>
       </Border>
 
-      <Border Classes="card" IsVisible="{Binding IsAdmin}">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Diagnostics: raw Tally data for one master" />
-          <TextBlock Classes="muted" TextWrapping="Wrap" Text="Use this to check which fields Tally returns (e.g. if HSN, GST or rates appear empty)." />
-          <Grid ColumnDefinitions="140,8,*,8,Auto">
-            <ComboBox ItemsSource="{Binding SampleTypes}" SelectedItem="{Binding SampleType}" HorizontalAlignment="Stretch" />
-            <TextBox Grid.Column="2" Text="{Binding SampleName}" Watermark="Exact name as in Tally" />
-            <Button ctl:ButtonIcon.Kind="download" Grid.Column="4" Content="Fetch" Command="{Binding LoadSampleCommand}" />
+
+
+      <!-- Round 39 (RD-1): a checklist checked with every refresh -->
+      <Border Classes="card" Name="DisconnectedChecklist">
+        <StackPanel Spacing="2">
+          <TextBlock Classes="h2" Text="🩺 If Tally is disconnected" />
+          <Grid ColumnDefinitions="30,*" Margin="0,6,0,0">
+            <Border Classes="chip" Classes.ok="{Binding TallyOpenOk}" Classes.bad="{Binding !TallyOpenOk}" Width="22" Height="22" Padding="0" CornerRadius="11"><TextBlock Text="{Binding TallyOpenMark}" HorizontalAlignment="Center" /></Border>
+            <StackPanel Grid.Column="1"><TextBlock FontWeight="SemiBold" Text="TallyPrime is running with the company open" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Text="On the PC set in Settings → Tally." /></StackPanel>
           </Grid>
-          <TextBox Text="{Binding SampleXml}" IsReadOnly="True" FontFamily="Consolas,Menlo,monospace" FontSize="{DynamicResource FontSmall}" Height="220" AcceptsReturn="True"
-                   IsVisible="{Binding SampleXml, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <Grid ColumnDefinitions="30,*" Margin="0,8,0,0">
+            <Border Classes="chip" Classes.ok="{Binding PortOk}" Classes.bad="{Binding !PortOk}" Width="22" Height="22" Padding="0" CornerRadius="11"><TextBlock Text="{Binding PortMark}" HorizontalAlignment="Center" /></Border>
+            <StackPanel Grid.Column="1"><TextBlock FontWeight="SemiBold" Text="Tally answers on port 9000" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" TextWrapping="Wrap" Text="TallyPrime: F1 (Help) › Settings › Connectivity › Client/Server: 'TallyPrime acts as' = Both, Port = 9000." /></StackPanel>
+          </Grid>
+          <Grid ColumnDefinitions="30,*" Margin="0,8,0,0">
+            <Border Classes="chip" Classes.ok="{Binding FirewallOk}" Classes.warn="{Binding !FirewallOk}" Width="22" Height="22" Padding="0" CornerRadius="11"><TextBlock Text="{Binding FirewallMark}" HorizontalAlignment="Center" /></Border>
+            <StackPanel Grid.Column="1"><TextBlock FontWeight="SemiBold" Text="Windows Firewall lets this server reach port 9000" /><TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" TextWrapping="Wrap" Text="On the Tally PC allow inbound TCP 9000." /></StackPanel>
+          </Grid>
+          <TextBlock Classes="muted" FontSize="{DynamicResource FontSmall}" Margin="0,8,0,0" TextWrapping="Wrap"
+                     Text="Meanwhile you can still search the data synced last time." />
         </StackPanel>
       </Border>
 
-      <Border Classes="card">
-        <StackPanel Spacing="4">
-          <TextBlock Classes="h2" Text="If Tally is disconnected" />
-          <TextBlock TextWrapping="Wrap" Text="1. TallyPrime must be running on the configured PC with the company open." />
-          <TextBlock TextWrapping="Wrap" Text="2. In TallyPrime: F1 (Help) &gt; Settings &gt; Connectivity &gt; Client/Server configuration: 'TallyPrime acts as' = Both (or Server), Port = 9000." />
-          <TextBlock TextWrapping="Wrap" Text="3. Windows Firewall on that PC must allow inbound TCP 9000 from the Quotation Server." />
-          <TextBlock TextWrapping="Wrap" Text="While Tally is unavailable you can keep searching previously synchronized data; quotations will show a stale-data warning." />
+      <!-- Round 39 (RD-1): the raw Tally data tool stays, folded at the bottom -->
+      <Border Classes="card" Name="RawDataCard" IsVisible="{Binding IsAdmin}">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="h2" Text="🔬 Raw Tally data (for checking)" VerticalAlignment="Center" />
+            <ToggleButton Grid.Column="1" Name="RawDataToggle" Classes="round" IsChecked="{Binding RawDataOpen}" Width="28" Height="28" Padding="0"
+                          ToolTip.Tip="Open / fold">
+              <Path Data="M6,9 L12,15 L18,9" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.8" Width="11" Stretch="Uniform"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </ToggleButton>
+          </Grid>
+          <StackPanel Spacing="8" IsVisible="{Binding RawDataOpen}">
+            <TextBlock Classes="muted" TextWrapping="Wrap" Text="Which fields Tally returns for one master (e.g. if HSN, GST or rates appear empty)." />
+            <Grid ColumnDefinitions="140,8,*,8,Auto">
+              <ComboBox ItemsSource="{Binding SampleTypes}" SelectedItem="{Binding SampleType}" HorizontalAlignment="Stretch" />
+              <TextBox Grid.Column="2" Text="{Binding SampleName}" Watermark="Exact name as in Tally" />
+              <Button ctl:ButtonIcon.Kind="download" Grid.Column="4" Content="Fetch" Command="{Binding LoadSampleCommand}" />
+            </Grid>
+            <TextBox Text="{Binding SampleXml}" IsReadOnly="True" FontFamily="Consolas,Menlo,monospace" FontSize="{DynamicResource FontSmall}" Height="220" AcceptsReturn="True"
+                     IsVisible="{Binding SampleXml, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
         </StackPanel>
       </Border>
     </StackPanel>

@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 38 shipped on "Do, for mac and Android too" as version 0.9.93 (run 93, commit 94cd05d; all 716 tests passed; Windows, Mac and Android built). Nothing on the list. NEW RULE: requests are only ADDED TO THE LIST until "Do" (section 2).
+Last updated: Round 38 shipped on "Do, for mac and Android too" as version 0.9.93 (run 93, commit 94cd05d; all 716 tests passed; Windows, Mac and Android built). On the list: GR-1, GR-2, KL-1, SB-1, AD-1, IE-1, GU-1, GT-1, SX-1, DX-1, K4, K5, K2, Z8, PN-1, DG-1, RD-1, RD-2, RD-4..RD-9, TB-1. NEW RULE: requests are only ADDED TO THE LIST until "Do" (section 2).
 
 
 1. THE PROJECT
@@ -197,7 +197,202 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 
 8. ON THE LIST — NOT BUILT YET
 ------------------------------
- NOTHING ON THE LIST. ROUND 38 (built on "Do, for mac and Android too", version 0.9.93, run 93) delivered:
+ STILL TO BUILD: Z8 phone part (read / add notes in the Android app, 🎤 in the note box) — the server and PC/Mac parts
+   are built; do it with the next Android build.
+ (Everything else that was listed below was BUILT in Round 39 on "Do for windows only" — kept below as the record of
+ what was asked; see docs/PHASES.md "Round 39" and the ROUND 39 block after this list.)
+
+ GR-1 (asked after Round 38): a gear icon on the quotation page just before the date pill (top right). Its menu, on the
+   SCREEN only (this PC, ClientConfig, like HideHsnGst today; the PDF is not changed): switches "Hide GST", "Hide HSN",
+   "Hide per" (user: NOS = the "per" unit column; Qty keeps its number). The existing gear-next-to-Items switch "Hide HSN
+   and GST columns on screen" moves into this new gear (split into two switches). CHANGED (user: "Hide gst, per, HSN
+   option default on"): all three switches are ON by default — on every PC once (one-time, like DeliveryOnByDefaultApplied),
+   the user can switch them off again afterwards.
+   PC/Mac only; no server update.
+ KL-1 (asked after Round 38): keyboard through the item lines on the quotation page. When the keyboard is not in a typing
+   box (or after Esc from the entry boxes / item boxes): ↓ / ↑ highlight the next / previous line (SelectedLine; first
+   ↓ = line 1; the list scrolls to it); Enter = edit that line (same as clicking it: values in the boxes, cursor in Qty);
+   Esc = first cancels an edit (boxes cleared, line unchanged) / removes the highlight, and only when nothing is
+   highlighted does Esc go Back as today. Ctrl+D / Ctrl+↑↓ (Q5) work on the highlighted line. Not inside open lists
+   (product/customer search) or multi-line boxes; Page Up/Down unchanged. Add to the F1 card. PC/Mac only.
+ GR-2 (asked after Round 38, goes with GR-1): the new gear before the date also gets
+   a) "Product links on PDF" switch — moved there from the tick box "Show product links on the PDF" in the remarks
+      section (ShowProductLinksBox, removed there). CHANGED (user: "Product links pdf on off for all quotations"): a
+      standing choice of the user like (b) (AppUser + MyPreferencesDto, default On), not per quotation; the PDF uses the
+      choice of the user who makes it (QuotationHeader.ShowProductLinks no longer used for it; kept for old rows).
+      CHANGED again (user: "Every user gets onoff button for products links, so remove that here"): the Settings → PDF
+      admin switch "View product link on the PDF" (ProductLinksOnPdfBox, QuotationSettings.ProductLinksOnPdf) is
+      REMOVED; only each user's own gear switch decides (server ignores the old setting; kept in JSON for old files).
+      The "Load product links (Excel)…" button stays on Settings → PDF (row "Product links").
+   Both switches show only their name — no grey second line ("this quotation" / "all my quotations").
+   b) "Attach catalogues" switch — user: "on/off for all quotes, not one time": a standing choice of the user (saved
+      with the login, like the PDF layout: AppUser + MyPreferencesDto, default On), remembered for every quotation.
+      Off = the items' catalogues / datasheets (Products page, "add to the quotation PDF") are NOT appended to this
+      user's PDFs; On = as today. The server uses the choice of the user who makes the PDF.
+   SERVER UPDATE needed (b) + PC/Mac app.
+ SB-1 (bug, user: "In bigger text, 2nd item search box is hidden with suggested items"): reproduced at 1366×768 with
+   Bigger item rows and one line: the Product box is below the visible part of the page (it is not scrolled into view
+   when it gets the keyboard), so its suggestion list opens UPWARD over the customer boxes and the box itself cannot be
+   seen. Fix: when the Product box (and the Customer box) gets the keyboard or its list opens, scroll the page so the
+   box sits in view with room for the list below it (BringIntoView with ~320 px extra below); the list never covers its
+   own box (open below; if there is truly no room, shorter list instead of flipping over the box). Check Normal and
+   Bigger rows, 768 and 1080 high windows. PC/Mac only; no server update.
+ AD-1 (user: "Remove all suggestions same delivery on all lines in gear icon"): in the gear next to Items, "Same
+   delivery on all lines" keeps only its typing box + Apply (Enter); the row of suggestion buttons under it ((none),
+   Ex-stock, 1 week, 2–3 weeks, 4–6 weeks — OnAllDeliveryPicked) is removed. An empty box + Apply still clears all lines.
+   The Delivery box of a line keeps its own list. PC/Mac only; no server update.
+ IE-1 (user: "Let it be mode in my settings, with old one too"), preview docs/handoff/previews/idea-edit-line-in-list.png:
+   My Settings (this PC, ClientConfig) "Editing a line": "In the list" / "In the boxes below" (the old way; default).
+   In the list: clicking a line (or KL-1 ↓↑ + Enter) opens THAT row in place — Qty, Rate, Disc. % boxes in their
+   columns (cursor in Qty), Description text box + Delivery box under the item name, Amount live; Tab Qty → Rate →
+   Disc. % → Description → Delivery; Enter = Update line, Esc = cancel (row unchanged); small "Esc · Cancel" /
+   "Enter · Update line" buttons. The boxes at the bottom are then only for adding new lines. Gear step mode (line by
+   line / column by column), maths in boxes, column paste (Rate/Qty/Disc, DX-1) keep working. PC/Mac only; no server update.
+   Change the item while editing (preview idea-edit-line-change-item.png): click the name or Shift+Tab from Qty → the name
+   becomes a SearchPicker; Enter picks another Tally item (name, part no., HSN, GST, unit follow it; Qty, Rate, Disc,
+   Description, Delivery stay), Esc keeps the old one. Its suggestion list FLOATS over the rows below (a pop-up like
+   the Product box) — the row and the lines under it never move down (user asked).
+ GU-1 (user: "Remove that option"): the gear next to Items loses "Go up instead of down" (StepUpSwitch / StepUp /
+   ClientConfig.LineStepUp): stepping always goes down to the next line; a PC that had it on goes down from now on
+   (the setting is ignored, kept only so old settings files read). The step note says "line by line · line 4 of 8"
+   (no "Going up/down"). PC/Mac only; no server update.
+ GT-1 (user picked "4 5 6 9 10 2" from the grey-text list): remove these grey lines (PC/Mac):
+   2  QuotationEditorView ~944 paste-a-list window "Copied from WhatsApp, e-mail or Excel."
+   4  MySettingsView ~11 "Only for you (…) — every user can change these."
+   5  MySettingsView ~27 "For a company that does not take GST (e.g. SEZ)."
+   6  MySettingsView ~51 "The look of the PDFs you make: Tally … or Zoho …"
+   9  MySettingsView ~85 "A picture of your own behind the pages, on this PC only …"
+   10 MySettingsView ~96 "'Save as PDF' saves the document here without asking …"
+   (any ⓘ hint next to them goes too; the setting itself stays). Others kept. No server update.
+ SX-1 (user: "Sharp text forever, remove button and sound on too"): My Settings loses the "Sharp text (this PC)" card
+   (SharpTextCard) and the "Silent" card (SilentCard). Sharp text is always on (ClientConfig.SharpText ignored = true);
+   the click sounds are always on (ClientConfig.Silent ignored = false: soft click on save / approve). Old settings
+   files still read. PC/Mac only; no server update.
+   + (user: "Animation always on"): the "Animations" row in My Settings (ReduceMotionSwitch, saved with the login as
+   ReduceMotion) is removed; animations and glow are always on (a user who had them off gets them on). PC/Mac only.
+ DX-1 (user: "Add"): Excel description column.
+   1) Paste into the Description box: SPREAD over the lines (line 1 = cell 1 …, from the top like Rate/Qty/Disc %, with
+      Undo) only when the clipboard is from Excel (it carries a spreadsheet format — "XML Spreadsheet"/"Biff"/HTML table —
+      besides text) AND it has 2+ cells AND the quotation has lines. Otherwise (text from WhatsApp, Word, e-mail, one
+      cell) it pastes into the one box as today. A cell with Alt+Enter lines (Excel quotes it) stays one description
+      with several lines; empty cells leave that line as it is; more cells than lines: the extra are ignored (message).
+      Toast "Descriptions pasted into lines 1–5." with "Undo" and "Put all in this box" (undoes the spread and pastes
+      the whole text into the box instead).
+   2) Pasted-list window: a description column in the copied rows fills each new line's description.
+   PC/Mac only; no server update.
+ K4 (user: "Add k4"): F2 in Quotation History (QuotationListView, the history page) opens the date filter with its
+   calendar; ←/→ (↑/↓ week) move the day, Enter shows that day's quotations, Esc closes. Picture
+   previews/idea-K4-f2-history-date.png. PC/Mac only; no server update.
+ K5 (user: "Add"): Alt+D (and right Alt) on the quotation screen deletes the highlighted line (PickedLine, KL-1 highlight
+   or the selected line); toast "Line 2 removed (NAME). Undo" puts it back in its place. Not while typing in a box
+   that uses Alt+D itself; not on approved quotations. Picture previews/idea-K5-alt-d-delete.png. PC/Mac only.
+ K2 (user: "Add"): Enter on an EMPTY Product box = done with items: focus goes P&F → Enter → Remarks (Enter = next, the
+   box keeps Ctrl/Shift+Enter for a new line inside Remarks if it is multi-line) → Approve button (Enter approves, as
+   #31). Shift+Enter goes one step back. Typing in Product still searches as today. Picture
+   previews/idea-K2-empty-enter.png. PC/Mac only; no server update.
+ (K10 focus ring: previewed, not added.)
+ Z8 (user: "Add z8, on off admin, default off"): Internal notes on a quotation (from Zoho Books ideas).
+   ADMIN SWITCH: Settings → Features "Notes" On / Off, DEFAULT OFF (QuotationSettings.InternalNotes = false). Off = no
+   card, no 📝 column, no Alt+N, search ignores notes (notes already written are kept, shown again when switched On).
+   When On (pictures previews/idea-Z8-1-screen.png … idea-Z8-4-phone.png):
+   - 📝 Notes card under the items, left of Totals (under Remarks); folded when empty; click or Alt+N (right Alt too)
+     opens it and puts the cursor in "Write a note…". Enter adds, Shift+Enter new line, Esc leaves. "🔒 Only inside the
+     app" label. NEVER on PDF, WhatsApp text or e-mail.
+   - Each note: text, who, when; oldest at the top; card scrolls when long. Allowed on draft / approved / cancelled;
+     adding a note does not change the quotation, its approval, number or "changed by" line.
+   - Own notes: ✏️ Edit (shows "(edited)") and 🗑 Delete (asks "Delete this note? Yes / No"); admin can delete any.
+     Everyone who can open the quotation can read and add.
+   - Proforma made from it shows the same notes; Duplicate does NOT copy notes.
+   - History: 📝 count column, hover = newest note; search also looks in note text (snippet shown under the customer).
+     To Follow Up list: newest note under the customer.
+   - Phone app: read + add (🎤 voice in the note box).
+   Data: new table QuotationNote (Id, QuotationId, UserId/Name, Text, CreatedAt, EditedAt) + migration; endpoints
+   GET/POST /api/quotations/{id}/notes, PUT/DELETE /api/notes/{id}. In the Drive backup with the database.
+   Server update needed; PC/Mac and phone apps too.
+ PN-1 (user: "No need to display part number under item name in quotation page"): the grey "Part No. …" line under
+   the item name in the quotation screen's items list (QuotationEditorView.axaml ~596) is removed. Screen only: the
+   PDF (Part No column / admin switches) and the product search list are unchanged; part no. still searchable.
+   No hover hint (previewed, user: "Not required hover").
+ DG-1 (user: "Redesign the drag icon" → picked "A"; picture previews/idea-DG-drag-icon.png): the grip (QuotationEditorView
+   .axaml ~578, Border.grip with the six-dot Path) is hidden on every row except the one under the mouse (row
+   :pointerover → grip visible) and the row being dragged. On the mouse row: six dots in AccentBrush on a soft accent
+   chip (rounded 5, 16×22); while dragging (Classes.dragging): solid accent chip, white dots. Space stays reserved so
+   the Sl numbers do not move. Dashed accent line shows where the item lands. Ctrl+↑/↓ unchanged. All themes.
+   PC/Mac only; no server update.
+
+ RD (user: "Any other old design there for redesigning" → "Preview all" → "Add all except 3"): old-looking parts
+   redone; pictures previews/idea-RD-<n>-*.png (left = today, right = after). RD-3 (Dashboard) NOT added.
+   RD-1 Tally Connection page: sync history as a small table (When · Kind · Result chip Done/Failed · Read) with "Next
+     automatic … · full sync tonight 02:00"; "If Tally is disconnected" text → 3-step checklist checked live (✓/✗):
+     TallyPrime open with the company · Tally answers on port 9000 · firewall lets the server reach 9000, each with
+     the fix in small text. The "Raw Tally data for one master" tool STAYS (user asked "where raw data from tally"):
+     a folded card "🔬 Raw Tally data (for checking)" at the bottom of the page; opening it shows the same type
+     drop-down, name box and Fetch as today.
+   RD-2 Diagnostics → System: True/False → chips (Tally Connected / Gmail Not connected / Claude AI Not set up),
+     plain words (Server 0.9.x · Windows; Database size · items · customers); data folder and today's log get
+     "Open" buttons (work only on the server PC; hidden elsewhere).
+   RD-4 Deleted page: empty state "🗑 Nothing deleted — quotations an administrator deletes show here for 30 days".
+   RD-5 Settings left menu: icons + the main menu's soft selected pill.
+   RD-6 Products details card: rows with no value hidden (Part number, Brand, Aliases, Description, Rate source),
+     no "(from )"; GST "18% (from item)"; "No selling price in Tally" as a warn chip; Synced time in local time (no UTC).
+   RD-7 "Show DNU items" (Products) and "Show all (also completed)" (AI Inbox): switches instead of tick boxes.
+   RD-8 AI Inbox not configured: info card "✨ Claude AI is not set up yet" + "Set up" button (admins → Settings ›
+     Claude AI); users see "Ask your administrator to set it up", no button. Analyse button disabled meanwhile.
+   RD-9 Top-bar search box hidden on pages with their own search (History, Drafts, Today, Customers, Products,
+     Deleted); stays elsewhere.
+   All PC/Mac only; no server update.
+ TB-1 (user: "Anywhere tickbox are leftover…" → "Preview all" → "Add all"; pictures previews/idea-TB-1..4-*.png):
+   every remaining CheckBox becomes the app's switch (same ToggleSwitch style as Greet/Fest/XO), same bindings, same
+   meaning, same label/Content text beside it:
+   SettingsView: RoundOffTotal, AllowStaleDataOverride, RequireHsn, TitleCase, PartNumberOnQuotations,
+     PartNumberOnProforma, DriveBackups (DriveBackupsBox),
+     DrivePdfs (DrivePdfsBox), Party Details ×10 (ShowContactBox, ShowContactPerson [stays disabled until Contact on],
+     ShowEmailBox, NameAndAddressFromMaster, AddressInContinuousLine, ShowGstin, ShowPan, ShowStateNameAndCode,
+     ShowPinCode, AddressHalfWidth), Tally UseLastRate + ReadLastRatesFromTally [disabled until UseLastRate],
+     Ai.Enabled, Gmail.Enabled.
+   ProductsView DatasheetOnPdfBox → switch. (Products ShowHidden + AiInbox ShowAll are RD-7; editor
+     ShowProductLinksBox goes with GR-2.)
+   DiagnosticsView ZipQuotationsBox / ZipProformaBox → two pill toggle buttons (ToggleButton, blue with ✓ when on).
+   KEPT as tick boxes: row-choice ticks in the pasted-list and Tally-invoice windows (QuotationEditorView ~913
+     IsTicked). Keep the Names (tests find them by name). PC/Mac only; no server update.
+   + (user: "Title case while typing - no grey text required"): the Title Case switch has NO text beside it (drop
+     "Capital first letter of each word in the quotation's text boxes (like Tally)"); the row name "Title Case while
+     typing" stays.
+   + (user: "Shrink to 10% default on, so remove"): Settings → PDF row "Fit on one page" (ShrinkToFitOnePage switch)
+     REMOVED; shrinking up to 10 % when a document is just over one page is ALWAYS on (PdfQuotationRenderer passes
+     ShrinkToFitOnePage = true; the setting stays in JSON, ignored). SERVER UPDATE needed.
+   + (user: "Word first, also check line spacing, feels like that box is hitting"; pictures
+     previews/idea-TB-partno-words-left.png, idea-TB-settings-row-spacing.png):
+     a) Settings → PDF "Part No. column": the words come BEFORE each switch — "On quotations [switch]   On proforma
+        invoices [switch]" (muted text, then the switch).
+     b) Settings form rows too tight (Grid.form children Margin 0,3 / 0,4 → boxes touch the row below): every row gets
+        8 px above and below (TextBlock / TextBox / NumericUpDown / ComboBox / switch / StackPanel rows) and a faint
+        line between rows (RowLineBrush), on all Settings tabs. PC/Mac only.
+
+ ROUND 39 (built on "Do for windows only") delivered (code pointers):
+   GR-1/GR-2 QuotationEditorView ViewGearButton (HideGstSwitch, HideHsnSwitch, HidePerSwitch, ProductLinksSwitch,
+     AttachCataloguesSwitch); ClientConfig.HideGst/HideHsn/HidePer (+ HideColumnsByDefaultApplied one-time);
+     AppUser.ProductLinksOnPdf / AttachCatalogues (+ MyPreferencesDto, UserDto); QuotationService.ApplyPrintChoicesAsync
+     sets QuotationHeader.PrintLinks / PrintCatalogues ([NotMapped]) before every render; ShrinkToFitOnePage = true always.
+   KL-1/K5/K2 QuotationEditorView.OnPreviewKeyDown (MoveHighlight, RemovePickedLine, FocusPackingStep → FocusRemarks →
+     FocusApprove); the editor view is Focusable; QuotationLineViewModel.IsHighlighted, Border.row.highlight.
+   SB-1 SearchPicker: PlacementConstraintAdjustment SlideX|ResizeY (never flips), BringIntoView(+RoomBelow 320) on focus.
+   IE-1 ClientConfig.EditLineInList; editor EditInList / InListEditing / ShowLineEntry / ChangeEditingItem; row Grid
+     "inlineedit" (InlineQtyBox, InlineRateBox, InlineDiscountBox, InlineDescriptionBox, InlineDeliveryBox,
+     InlineProductBox); My Settings EditLineCard.
+   DX-1 Core/Import/ExcelColumnText; QuotationEditorView.OnDescriptionPasting / IsSpreadsheet / PasteDescriptions;
+     editor PasteDescriptionColumn; PastedColumnRole.Description + PastedLine.Description.
+   Z8 Data QuotationNote (+ migration Round39NotesAndPrintChoices), Endpoints/NoteEndpoints.cs, QuotationSettings
+     .InternalNotes, QuotationSummaryDto.NoteCount/LatestNote (+ note search); editor NotesCard / NoteItemViewModel /
+     Alt+N; History note chip + note line.
+   K4 QuotationListView DateFilterBox (F2), QuotationListViewModel.DateFilter.
+   RD-1..9 TallyView (SyncRunsTable, DisconnectedChecklist, RawDataCard), DiagnosticsView SystemGrid chips + Open buttons,
+     DeletedQuotationsView EmptyNote, Settings menu icons (Controls/SettingsTabIcon), ProductsView details, AiInboxView
+     AiNotSetUpCard, ShellViewModel.ShowGlobalSearch (Ctrl+F → the page's own SearchBox).
+   TB-1 all CheckBoxes → ToggleSwitch (names kept), ZIP pills (ToggleButton.pilltoggle); Settings rows Margin 0,8.
+   SX-1/GT-1/AD-1/GU-1/PN-1/DG-1 as listed above.
+
+ ROUND 38 (built on "Do, for mac and Android too", version 0.9.93, run 93) delivered:
    EY-1 HideHeaderButton moved into the References headbar (QuotationEditorView.axaml).
    DM-1 Core/Domain/DeliveryText.WithoutDeliveryLines: used by QuotationService.RememberDescriptionsAsync, CatalogEndpoints
      .ToSummary and CatalogSearchService.LoadRememberedAsync (cleans old remembered ones once). DeliveryChoices = (none) +

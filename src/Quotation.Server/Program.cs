@@ -135,6 +135,7 @@ app.MapGmailEndpoints();
 app.MapDiagnosticsEndpoints();
 app.MapFormaterEndpoints();
 app.MapTallyInvoiceEndpoints();
+app.MapNoteEndpoints();
 
 app.Logger.LogInformation("Quotations Server starting. Data directory: {DataDir}", dataDir);
 await app.RunAsync();

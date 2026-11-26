@@ -273,7 +273,7 @@ public class Round15UiTests
         {
             await ctx.Session.SetDisplayAsync(textSize: AppDisplay.Large, spacing: AppDisplay.Compact, reduceMotion: true);
             Assert.Equal(1.15, ThemeService.Zoom, 3);
-            Assert.False(ThemeService.AnimationsOn);
+            Assert.True(ThemeService.AnimationsOn); // Round 39 (SX-1): animations are always on
             Assert.Equal(6.0, Avalonia.Application.Current!.Resources["SectionSpacing"]);
             var me = await ctx.Session.Api.MeAsync();
             Assert.Equal(AppDisplay.Large, me.TextSize);

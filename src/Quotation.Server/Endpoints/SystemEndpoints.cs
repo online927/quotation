@@ -217,6 +217,8 @@ public static class SystemEndpoints
             if (req.ReduceMotion is { } reduce) user.ReduceMotion = reduce;
             if (req.PdfFileOrder is { } order) user.PdfFileOrder = order;
             if (req.OpenPdfAfterSave is { } open) user.OpenPdfAfterSave = open;
+            if (req.ProductLinksOnPdf is { } links) user.ProductLinksOnPdf = links;
+            if (req.AttachCatalogues is { } catalogues) user.AttachCatalogues = catalogues;
             if (req.UsdRate is { } usdRate)
             {
                 if (usdRate != 0 && usdRate is < Currencies.MinUsdRate or > Currencies.MaxUsdRate)

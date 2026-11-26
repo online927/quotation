@@ -245,8 +245,11 @@ public class Round36UiTests
             Dispatcher.UIThread.RunJobs();
             var menu = (Control)((Flyout)gear.Flyout).Content!;
             Assert.True(menu.GetLogicalDescendants().OfType<StackPanel>().First(p => p.Name == "AllDeliveryPanel").IsVisible);
-            var oneWeek = menu.GetVisualDescendants().OfType<Button>().First(b => (b.Content as string) == "1 week");
-            oneWeek.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            // Round 39 (AD-1): no suggestion buttons any more: typed, then Apply
+            Assert.DoesNotContain(menu.GetVisualDescendants().OfType<Button>(), b => (b.Content as string) == "1 week");
+            editor.AllLinesDeliveryText = "1 week";
+            Assert.NotNull(menu.GetLogicalDescendants().OfType<Button>().FirstOrDefault(b => b.Name == "ApplyAllDeliveryButton"));
+            editor.ApplyDeliveryToAllCommand.Execute(null);
             Assert.All(editor.Lines, l => Assert.Equal("1 week", l.DueOn));
             var notice = ctx.Shell.Toasts.Last();
             Assert.Equal("Delivery \"1 week\" put on all 2 lines.", notice.Text);
@@ -261,10 +264,9 @@ public class Round36UiTests
             Assert.All(editor.Lines, l => Assert.Equal("10 days", l.DueOn));
             Assert.DoesNotContain("10 days", editor.DeliveryChoices); // Round 38 (DM-1): typed times are not remembered
 
-            // (none) clears all
-            Dispatcher.UIThread.RunJobs();
-            var none = menu.GetVisualDescendants().OfType<Button>().First(b => (b.Content as string) == QuotationEditorViewModel.NoDelivery);
-            none.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            // An empty box + Apply clears all
+            editor.AllLinesDeliveryText = "";
+            editor.ApplyDeliveryToAllCommand.Execute(null);
             Assert.All(editor.Lines, l => Assert.Equal("", l.DueOn));
             gear.Flyout.Hide();
         }

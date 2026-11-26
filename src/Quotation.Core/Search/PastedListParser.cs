@@ -12,10 +12,12 @@ public sealed record PastedLine(string Raw, string Query, decimal Quantity, bool
     public decimal? Discount { get; init; }
     /// <summary>The item name of an Excel row whose search words are its part number (searched when the part number finds nothing).</summary>
     public string? NameQuery { get; init; }
+    /// <summary>Round 39 (DX-1): the description from an Excel row's description column (null: the item's own).</summary>
+    public string? Description { get; init; }
 }
 
 /// <summary>What a column of rows copied from Excel holds.</summary>
-public enum PastedColumnRole { Skip, Item, PartNo, Quantity, Rate, Discount }
+public enum PastedColumnRole { Skip, Item, PartNo, Quantity, Rate, Discount, Description }
 
 /// <summary>
 /// Reads a list copied from WhatsApp, e-mail or Excel ("187-901 x 2", "530-312 - 5 nos", "qty 3 dial gauge")
@@ -191,6 +193,11 @@ public static partial class PastedListParser
         {
             hasHeader = true;
             for (var c = 0; c < named.Length; c++) roles[c] = named[c];
+            // Round 39 (DX-1): with a name column as well, a "Description" / "Specification" / "Details" column is the
+            // line's description, not more name words.
+            if (named.Count(r => r == PastedColumnRole.Item) >= 2)
+                for (var c = 0; c < named.Length; c++)
+                    if (named[c] == PastedColumnRole.Item && IsDescriptionHeading(first[c])) roles[c] = PastedColumnRole.Description;
         }
         var data = hasHeader ? rows.Skip(1).ToList() : rows;
         string Cell(string[] row, int c) => c < row.Length ? row[c] : "";
@@ -307,6 +314,13 @@ public static partial class PastedListParser
         return null;
     }
 
+    private static bool IsDescriptionHeading(string cell)
+    {
+        var h = cell.ToLowerInvariant();
+        return (h.Contains("desc") || h.Contains("spec") || h.Contains("detail") || h.Contains("remark"))
+               && !h.Contains("name") && !h.Contains("item") && !h.Contains("product");
+    }
+
     /// <summary>The rows read with these columns (the heading row left out).</summary>
     public static List<PastedLine> ParseTable(string? text, IReadOnlyList<PastedColumnRole> roles, bool hasHeader)
     {
@@ -332,6 +346,7 @@ public static partial class PastedListParser
                 Rate = rate is >= 0 ? rate : null,
                 Discount = disc is >= 0 and < 100 ? disc : null,
                 NameQuery = part.Length > 0 && name.Length > 0 ? name : null,
+                Description = Join(PastedColumnRole.Description) is { Length: > 0 } d ? d : null,
             });
         }
         return result;

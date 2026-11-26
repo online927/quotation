@@ -205,7 +205,9 @@ public sealed record QuotationSummaryDto(
     QuotationOutcome Outcome = QuotationOutcome.Open,
     DateOnly? FollowUpDate = null,
     string? Owner = null,
-    string Currency = "")
+    string Currency = "",
+    int NoteCount = 0,
+    string LatestNote = "")
 {
     /// <summary>A USD quotation (its amounts are in US dollars).</summary>
     public bool IsUsd => Currencies.IsUsd(Currency);
@@ -250,3 +252,12 @@ public static class Currencies
         return dollars.Count == 0 ? text : text + " + $ " + Quotation.Core.Calculation.IndianFormat.Amount(dollars.Sum(a => a.Amount));
     }
 }
+
+/// <summary>Round 39 (Z8): an internal note on a quotation (never printed). <see cref="Mine"/>: written by the signed-in user.</summary>
+public sealed record QuotationNoteDto(int Id, Guid QuotationId, string UserName, string DisplayName, string Text, DateTime CreatedUtc,
+    DateTime? EditedUtc, bool Mine, bool CanDelete)
+{
+    public bool IsEdited => EditedUtc is not null;
+}
+
+public sealed record NoteTextRequest(string Text);

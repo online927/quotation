@@ -86,7 +86,7 @@ public sealed class AuthService(QuotationDbContext db, IOptions<ServerOptions> o
         AppDisplay.IsValidTextSize(u.TextSize) ? u.TextSize : AppDisplay.Normal,
         AppDisplay.IsValidSpacing(u.Spacing) ? u.Spacing : AppDisplay.Comfortable, u.ReduceMotion,
         PdfFileOrders.IsValid(u.PdfFileOrder) ? u.PdfFileOrder : PdfFileOrders.NumberFirst, u.HasSealImage, u.SealPinHash is not null,
-        u.OpenPdfAfterSave, u.UsdNext, u.UsdRate);
+        u.OpenPdfAfterSave, u.UsdNext, u.UsdRate, u.ProductLinksOnPdf, u.AttachCatalogues);
 
     /// <summary>
     /// Administrator edits a user. The login name must stay unique; an administrator cannot deactivate themselves or

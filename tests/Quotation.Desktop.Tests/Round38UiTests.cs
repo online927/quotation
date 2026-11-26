@@ -110,8 +110,8 @@ public class Round38UiTests
         Assert.Null(ToolTip.GetTip(icons.Single(b => b.IsVisible)));          // no hover box
         icons.Single(b => b.IsVisible).RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Assert.Equal(["https://www.example.com/bevel"], ((RecordingLauncher)ctx.Session.Documents).WebPages);
-        Assert.True(editor.ShowProductLinks);
-        Assert.True(view.FindControl<CheckBox>("ShowProductLinksBox")!.IsVisible);
+        Assert.Null(view.FindControl<CheckBox>("ShowProductLinksBox")); // Round 39 (GR-2): in the gear before the date
+        Assert.True(editor.ProductLinksMine);
     }
 
     [AvaloniaFact]

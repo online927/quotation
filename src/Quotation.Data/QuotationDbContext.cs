@@ -21,6 +21,7 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
     public DbSet<AiRequest> AiRequests => Set<AiRequest>();
     public DbSet<FormaterMatch> FormaterMatches => Set<FormaterMatch>();
     public DbSet<ProductDatasheet> Datasheets => Set<ProductDatasheet>();
+    public DbSet<QuotationNote> QuotationNotes => Set<QuotationNote>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -71,6 +72,8 @@ public class QuotationDbContext(DbContextOptions<QuotationDbContext> options) : 
             e.HasQueryFilter(x => x.DeletedUtc == null);
             e.HasIndex(x => x.DeletedUtc);
         });
+
+        b.Entity<QuotationNote>(e => e.HasIndex(x => x.QuotationId)); // Round 39 (Z8)
 
         b.Entity<QuotationLine>(e =>
         {

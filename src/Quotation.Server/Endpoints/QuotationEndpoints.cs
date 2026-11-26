@@ -24,8 +24,9 @@ public static class QuotationEndpoints
 
         g.MapGet("/", async (QuotationDbContext db, string? q, QuotationStatus? status, QuotationSource? source,
             DateOnly? from, DateOnly? to, int? customerId, int? take, int? skip, DocumentType? type, QuotationOutcome? outcome, bool? followUpDue,
-            int? sequence, FinancialYearService fy, CancellationToken ct) =>
+            int? sequence, FinancialYearService fy, SettingsService settings, CancellationToken ct) =>
         {
+            var notesOn = settings.Quotation.InternalNotes; // Round 39 (Z8): search, count and newest note only while on
             var query = db.Quotations.AsNoTracking().AsQueryable();
             // The number part of a quotation number ("142" of TSQ2627-142), in every year: the top search jumps to it.
             if (sequence is not null) query = query.Where(x => x.Number != null && x.Sequence == sequence);
@@ -64,7 +65,9 @@ public static class QuotationEndpoints
                             EF.Functions.Like(p.PartNumber, like, "\\") || EF.Functions.Like(p.Aliases, like, "\\") ||
                             (compactLike != null && EF.Functions.Like(p.PartNumber.Replace("-", "").Replace(".", "").Replace(" ", "").Replace("/", ""), compactLike)))
                         .Select(p => (int?)p.Id);
+                    var noted = db.QuotationNotes.Where(n => notesOn && EF.Functions.Like(n.Text, like, "\\")).Select(n => n.QuotationId);
                     query = query.Where(x =>
+                        noted.Contains(x.Id) ||
                         EF.Functions.Like(x.Number!, like, "\\") ||
                         EF.Functions.Like(x.Buyer.Name, like, "\\") ||
                         EF.Functions.Like(x.Buyer.Gstin, like, "\\") ||
@@ -90,6 +93,15 @@ public static class QuotationEndpoints
                     x.CreatedBy, x.CreatedUtc, x.ApprovedBy, x.PdfPath != null, x.DocType, x.Outcome, x.FollowUpDate,
                     x.Owner ?? (x.CreatedBy == QuotationService.GmailUserName ? null : x.CreatedBy), x.Currency))
                 .ToListAsync(ct);
+            if (notesOn && rows.Count > 0)
+            {
+                var ids = rows.Select(r => r.Id).ToList();
+                var notes = await db.QuotationNotes.AsNoTracking().Where(n => ids.Contains(n.QuotationId))
+                    .Select(n => new { n.QuotationId, n.Text, n.CreatedUtc, n.Id }).ToListAsync(ct);
+                var byQuotation = notes.GroupBy(n => n.QuotationId).ToDictionary(g => g.Key,
+                    g => (Count: g.Count(), Latest: g.OrderByDescending(n => n.CreatedUtc).ThenByDescending(n => n.Id).First().Text));
+                rows = rows.Select(r => byQuotation.TryGetValue(r.Id, out var n) ? r with { NoteCount = n.Count, LatestNote = n.Latest } : r).ToList();
+            }
             return rows;
         });
 

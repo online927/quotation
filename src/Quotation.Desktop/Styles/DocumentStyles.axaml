@@ -35,14 +35,30 @@
     </Style>
     <Style Selector="Border.row.dragging">
       <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="BorderThickness" Value="0,2,0,2" />
     </Style>
+    <!-- Round 39 (DG-1): the drag dots show only on the row under the mouse (soft accent chip) and on the row being dragged
+         (solid accent chip, white dots); the space stays so the Sl numbers do not move. -->
     <Style Selector="Border.grip">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Cursor" Value="SizeNorthSouth" />
-      <Setter Property="Opacity" Value="0.55" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Opacity" Value="0" />
     </Style>
-    <Style Selector="Border.grip:pointerover">
+    <Style Selector="Border.grip Path">
+      <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Border.row:pointerover Border.grip">
       <Setter Property="Opacity" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    </Style>
+    <Style Selector="Border.row.dragging Border.grip">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Border.row.dragging Border.grip Path">
+      <Setter Property="Fill" Value="White" />
     </Style>
     <!-- Edit and remove appear when the mouse is on the line (and on the line being edited) -->
     <Style Selector="StackPanel.lineactions">
@@ -50,6 +66,10 @@
     </Style>
     <Style Selector="Border.row:pointerover StackPanel.lineactions, Border.row.editing StackPanel.lineactions, StackPanel.lineactions:focus-within">
       <Setter Property="Opacity" Value="1" />
+    </Style>
+    <!-- Round 39 (KL-1): the line picked with the arrow keys -->
+    <Style Selector="Border.row.highlight">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
     </Style>
     <Style Selector="Border.row.editing">
       <Setter Property="Background" Value="{DynamicResource EditingRowBrush}" />

@@ -22,8 +22,8 @@ public partial class App : Application
             var session = new AppSession(ClientConfig.Load(), url => QuotationApiClient.Create(url));
             ThemeService.Apply(Quotation.Contracts.AppTheme.Normalize(session.Config.Theme));
             TextSelectionLook.Apply(session.Config.TextSelection);
-            SharpTextLook.Apply(session.Config.SharpText);
-            ClickSound.Silent = session.Config.Silent;
+            SharpTextLook.Apply(true); // Round 39 (SX-1): sharp text always on
+            ClickSound.Silent = false; // Round 39 (SX-1): click sounds always on
             // Always opens maximised (fills the screen; taskbar and title bar stay visible).
             desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel(session), WindowState = Avalonia.Controls.WindowState.Maximized };
         }

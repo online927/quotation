@@ -30,11 +30,15 @@ public sealed partial class DeletedQuotationsViewModel : ViewModelBase, ITitledP
     public ObservableCollection<DeletedRow> Rows { get; } = [];
     [ObservableProperty] private DeletedRow? _selected;
     public string Title => "Deleted";
+    private bool _loaded;
+    /// <summary>Round 39 (RD-4): loaded and nothing is in the list.</summary>
+    public bool IsEmpty => _loaded && Rows.Count == 0;
 
     public DeletedQuotationsViewModel(AppSession session, INavigator navigator)
     {
         _session = session;
         _navigator = navigator;
+        Rows.CollectionChanged += (_, _) => OnPropertyChanged(nameof(IsEmpty));
         _ = LoadAsync();
     }
 
@@ -45,6 +49,8 @@ public sealed partial class DeletedQuotationsViewModel : ViewModelBase, ITitledP
     {
         Rows.Clear();
         foreach (var d in await _session.Api.DeletedQuotationsAsync()) Rows.Add(new DeletedRow(d));
+        _loaded = true;
+        OnPropertyChanged(nameof(IsEmpty));
     });
 
     [RelayCommand]

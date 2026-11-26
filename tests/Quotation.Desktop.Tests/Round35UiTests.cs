@@ -437,14 +437,13 @@ public class Round35UiTests
     }
 
     [AvaloniaFact]
-    public async Task Save_clicks_once_and_approve_twice_unless_silent()
+    public async Task Save_clicks_once_and_approve_twice()
     {
         using var ctx = await Round33UiTests.StartAsync();
         var silent = ClickSound.Silent;
         try
         {
-            Assert.True(new Quotation.Desktop.Services.ClientConfig().Silent); // silent at first
-            ClickSound.Silent = true;
+            ClickSound.Silent = true; // (tests only; the app is never silent since Round 39)
             var played = ClickSound.PlayedCount;
             var (editor, _) = await Round33UiTests.NewQuotationAsync(ctx);
             editor.SelectProduct((await ctx.Session.Api.SearchProductsAsync("universal bevel")).First().Product);

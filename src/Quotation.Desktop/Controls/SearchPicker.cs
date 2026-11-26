@@ -112,6 +112,9 @@ public sealed class SearchPicker : UserControl
         {
             PlacementTarget = _textBox,
             Placement = PlacementMode.BottomEdgeAlignedLeft,
+            // Round 39 (SB-1): the list never flips up over its own box; with little room below it gets shorter instead.
+            PlacementConstraintAdjustment = Avalonia.Controls.Primitives.PopupPositioning.PopupPositionerConstraintAdjustment.SlideX
+                | Avalonia.Controls.Primitives.PopupPositioning.PopupPositionerConstraintAdjustment.ResizeY,
             HorizontalOffset = -10, // the card's clear space: the list still starts under the box
             IsLightDismissEnabled = true,
             OverlayDismissEventPassThrough = true,
@@ -219,7 +222,12 @@ public sealed class SearchPicker : UserControl
     {
         base.OnGotFocus(e);
         if (ReferenceEquals(e.Source, this)) _textBox.Focus(e.NavigationMethod);
+        // Round 39 (SB-1): the page scrolls so the box is in view with room for its list below it.
+        this.BringIntoView(new Rect(0, 0, Math.Max(1, Bounds.Width), Bounds.Height + RoomBelow));
     }
+
+    /// <summary>Space kept free under the box when it gets the keyboard (Round 39, SB-1).</summary>
+    public const double RoomBelow = 320;
 
     private void ApplyProperties()
     {

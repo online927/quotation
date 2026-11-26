@@ -8,7 +8,6 @@
     <StackPanel Margin="24,12,24,24" Spacing="16" MaxWidth="820" HorizontalAlignment="Left">
       <StackPanel>
         <ctl:PageTitle Text="My Settings" Icon="mysettings" />
-        <TextBlock Classes="muted" Text="{Binding UserName, StringFormat='Only for you ({0}) — every user can change these.'}" />
       </StackPanel>
       <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
 
@@ -24,7 +23,6 @@
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Without GST (next quotation only)" />
-          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="For a company that does not take GST (e.g. SEZ)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="For a company that does not take GST (e.g. SEZ): the next quotation or proforma invoice you make shows 0 % on every item, 'Packing &amp; Forwarding - Without GST' and no SGST/CGST/IGST lines. The switch turns itself off as soon as that document is saved; the document keeps it."><Path Classes="infoicon" /></Border></StackPanel>
           <ToggleSwitch Name="WithoutGstSwitch" IsChecked="{Binding WithoutGstNext}" OnContent="On — next quotation without GST" OffContent="Off" />
         </StackPanel>
       </Border>
@@ -48,7 +46,6 @@
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="PDF layout and file name" />
-          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="The look of the PDFs you make: Tally (like the TallyPrime print) or Zoho (company logo, modern design)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="The look of the PDFs you make: Tally (like the TallyPrime print) or Zoho (company logo, modern design). Used for Approve, Save as PDF, Open PDF and Preview. Saved with your login, so it follows you to every PC."><Path Classes="infoicon" /></Border></StackPanel>
           <ComboBox Name="PdfLayoutBox" ItemsSource="{Binding PdfLayoutChoices}" SelectedItem="{Binding PdfLayout}" Width="200" />
           <TextBlock Classes="label" Text="PDF file name" Margin="0,8,0,0" />
           <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="The order in the names of your PDF files (Approve, Save as PDF, Open PDF, WhatsApp)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="The order in the names of your PDF files (Approve, Save as PDF, Open PDF, WhatsApp). Saved with your login; files already saved keep their names."><Path Classes="infoicon" /></Border></StackPanel>
@@ -63,7 +60,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Appearance" />
           <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="Just for you, and saved with your login, so it follows you to every PC." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Just for you, and saved with your login, so it follows you to every PC. The moon/sun button at the top goes on to the next theme. PDFs are always printed white."><Path Classes="infoicon" /></Border></StackPanel>
-          <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+          <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
             <TextBlock Classes="label" Text="Theme" />
             <ComboBox Grid.Column="1" Name="ThemeBox" ItemsSource="{Binding ThemeChoices}" SelectedIndex="{Binding ThemeIndex}" Width="200" />
             <TextBlock Grid.Row="1" Classes="label" Text="Text size" />
@@ -71,10 +68,6 @@
             <TextBlock Grid.Row="2" Classes="label" Text="Spacing" />
             <ComboBox Grid.Row="2" Grid.Column="1" Name="SpacingBox" ItemsSource="{Binding SpacingChoices}" SelectedIndex="{Binding SpacingIndex}" Width="200"
                       ToolTip.Tip="Compact fits more on a small laptop screen" />
-            <TextBlock Grid.Row="3" Classes="label" Text="Animations" />
-            <ToggleSwitch Grid.Row="3" Grid.Column="1" Name="ReduceMotionSwitch" IsChecked="{Binding AnimationsOn}"
-                          OnContent="On" OffContent="Off (no animations, no glow)"
-                          ToolTip.Tip="For a slow PC, or if you prefer a calm screen: no animations and no glow shadows" />
           </Grid>
         </StackPanel>
       </Border>
@@ -82,7 +75,6 @@
       <Border Classes="card" Name="BackgroundPictureCard">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Background picture (this PC)" />
-          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="A picture of your own behind the pages, on this PC only (it is not sent to the server or to other PCs)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="A picture of your own behind the pages, on this PC only (it is not sent to the server or to other PCs). Use a picture you have the right to use."><Path Classes="infoicon" /></Border></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button ctl:ButtonIcon.Kind="image" Name="ChooseBackgroundButton" Content="Choose picture…" Click="OnChooseBackground" />
             <Button ctl:ButtonIcon.Kind="trash" Name="RemoveBackgroundButton" Content="Remove" Command="{Binding RemoveBackgroundPictureCommand}" IsVisible="{Binding HasBackgroundPicture}" />
@@ -93,7 +85,6 @@
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Save as PDF folders (this PC)" />
-          <StackPanel Classes="help" Orientation="Horizontal" Spacing="6" ><TextBlock Text="&#x27;Save as PDF&#x27; saves the document here without asking (named as chosen above)." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="'Save as PDF' saves the document here without asking (named as chosen above). Leave a box empty for the standard folder."><Path Classes="infoicon" /></Border></StackPanel>
           <TextBlock Classes="fl" Text="Quotations" />
           <Grid ColumnDefinitions="*,8,Auto">
             <TextBox Text="{Binding PdfFolder}" Watermark="{Binding DefaultPdfFolder}" />
@@ -143,10 +134,17 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="card" Name="SilentCard">
+
+      <!-- Round 39 (IE-1) -->
+      <Border Classes="card" Name="EditLineCard">
         <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Silent" />
-          <ToggleSwitch Name="SilentSwitch" IsChecked="{Binding Silent}" OnContent="On" OffContent="Off" />
+          <TextBlock Classes="h2" Text="Editing a line (this PC)" />
+          <Border Classes="pillbar" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="2">
+              <RadioButton Name="EditInListRadio" Classes="seg" GroupName="EditLine" Content="In the list" IsChecked="{Binding EditLineInList}" />
+              <RadioButton Name="EditInBoxesRadio" Classes="seg" GroupName="EditLine" Content="In the boxes below" IsChecked="{Binding EditLineInBoxes}" />
+            </StackPanel>
+          </Border>
         </StackPanel>
       </Border>
 
@@ -158,13 +156,6 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="card" Name="SharpTextCard">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Sharp text (this PC)" />
-          <ToggleSwitch Name="SharpTextSwitch" IsChecked="{Binding SharpText}"
-                        OnContent="On: sharper letters and slightly bigger small text" OffContent="Off: the old look" />
-        </StackPanel>
-      </Border>
 
       <Border Classes="card">
         <StackPanel Spacing="8">

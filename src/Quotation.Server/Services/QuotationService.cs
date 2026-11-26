@@ -333,6 +333,7 @@ public sealed class QuotationService(
         }
         try
         {
+            await ApplyPrintChoicesAsync(q, user, ct);
             var bytes = RenderAs(await LayoutOfAsync(user, ct), q, Stamp(user));
             q.PdfPath = await pdfStorage.SaveAsync(q, bytes, ct);
             q.PdfError = null;
@@ -496,6 +497,16 @@ public sealed class QuotationService(
         return PdfLayouts.IsValid(own) ? own! : PdfLayouts.IsValid(settings.Quotation.DefaultPdfLayout) ? settings.Quotation.DefaultPdfLayout : PdfLayouts.Tally;
     }
 
+    /// <summary>Round 39 (GR-2): the "View product" links and catalogues follow the choice of the user who makes the PDF.</summary>
+    public async Task ApplyPrintChoicesAsync(QuotationHeader q, UserContext? user, CancellationToken ct)
+    {
+        if (user is null) return;
+        var own = await db.Users.AsNoTracking().Where(u => u.Username == user.UserName)
+            .Select(u => new { u.ProductLinksOnPdf, u.AttachCatalogues }).FirstOrDefaultAsync(ct);
+        q.PrintLinks = own?.ProductLinksOnPdf ?? true;
+        q.PrintCatalogues = own?.AttachCatalogues ?? true;
+    }
+
     /// <summary>
     /// The layout fixed on the quotation itself: the one chosen on the Formater page; Formater quotations made before the
     /// choice existed stay in the Zoho layout. Null: the user's own layout.
@@ -514,6 +525,7 @@ public sealed class QuotationService(
     /// <summary>Round 36: the items' datasheets ("Add to the quotation PDF") after the quotation's own pages.</summary>
     private byte[] WithDatasheets(QuotationHeader q, byte[] pdf)
     {
+        if (!q.PrintCatalogues) return pdf; // Round 39 (GR-2): the maker switched "Attach catalogues" off
         try
         {
             return new DatasheetService(serverOptions).Append(db, q, pdf);
@@ -529,6 +541,7 @@ public sealed class QuotationService(
     public async Task<byte[]> PreviewPdfAsync(Guid id, PdfQuotationRenderer pdf, CancellationToken ct, UserContext? user = null)
     {
         var q = await LoadAsync(id, ct);
+        await ApplyPrintChoicesAsync(q, user, ct);
         var stamp = user is null ? null : Stamp(user);
         var layout = FixedLayout(q) ?? (user is not null ? await LayoutOfAsync(user, ct) : PdfLayouts.Tally);
         if (q.Status is QuotationStatus.Generated or QuotationStatus.Approved)
@@ -546,6 +559,7 @@ public sealed class QuotationService(
         var q = await LoadAsync(id, ct);
         if (q.Status is not (QuotationStatus.Approved or QuotationStatus.Generated)) return null;
         EnsureOwner(q, user);
+        await ApplyPrintChoicesAsync(q, user, ct);
         var chosen = await LayoutOfAsync(user, ct, layout);
         if (seal is not null)
         {
@@ -656,6 +670,7 @@ public sealed class QuotationService(
             CreatedBy = user.UserName,
         };
         await ApplyAsync(q, r, isNew: true, ct, remember: false);
+        await ApplyPrintChoicesAsync(q, user, ct);
         var provisional = (await numbering.PreviewAsync(db, fy.GetActive().Year, ct, q.DocType)).Number + " (provisional)";
         var layout = FixedLayout(q) ?? await LayoutOfAsync(user, ct);
         return pdf.RenderPreviewIn(layout, q, settings.Company, settings.Quotation, provisional, Stamp(user), MasterOf(q));

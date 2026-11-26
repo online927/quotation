@@ -107,6 +107,15 @@ public partial class QuotationApiClient
     public Task<UserDto> SetMyPreferencesAsync(MyPreferencesDto prefs, CancellationToken ct = default) =>
         SendAsync<UserDto>(HttpMethod.Put, "api/me/preferences", prefs, ct);
 
+    // Round 39 (Z8): internal notes on a quotation (never printed).
+    public Task<List<QuotationNoteDto>> NotesAsync(Guid quotationId, CancellationToken ct = default) =>
+        GetAsync<List<QuotationNoteDto>>($"api/quotations/{quotationId}/notes", ct);
+    public Task<QuotationNoteDto> AddNoteAsync(Guid quotationId, string text, CancellationToken ct = default) =>
+        PostAsync<QuotationNoteDto>($"api/quotations/{quotationId}/notes", new NoteTextRequest(text), ct);
+    public Task<QuotationNoteDto> EditNoteAsync(int noteId, string text, CancellationToken ct = default) =>
+        SendAsync<QuotationNoteDto>(HttpMethod.Put, $"api/notes/{noteId}", new NoteTextRequest(text), ct);
+    public Task DeleteNoteAsync(int noteId, CancellationToken ct = default) => SendAsync(HttpMethod.Delete, $"api/notes/{noteId}", null, ct);
+
     // Personal seals (administrators set them for users; administrators do not seal).
     public Task<UserDto> UploadUserSealAsync(int userId, byte[] image, CancellationToken ct = default) =>
         SendAsync<UserDto>(HttpMethod.Put, $"api/users/{userId}/seal", image, ct);

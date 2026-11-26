@@ -179,8 +179,8 @@ public class Round18UiTests
         tabs.SelectedItem = Tab("Party Details");
         await Task.Delay(300);
         Dispatcher.UIThread.RunJobs();
-        var contact = view.FindControl<CheckBox>("ShowContactBox")!;
-        var email = view.FindControl<CheckBox>("ShowEmailBox")!;
+        var contact = view.FindControl<ToggleSwitch>("ShowContactBox")!;
+        var email = view.FindControl<ToggleSwitch>("ShowEmailBox")!;
         Assert.True(contact.IsChecked);
         Assert.True(email.IsChecked);
         email.IsChecked = false;

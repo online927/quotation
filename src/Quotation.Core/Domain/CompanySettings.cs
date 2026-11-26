@@ -106,7 +106,7 @@ public sealed class QuotationSettings
     /// <summary>Round 37 (Settings → PDF): the note printed on a USD quotation's PDF.</summary>
     public string UsdPdfNote { get; set; } = UsdPdfNotes.Full;
 
-    /// <summary>Round 38 (PL-1, Settings → PDF): a clickable "View product" line under items that have a product link.</summary>
+    /// <summary>Round 38 (PL-1). No longer used: Round 39 (GR-2) each user's own gear switch decides. Kept so saved settings read.</summary>
     public bool ProductLinksOnPdf { get; set; } = true;
 
     /// <summary>Allow generating a quotation when the last Tally sync is stale (with warning + audit).</summary>
@@ -137,6 +137,9 @@ public sealed class QuotationSettings
 
     /// <summary>The hidden XO game (Ctrl+Alt+Shift+X) for everyone (administrator switch; off by default).</summary>
     public bool XoGame { get; set; }
+
+    /// <summary>Round 39 (Z8): internal notes on quotations (Settings → Features "Notes"; off by default).</summary>
+    public bool InternalNotes { get; set; }
 
     /// <summary>
     /// Seal PIN (administrator switch; off by default, Round 35): On = users type their 4-digit seal PIN before sealing a PDF;

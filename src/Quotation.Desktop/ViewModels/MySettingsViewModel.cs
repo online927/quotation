@@ -165,20 +165,6 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         _ = RunAsync(() => _session.SetDisplayAsync(spacing: value == 1 ? AppDisplay.Compact : AppDisplay.Comfortable));
     }
 
-    /// <summary>The Animations switch reads the right way round: On = animations on (it is "reduce animations" inside).</summary>
-    public bool AnimationsOn
-    {
-        get => !ReduceMotion;
-        set => ReduceMotion = !value;
-    }
-
-    partial void OnReduceMotionChanged(bool value)
-    {
-        OnPropertyChanged(nameof(AnimationsOn));
-        if (_loading) return;
-        _ = RunAsync(() => _session.SetDisplayAsync(reduceMotion: value));
-    }
-
     partial void OnWithoutGstNextChanged(bool value)
     {
         if (_loading) return;
@@ -361,29 +347,28 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
         }
     }
 
-    /// <summary>Silent (this PC, Round 35): on = no click when a quotation is saved or approved. On at first.</summary>
-    public bool Silent
+    /// <summary>Round 39 (IE-1): "Editing a line (this PC)": in the list itself, or in the boxes below (the old way).</summary>
+    public bool EditLineInList
     {
-        get => _session.Config.Silent;
+        get => _session.Config.EditLineInList;
         set
         {
-            if (value == _session.Config.Silent) return;
-            _session.Config.Silent = value;
-            try
-            {
-                _session.Config.Save();
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                // Kept for this session; only this PC's choice.
-            }
-            ClickSound.Silent = value;
+            if (value == _session.Config.EditLineInList) return;
+            _session.Config.EditLineInList = value;
+            try { _session.Config.Save(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
             OnPropertyChanged();
-            if (!value) ClickSound.Saved(); // hear it once
+            OnPropertyChanged(nameof(EditLineInBoxes));
+            InfoMessage = value ? "Lines are now changed in the list itself (new quotation pages)." : "Lines are now changed in the boxes below.";
         }
     }
 
-    /// <summary>Sharp text (this PC): ClearType-style letters and slightly bigger small text; off = the old look.</summary>
+    public bool EditLineInBoxes
+    {
+        get => !EditLineInList;
+        set { if (value) EditLineInList = false; }
+    }
+
     /// <summary>Round 37: "Item rows (this PC)" Bigger (default) or Normal; quotation pages opened after this use it.</summary>
     public bool BiggerItemRows
     {
@@ -398,27 +383,6 @@ public sealed partial class MySettingsViewModel : ViewModelBase, ITitledPage, IR
             InfoMessage = value
                 ? "Item rows are bigger on this PC (new quotation pages)."
                 : "Item rows are normal size on this PC (new quotation pages).";
-        }
-    }
-
-    public bool SharpText
-    {
-        get => _session.Config.SharpText;
-        set
-        {
-            if (value == _session.Config.SharpText) return;
-            _session.Config.SharpText = value;
-            try
-            {
-                _session.Config.Save();
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                // Kept for this session; only this PC's choice.
-            }
-            SharpTextLook.Apply(value);
-            OnPropertyChanged();
-            InfoMessage = value ? "Sharp text on for this PC." : "Sharp text off: the old look on this PC.";
         }
     }
 

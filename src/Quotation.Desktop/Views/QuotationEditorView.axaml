@@ -4,7 +4,7 @@
              xmlns:c="using:Quotation.Contracts"
              xmlns:ctl="using:Quotation.Desktop.Controls"
              x:Class="Quotation.Desktop.Views.QuotationEditorView"
-             x:DataType="vm:QuotationEditorViewModel">
+             x:DataType="vm:QuotationEditorViewModel" Focusable="True">
   <UserControl.KeyBindings>
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
     <KeyBinding Gesture="Ctrl+Enter" Command="{Binding ApproveCommand}" />
@@ -62,8 +62,51 @@
         <TextBlock Name="ListPositionText" Text="{Binding ListPositionText}" Classes="muted" VerticalAlignment="Center" FontSize="{DynamicResource FontSmall}"
                    IsVisible="{Binding HasListPosition}" ToolTip.Tip="Page Down: next quotation in the list · Page Up: previous" />
       </StackPanel>
+      <!-- Round 39 (GR-1 / GR-2): a gear just before the date: what this PC's screen hides, and this user's PDF choices -->
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+      <Button Name="ViewGearButton" Classes="round" Width="32" Height="32" Padding="0" VerticalAlignment="Center" ToolTip.Tip="Columns on screen and PDF choices">
+        <Path Data="M12,8.6 A3.4,3.4 0 1 1 11.99,8.6 Z M12,2.5 L13.6,2.5 L14.1,5 C14.8,5.2 15.4,5.5 16,5.9 L18.2,4.6 L19.4,5.8 L18.1,8 C18.5,8.6 18.8,9.2 19,9.9 L21.5,10.4 L21.5,12 L21.5,13.6 L19,14.1 C18.8,14.8 18.5,15.4 18.1,16 L19.4,18.2 L18.2,19.4 L16,18.1 C15.4,18.5 14.8,18.8 14.1,19 L13.6,21.5 L12,21.5 L10.4,21.5 L9.9,19 C9.2,18.8 8.6,18.5 8,18.1 L5.8,19.4 L4.6,18.2 L5.9,16 C5.5,15.4 5.2,14.8 5,14.1 L2.5,13.6 L2.5,12 L2.5,10.4 L5,9.9 C5.2,9.2 5.5,8.6 5.9,8 L4.6,5.8 L5.8,4.6 L8,5.9 C8.6,5.5 9.2,5.2 9.9,5 L10.4,2.5 Z"
+              Stroke="{DynamicResource TextBrush}" StrokeThickness="1.4" Width="16" Height="16" Stretch="Uniform" />
+        <Button.Flyout>
+          <Flyout Placement="BottomEdgeAlignedRight">
+            <StackPanel Name="ViewMenu" Spacing="1" Width="260" Margin="2">
+              <Border Classes="steprow" Classes.on="{Binding HideGst}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Hide GST" VerticalAlignment="Center" />
+                  <ToggleSwitch Name="HideGstSwitch" Grid.Column="1" Classes="bare" IsChecked="{Binding HideGst}" />
+                </Grid>
+              </Border>
+              <Border Classes="steprow" Classes.on="{Binding HideHsn}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Hide HSN" VerticalAlignment="Center" />
+                  <ToggleSwitch Name="HideHsnSwitch" Grid.Column="1" Classes="bare" IsChecked="{Binding HideHsn}" />
+                </Grid>
+              </Border>
+              <Border Classes="steprow" Classes.on="{Binding HidePer}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Hide per" VerticalAlignment="Center" />
+                  <ToggleSwitch Name="HidePerSwitch" Grid.Column="1" Classes="bare" IsChecked="{Binding HidePer}" />
+                </Grid>
+              </Border>
+              <Border Classes="menusep" />
+              <Border Classes="steprow" Classes.on="{Binding ProductLinksMine}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Product links on PDF" VerticalAlignment="Center" />
+                  <ToggleSwitch Name="ProductLinksSwitch" Grid.Column="1" Classes="bare" IsChecked="{Binding ProductLinksMine}" />
+                </Grid>
+              </Border>
+              <Border Classes="steprow" Classes.on="{Binding AttachCataloguesMine}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Attach catalogues" VerticalAlignment="Center" />
+                  <ToggleSwitch Name="AttachCataloguesSwitch" Grid.Column="1" Classes="bare" IsChecked="{Binding AttachCataloguesMine}" />
+                </Grid>
+              </Border>
+            </StackPanel>
+          </Flyout>
+        </Button.Flyout>
+      </Button>
       <!-- The date: a date box only where it can be changed (the administrator, before approval); otherwise plain -->
-      <Border Name="DatePill" Grid.Column="1" Classes="datepill" VerticalAlignment="Center">
+      <Border Name="DatePill" Classes="datepill" VerticalAlignment="Center">
         <StackPanel Orientation="Horizontal" Spacing="9">
           <Path Classes="dateicon" Data="M5,4 L19,4 C20.1,4 21,4.9 21,6 L21,20 C21,21.1 20.1,22 19,22 L5,22 C3.9,22 3,21.1 3,20 L3,6 C3,4.9 3.9,4 5,4 Z M16,2 L16,6 M8,2 L8,6 M3,10 L21,10"
                 StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" Width="14" Height="14" Stretch="Uniform" VerticalAlignment="Center"
@@ -74,6 +117,7 @@
                      IsVisible="{Binding !CanChangeDate}" />
         </StackPanel>
       </Border>
+      </StackPanel>
     </Grid>
 
     <!-- Who changed it, and notices for several users -->
@@ -481,13 +525,6 @@
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
                       <Border Classes="menusep" />
-                      <Border Classes="steprow" Classes.on="{Binding StepUp}">
-                        <Grid ColumnDefinitions="*,Auto">
-                          <TextBlock Text="Go up instead of down" VerticalAlignment="Center" />
-                          <ToggleSwitch Name="StepUpSwitch" Grid.Column="1" Classes="bare" IsChecked="{Binding StepUp}" />
-                        </Grid>
-                      </Border>
-                      <Border Classes="menusep" />
                       <StackPanel Margin="10,6,10,4" Spacing="6">
                         <TextBlock Text="Same discount on all lines" FontWeight="SemiBold" />
                         <Grid ColumnDefinitions="90,Auto,*">
@@ -515,18 +552,6 @@
                           <Button Name="ApplyAllDeliveryButton" Grid.Column="1" Classes="primary" ctl:ButtonIcon.Kind="check" Content="Apply"
                                   Command="{Binding ApplyDeliveryToAllCommand}" IsEnabled="{Binding CanEditContent}" />
                         </Grid>
-                        <ItemsControl Name="AllDeliveryChoices" ItemsSource="{Binding DeliveryChoices}" IsEnabled="{Binding CanEditContent}">
-                          <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                              <WrapPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                          </ItemsControl.ItemsPanel>
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="x:String">
-                              <Button Classes="link" Content="{Binding}" Padding="6,2" Margin="0,0,4,2" Click="OnAllDeliveryPicked" />
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
                       </StackPanel>
                       <Border Classes="menusep" IsVisible="{Binding ShowDeliveryBox}" />
                       <StackPanel Margin="10,6,10,4" Spacing="6">
@@ -544,27 +569,20 @@
                                   IsEnabled="{Binding CanEditContent}" />
                         </Grid>
                       </StackPanel>
-                      <Border Classes="menusep" />
-                      <Border Classes="steprow" Classes.on="{Binding HideHsnGst}">
-                        <Grid ColumnDefinitions="*,Auto">
-                          <TextBlock Text="Hide HSN and GST columns" VerticalAlignment="Center" />
-                          <ToggleSwitch Name="HideHsnGstSwitch" Grid.Column="1" Classes="bare" IsChecked="{Binding HideHsnGst}" />
-                        </Grid>
-                      </Border>
                     </StackPanel>
                   </Flyout>
                 </Button.Flyout>
               </Button>
             </Grid>
             <Border Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,1" Padding="12,9">
-              <Grid ColumnDefinitions="50,*,Auto,Auto,0,70,90,44,54,100,110">
+              <Grid ColumnDefinitions="50,*,Auto,Auto,0,70,90,Auto,54,100,110">
                 <TextBlock Classes="th" Text="Sl" Margin="20,0,0,0" />
                 <TextBlock Classes="th" Grid.Column="1" Text="Description of Goods" />
-                <TextBlock Classes="th" Grid.Column="2" Text="HSN/SAC" Width="80" IsVisible="{Binding ShowHsnGst}" />
-                <TextBlock Classes="th" Grid.Column="3" Text="GST" Width="50" IsVisible="{Binding ShowHsnGst}" />
+                <TextBlock Classes="th" Grid.Column="2" Text="HSN/SAC" Width="80" IsVisible="{Binding ShowHsn}" />
+                <TextBlock Classes="th" Grid.Column="3" Text="GST" Width="50" IsVisible="{Binding ShowGst}" />
                 <TextBlock Classes="th" Grid.Column="5" Text="Quantity" HorizontalAlignment="Right" />
                 <TextBlock Classes="th" Grid.Column="6" Text="Rate" HorizontalAlignment="Right" />
-                <TextBlock Classes="th" Grid.Column="7" Text="per" Margin="6,0,0,0" />
+                <TextBlock Classes="th" Grid.Column="7" Text="per" Margin="6,0,0,0" Width="38" IsVisible="{Binding ShowPer}" />
                 <TextBlock Classes="th" Grid.Column="8" Text="Disc. %" HorizontalAlignment="Right" />
                 <TextBlock Classes="th" Grid.Column="9" Text="Amount" HorizontalAlignment="Right" />
               </Grid>
@@ -572,13 +590,14 @@
             <ItemsControl Name="LinesList" ItemsSource="{Binding Lines}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:QuotationLineViewModel">
-                  <Border Classes="row" Classes.alt="{Binding IsEven}" Classes.editing="{Binding IsEditing}" Classes.dragging="{Binding IsDragging}" BorderBrush="{DynamicResource RowLineBrush}" BorderThickness="0,0,0,1" Padding="{DynamicResource RowPadding}">
-                    <Grid ColumnDefinitions="50,*,Auto,Auto,0,70,90,44,54,100,110">
+                  <Border Classes="row" Classes.alt="{Binding IsEven}" Classes.editing="{Binding IsEditing}" Classes.highlight="{Binding IsHighlighted}" Classes.dragging="{Binding IsDragging}" BorderBrush="{DynamicResource RowLineBrush}" BorderThickness="0,0,0,1" Padding="{DynamicResource RowPadding}">
+                    <Panel>
+                    <Grid ColumnDefinitions="50,*,Auto,Auto,0,70,90,Auto,54,100,110" IsVisible="{Binding !IsInline}">
                       <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
                         <Border Classes="grip" Width="16" Height="20" Margin="0,0,4,0" PointerPressed="OnGripPressed"
                                 ToolTip.Tip="Drag up or down to move this item">
                           <Path Data="M5,4 A1.6,1.6 0 1 1 4.99,4 Z M11,4 A1.6,1.6 0 1 1 10.99,4 Z M5,10 A1.6,1.6 0 1 1 4.99,10 Z M11,10 A1.6,1.6 0 1 1 10.99,10 Z M5,16 A1.6,1.6 0 1 1 4.99,16 Z M11,16 A1.6,1.6 0 1 1 10.99,16 Z"
-                                Fill="{DynamicResource MutedBrush}" Width="10" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                Width="10" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <TextBlock Classes="td" Text="{Binding LineNo}" />
                       </StackPanel>
@@ -593,8 +612,6 @@
                             </Button>
                           </InlineUIContainer>
                         </TextBlock>
-                        <TextBlock Classes="td" Text="{Binding PartNumber, StringFormat='Part No. {0}'}" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}"
-                                   IsVisible="{Binding HasPartNumber}" />
                         <TextBlock Classes="td" Text="{Binding Description}" FontSize="{DynamicResource FontSmall}" FontStyle="Italic" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
                         <!-- Round 35: delivery time as a chip (green in stock, orange a waiting time) -->
                         <Border Name="DueOnChip" Classes="chip" Classes.ok="{Binding DueOnInStock}" Classes.warn="{Binding !DueOnInStock}"
@@ -603,14 +620,15 @@
                         </Border>
                       </StackPanel>
                       <TextBlock Classes="td" Grid.Column="2" Text="{Binding Hsn}" Width="80"
-                                 IsVisible="{Binding $parent[ItemsControl].((vm:QuotationEditorViewModel)DataContext).ShowHsnGst}" />
+                                 IsVisible="{Binding $parent[ItemsControl].((vm:QuotationEditorViewModel)DataContext).ShowHsn}" />
                       <TextBlock Classes="td" Grid.Column="3" Text="{Binding GstText}" Width="50"
-                                 IsVisible="{Binding $parent[ItemsControl].((vm:QuotationEditorViewModel)DataContext).ShowHsnGst}" />
+                                 IsVisible="{Binding $parent[ItemsControl].((vm:QuotationEditorViewModel)DataContext).ShowGst}" />
                       <TextBlock Classes="td" Grid.Column="5" Text="{Binding QuantityText}" HorizontalAlignment="Right" />
                       <StackPanel Grid.Column="6">
                         <TextBlock Classes="td" Text="{Binding RateText}" HorizontalAlignment="Right" />
                       </StackPanel>
-                      <TextBlock Classes="td" Grid.Column="7" Text="{Binding Unit}" Margin="6,0,0,0" />
+                      <TextBlock Classes="td" Grid.Column="7" Text="{Binding Unit}" Margin="6,0,0,0" Width="38"
+                                 IsVisible="{Binding $parent[ItemsControl].((vm:QuotationEditorViewModel)DataContext).ShowPer}" />
                       <TextBlock Classes="td" Grid.Column="8" Text="{Binding DiscountText}" HorizontalAlignment="Right" />
                       <TextBlock Classes="td" Grid.Column="9" Text="{Binding AmountText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
                       <StackPanel Grid.Column="10" Classes="lineactions" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="2">
@@ -623,13 +641,58 @@
                         </Button>
                       </StackPanel>
                     </Grid>
+                    <!-- Round 39 (IE-1): the line changed in the list itself (My Settings → Editing a line → In the list) -->
+                    <Grid Classes="inlineedit" ColumnDefinitions="50,*,Auto,Auto,0,70,90,Auto,54,100,110" IsVisible="{Binding IsInline}"
+                          KeyboardNavigation.TabNavigation="Local">
+                      <TextBlock Classes="td" Text="{Binding LineNo}" Margin="20,0,0,0" VerticalAlignment="Top" />
+                      <StackPanel Grid.Column="1" Spacing="6" Margin="0,0,10,0">
+                        <Button Name="InlineNameButton" Classes="link" Padding="0" HorizontalAlignment="Left" IsVisible="{Binding !IsChangingItem}"
+                                Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).StartChangeItemCommand}" ToolTip.Tip="Change the item (Shift+Tab from Qty)" Focusable="False">
+                          <TextBlock Text="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).ProductSearchText}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        </Button>
+                        <ctl:SearchPicker Name="InlineProductBox" IsVisible="{Binding IsChangingItem}" Search="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).ProductPopulator}"
+                                          Watermark="Type another item…" SearchDelay="0:0:0.1" MaxDropDownHeight="360" MinDropDownWidth="520"
+                                          NoMatchText="No matching product in Tally">
+                          <ctl:SearchPicker.ItemTemplate>
+                            <DataTemplate x:DataType="c:ProductSearchHitDto">
+                              <Grid ColumnDefinitions="*,60,90" MinWidth="480">
+                                <StackPanel>
+                                  <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" />
+                                  <TextBlock FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}" Text="{Binding Product.PartNumber}" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="{Binding Product.Unit}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{Binding Product.Rate, StringFormat='{}{0:N2}', TargetNullValue='no rate'}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                              </Grid>
+                            </DataTemplate>
+                          </ctl:SearchPicker.ItemTemplate>
+                        </ctl:SearchPicker>
+                        <TextBox Name="InlineDescriptionBox" Text="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EntryDescription}" Watermark="Description (Shift+Enter for next line)"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="36" TabIndex="4" ctl:TitleCase.Enabled="True" />
+                        <TextBox Name="InlineDeliveryBox" Text="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EntryDueOn}" Watermark="Delivery (none)" Width="170" HorizontalAlignment="Left"
+                                 TabIndex="5" IsVisible="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).ShowDeliveryBox}" />
+                      </StackPanel>
+                      <NumericUpDown Grid.Column="5" Name="InlineQtyBox" Value="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EntryQuantity}" Minimum="0" FormatString="0.###" TabIndex="1"
+                                     VerticalAlignment="Top" ShowButtonSpinner="False" HorizontalContentAlignment="Right" />
+                      <NumericUpDown Grid.Column="6" Name="InlineRateBox" Value="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EntryRate}" Minimum="0" FormatString="0.00" TabIndex="2"
+                                     VerticalAlignment="Top" Margin="6,0,0,0" ShowButtonSpinner="False" HorizontalContentAlignment="Right" />
+                      <TextBlock Classes="td" Grid.Column="7" Text="{Binding Unit}" Margin="6,0,0,0" Width="38" VerticalAlignment="Top"
+                                 IsVisible="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).ShowPer}" />
+                      <NumericUpDown Grid.Column="8" Name="InlineDiscountBox" Value="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EntryDiscount}" Minimum="0" Maximum="99.99" FormatString="0.##" TabIndex="3"
+                                     VerticalAlignment="Top" Margin="4,0,0,0" ShowButtonSpinner="False" HorizontalContentAlignment="Right" />
+                      <TextBlock Classes="td" Grid.Column="9" Text="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).EntryAmountText}" HorizontalAlignment="Right" FontWeight="SemiBold" VerticalAlignment="Top" />
+                      <StackPanel Grid.Column="10" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <Button Name="InlineUpdateButton" Classes="primary small" Content="Enter · Update line" Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).SaveLineCommand}" Focusable="False" />
+                        <Button Name="InlineCancelButton" Classes="small" Content="Esc · Cancel" Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).CancelEntryCommand}" Focusable="False" />
+                      </StackPanel>
+                    </Grid>
+                    </Panel>
                   </Border>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
 
             <!-- Line entry (not shown when the quotation cannot be changed) -->
-            <Border Name="LineEntry" IsVisible="{Binding CanEditContent}" Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10" Padding="12,10">
+            <Border Name="LineEntry" IsVisible="{Binding ShowLineEntry}" Background="{DynamicResource SubtleFillBrush}" BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10" Padding="12,10">
               <StackPanel Spacing="4">
                 <Grid ColumnDefinitions="*,8,90,8,110,8,80,0,0,8,Auto">
                   <StackPanel>
@@ -748,6 +811,7 @@
 
         <!-- Footer: terms and totals -->
         <Grid ColumnDefinitions="*,12,360">
+          <StackPanel Spacing="12" VerticalAlignment="Top">
           <Border Classes="card fold" Padding="14,8" VerticalAlignment="Top" IsVisible="{Binding FooterCollapsed}">
             <Grid ColumnDefinitions="Auto,*,Auto">
               <Path Classes="si" Data="M14,2 L6,2 C5,2 4,3 4,4 L4,20 C4,21 5,22 6,22 L18,22 C19,22 20,21 20,20 L20,8 Z M14,2 L14,8 L20,8 M8,13 L16,13 M8,17 L13,17" Margin="0,0,10,0" />
@@ -774,7 +838,7 @@
               </Grid>
               <Grid ColumnDefinitions="*,*">
               <StackPanel Name="FooterFields">
-              <TextBox Text="{Binding Remarks}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" Margin="0,8,0,0"
+              <TextBox Name="RemarksBox" Text="{Binding Remarks}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="44" Margin="0,8,0,0"
                        Watermark="Remarks (printed on quotation)" />
               <TextBlock Classes="fl" Text="Terms &amp; conditions (one per line)" />
               <TextBox Text="{Binding TermsAndConditions}" ctl:TitleCase.Enabled="True" AcceptsReturn="True" TextWrapping="Wrap" Height="80"
@@ -789,13 +853,69 @@
                   <TextBox Text="{Binding VerifiedBy}" ctl:TitleCase.Enabled="True" Watermark="Enter name" />
                 </StackPanel>
               </Grid>
-              <!-- Round 38 (PL-1): leave the "View product" links off this customer's PDF -->
-              <CheckBox Name="ShowProductLinksBox" IsChecked="{Binding ShowProductLinks}" Content="Show product links on the PDF" Margin="0,8,0,0"
-                        IsVisible="{Binding ProductLinksOnPdf}" IsEnabled="{Binding CanEditContent}" />
               </StackPanel>
               </Grid>
             </StackPanel>
           </Border>
+          <!-- Round 39 (Z8): internal notes — only inside the app, never on the PDF, WhatsApp text or e-mail -->
+          <Border Name="NotesCard" Classes="card" Padding="14,10" IsVisible="{Binding NotesOn}">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                <Button Name="NotesHeaderButton" Classes="link" Padding="0" Command="{Binding OpenNotesCommand}" ToolTip.Tip="Notes (Alt+N)">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="📝" VerticalAlignment="Center" />
+                    <TextBlock Classes="h2" Text="Notes" Margin="0" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Button>
+                <Border Grid.Column="1" Classes="chip" Margin="8,0,0,0" VerticalAlignment="Center" IsVisible="{Binding HasNotes}">
+                  <TextBlock Text="{Binding NotesCountText}" FontSize="{DynamicResource FontSmall}" FontWeight="SemiBold" />
+                </Border>
+                <TextBlock Grid.Column="3" Text="🔒 Only inside the app" FontSize="{DynamicResource FontSmall}" Foreground="{DynamicResource MutedBrush}"
+                           VerticalAlignment="Center" />
+              </Grid>
+              <StackPanel Spacing="8" IsVisible="{Binding NotesOpen}">
+                <ScrollViewer MaxHeight="260" IsVisible="{Binding HasNotes}">
+                  <ItemsControl Name="NotesList" ItemsSource="{Binding Notes}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:NoteItemViewModel">
+                        <Border Classes="note" Margin="0,0,0,8" Padding="11,8" CornerRadius="10" Background="#FFF8D9" BorderBrush="#F0E2A0" BorderThickness="1">
+                          <StackPanel Spacing="3">
+                            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !IsEditing}">
+                              <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap" Foreground="#2B2410" />
+                              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" VerticalAlignment="Top">
+                                <Button Classes="link" Padding="4,0" Content="✏️ Edit" IsVisible="{Binding Mine}" FontSize="{DynamicResource FontSmall}"
+                                        Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).StartEditNoteCommand}" CommandParameter="{Binding}" />
+                                <Button Classes="link" Padding="4,0" Content="🗑" IsVisible="{Binding CanDelete}" ToolTip.Tip="Delete this note"
+                                        Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).DeleteNoteCommand}" CommandParameter="{Binding}" />
+                              </StackPanel>
+                            </Grid>
+                            <StackPanel Spacing="6" IsVisible="{Binding IsEditing}">
+                              <TextBox Text="{Binding EditText}" AcceptsReturn="True" TextWrapping="Wrap" />
+                              <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Classes="primary" ctl:ButtonIcon.Kind="check" Content="Save"
+                                        Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).SaveNoteCommand}" CommandParameter="{Binding}" />
+                                <Button ctl:ButtonIcon.Kind="x" Content="Cancel"
+                                        Command="{Binding $parent[UserControl].((vm:QuotationEditorViewModel)DataContext).CancelEditNoteCommand}" CommandParameter="{Binding}" />
+                              </StackPanel>
+                            </StackPanel>
+                            <TextBlock Text="{Binding WhoWhen}" FontSize="{DynamicResource FontSmall}" Foreground="#7A6720" />
+                          </StackPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+                <Grid ColumnDefinitions="*,8,Auto" IsVisible="{Binding CanWriteNotes}">
+                  <TextBox Name="NewNoteBox" Text="{Binding NewNoteText}" Watermark="Write a note…" TextWrapping="Wrap" AcceptsReturn="False"
+                           KeyDown="OnNewNoteKeyDown" />
+                  <Button Grid.Column="2" Name="AddNoteButton" Classes="primary" ctl:ButtonIcon.Kind="plus" Content="Add" Command="{Binding AddNoteCommand}" />
+                </Grid>
+                <TextBlock Text="Save the quotation first, then notes can be added." FontSize="{DynamicResource FontSmall}"
+                           Foreground="{DynamicResource MutedBrush}" IsVisible="{Binding !CanWriteNotes}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+          </StackPanel>
           <!-- Only as tall as its rows, so the blue Total band is always the bottom edge -->
           <Border Grid.Column="2" Classes="card" Padding="14,14,14,0" VerticalAlignment="Top">
             <StackPanel Spacing="8">
@@ -941,7 +1061,7 @@
           <Button Grid.Column="1" Name="PasteCloseButton" Content="✕" Classes="link" Padding="8,2" FontSize="16" Command="{Binding ClosePasteListCommand}"
                   ToolTip.Tip="Close without adding (Esc)" />
         </Grid>
-        <StackPanel DockPanel.Dock="Top" Classes="help" Orientation="Horizontal" Spacing="6" Margin="0,2,0,12"><TextBlock Text="Copied from WhatsApp, e-mail or Excel." TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center" /><Border Classes="info" ToolTip.Tip="Copied from WhatsApp, e-mail or Excel. Check each line, then add them all at once. Rates come from Tally, or from the Excel rows when they have a rate column (green): for this quotation only, Tally is not changed."><Path Classes="infoicon" /></Border></StackPanel>
+        <Border DockPanel.Dock="Top" Height="12" />
         <!-- Rows from Excel: how each column was read (A Part No, B Name, C Qty, D Rate …); change one to read the rows again -->
         <StackPanel DockPanel.Dock="Top" Name="PasteColumnsBar" Orientation="Horizontal" Spacing="8" Margin="0,-4,0,10" IsVisible="{Binding PasteIsTable}">
           <TextBlock Text="Columns read as" VerticalAlignment="Center" FontSize="12.5" />

@@ -29,7 +29,7 @@ public class TallyPageTests
         await vm.IncrementalSyncCommand.ExecuteAsync(null);
         Assert.Null(vm.ErrorMessage);
         Assert.NotEmpty(vm.Runs);
-        Assert.Equal("Succeeded", vm.Runs[0].Status);
+        Assert.Equal("Done", vm.Runs[0].Status);
         Assert.Equal("Full", vm.Runs[0].Kind); // first sync is always full
         Assert.True(vm.Status!.ProductCount > 0);
 

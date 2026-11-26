@@ -32,7 +32,39 @@ public sealed partial class DiagnosticsViewModel : ViewModelBase
     public string DatabaseSize => Info is null ? "" : $"{Info.DatabaseBytes / 1024.0 / 1024.0:0.0} MB";
     public string ClientInfo => $"{Environment.MachineName} · {System.Runtime.InteropServices.RuntimeInformation.OSDescription} · client {typeof(App).Assembly.GetName().Version}";
 
-    partial void OnInfoChanged(DiagnosticsDto? value) => OnPropertyChanged(nameof(DatabaseSize));
+    partial void OnInfoChanged(DiagnosticsDto? value)
+    {
+        foreach (var n in new[] { nameof(DatabaseSize), nameof(ServerText), nameof(DatabaseText), nameof(TallyOk), nameof(GmailOk), nameof(AiOk),
+                     nameof(TallyText), nameof(GmailText), nameof(AiText), nameof(TodaysLog), nameof(OnServerPc) })
+            OnPropertyChanged(n);
+    }
+
+    // Round 39 (RD-2): plain words and coloured chips instead of "True / False".
+    public string ServerText => Info is null ? "" : $"{Info.ServerVersion} · {Info.OperatingSystem}";
+    public string DatabaseText => Info is null ? "" : $"{DatabaseSize} · {Info.Products:N0} items · {Info.Customers:N0} customers";
+    public bool TallyOk => Info?.Status.TallyConnected == true;
+    public bool GmailOk => Info?.Status.GmailConnected == true;
+    public bool AiOk => Info?.Status.AiConfigured == true;
+    public string TallyText => TallyOk ? "Connected" : "Not connected";
+    public string GmailText => GmailOk ? "Connected" : "Not connected";
+    public string AiText => AiOk ? "Set up" : "Not set up";
+    public string TodaysLog => Info?.LogFiles.OrderByDescending(f => f).FirstOrDefault() ?? "";
+    /// <summary>The folder and log can be opened only on the server PC itself (Round 39, RD-2).</summary>
+    public bool OnServerPc => Info is not null && Directory.Exists(Info.DataDirectory);
+
+    [RelayCommand]
+    private void OpenDataFolder()
+    {
+        if (OnServerPc) _session.Documents.Open(Info!.DataDirectory);
+    }
+
+    [RelayCommand]
+    private void OpenTodaysLog()
+    {
+        if (!OnServerPc || TodaysLog.Length == 0) return;
+        var path = Path.Combine(Info!.DataDirectory, "logs", TodaysLog);
+        _session.Documents.Open(File.Exists(path) ? path : Path.Combine(Info.DataDirectory, "logs"));
+    }
 
     [RelayCommand]
     public Task LoadAsync() => RunAsync(async () =>

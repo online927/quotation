@@ -155,6 +155,10 @@ public class QuotationHeader
     public bool WithoutGst { get; set; }
     /// <summary>Round 38 (PL-1): print the "View product" links on this quotation's PDF.</summary>
     public bool ShowProductLinks { get; set; } = true;
+    /// <summary>Round 39 (GR-2): print the "View product" links on the PDF being made now (the maker's own choice; not saved).</summary>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped] public bool PrintLinks { get; set; } = true;
+    /// <summary>Round 39 (GR-2): add the items' catalogues to the PDF being made now (the maker's own choice; not saved).</summary>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped] public bool PrintCatalogues { get; set; } = true;
     /// <summary>Round 38 (Q10): the PC's key for this new quotation (a create sent again never makes a second copy).</summary>
     public Guid? ClientKey { get; set; }
     /// <summary>
@@ -330,6 +334,10 @@ public class AppUser
     public bool UsdNext { get; set; }
     /// <summary>Round 36: 1 USD = this many rupees, for the USD quotation (My Settings).</summary>
     public decimal UsdRate { get; set; }
+    /// <summary>Round 39 (GR-2): this user's PDFs carry the "View product" links (gear before the date; on by default).</summary>
+    public bool ProductLinksOnPdf { get; set; } = true;
+    /// <summary>Round 39 (GR-2): the items' catalogues / datasheets are added to this user's PDFs (on by default).</summary>
+    public bool AttachCatalogues { get; set; } = true;
     public DateTime CreatedUtc { get; set; }
     public DateTime? LastLoginUtc { get; set; }
 }
@@ -423,4 +431,18 @@ public class ProductDatasheet
     public bool AddToPdf { get; set; } = true;
     public string UploadedBy { get; set; } = "";
     public DateTime UploadedUtc { get; set; }
+}
+
+/// <summary>
+/// Round 39 (Z8): an internal note on a quotation — only inside the app, never on the PDF, WhatsApp text or e-mail.
+/// </summary>
+public class QuotationNote
+{
+    public int Id { get; set; }
+    public Guid QuotationId { get; set; }
+    public string UserName { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string Text { get; set; } = "";
+    public DateTime CreatedUtc { get; set; }
+    public DateTime? EditedUtc { get; set; }
 }

@@ -51,7 +51,7 @@ public partial class ShellView : UserControl
         KeyBindings.Add(new KeyBinding
         {
             Gesture = KeyGesture.Parse("Ctrl+F"),
-            Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() => GlobalSearchBox.Focus()),
+            Command = new CommunityToolkit.Mvvm.Input.RelayCommand(FocusSearch),
         });
         KeyBindings.Add(new KeyBinding
         {
@@ -385,5 +385,18 @@ public partial class ShellView : UserControl
                 e.Handled = true;
                 break;
         }
+    }
+
+    /// <summary>Ctrl+F: the top-bar search, or (Round 39, RD-9) the page's own search box where the top one is hidden.</summary>
+    private void FocusSearch()
+    {
+        if (GlobalSearchBox.IsVisible)
+        {
+            GlobalSearchBox.Focus();
+            return;
+        }
+        var own = this.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(t => t.Name == "SearchBox" && t.IsEffectivelyVisible);
+        own?.Focus();
+        own?.SelectAll();
     }
 }

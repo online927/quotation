@@ -759,8 +759,15 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable, INaviga
         UpdateHistoryState();
     }
 
+    /// <summary>
+    /// Round 39 (RD-9): the top-bar search hides on pages that have their own search box (History, Drafts, Today,
+    /// Customers, Products; the Deleted page has no search of its own, so it keeps the top one).
+    /// </summary>
+    public bool ShowGlobalSearch => CurrentPage is not (QuotationListViewModel or CustomersViewModel or ProductsViewModel);
+
     partial void OnCurrentPageChanged(ViewModelBase? oldValue, ViewModelBase? newValue)
     {
+        OnPropertyChanged(nameof(ShowGlobalSearch));
         if (oldValue is not null) oldValue.PropertyChanged -= OnPagePropertyChanged;
         if (newValue is not null) newValue.PropertyChanged += OnPagePropertyChanged;
         // A quotation counts as open (for "… also has this open") only while it is on the screen, not while it waits for Back

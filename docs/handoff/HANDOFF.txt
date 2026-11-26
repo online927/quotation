@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 38 shipped on "Do, for mac and Android too" as version 0.9.93 (run 93, commit 94cd05d; all 716 tests passed; Windows, Mac and Android built). On the list: GR-1, GR-2, KL-1, SB-1, AD-1, IE-1, GU-1, GT-1, SX-1, DX-1, K4, K5, K2, Z8, PN-1, DG-1, RD-1, RD-2, RD-4..RD-9, TB-1. NEW RULE: requests are only ADDED TO THE LIST until "Do" (section 2).
+Last updated: Round 39 shipped on "Do for windows only" as version 0.9.96 (run 96, commit 6ac2ef7; all 733 tests passed; Windows built, Mac and Android not built this time). On the list: Z8 phone part only (notes in the Android app). NEW RULE: requests are only ADDED TO THE LIST until "Do" (section 2).
 
 
 1. THE PROJECT

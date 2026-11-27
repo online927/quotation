@@ -186,7 +186,10 @@ public sealed class ModernPdfRenderer
 
         var bottom = FootBottom;
         _pairs = [];
-        var pairRows = Math.Max(ids.Count, bank.Count);
+        // Round 43 (SG-1): "for COMPANY … Authorised Signatory" at the bottom right, like the Tally layout; it takes
+        // SignatoryRows lines, so the foot is at least that tall.
+        var signatoryW = SignatoryWidth(g, doc);
+        var pairRows = Math.Max(Math.Max(ids.Count, bank.Count), SignatoryRows);
         if (pairRows > 0)
         {
             var labelFont = F(PairSize);
@@ -205,7 +208,7 @@ public sealed class ModernPdfRenderer
                 // In the middle: between the company's numbers and the right margin; slightly smaller text when long bank
                 // details would otherwise not fit.
                 var from = idsRight + 16;
-                var to = AmountRight;
+                var to = AmountRight - signatoryW - 24;
                 double size = PairSize, labelW, blockW;
                 while (true)
                 {
@@ -221,10 +224,6 @@ public sealed class ModernPdfRenderer
                 for (var i = 0; i < bank.Count; i++) _pairs.Add((x, top + PairStep * i + (PairSize - size) * 0.85, bank[i].Label, bank[i].Value, labelW, size));
             }
             bottom = bottom - PairStep * (pairRows - 1) - 18;
-        }
-        else
-        {
-            bottom -= 21;
         }
 
         var placed = new List<(double T, TextLine Line)>();
@@ -252,11 +251,34 @@ public sealed class ModernPdfRenderer
             for (var i = 0; i < remarks.Count; i++) placed.Add((top + 10.5 * i, new TextLine(remarks[i], 8, true)));
         }
         _bottomPositions = placed;
-        var blockTop = Math.Min(placed.Count == 0 ? FootBottom : placed.Min(p => p.T), _pairs.Count == 0 ? FootBottom : _pairs.Min(p => p.T));
+        var blockTop = Math.Min(placed.Count == 0 ? FootBottom : placed.Min(p => p.T), _pairs.Count == 0 ? SignatoryTop : Math.Min(SignatoryTop, _pairs.Min(p => p.T)));
         return (placed.Select(p => p.Line).ToList(), blockTop);
     }
 
     private const double PairSize = 7.5, PairStep = 10.5, PairGap = 12;
+
+    /// <summary>Round 43 (SG-1): the signatory block's lines (company line … "Authorised Signatory"), room for the seal between.</summary>
+    private const int SignatoryRows = 4;
+    private const double SignatorySize = 8, SignatoryMaxWidth = 190;
+    private const double SignatoryTop = FootBottom - PairStep * (SignatoryRows - 1);
+
+    private static string SignatoryCompany(QuotationDocument doc) =>
+        string.IsNullOrWhiteSpace(doc.Company.CompanyName) ? "" : "for " + doc.Company.CompanyName.Trim();
+
+    private static string SignatoryLabel(QuotationDocument doc) =>
+        string.IsNullOrWhiteSpace(doc.Company.AuthorisedSignatoryLabel) ? "Authorised Signatory" : doc.Company.AuthorisedSignatoryLabel.Trim();
+
+    private double SignatoryWidth(XGraphics g, QuotationDocument doc) => Math.Min(SignatoryMaxWidth, Math.Max(
+        g.MeasureString(SignatoryCompany(doc), F(SignatorySize, true)).Width,
+        g.MeasureString(SignatoryLabel(doc), F(SignatorySize)).Width));
+
+    /// <summary>Round 43 (SG-1): "for T.SAIFUDDIN &amp; CO." (bold) level with the first bank line, "Authorised Signatory" on the last.</summary>
+    private void DrawSignatory(XGraphics g, QuotationDocument doc)
+    {
+        var company = SignatoryCompany(doc);
+        if (company.Length > 0) TextFit(g, AmountRight, SignatoryTop, company, SignatorySize, SignatoryMaxWidth, true);
+        Text(g, AmountRight, FootBottom, SignatoryLabel(doc), SignatorySize, color: Black, align: Right);
+    }
 
     private List<(double X, double T, string Label, string Value, double LabelWidth, double Size)> _pairs = [];
 
@@ -477,6 +499,7 @@ public sealed class ModernPdfRenderer
             DrawTotals(g, layout.Totals, rowTop);
             foreach (var (t, line) in _bottomPositions) Text(g, LeftX, t, line.Text, line.Size, line.Bold);
             DrawPairs(g);
+            DrawSignatory(g, doc);
             if (doc.Seal is not null) DrawSeal(g, doc);
         }
         else

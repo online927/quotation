@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 42 shipped on "Do only for windows" as version 0.9.104 (run 104 = workflow_dispatch; commit 2b7a921; all 750 tests passed; Windows built, Mac and Android not built). Built: SR-1 (search by amount + more fields), DB-1 (new dashboard). Not on the list: SG-1 Zoho signatory (previewed, waits for "Add"). After dispatching, pick the run whose event is workflow_dispatch. Requests are only ADDED TO THE LIST until "Do" (section 2).
+Last updated: Round 42 shipped on "Do only for windows" as version 0.9.104 (run 104 = workflow_dispatch; commit 2b7a921; all 750 tests passed; Windows built, Mac and Android not built). Built: SR-1 (search by amount + more fields), DB-1 (new dashboard). On the list: SG-1 Zoho signatory (added, waits for "Do"). After dispatching, pick the run whose event is workflow_dispatch. Requests are only ADDED TO THE LIST until "Do" (section 2).
 
 
 1. THE PROJECT
@@ -198,9 +198,10 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 8. ON THE LIST — NOT BUILT YET
 ------------------------------
  NOTHING LEFT TO BUILD after Round 41 (Z8 phone part, RD-5b, SL-2, PD-2 built on "Do, for Android and mac too").
- SR-1 and DB-1 below were BUILT in Round 42 ("Do only for windows"). SG-1 (Zoho signatory) is previewed, NOT added.
+ SR-1 and DB-1 below were BUILT in Round 42 ("Do only for windows").
+ SG-1 was BUILT in Round 43 ("Do only for windows"). NOTHING LEFT TO BUILD.
  SG-1 (user after Round 41: "Zoho pdf needs authorised signatory thing like tally format also, move bank details to
-   centre, preview"; picture previews/idea-SG1-zoho-signatory.png, previewed — waits for "Add"): Zoho PDF last page,
+   centre, preview"; picture previews/idea-SG1-zoho-signatory.png; ADDED — build as previewed): Zoho PDF last page,
    bottom right: "for {CompanyName}" (bold 8) level with the first bank line and "Authorised Signatory" (8) on the last
    line, right-aligned to the amount column; the bank details move left into the middle between the company numbers
    and the signatory (ModernPdfRenderer.BottomBlock "to" = AmountRight − signatory width − 24). The Zoho seal stays at
@@ -504,6 +505,12 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
         8 px above and below (TextBlock / TextBox / NumericUpDown / ComboBox / switch / StackPanel rows) and a faint
         line between rows (RowLineBrush), on all Settings tabs. PC/Mac only.
 
+ ROUND 43 (built on "Do only for windows") delivered (code pointers):
+   SG-1 ModernPdfRenderer: SignatoryRows = 4 (the foot is always at least 4 lines tall), SignatoryTop = FootBottom −
+     3 × PairStep; SignatoryWidth (max 190) → BottomBlock bank "to" = AmountRight − signatory width − 24; DrawSignatory
+     ("for " + CompanyName bold 8 via TextFit, AuthorisedSignatoryLabel 8, both right-aligned at AmountRight) called after
+     DrawPairs on the last page, before the seal. Test: tests/Quotation.Pdf.Tests/Round43PdfTests.cs.
+
  ROUND 42 (built on "Do only for windows") delivered (code pointers):
    SR-1 QuotationEndpoints list search: SearchTerms (qty / x + number → quantity), AmountOf (₹ / Rs / commas / "/-"),
      AmountMatchesAsync (raw SQL CAST(... AS REAL) on Quotations GrandTotal / Subtotal / PackingForwarding and
@@ -518,7 +525,6 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
      edge, quick links, health warnings, panels). GlanceTitle TextBlock kept (date line, festive class). Picture of the
      built page: previews/DB1-dashboard-built.png.
    Tests: tests/Quotation.Server.Tests/Round42Tests.cs, tests/Quotation.Desktop.Tests/Round42UiTests.cs.
-
  ROUND 41 (built on "Do, for Android and mac too") delivered (code pointers):
    RD-5b SettingsView sidetabs: TextBlock.tabname (TextBrush; chosen = AccentBrush), chosen TabItem CardBrush + shadow on
      PART_LayoutRoot; Controls/SettingsTabIcon.cs SettingsTabColor (fixed colour per section).

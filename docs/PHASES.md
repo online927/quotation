@@ -1123,3 +1123,9 @@ Server update needed (2 is done by the server). PC, Mac and phone apps updated (
    map of the last 4 months with streak and busiest day / hours. Approved quotations only.
 
 Server update needed (both are done by the server). PC app update.
+
+### Round 43 (Windows only)
+
+1. Zoho PDF (SG-1): "for T.SAIFUDDIN & CO." (bold) and "Authorised Signatory" at the bottom right of the last page, like
+   the Tally layout (the label follows Settings → Company "Authorised signatory"); the bank details move into the middle
+   between the company's PAN / MSME / IEC and the signatory; the Zoho seal stays over the signatory.

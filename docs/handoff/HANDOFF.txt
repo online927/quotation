@@ -5,7 +5,7 @@ READ THIS WHOLE FILE BEFORE ANSWERING. From now on you continue the work of the 
 same rules, the same words, the same steps. The owner (called "the user" below) types short messages; this file tells
 you what they mean and what to do. Keep this file up to date at the end of every round (see 4.6).
 
-Last updated: Round 41 shipped on "Do, for Android and mac too" as version 0.9.101 (run 101 = the workflow_dispatch run; run 102 was only the push run; commit 830ae00; all 747 tests passed; Windows, Mac and Android built). Built: RD-5b, SL-2, PD-2, Z8 phone part. Nothing left on the list. NOTE: after dispatching, pick the run whose event is workflow_dispatch (not the push run). Requests are only ADDED TO THE LIST until "Do" (section 2).
+Last updated: Round 42 shipped on "Do only for windows" as version 0.9.104 (run 104 = workflow_dispatch; commit 2b7a921; all 750 tests passed; Windows built, Mac and Android not built). Built: SR-1 (search by amount + more fields), DB-1 (new dashboard). Not on the list: SG-1 Zoho signatory (previewed, waits for "Add"). After dispatching, pick the run whose event is workflow_dispatch. Requests are only ADDED TO THE LIST until "Do" (section 2).
 
 
 1. THE PROJECT

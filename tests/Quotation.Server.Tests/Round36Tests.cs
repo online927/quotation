@@ -244,7 +244,7 @@ public class Round36Tests : QuotationTestBase
     {
         var request = await BevelRequest();
         request.Lines[0].Description = "With carbide blade 150_mm";
-        request.Remarks = "Urgent for Chakan plant";
+        request.Remarks = "Urgent for Talegaon plant";
         var q = await Api.CreateQuotationAsync(request);
         var line = q.Lines[0];
         Assert.False(string.IsNullOrEmpty(line.PartNumber));                 // e.g. 187-901-10
@@ -262,8 +262,8 @@ public class Round36Tests : QuotationTestBase
         Assert.Contains(q.Id, await Find("carbide"));                                  // description
         Assert.Contains(q.Id, await Find("150_mm"));                                   // "_" is found (was never before)
         Assert.DoesNotContain(other.Id, await Find("150_mm"));
-        Assert.Contains(q.Id, await Find("chakan plant"));                             // remarks
-        Assert.DoesNotContain(other.Id, await Find("chakan"));
+        Assert.Contains(q.Id, await Find("talegaon plant"));                           // remarks
+        Assert.DoesNotContain(other.Id, await Find("talegaon")); // (Round 42: "chakan" is now found in the buyer address too)
         Assert.Contains(q.Id, await Find("mitu-bevel"));                               // the item's other name in Tally
         Assert.Contains(other.Id, await Find("mitu-bevel"));
         Assert.Empty(await Find("zzqq_%"));

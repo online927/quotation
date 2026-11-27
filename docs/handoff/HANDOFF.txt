@@ -198,6 +198,50 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
 8. ON THE LIST — NOT BUILT YET
 ------------------------------
  NOTHING LEFT TO BUILD after Round 41 (Z8 phone part, RD-5b, SL-2, PD-2 built on "Do, for Android and mac too").
+ SR-1 and DB-1 below were BUILT in Round 42 ("Do only for windows"). SG-1 (Zoho signatory) is previewed, NOT added.
+ SG-1 (user after Round 41: "Zoho pdf needs authorised signatory thing like tally format also, move bank details to
+   centre, preview"; picture previews/idea-SG1-zoho-signatory.png, previewed — waits for "Add"): Zoho PDF last page,
+   bottom right: "for {CompanyName}" (bold 8) level with the first bank line and "Authorised Signatory" (8) on the last
+   line, right-aligned to the amount column; the bank details move left into the middle between the company numbers
+   and the signatory (ModernPdfRenderer.BottomBlock "to" = AmountRight − signatory width − 24). The Zoho seal stays at
+   its place (over the signatory, like a stamp on the Tally print). Server update when built.
+ SR-1 (user: "Quotations history should search with total amount also, whatever possible value for search, it should
+   search, like tally"): the search box of History / Today / Drafts / Proformas / the top search (server: QuotationEndpoints
+   list search) also finds:
+   - AMOUNTS: a number typed with or without commas / ₹ / decimals ("75291", "75,291", "75291.00", "₹ 75,291") matches the
+     grand total, the total before tax (subtotal), P&F, a line's amount and a line's rate (exact value, ignoring paise
+     when none typed: "75291" = 75,291.00 … 75,291.99); a quantity typed as "x 5" / "qty 5" matches a line quantity.
+   - Text (user narrowed it: "buyer address, e-mail and, consignee address, GSTIN, contact and phone; dispatch,
+     destination add"): ONLY these new text fields: buyer address and e-mail; consignee address, GSTIN, contact person
+     and phone; dispatched through; destination. (State, terms, prepared by, user, line delivery / unit, status words
+     and currency are NOT added.)
+   Already searched (kept): number, buyer name / GSTIN / contact / phone, consignee name, buyer's ref, other refs,
+   remarks, item name / description / part no / HSN / aliases, notes (when on), a date.
+   Several words = all must match (as now). Server update needed; no app change except none (the PC/Mac/phone boxes
+   already send the text).
+ DB (user: "Redesign dashboard preview"; RD-3 was refused earlier): previews/idea-DB-now.png, idea-DB-A-work-first.png,
+   idea-DB-B-pick-up.png — C chosen (see below), A and B dropped.
+   A "Work first": greeting "Good morning, Ravi" + today's count and value; Formater / Paste a list / big New quotation
+     buttons; one backup card with "Set up backup" (admins); 4 tiles Today (₹), Drafts (oldest), Waiting for approval,
+     This month (count, ₹); Recent quotations table (number, customer, status chip, amount, time); This week bar chart
+     (quotations per day) + top 3 customers this month; one status strip at the bottom (Tally synced, FY, Gmail, Claude AI,
+     products / customers).
+   B "Pick up where you left": 4 tiles with a coloured edge and "Open list → / Continue → / Review →"; "Continue your
+     drafts" cards (customer, items, value, changed, Open); "To follow up" (approved, not won / lost, days since sent,
+     newest note); connections as 4 small cards (Tally, Backup + Set up, Gmail, Claude AI).
+   Both need new numbers from the server (values, this month, week, top customers / follow-ups) → server update.
+   C "Crazy" (user: "Include who got most quoted by value, and number of times etc, redesign, go crazy"):
+     previews/idea-DB-C-crazy.png. Dark blue hero band: date, "Good morning, Ravi 👋", "You've quoted ₹ 28.4 lakh this
+     month — ▲ 18% on October. Best day: Thursday."; period switch Today / Week / Month / FY; New quotation (white),
+     Formater, Paste a list; Tally / Backup dots. 4 tiles over the band's edge with sparklines: Quoted this month (₹,
+     ▲/▼ vs last month), Quotations (count), Average value, 🏆 Biggest quotation (gold card, number + customer).
+     👑 Top customers (gold / silver / bronze rank, value bar, "N quotations · avg ₹"), Value | Times quoted switch.
+     📦 Most quoted items (N×, value). 🏅 Team this month (each user: quotations, ₹, medals) — admins; a user sees
+     their own place. 🎯 Won / Lost donut (when Won/Lost is on). 🔥 Activity heat map (quotations per day, last 4
+     months), streak, busiest day / hour. Approved quotations count (drafts / cancelled left out). Server: one new
+     /api/dashboard/stats?period= endpoint; PC/Mac page rebuilt; phone keeps its own Home.
+   >>> ADDED (user: "Add c but no good morning, just Dashboard only"): build idea C as DB-1, but the hero heading is just
+     "Dashboard" (no greeting, no 👋); the date line above it and the one-line summary under it stay. Ideas A and B dropped.
  RD-5b (user after Round 40: "Rd 5, no change"): the Round 39 RD-5 build only added line icons; the words stayed the
    old faded grey and the chosen one a pale blue pill, so it looked unchanged. Fix (SettingsView.axaml sidetabs styles):
    section names in the normal text colour (TextBrush) via a class on the header TextBlock (NOT "TabItem TextBlock" —
@@ -459,6 +503,21 @@ phone signing key (no uninstall); Tailscale firewall rule; "See-through" selecte
      b) Settings form rows too tight (Grid.form children Margin 0,3 / 0,4 → boxes touch the row below): every row gets
         8 px above and below (TextBlock / TextBox / NumericUpDown / ComboBox / switch / StackPanel rows) and a faint
         line between rows (RowLineBrush), on all Settings tabs. PC/Mac only.
+
+ ROUND 42 (built on "Do only for windows") delivered (code pointers):
+   SR-1 QuotationEndpoints list search: SearchTerms (qty / x + number → quantity), AmountOf (₹ / Rs / commas / "/-"),
+     AmountMatchesAsync (raw SQL CAST(... AS REAL) on Quotations GrandTotal / Subtotal / PackingForwarding and
+     QuotationLines Amount / Rate / Quantity; whole rupee range when no paise); extra LIKE fields Buyer.Address / Email,
+     Consignee.Address / Gstin / ContactPerson / Phone, DispatchedThrough, Destination.
+   DB-1 Services/DashboardStatsService.cs (+ Program.cs AddScoped) → GET /api/dashboard/stats?period=today|week|month|fy
+     (DashboardStatsDto in Contracts/SystemDtos.cs; ApiClient.DashboardStatsAsync). Approved quotations only (DocType
+     Quotation); USD in rupees by the exchange rate; previous period of the same length; 12-slice trends; top 5 customers
+     by value and by count; top 5 items (times = quotations); team (non-admins: only Me); outcomes when TrackOutcomes;
+     activity = 17 weeks; streak skips Sundays. Desktop: DashboardViewModel (Period, Stats, CustomersByCount, LeaderRow /
+     TeamRow / HeatCell, sparks and ring arcs as Geometry), DashboardView.axaml rewritten (hero band, kpi tiles over its
+     edge, quick links, health warnings, panels). GlanceTitle TextBlock kept (date line, festive class). Picture of the
+     built page: previews/DB1-dashboard-built.png.
+   Tests: tests/Quotation.Server.Tests/Round42Tests.cs, tests/Quotation.Desktop.Tests/Round42UiTests.cs.
 
  ROUND 41 (built on "Do, for Android and mac too") delivered (code pointers):
    RD-5b SettingsView sidetabs: TextBlock.tabname (TextBrush; chosen = AccentBrush), chosen TabItem CardBrush + shadow on

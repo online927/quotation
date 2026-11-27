@@ -199,3 +199,37 @@ public sealed record ActivityDto(DateTime AtLocal, string User, string Chip, str
 
 /// <summary>Round 36: the evening summary of a day (text ready for WhatsApp or e-mail) and when it was last e-mailed.</summary>
 public sealed record EveningSummaryDto(DateOnly Day, string Title, string Text, string? LastSent = null, string? Error = null);
+
+/// <summary>Round 41 (DB-1): the dashboard's numbers for one period (today / week / month / fy). Amounts in rupees; approved
+/// quotations only (not drafts, cancelled or proforma invoices).</summary>
+public sealed record DashboardStatsDto(
+    string Period,
+    DateOnly From,
+    DateOnly To,
+    decimal QuotedValue,
+    decimal PreviousValue,
+    int Count,
+    int PreviousCount,
+    decimal AverageValue,
+    decimal PreviousAverage,
+    IReadOnlyList<decimal> ValueTrend,
+    IReadOnlyList<int> CountTrend,
+    IReadOnlyList<decimal> AverageTrend,
+    DashboardBiggestDto? Biggest,
+    IReadOnlyList<DashboardCustomerDto> CustomersByValue,
+    IReadOnlyList<DashboardCustomerDto> CustomersByCount,
+    IReadOnlyList<DashboardItemDto> Items,
+    IReadOnlyList<DashboardTeamDto> Team,
+    DashboardOutcomesDto? Outcomes,
+    IReadOnlyList<DashboardDayDto> Activity,
+    int Streak,
+    string BusiestDay,
+    string BusiestHours,
+    string BestDay);
+
+public sealed record DashboardBiggestDto(Guid Id, string Number, string Customer, decimal Value);
+public sealed record DashboardCustomerDto(string Name, int? CustomerId, decimal Value, int Count);
+public sealed record DashboardItemDto(string Name, int Times, decimal Value);
+public sealed record DashboardTeamDto(int Rank, string UserName, string DisplayName, int Count, decimal Value, bool Me);
+public sealed record DashboardOutcomesDto(int Won, int Lost, int Open, decimal WonValue, int FollowUpsDue);
+public sealed record DashboardDayDto(DateOnly Date, int Count);

@@ -1108,3 +1108,18 @@ Android build.
 5. Mac and phone apps also get everything of Rounds 39–40.
 
 Server update needed (2 is done by the server). PC, Mac and phone apps updated (phone: uninstall the old app first).
+
+### Round 42 (Windows only)
+
+1. Quotation search (History, Today, Drafts, Proformas, top search) also finds: amounts — "75291", "75,291", "75291.00",
+   "₹75,291" match the grand total, the total before tax, P&F, a line's amount or rate (without paise the whole rupee);
+   "qty 5" / "x5" a line's quantity; and buyer address and e-mail, consignee address / GSTIN / contact / phone, dispatched
+   through and destination (SR-1).
+2. New dashboard (DB-1): a dark band with the date, "Dashboard", a one-line summary, Today / Week / Month / FY, New
+   quotation, Formater, Refresh and Tally / Gmail / Claude AI dots; four tiles with small trend lines (value quoted vs the
+   period before, number of quotations, average value, 🏆 biggest quotation); quick links (today, drafts, waiting, AI
+   inbox, to follow up); 👑 top customers by value or by times quoted (gold / silver / bronze, bar, "N quotations · avg");
+   📦 most quoted items; 🏅 team (admins see everyone, a user their own place); 🎯 Won / Lost ring (when on); 🔥 activity
+   map of the last 4 months with streak and busiest day / hours. Approved quotations only.
+
+Server update needed (both are done by the server). PC app update.

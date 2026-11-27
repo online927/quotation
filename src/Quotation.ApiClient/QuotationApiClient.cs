@@ -141,6 +141,9 @@ public partial class QuotationApiClient
     }
 
     public Task<DashboardDto> DashboardAsync(CancellationToken ct = default) => GetAsync<DashboardDto>("api/dashboard", ct);
+    /// <summary>Round 41 (DB-1): the dashboard's numbers for "today", "week", "month" or "fy".</summary>
+    public Task<DashboardStatsDto> DashboardStatsAsync(string period = "month", CancellationToken ct = default) =>
+        GetAsync<DashboardStatsDto>($"api/dashboard/stats?period={Uri.EscapeDataString(period)}", ct);
     public Task<SystemStatusDto> StatusAsync(CancellationToken ct = default) => GetAsync<SystemStatusDto>("api/status", ct);
     /// <summary>Administrators: requests that took longer than a second (Diagnostics → Slow requests).</summary>
     public Task<List<SlowRequestDto>> SlowRequestsAsync(CancellationToken ct = default) => GetAsync<List<SlowRequestDto>>("api/diagnostics/slow", ct);

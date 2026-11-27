@@ -45,6 +45,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<MonthPdfZip>();
 builder.Services.AddScoped<ActivityService>();
+builder.Services.AddScoped<DashboardStatsService>(); // Round 41 (DB-1)
 builder.Services.AddSingleton<DatasheetService>();
 builder.Services.AddScoped<StatusService>();
 builder.Services.AddHttpClient(TallyGateway.HttpClientName);

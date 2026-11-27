@@ -343,6 +343,9 @@ public static class SystemEndpoints
 
         app.MapGet("/api/status", (StatusService s, CancellationToken ct) => s.GetAsync(ct)).RequireAuthorization();
         app.MapGet("/api/dashboard", (StatusService s, CancellationToken ct) => s.GetDashboardAsync(ct)).RequireAuthorization();
+        // Round 41 (DB-1): value quoted, top customers / items, team, Won / Lost and activity for today / week / month / fy.
+        app.MapGet("/api/dashboard/stats", (string? period, DashboardStatsService s, HttpContext ctx, CancellationToken ct) =>
+            s.GetAsync(period, ctx.User.UserName(), ctx.User.IsInRole("Admin"), ct)).RequireAuthorization();
 
         app.MapGet("/api/audit", async (QuotationDbContext db, string? entityType, string? entityId, int? take,
             CancellationToken ct) =>

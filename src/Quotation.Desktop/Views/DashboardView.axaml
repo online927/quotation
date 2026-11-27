@@ -5,37 +5,191 @@
              xmlns:c="using:Quotation.Contracts"
              x:Class="Quotation.Desktop.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
+  <!-- Round 41 (DB-1): the dashboard redesigned (picture docs/handoff/previews/idea-DB-C-crazy.png, heading "Dashboard") -->
   <UserControl.Styles>
     <Style Selector="Border.healthwarn">
       <Setter Property="Background" Value="{DynamicResource WarnSoftBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource WarnBorderBrush}" />
     </Style>
-    <Style Selector="TextBlock.big">
-      <Setter Property="FontSize" Value="40" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Margin" Value="0,6,0,0" />
+    <Style Selector="Border.hero">
+      <Setter Property="CornerRadius" Value="20" />
+      <Setter Property="Padding" Value="26,22,26,62" />
+      <Setter Property="Background">
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+          <GradientStop Offset="0" Color="#0E1E4A" />
+          <GradientStop Offset="0.6" Color="#1C3E91" />
+          <GradientStop Offset="1" Color="#2F6FE4" />
+        </LinearGradientBrush>
+      </Setter>
     </Style>
+    <Style Selector="Border.hero TextBlock"><Setter Property="Foreground" Value="White" /></Style>
+    <Style Selector="Border.hero TextBlock.soft"><Setter Property="Foreground" Value="#C8D8FF" /></Style>
+    <Style Selector="Border.hero Button.herobtn">
+      <Setter Property="Background" Value="#26FFFFFF" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Padding" Value="14,9" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.hero Button.herobtn TextBlock"><Setter Property="Foreground" Value="White" /></Style>
+    <Style Selector="Border.hero Button.herobtn:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#3DFFFFFF" /></Style>
+    <Style Selector="Border.hero Button.herobtn.white"><Setter Property="Background" Value="White" /></Style>
+    <Style Selector="Border.hero Button.herobtn.white TextBlock"><Setter Property="Foreground" Value="#1C3E91" /></Style>
+    <Style Selector="Border.hero Button.herobtn.white:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#E8EEFF" /></Style>
+    <!-- Today / Week / Month / FY -->
+    <Style Selector="Border.heroseg"><Setter Property="Background" Value="#1FFFFFFF" /><Setter Property="CornerRadius" Value="999" /><Setter Property="Padding" Value="3" /></Style>
+    <Style Selector="Border.heroseg RadioButton">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Name="pill" CornerRadius="999" Padding="14,6" Background="Transparent">
+            <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" FontSize="12.5" Foreground="#C8D8FF" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Border.heroseg RadioButton:checked /template/ Border#pill"><Setter Property="Background" Value="White" /></Style>
+    <Style Selector="Border.heroseg RadioButton:checked /template/ TextBlock"><Setter Property="Foreground" Value="#1C3E91" /></Style>
+    <Style Selector="Ellipse.dot"><Setter Property="Width" Value="8" /><Setter Property="Height" Value="8" /><Setter Property="Fill" Value="#FF6B6B" /></Style>
+    <Style Selector="Ellipse.dot.ok"><Setter Property="Fill" Value="#46D38A" /></Style>
+    <Style Selector="Ellipse.dot.warn"><Setter Property="Fill" Value="#FFC24B" /></Style>
+    <!-- Number tiles over the band's edge -->
+    <Style Selector="Border.kpi">
+      <Setter Property="Background" Value="{DynamicResource PopupBrush}" />
+      <Setter Property="CornerRadius" Value="18" />
+      <Setter Property="Padding" Value="18,14" />
+      <Setter Property="BoxShadow" Value="0 6 22 0 #1F14326E" />
+    </Style>
+    <Style Selector="Border.kpi.gold">
+      <Setter Property="Background">
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%"><GradientStop Offset="0" Color="#FFF4D8" /><GradientStop Offset="1" Color="#FFE3A3" /></LinearGradientBrush>
+      </Setter>
+    </Style>
+    <Style Selector="Border.kpi.gold TextBlock"><Setter Property="Foreground" Value="#7A5200" /></Style>
+    <Style Selector="TextBlock.kpinum"><Setter Property="FontSize" Value="28" /><Setter Property="FontWeight" Value="Bold" /></Style>
+    <Style Selector="TextBlock.up"><Setter Property="Foreground" Value="#1F9D55" /><Setter Property="FontWeight" Value="Bold" /><Setter Property="FontSize" Value="12" /></Style>
+    <Style Selector="TextBlock.up.down"><Setter Property="Foreground" Value="#D93A3A" /></Style>
+    <Style Selector="Path.spark"><Setter Property="StrokeThickness" Value="2" /><Setter Property="StrokeJoin" Value="Round" /><Setter Property="Width" Value="96" /><Setter Property="Height" Value="30" /></Style>
+    <Style Selector="Border.panel">
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="CornerRadius" Value="18" />
+      <Setter Property="Padding" Value="18,16" />
+      <Setter Property="BoxShadow" Value="0 4 18 0 #1414326E" />
+    </Style>
+    <Style Selector="TextBlock.ph"><Setter Property="FontSize" Value="15.5" /><Setter Property="FontWeight" Value="Bold" /></Style>
+    <!-- Rank badges: gold, silver, bronze -->
+    <Style Selector="Border.rank"><Setter Property="Width" Value="26" /><Setter Property="Height" Value="26" /><Setter Property="CornerRadius" Value="8" /><Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" /></Style>
+    <Style Selector="Border.rank.gold"><Setter Property="Background" Value="#F5B83A" /></Style>
+    <Style Selector="Border.rank.silver"><Setter Property="Background" Value="#C2CBD7" /></Style>
+    <Style Selector="Border.rank.bronze"><Setter Property="Background" Value="#D69A68" /></Style>
+    <Style Selector="ProgressBar.lbbar">
+      <Setter Property="Height" Value="7" /><Setter Property="MinHeight" Value="7" /><Setter Property="CornerRadius" Value="99" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}" /><Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Border.timespill"><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="CornerRadius" Value="99" /><Setter Property="Padding" Value="9,2" /></Style>
+    <!-- Quick links (today, drafts, waiting, AI inbox, follow-ups) -->
+    <Style Selector="Button.quick">
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="Padding" Value="14,7" />
+    </Style>
+    <!-- Activity map -->
+    <Style Selector="Border.cell"><Setter Property="Width" Value="15" /><Setter Property="Height" Value="15" /><Setter Property="CornerRadius" Value="3" /><Setter Property="Margin" Value="1.5" /><Setter Property="Background" Value="#E8EEF9" /></Style>
+    <Style Selector="Border.cell.l1"><Setter Property="Background" Value="#C7D8F7" /></Style>
+    <Style Selector="Border.cell.l2"><Setter Property="Background" Value="#9DBCF2" /></Style>
+    <Style Selector="Border.cell.l3"><Setter Property="Background" Value="#6C9BEA" /></Style>
+    <Style Selector="Border.cell.l4"><Setter Property="Background" Value="#3E78DE" /></Style>
+    <Style Selector="Border.cell.l5"><Setter Property="Background" Value="#1F55C0" /></Style>
+    <Style Selector="Border.cell.out"><Setter Property="Background" Value="Transparent" /></Style>
   </UserControl.Styles>
   <ScrollViewer>
-    <StackPanel Margin="24,16,24,24" Spacing="18" MaxWidth="1200" HorizontalAlignment="Stretch">
-      <Grid ColumnDefinitions="*,Auto">
-        <StackPanel>
-          <ctl:PageTitle Text="Dashboard" Icon="dashboard" />
-          <TextBlock Name="GlanceTitle" Classes="muted" Classes.festive="{Binding IsFestival}" Text="{Binding GlanceTitle}" />
-        </StackPanel>
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Button Command="{Binding LoadCommand}" HotKey="F5" ToolTip.Tip="Refresh (F5)">
-            <StackPanel Orientation="Horizontal" Spacing="7">
-              <Path Data="M20,11 A8,8 0 1 0 17.7,16.6 M20,4 L20,11 L13,11" Stroke="{DynamicResource TextBrush}" StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
-              <TextBlock Text="Refresh" />
+    <StackPanel Margin="24,16,24,24" MaxWidth="1240" HorizontalAlignment="Stretch">
+      <ctl:ErrorBanner Text="{Binding ErrorMessage}" Margin="0,0,0,10" />
+
+      <!-- The band: date, "Dashboard", the period's summary, the period switch and the main buttons -->
+      <Border Classes="hero" Name="Hero">
+        <StackPanel Spacing="4">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel>
+              <TextBlock Name="GlanceTitle" Classes="soft" Classes.festive="{Binding IsFestival}" Text="{Binding DateLine}" FontSize="12.5" FontWeight="SemiBold" LetterSpacing="0.6" />
+              <TextBlock Name="DashboardTitle" Text="Dashboard" FontSize="30" FontWeight="Bold" />
+              <TextBlock Name="SummaryText" Classes="soft" Text="{Binding Summary}" FontSize="14" TextWrapping="Wrap" />
             </StackPanel>
-          </Button>
+            <StackPanel Grid.Column="1" Spacing="10" HorizontalAlignment="Right">
+              <Border Classes="heroseg">
+                <StackPanel Orientation="Horizontal">
+                  <RadioButton Name="PeriodTodayRadio" GroupName="DashPeriod" Content="Today" IsChecked="{Binding PeriodToday}" />
+                  <RadioButton Name="PeriodWeekRadio" GroupName="DashPeriod" Content="Week" IsChecked="{Binding PeriodWeek}" />
+                  <RadioButton Name="PeriodMonthRadio" GroupName="DashPeriod" Content="Month" IsChecked="{Binding PeriodMonth}" />
+                  <RadioButton Name="PeriodFyRadio" GroupName="DashPeriod" Content="FY" IsChecked="{Binding PeriodFy}" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </Grid>
+          <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,12,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Classes="herobtn white" Command="{Binding GoCommand}" CommandParameter="new"><TextBlock Text="＋  New quotation" /></Button>
+              <Button Classes="herobtn" Command="{Binding GoCommand}" CommandParameter="formater"><TextBlock Text="✎  Formater" /></Button>
+              <Button Classes="herobtn" Command="{Binding LoadCommand}" HotKey="F5" ToolTip.Tip="Refresh (F5)"><TextBlock Text="⟳  Refresh" /></Button>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+              <Ellipse Name="TallyChip" Classes="dot" Classes.ok="{Binding TallyOk}" />
+              <TextBlock Classes="soft" FontSize="12" Text="{Binding LastSyncText, StringFormat='Tally synced {0}'}" />
+              <Ellipse Name="GmailChip" Classes="dot" Classes.ok="{Binding GmailOk}" Margin="10,0,0,0" />
+              <TextBlock Classes="soft" FontSize="12" Text="{Binding GmailText, StringFormat='Gmail {0}'}" />
+              <Ellipse Name="AiChip" Classes="dot" Classes.ok="{Binding AiOk}" Classes.warn="{Binding !AiOk}" Margin="10,0,0,0" />
+              <TextBlock Classes="soft" FontSize="12" Text="{Binding AiText, StringFormat='Claude AI {0}'}" />
+            </StackPanel>
+          </Grid>
         </StackPanel>
+      </Border>
+
+      <!-- Four number tiles over the band's lower edge -->
+      <Grid ColumnDefinitions="*,14,*,14,*,14,*" Margin="20,-46,20,0">
+        <Border Classes="kpi">
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Classes="muted" FontSize="12.5" Text="{Binding ValueLabel}" />
+            <TextBlock Grid.Row="1" Name="ValueTile" Classes="kpinum" Text="{Binding ValueText}" />
+            <TextBlock Grid.Row="2" Classes="up" Classes.down="{Binding !ValueUp}" Text="{Binding ValueChange}" />
+            <Path Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Classes="spark" Data="{Binding ValueSpark}" Stroke="#2F6FE4" VerticalAlignment="Bottom" />
+          </Grid>
+        </Border>
+        <Border Grid.Column="2" Classes="kpi">
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Classes="muted" FontSize="12.5" Text="Quotations" />
+            <TextBlock Grid.Row="1" Name="CountTile" Classes="kpinum" Text="{Binding CountText}" />
+            <TextBlock Grid.Row="2" Classes="up" Classes.down="{Binding !CountUp}" Text="{Binding CountChange}" />
+            <Path Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Classes="spark" Data="{Binding CountSpark}" Stroke="#0E9F9A" VerticalAlignment="Bottom" />
+          </Grid>
+        </Border>
+        <Border Grid.Column="4" Classes="kpi">
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Classes="muted" FontSize="12.5" Text="Average value" />
+            <TextBlock Grid.Row="1" Name="AverageTile" Classes="kpinum" Text="{Binding AverageText}" />
+            <TextBlock Grid.Row="2" Classes="up" Classes.down="{Binding !AverageUp}" Text="{Binding AverageChange}" />
+            <Path Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Classes="spark" Data="{Binding AverageSpark}" Stroke="#E39B0B" VerticalAlignment="Bottom" />
+          </Grid>
+        </Border>
+        <Border Grid.Column="6" Classes="kpi gold" Name="BiggestTile">
+          <StackPanel>
+            <TextBlock FontSize="12.5" Text="🏆 Biggest quotation" />
+            <TextBlock Classes="kpinum" FontSize="24" Text="{Binding BiggestValue}" IsVisible="{Binding HasBiggest}" />
+            <TextBlock FontSize="12" Text="{Binding BiggestDetail}" TextTrimming="CharacterEllipsis" IsVisible="{Binding HasBiggest}" />
+            <TextBlock FontSize="13" Margin="0,8,0,0" Text="None yet" IsVisible="{Binding !HasBiggest}" />
+          </StackPanel>
+        </Border>
       </Grid>
-      <ctl:ErrorBanner Text="{Binding ErrorMessage}" />
+
+      <!-- Quick links -->
+      <WrapPanel Margin="0,16,0,0" ItemSpacing="8" LineSpacing="8">
+        <Button Classes="quick" Command="{Binding GoCommand}" CommandParameter="today"><TextBlock><Run Text="📅 Today " /><Run FontWeight="Bold" Text="{Binding Data.TodaysQuotations, FallbackValue='–', Mode=OneWay}" /></TextBlock></Button>
+        <Button Classes="quick" Command="{Binding GoCommand}" CommandParameter="drafts"><TextBlock><Run Text="✏️ Drafts " /><Run FontWeight="Bold" Text="{Binding Data.Drafts, FallbackValue='–', Mode=OneWay}" /></TextBlock></Button>
+        <Button Classes="quick" Command="{Binding GoCommand}" CommandParameter="drafts"><TextBlock><Run Text="⏱ Waiting for approval " /><Run FontWeight="Bold" Text="{Binding Data.PendingReview, FallbackValue='–', Mode=OneWay}" /></TextBlock></Button>
+        <Button Classes="quick" Command="{Binding GoCommand}" CommandParameter="inbox"><TextBlock><Run Text="✨ AI inbox " /><Run FontWeight="Bold" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–', Mode=OneWay}" /></TextBlock></Button>
+        <Button Classes="quick" Name="FollowUpTile" Command="{Binding GoCommand}" CommandParameter="followup" IsVisible="{Binding ShowFollowUp}"><TextBlock><Run Text="📞 To follow up " /><Run FontWeight="Bold" Text="{Binding Data.FollowUpDue, FallbackValue='–', Mode=OneWay}" /></TextBlock></Button>
+      </WrapPanel>
 
       <!-- Administrators: things to fix before they become a problem -->
-      <ItemsControl Name="HealthWarnings" ItemsSource="{Binding Warnings}" IsVisible="{Binding HasWarnings}">
+      <ItemsControl Name="HealthWarnings" ItemsSource="{Binding Warnings}" IsVisible="{Binding HasWarnings}" Margin="0,12,0,0">
         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="c:HealthWarningDto">
@@ -50,117 +204,130 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
 
-      <UniformGrid Columns="4">
-        <Button Classes="tile strip1" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="today">
-          <StackPanel>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Classes="eyebrow" Text="TODAY'S QUOTATIONS" VerticalAlignment="Center" />
-              <Border Grid.Column="1" Classes="tileicon" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
-                <Path Data="{x:Static vm:NavIcons.Today}" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
-                      Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      <!-- Top customers | most quoted items + team -->
+      <Grid ColumnDefinitions="1.25*,14,*" Margin="0,14,0,0">
+        <Border Classes="panel" Name="TopCustomersCard">
+          <StackPanel Spacing="4">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Classes="ph" Text="👑 Top customers" />
+                <TextBlock Classes="muted" FontSize="12" VerticalAlignment="Center" Text="{Binding CustomersSubtitle}" />
+              </StackPanel>
+              <Border Grid.Column="2" Classes="pillbar">
+                <StackPanel Orientation="Horizontal" Spacing="2">
+                  <RadioButton Name="ByValueRadio" Classes="seg" GroupName="DashCustomers" Content="Value" IsChecked="{Binding CustomersByValue}" />
+                  <RadioButton Name="ByCountRadio" Classes="seg" GroupName="DashCustomers" Content="Times quoted" IsChecked="{Binding CustomersByCount}" />
+                </StackPanel>
               </Border>
             </Grid>
-            <TextBlock Classes="big" Foreground="{DynamicResource AccentBrush}" Text="{Binding Data.TodaysQuotations, FallbackValue='–'}" />
+            <TextBlock Classes="muted" Margin="0,10" Text="No approved quotations in this period yet." IsVisible="{Binding !HasCustomers}" />
+            <ItemsControl Name="TopCustomersList" ItemsSource="{Binding TopCustomers}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:LeaderRow">
+                  <Grid ColumnDefinitions="Auto,*" Margin="0,8,0,2">
+                    <Border Classes="rank" Classes.gold="{Binding Gold}" Classes.silver="{Binding Silver}" Classes.bronze="{Binding Bronze}" VerticalAlignment="Top">
+                      <TextBlock Text="{Binding Rank}" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="4">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontWeight="Bold" FontSize="14" Margin="10,0,0,0" />
+                      </Grid>
+                      <ProgressBar Classes="lbbar" Minimum="0" Maximum="100" Value="{Binding Bar}" />
+                      <TextBlock Classes="muted" FontSize="12" Text="{Binding Detail}" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </StackPanel>
-        </Button>
-        <Button Classes="tile strip2" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
-          <StackPanel>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Classes="eyebrow" Text="DRAFTS" VerticalAlignment="Center" />
-              <Border Grid.Column="1" Classes="tileicon" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
-                <Path Data="{x:Static vm:NavIcons.Drafts}" Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
-                      Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
-              </Border>
-            </Grid>
-            <TextBlock Classes="big" Text="{Binding Data.Drafts, FallbackValue='–'}" />
+        </Border>
+        <Border Grid.Column="2" Classes="panel">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="ph" Text="📦 Most quoted items" />
+            <TextBlock Classes="muted" Text="Nothing quoted in this period yet." IsVisible="{Binding !HasItems}" />
+            <ItemsControl Name="TopItemsList" ItemsSource="{Binding TopItems}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:LeaderRow">
+                  <Grid ColumnDefinitions="22,*,Auto,Auto" Margin="0,5">
+                    <TextBlock Classes="muted" Text="{Binding Rank}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    <Border Grid.Column="2" Classes="timespill" Margin="8,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Value}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AccentBrush}" />
+                    </Border>
+                    <TextBlock Grid.Column="3" Text="{Binding Detail}" FontWeight="SemiBold" MinWidth="92" TextAlignment="Right" VerticalAlignment="Center" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Classes="ph" Margin="0,10,0,0" Text="{Binding TeamTitle, StringFormat='🏅 {0}'}" IsVisible="{Binding HasTeam}" />
+            <ItemsControl Name="TeamList" ItemsSource="{Binding Team}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:TeamRow">
+                  <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
+                    <Border Width="34" Height="34" CornerRadius="17" Background="{DynamicResource AccentBrush}">
+                      <TextBlock Text="{Binding Initial}" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Classes="muted" FontSize="12" Text="{Binding Detail}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding Medal}" FontSize="20" VerticalAlignment="Center" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </StackPanel>
-        </Button>
-        <Button Classes="tile strip3" HorizontalContentAlignment="Stretch" Margin="0,0,14,0" Command="{Binding GoCommand}" CommandParameter="drafts">
-          <StackPanel>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Classes="eyebrow" Text="PENDING REVIEW" VerticalAlignment="Center" />
-              <Border Grid.Column="1" Classes="tileicon" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
-                <Path Data="{x:Static vm:NavIcons.History}" Stroke="{DynamicResource OrangeBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
-                      Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
-              </Border>
-            </Grid>
-            <TextBlock Classes="big" Foreground="{DynamicResource OrangeBrush}" Text="{Binding Data.PendingReview, FallbackValue='–'}" />
-          </StackPanel>
-        </Button>
-        <Button Classes="tile strip4" HorizontalContentAlignment="Stretch" Command="{Binding GoCommand}" CommandParameter="inbox">
-          <StackPanel>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Classes="eyebrow" Text="AI INBOX — NEEDS ATTENTION" VerticalAlignment="Center" />
-              <Border Grid.Column="1" Classes="tileicon" Width="30" Height="30" CornerRadius="8" Background="{DynamicResource SubtleFillBrush}">
-                <Path Data="{x:Static vm:NavIcons.Inbox}" Stroke="{DynamicResource PurpleBrush}" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
-                      Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
-              </Border>
-            </Grid>
-            <TextBlock Classes="big" Foreground="{DynamicResource PurpleBrush}" Text="{Binding Data.InboxNeedsAttention, FallbackValue='–'}" />
-          </StackPanel>
-        </Button>
-      </UniformGrid>
+        </Border>
+      </Grid>
 
-      <Button Classes="tile" Name="FollowUpTile" HorizontalContentAlignment="Stretch" Command="{Binding GoCommand}" CommandParameter="followup"
-              IsVisible="{Binding ShowFollowUp}">
-        <Grid ColumnDefinitions="*,Auto">
-          <StackPanel>
-            <TextBlock Classes="eyebrow" Text="TO FOLLOW UP" />
-            <TextBlock Classes="muted" FontSize="12" Text="Approved quotations whose follow-up date has come — call the customer, then mark Won or Lost." />
+      <!-- Won / Lost | activity -->
+      <Grid ColumnDefinitions="*,14,1.35*" Margin="0,14,0,0">
+        <Border Classes="panel" Name="OutcomesCard" IsVisible="{Binding ShowOutcomes}">
+          <Grid ColumnDefinitions="Auto,*">
+            <Panel Width="120" Height="120">
+              <Ellipse Width="92" Height="92" Stroke="{DynamicResource SubtleFillBrush}" StrokeThickness="16" />
+              <Path Data="{Binding OpenArc}" Stroke="#C7D3E6" StrokeThickness="16" />
+              <Path Data="{Binding LostArc}" Stroke="#E0453A" StrokeThickness="16" />
+              <Path Data="{Binding WonArc}" Stroke="#2E9E4F" StrokeThickness="16" />
+              <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{Binding WonPercent}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" />
+                <TextBlock Classes="muted" FontSize="11" Text="won" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Panel>
+            <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="6">
+              <TextBlock Classes="ph" Text="🎯 Won / Lost" />
+              <WrapPanel ItemSpacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="5"><Border Width="9" Height="9" CornerRadius="3" Background="#2E9E4F" /><TextBlock FontSize="12.5" Text="{Binding WonText}" /></StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="5"><Border Width="9" Height="9" CornerRadius="3" Background="#E0453A" /><TextBlock FontSize="12.5" Text="{Binding LostText}" /></StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="5"><Border Width="9" Height="9" CornerRadius="3" Background="#C7D3E6" /><TextBlock FontSize="12.5" Text="{Binding OpenText}" /></StackPanel>
+              </WrapPanel>
+              <TextBlock Classes="muted" FontSize="12.5" Text="{Binding OutcomeDetail}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Grid>
+        </Border>
+        <Border Grid.Column="{Binding ActivityColumn}" Grid.ColumnSpan="{Binding ActivitySpan}" Classes="panel" Name="ActivityCard">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <TextBlock Classes="ph" Text="🔥 Activity" />
+              <TextBlock Grid.Column="1" Classes="muted" FontSize="12" Margin="8,0" VerticalAlignment="Center" Text="approved quotations per day · last 4 months" />
+              <TextBlock Grid.Column="2" FontWeight="Bold" FontSize="12.5" Text="{Binding StreakText}" VerticalAlignment="Center" />
+            </Grid>
+            <ItemsControl Name="ActivityMap" ItemsSource="{Binding Heat}" HorizontalAlignment="Left">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><UniformGrid Rows="7" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:HeatCell">
+                  <Border Classes="cell" Classes.l1="{Binding L1}" Classes.l2="{Binding L2}" Classes.l3="{Binding L3}" Classes.l4="{Binding L4}"
+                          Classes.l5="{Binding L5}" Classes.out="{Binding Outside}" ToolTip.Tip="{Binding Tip}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Classes="muted" FontSize="12.5" Text="{Binding BusiestText}" />
           </StackPanel>
-          <TextBlock Grid.Column="1" Classes="big" Margin="0" VerticalAlignment="Center" Foreground="{DynamicResource TealBrush}"
-                     Text="{Binding Data.FollowUpDue, FallbackValue='–'}" />
-        </Grid>
-      </Button>
-
-      <Border Classes="card">
-        <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-          <Grid.Styles>
-            <Style Selector="TextBlock">
-              <Setter Property="Margin" Value="0,5" />
-            </Style>
-            <!-- The status pills (Tally, Gmail, Claude AI): the same room above and below as a text row, so two pills one
-                 under the other never touch -->
-            <Style Selector="Border.chip">
-              <Setter Property="Margin" Value="0,3" />
-            </Style>
-            <Style Selector="Border.chip TextBlock">
-              <Setter Property="Margin" Value="0" />
-            </Style>
-          </Grid.Styles>
-          <TextBlock Classes="h2" Grid.ColumnSpan="2" Text="Connections" Margin="0,0,0,8" />
-          <TextBlock Grid.Row="1" Classes="label" Text="Tally" />
-          <Border Grid.Row="1" Grid.Column="1" Name="TallyChip" Classes="chip" Classes.ok="{Binding TallyOk}" Classes.bad="{Binding !TallyOk}">
-            <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding TallyText}" /></StackPanel>
-          </Border>
-          <TextBlock Grid.Row="2" Classes="label" Text="Tally company" />
-          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Data.Status.TallyCompany, FallbackValue='–', TargetNullValue='–'}" />
-          <TextBlock Grid.Row="3" Classes="label" Text="Active financial year" />
-          <TextBlock Grid.Row="3" Grid.Column="1">
-            <Run Text="{Binding Data.Status.ActiveFinancialYear, FallbackValue='–', Mode=OneWay}" />
-            <Run Text="  (source: " />
-            <Run Text="{Binding Data.Status.ActiveFinancialYearSource, FallbackValue='', Mode=OneWay}" />
-            <Run Text=")" />
-          </TextBlock>
-          <TextBlock Grid.Row="4" Classes="label" Text="Last sync" />
-          <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastSyncText}" />
-          <TextBlock Grid.Row="5" Classes="label" Text="Products / Customers" />
-          <TextBlock Grid.Row="5" Grid.Column="1">
-            <Run Text="{Binding Data.Status.ProductCount, FallbackValue='–', Mode=OneWay}" />
-            <Run Text=" / " />
-            <Run Text="{Binding Data.Status.CustomerCount, FallbackValue='–', Mode=OneWay}" />
-          </TextBlock>
-          <TextBlock Grid.Row="6" Classes="label" Text="Gmail" />
-          <Border Grid.Row="6" Grid.Column="1" Name="GmailChip" Classes="chip" Classes.ok="{Binding GmailOk}" Classes.bad="{Binding !GmailOk}">
-            <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding GmailText}" /></StackPanel>
-          </Border>
-          <TextBlock Grid.Row="7" Classes="label" Text="Claude AI" />
-          <Border Grid.Row="7" Grid.Column="1" Name="AiChip" Classes="chip" Classes.ok="{Binding AiOk}" Classes.warn="{Binding !AiOk}">
-            <StackPanel Orientation="Horizontal"><Ellipse /><TextBlock Text="{Binding AiText}" /></StackPanel>
-          </Border>
-        </Grid>
-      </Border>
-
+        </Border>
+      </Grid>
     </StackPanel>
   </ScrollViewer>
 </UserControl>
